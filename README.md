@@ -5,9 +5,6 @@ This project was bootstrapped with [Create React App](https://github.com/faceboo
 
 | dependency    | version
 | ------------- |:-------------:|
-| @sentry/browser? | 5.15.0 |
-| @sentry/apm? | 5.20.1 |
-| @sentry/react? 5.20.1 | 
 | npx | 7.8.0 |
 | npm | 7.8.0 |
 | node | v.14.2.0 |
