@@ -11,8 +11,8 @@ This project was bootstrapped with [Create React App](https://github.com/faceboo
 | @sentry/react? 5.20.1 | 
 | redux? | 4.0.5 |
 | react-redux? | 7.2.1 |
-| react-router? | ^1.0.3 |
-| react-router-dom? | ^5.2.0 |
+| react-router?? | ^1.0.3 |
+| react-router-dom | ^5.2.0 |
 | redux-logger? | ^3.0.6" |
 | npx | 7.8.0 |
 | npm | 7.8.0 |
@@ -31,11 +31,15 @@ The npx Create React App came with the following:
 
 
 ## Run
+Dev
+```
 npm start
+```
 
+Prod
+```
 npm build
-
 serve -s build
-
+```
 ### Other
 
