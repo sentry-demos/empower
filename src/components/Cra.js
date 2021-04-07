@@ -1,7 +1,7 @@
 import logo from '../assets/logo.svg';
-import './Cnra.css';
+import './Cra.css';
 
-function Cnra() {
+function Cra() {
   return (
     <div className="App">
       <header className="App-header">
@@ -22,4 +22,4 @@ function Cnra() {
   );
 }
 
-export default Cnra;
+export default Cra;

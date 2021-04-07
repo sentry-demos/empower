@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom';
 import './index.css';
 import About from './components/About';
 import Checkout from './components/Checkout';
-import Cnra from './components/Cnra';
+import Cra from './components/Cra';
 import Products from './components/Products';
 
 import {
@@ -39,7 +39,7 @@ ReactDOM.render(
               <Link to="/checkout">Checkout</Link>
             </li>
             <li>
-              <Link to="/cnra">CreateNewReactApp Starter Page</Link>
+              <Link to="/cra">CreateReactApp Starter Page</Link>
             </li>
             <li>
               <Link to="/products">Products</Link>
@@ -56,8 +56,8 @@ ReactDOM.render(
           <Route path="/checkout">
             <Checkout />
           </Route>
-          <Route path="/cnra">
-            <Cnra />
+          <Route path="/cra">
+            <Cra />
           </Route>
           <Route path="/products">
             <Products />
