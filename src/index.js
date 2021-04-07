@@ -1,8 +1,9 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
-import Cnra from './components/Cnra';
 import About from './components/About';
+import Checkout from './components/Checkout';
+import Cnra from './components/Cnra';
 import Products from './components/Products';
 
 import {
@@ -32,13 +33,16 @@ ReactDOM.render(
               <Link to="/">Home</Link>
             </li>
             <li>
-              <Link to="/products">Products</Link>
-            </li>
-            <li>
               <Link to="/about">About</Link>
             </li>
             <li>
+              <Link to="/checkout">Checkout</Link>
+            </li>
+            <li>
               <Link to="/cnra">CreateNewReactApp Starter Page</Link>
+            </li>
+            <li>
+              <Link to="/products">Products</Link>
             </li>
           </ul>
         {'<Navbar End>'}
@@ -49,11 +53,14 @@ ReactDOM.render(
           <Route path="/about">
             <About />
           </Route>
-          <Route path="/products">
-            <Products />
+          <Route path="/checkout">
+            <Checkout />
           </Route>
           <Route path="/cnra">
             <Cnra />
+          </Route>
+          <Route path="/products">
+            <Products />
           </Route>
           <Route path="/">
             <Home />
