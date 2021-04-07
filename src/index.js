@@ -72,7 +72,7 @@ ReactDOM.render(
   document.getElementById('root')
 )
 
-// If you don't like the above navbar, then you can remove it, it would look like this:
+// If you don't want a navbar, then you can remove it altogether, it would look like this:
 /*
 ReactDOM.render(
   <React.StrictMode>
@@ -81,8 +81,8 @@ ReactDOM.render(
           <Route path="/about">
             <About />
           </Route>
-          <Route path="/users">
-            <Users />
+          <Route path="/checkout">
+            <Checkout />
           </Route>
           <Route path="/">
             <Home />
