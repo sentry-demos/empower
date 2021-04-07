@@ -12,7 +12,6 @@ This project was bootstrapped with [Create React App](https://github.com/faceboo
 | react-dom | ^17.0.2 |
 | react-router-dom | ^5.2.0 |
 | react-scripts | 4.0.3 |
-| web-vitals | ^1.0.1 |
 
 redux, react-redux, redux-logger, will do later.
 
