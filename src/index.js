@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
-import AppOld from './components/AppOld';
+import Cnra from './components/Cnra';
 import About from './components/About';
 import Products from './components/Products';
 
@@ -37,6 +37,9 @@ ReactDOM.render(
             <li>
               <Link to="/about">About</Link>
             </li>
+            <li>
+              <Link to="/cnra">CreateNewReactApp Starter Page</Link>
+            </li>
           </ul>
         {'<Navbar End>'}
         </nav>
@@ -48,6 +51,9 @@ ReactDOM.render(
           </Route>
           <Route path="/products">
             <Products />
+          </Route>
+          <Route path="/cnra">
+            <Cnra />
           </Route>
           <Route path="/">
             <Home />
