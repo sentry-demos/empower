@@ -50,6 +50,9 @@ ReactDOM.render(
 
         {'<React-Router\'s Switch components appear below:>'}
         <Switch>
+          <Route path="/">
+            <Home />
+          </Route>
           <Route path="/about">
             <About />
           </Route>
@@ -62,15 +65,16 @@ ReactDOM.render(
           <Route path="/products">
             <Products />
           </Route>
-          <Route path="/">
-            <Home />
-          </Route>
         </Switch>
       </div>
     </Router>
   </React.StrictMode>,
   document.getElementById('root')
 )
+
+function Home() {
+  return <h2>Home</h2>;
+}
 
 // If you don't want a navbar, then you can remove it altogether, it would look like this:
 /*
@@ -93,7 +97,3 @@ ReactDOM.render(
   document.getElementById('root')
 )
 */
-
-function Home() {
-  return <h2>Home</h2>;
-}
