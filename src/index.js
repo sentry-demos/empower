@@ -50,9 +50,6 @@ ReactDOM.render(
 
         {'<React-Router\'s Switch components appear below:>'}
         <Switch>
-          <Route path="/">
-            <Home />
-          </Route>
           <Route path="/about">
             <About />
           </Route>
@@ -64,6 +61,9 @@ ReactDOM.render(
           </Route>
           <Route path="/products">
             <Products />
+          </Route>
+          <Route path="/">
+            <Home />
           </Route>
         </Switch>
       </div>
