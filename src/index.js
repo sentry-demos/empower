@@ -4,6 +4,7 @@ import './index.css';
 import About from './components/About';
 import Checkout from './components/Checkout';
 import Cra from './components/Cra';
+import Product from './components/Product';
 import Products from './components/Products';
 
 import {
@@ -39,6 +40,9 @@ ReactDOM.render(
               <Link to="/cra">CreateReactApp Starter Page</Link>
             </li>
             <li>
+              <Link to="/product">Product</Link>
+            </li>
+            <li>
               <Link to="/products">Products</Link>
             </li>
             <li>
@@ -50,9 +54,6 @@ ReactDOM.render(
 
         {'<React-Router\'s Switch components appear below:>'}
         <Switch>
-          <Route path="/">
-            <Home />
-          </Route>
           <Route path="/about">
             <About />
           </Route>
@@ -62,8 +63,14 @@ ReactDOM.render(
           <Route path="/cra">
             <Cra />
           </Route>
+          <Route path="/product">
+            <Product />
+          </Route>
           <Route path="/products">
             <Products />
+          </Route>
+          <Route path="/">
+            <Home />
           </Route>
         </Switch>
       </div>
