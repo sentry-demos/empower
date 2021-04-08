@@ -30,9 +30,6 @@ ReactDOM.render(
         <nav>
           <ul>
             <li>
-              <Link to="/">Home</Link>
-            </li>
-            <li>
               <Link to="/about">About</Link>
             </li>
             <li>
@@ -43,6 +40,9 @@ ReactDOM.render(
             </li>
             <li>
               <Link to="/products">Products</Link>
+            </li>
+            <li>
+              <Link to="/">Home</Link>
             </li>
           </ul>
         {'<Navbar End>'}
