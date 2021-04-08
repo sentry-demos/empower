@@ -4,13 +4,14 @@ import './index.css';
 import About from './components/About';
 import Checkout from './components/Checkout';
 import Cra from './components/Cra';
+import Product from './components/Product';
 import Products from './components/Products';
 
 import {
   BrowserRouter as Router,
   Switch,
   Route,
-  Link
+  Link,
 } from "react-router-dom";
 
 // from Creat New React App
@@ -39,6 +40,9 @@ ReactDOM.render(
               <Link to="/cra">CreateReactApp Starter Page</Link>
             </li>
             <li>
+              <Link to="/product/1">Product/:id</Link>
+            </li>
+            <li>
               <Link to="/products">Products</Link>
             </li>
             <li>
@@ -59,10 +63,12 @@ ReactDOM.render(
           <Route path="/cra">
             <Cra />
           </Route>
+          <Route path="/product/:id" component={Product}>
+          </Route>
           <Route path="/products">
             <Products />
           </Route>
-          <Route path="/">
+          <Route exact path="/">
             <Home />
           </Route>
         </Switch>
