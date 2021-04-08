@@ -12,7 +12,6 @@ import {
   Switch,
   Route,
   Link,
-  useParams
 } from "react-router-dom";
 
 // from Creat New React App
@@ -65,7 +64,6 @@ ReactDOM.render(
             <Cra />
           </Route>
           <Route path="/product/:id" component={Product}>
-            {/* <Product /> */}
           </Route>
           <Route path="/products">
             <Products />
