@@ -11,7 +11,8 @@ import {
   BrowserRouter as Router,
   Switch,
   Route,
-  Link
+  Link,
+  useParams
 } from "react-router-dom";
 
 // from Creat New React App
@@ -40,7 +41,7 @@ ReactDOM.render(
               <Link to="/cra">CreateReactApp Starter Page</Link>
             </li>
             <li>
-              <Link to="/product">Product</Link>
+              <Link to="/product/1">Product/:id</Link>
             </li>
             <li>
               <Link to="/products">Products</Link>
@@ -63,13 +64,13 @@ ReactDOM.render(
           <Route path="/cra">
             <Cra />
           </Route>
-          <Route path="/product">
-            <Product />
+          <Route path="/product/:id" component={Product}>
+            {/* <Product /> */}
           </Route>
           <Route path="/products">
             <Products />
           </Route>
-          <Route path="/">
+          <Route exact path="/">
             <Home />
           </Route>
         </Switch>
