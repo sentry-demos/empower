@@ -5,6 +5,7 @@ import About from './components/About';
 import Checkout from './components/Checkout';
 import Cra from './components/Cra';
 import Employee from './components/Employee';
+import NotFound from './components/NotFound';
 import Product from './components/Product';
 import Products from './components/Products';
 
@@ -32,6 +33,9 @@ ReactDOM.render(
         <nav>
           <ul>
             <li>
+              <Link to="/">Home</Link>
+            </li>
+            <li>
               <Link to="/about">About</Link>
             </li>
             <li>
@@ -49,15 +53,15 @@ ReactDOM.render(
             <li>
               <Link to="/products">Products</Link>
             </li>
-            <li>
-              <Link to="/">Home</Link>
-            </li>
           </ul>
         {'<Navbar End>'}
         </nav>
 
         {'<React-Router\'s Switch components appear below:>'}
         <Switch>
+          <Route exact path="/">
+            <Home />
+          </Route>
           <Route path="/about">
             <About />
           </Route>
@@ -74,9 +78,7 @@ ReactDOM.render(
           <Route path="/products">
             <Products />
           </Route>
-          <Route exact path="/">
-            <Home />
-          </Route>
+          <Route component={NotFound} />
         </Switch>
       </div>
     </Router>
