@@ -4,6 +4,7 @@ import './index.css';
 import About from './components/About';
 import Checkout from './components/Checkout';
 import Cra from './components/Cra';
+import Employee from './components/Employee';
 import Product from './components/Product';
 import Products from './components/Products';
 
@@ -40,6 +41,9 @@ ReactDOM.render(
               <Link to="/cra">CreateReactApp Starter Page</Link>
             </li>
             <li>
+              <Link to="/employee/jane">Employee/:name</Link>
+            </li>
+            <li>
               <Link to="/product/1">Product/:id</Link>
             </li>
             <li>
@@ -62,6 +66,8 @@ ReactDOM.render(
           </Route>
           <Route path="/cra">
             <Cra />
+          </Route>
+          <Route path="/employee/:name" component={Employee}>
           </Route>
           <Route path="/product/:id" component={Product}>
           </Route>
