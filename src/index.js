@@ -8,6 +8,9 @@ import Employee from './components/Employee';
 import NotFound from './components/NotFound';
 import Product from './components/Product';
 import Products from './components/Products';
+import * as Sentry from "@sentry/react";
+import { Integrations } from "@sentry/tracing";
+import { createBrowserHistory } from 'history';
 
 import {
   BrowserRouter as Router,
@@ -24,10 +27,31 @@ import {
 //   document.getElementById('root')
 // );
 
+const tracingOrigins = [
+  'localhost', 
+  "empowerplant.io",
+  /^\//
+]
+
+const history = createBrowserHistory();
+const SentryRoute = Sentry.withSentryRouting(Route);
+
+Sentry.init({ 
+  dsn: "https://19349cefec81421f89ba3c572f5a1f59@o262702.ingest.sentry.io/5711949",
+  integrations: [new Integrations.BrowserTracing({
+    tracingOrigins: tracingOrigins,
+    routingInstrumentation: Sentry.reactRouterV5Instrumentation(history),
+  })],
+  tracesSampleRate: 1.0,
+  release: new Date().getMonth() + "." + new Date().getDate(),
+  environment: "test",
+  beforeSend(event) { return event }
+});
+
 // React-router in use here https://reactrouter.com/web/guides/quick-start
 ReactDOM.render(
   <React.StrictMode>
-    <Router>
+    <Router history={history}>
       <div>
         {'<Navbar Start>'}
         <nav>
@@ -71,10 +95,10 @@ ReactDOM.render(
           <Route path="/cra">
             <Cra />
           </Route>
-          <Route path="/employee/:name" component={Employee}>
-          </Route>
-          <Route path="/product/:id" component={Product}>
-          </Route>
+          <SentryRoute path="/employee/:name" component={Employee}>
+          </SentryRoute>
+          <SentryRoute path="/product/:id" component={Product}>
+          </SentryRoute>
           <Route path="/products">
             <Products />
           </Route>
