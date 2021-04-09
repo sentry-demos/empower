@@ -8,16 +8,13 @@ import Employee from './components/Employee';
 import NotFound from './components/NotFound';
 import Product from './components/Product';
 import Products from './components/Products';
-import * as Sentry from "@sentry/react";
-import { Integrations } from "@sentry/tracing";
+import * as Sentry from '@sentry/react';
+import { Integrations } from '@sentry/tracing';
 import { createBrowserHistory } from 'history';
 
-import {
-  BrowserRouter as Router,
-  Switch,
-  Route,
-  Link,
-} from "react-router-dom";
+import { BrowserRouter as Router, Switch, Route, Link } from 'react-router-dom';
+
+import logo from './assets/logo.svg';
 
 // from Creat New React App
 // ReactDOM.render(
@@ -27,111 +24,85 @@ import {
 //   document.getElementById('root')
 // );
 
-const tracingOrigins = [
-  'localhost', 
-  "empowerplant.io",
-  /^\//
-]
+const tracingOrigins = ['localhost', 'empowerplant.io', /^\//];
 
 const history = createBrowserHistory();
 const SentryRoute = Sentry.withSentryRouting(Route);
 
-Sentry.init({ 
-  dsn: "https://19349cefec81421f89ba3c572f5a1f59@o262702.ingest.sentry.io/5711949",
-  integrations: [new Integrations.BrowserTracing({
-    tracingOrigins: tracingOrigins,
-    routingInstrumentation: Sentry.reactRouterV5Instrumentation(history),
-  })],
+Sentry.init({
+  dsn:
+    'https://19349cefec81421f89ba3c572f5a1f59@o262702.ingest.sentry.io/5711949',
+  integrations: [
+    new Integrations.BrowserTracing({
+      tracingOrigins: tracingOrigins,
+      routingInstrumentation: Sentry.reactRouterV5Instrumentation(history),
+    }),
+  ],
   tracesSampleRate: 1.0,
-  release: new Date().getMonth() + "." + new Date().getDate(),
-  environment: "test",
-  beforeSend(event) { return event }
+  release: new Date().getMonth() + '.' + new Date().getDate(),
+  environment: 'test',
+  beforeSend(event) {
+    return event;
+  },
 });
 
 // React-router in use here https://reactrouter.com/web/guides/quick-start
 ReactDOM.render(
   <React.StrictMode>
     <Router history={history}>
-      <div>
-        {'<Navbar Start>'}
-        <nav>
-          <ul>
-            <li>
-              <Link to="/">Home</Link>
-            </li>
-            <li>
-              <Link to="/about">About</Link>
-            </li>
-            <li>
-              <Link to="/checkout">Checkout</Link>
-            </li>
-            <li>
-              <Link to="/cra">CreateReactApp Starter Page</Link>
-            </li>
-            <li>
-              <Link to="/employee/jane">Employee/:name</Link>
-            </li>
-            <li>
-              <Link to="/product/1">Product/:id</Link>
-            </li>
-            <li>
-              <Link to="/products">Products</Link>
-            </li>
-          </ul>
-        {'<Navbar End>'}
-        </nav>
+      <nav id="top-nav">
+        <Link to="/" id="home-link">
+          <img src={logo} className="logo" alt="logo" />
+          Empower Plant
+        </Link>
 
-        {'<React-Router\'s Switch components appear below:>'}
+        <div id="top-right-links">
+          <Link to="/products">Products</Link>
+          <Link to="/checkout">Checkout</Link>
+        </div>
+      </nav>
+
+      <div id="body-container">
         <Switch>
-          <Route exact path="/">
-            <Home />
-          </Route>
-          <Route path="/about">
-            <About />
-          </Route>
-          <Route path="/checkout">
-            <Checkout />
-          </Route>
-          <Route path="/cra">
-            <Cra />
-          </Route>
-          <SentryRoute path="/employee/:name" component={Employee}>
-          </SentryRoute>
-          <SentryRoute path="/product/:id" component={Product}>
-          </SentryRoute>
-          <Route path="/products">
-            <Products />
-          </Route>
+          <Route exact path="/" component={Home} />
+          <Route path="/about" component={About} />
+          <Route path="/checkout" component={Checkout} />
+          <Route path="/cra" component={Cra} />
+          <SentryRoute
+            path="/employee/:name"
+            component={Employee}
+          ></SentryRoute>
+          <SentryRoute path="/product/:id" component={Product}></SentryRoute>
+          <Route path="/products" component={Products} />
           <Route component={NotFound} />
         </Switch>
       </div>
+
+      <footer id="footer">
+        <div>
+          <h2>Sign up for plant tech news</h2>
+          <form>
+            <label for="email-subscribe">Email</label>
+            <input
+              type="email"
+              name="email-subscribe"
+              id="email-subscribe"
+            ></input>
+            <input type="submit" value="Subscribe"></input>
+          </form>
+        </div>
+      </footer>
     </Router>
   </React.StrictMode>,
   document.getElementById('root')
-)
+);
 
 function Home() {
-  return <h2>Home</h2>;
+  return (
+    <div className="hero">
+      <h1>Empower your plants</h1>
+      <p>Keep your houseplants happy.</p>
+      <Link to="/products">Browse Products</Link>
+    </div>
+  );
 }
-
-// If you don't want a navbar, then you can remove it altogether, it would look like this:
-/*
-ReactDOM.render(
-  <React.StrictMode>
-    <Router>
-        <Switch>
-          <Route path="/about">
-            <About />
-          </Route>
-          <Route path="/checkout">
-            <Checkout />
-          </Route>
-          <Route path="/">
-            <Home />
-          </Route>
-        </Switch>
-    </Router>
-  </React.StrictMode>,
-  document.getElementById('root')
-)
-*/
