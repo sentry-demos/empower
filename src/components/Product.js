@@ -1,18 +1,22 @@
-import React, { Component } from "react";
+import React, { useEffect, useState } from 'react';
 
-class Product extends Component {
-    constructor(props) {
-        super(props);
-        this.state = {};
-    }
+const Product = ({ match }) => {
+  const [product, setProduct] = useState(null);
 
-    async componentDidMount() {
-        console.log(this.props.match.params.id)
-    }
+  useEffect(() => {
+    (async () => {
+      if (match.params.id) {
+        const data = await import(`./products/${match.params.id}`);
+        setProduct(data);
+      }
+    })();
+  }, [match.params.id]);
 
-    render() {
-        return <h2>Product #{this.props.match.params.id}</h2>;
-    }
-}
+  return product ? (
+    <pre>{JSON.stringify(product, null, 2)}</pre>
+  ) : (
+    <p>Loading…</p>
+  );
+};
 
-export default Product
+export default Product;
