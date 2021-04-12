@@ -1,26 +1,25 @@
-import React, { useState, useReducer } from 'react';
+import React, { useReducer } from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
+import * as Sentry from '@sentry/react';
+import { Integrations } from '@sentry/tracing';
+import { createBrowserHistory } from 'history';
+import { BrowserRouter as Router, Switch, Route, Link } from 'react-router-dom';
 import About from './components/About';
+import Cart from './components/Cart';
 import Checkout from './components/Checkout';
 import Cra from './components/Cra';
 import Employee from './components/Employee';
 import NotFound from './components/NotFound';
 import Product from './components/Product';
 import Products from './components/Products';
-import * as Sentry from '@sentry/react';
-import { Integrations } from '@sentry/tracing';
-import { createBrowserHistory } from 'history';
+
+import EPlogo from './assets/empowerplant-logo.svg';
 
 import productOne from './components/products/1';
 import productTwo from './components/products/2';
 import productThree from './components/products/3';
 import productFour from './components/products/4';
-
-import { BrowserRouter as Router, Switch, Route, Link } from 'react-router-dom';
-
-import logo from './assets/logo.svg';
-import EPlogo from './assets/empowerplant-logo.svg';
 
 // from Creat New React App
 // ReactDOM.render(
@@ -93,7 +92,7 @@ export const Context = React.createContext({
   cart: { items: [] },
 });
 
-const App = () => {
+const App = (props) => {
   const [cart, dispatch] = useReducer(cartReducer, {
     items: [],
     quantities: {},
@@ -111,13 +110,13 @@ const App = () => {
         <Router history={history}>
           <nav id="top-nav">
             <Link to="/" id="home-link">
-              <img src={logo} className="logo" alt="logo" />
+              <img src={EPlogo} className="logo" alt="logo" />
               Empower Plant
             </Link>
 
             <div id="top-right-links">
               <Link to="/products">Products</Link>
-              <Link to="/checkout">Checkout</Link>
+              <Link to="/cart">Cart</Link>
             </div>
           </nav>
 
@@ -125,6 +124,7 @@ const App = () => {
             <Switch>
               <Route exact path="/" component={Home} />
               <Route path="/about" component={About} />
+              <Route path="/cart" component={Cart} />
               <Route path="/checkout" component={Checkout} />
               <Route path="/cra" component={Cra} />
               <SentryRoute

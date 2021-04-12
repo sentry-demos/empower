@@ -9,37 +9,12 @@ function Products(props) {
     <div>
       <h1>Products catalog</h1>
 
-      <aside>
-        <h3>Cart</h3>
-        {cart.items.length > 0 ? (
-          <>
-            <ul>
-              {cart.items.map((item) => {
-                const quantity = cart.quantities[item.id];
-                return (
-                  <li>
-                    <h4>
-                      {item.title} (x {quantity})
-                    </h4>
-                    <p>${item.price * quantity}</p>
-                  </li>
-                );
-              })}
-            </ul>
-            <p>Total: ${cart.total}</p>
-          </>
-        ) : (
-          <p>Please add items to the cart</p>
-        )}
-      </aside>
-
-      <hr />
-
       <ul className="products-list">
         {products.map((product) => {
+          const itemLink = '/product/' + product.id;
           return (
             <li>
-              <Link to="/product/1">
+              <Link to={itemLink}>
                 <img src="https://via.placeholder.com/500x250" alt="product" />
                 <div>
                   <h2>{product.title}</h2>
