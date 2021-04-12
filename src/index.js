@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useReducer } from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
 import About from './components/About';
@@ -48,63 +48,106 @@ Sentry.init({
   },
 });
 
+const cartReducer = (state, { action, product }) => {
+  if (!product) throw new Error('Cart reducer requires a product');
+
+  const newState = { ...state };
+
+  switch (action) {
+    case 'add':
+      {
+        let item = newState.items.find((x) => x.id === product.id);
+        if (!item) newState.items.push(product);
+        newState.quantities[product.id] = newState.quantities[product.id] || 0;
+        newState.quantities[product.id]++;
+      }
+      return newState;
+    case 'remove': {
+      let item = newState.items.find((x) => x.id === product.id);
+      if (!item) return newState;
+      newState.quantities[product.id]--;
+      if (newState.quantities[product.id] === 0) {
+        delete newState.quantities[product.id];
+        const i = newState.items.findIndex((x) => x.id === product.id);
+        newState.items.splice(i, 1);
+      }
+      return newState;
+    }
+    default:
+      throw new Error('Unknown cart action');
+  }
+};
+
+export const Context = React.createContext({
+  products: [],
+  cart: { items: [] },
+});
+
 const App = () => {
-  const [products, setProducts] = useState([productOne]);
-  const [cart, setCart] = useState([]);
-  console.log(products);
+  const [cart, dispatch] = useReducer(cartReducer, {
+    items: [],
+    quantities: {},
+    total: 0,
+  });
 
   return (
     <React.StrictMode>
-      <Router history={history}>
-        <nav id="top-nav">
-          <Link to="/" id="home-link">
-            <img src={logo} className="logo" alt="logo" />
-            Empower Plant
-          </Link>
+      <Context.Provider
+        value={{
+          cart: { ...cart, update: dispatch },
+          products: [productOne],
+        }}
+      >
+        <Router history={history}>
+          <nav id="top-nav">
+            <Link to="/" id="home-link">
+              <img src={logo} className="logo" alt="logo" />
+              Empower Plant
+            </Link>
 
-          <div id="top-right-links">
-            <Link to="/products">Products</Link>
-            <Link to="/checkout">Checkout</Link>
+            <div id="top-right-links">
+              <Link to="/products">Products</Link>
+              <Link to="/checkout">Checkout</Link>
+            </div>
+          </nav>
+
+          <div id="body-container">
+            <Switch>
+              <Route exact path="/" component={Home} />
+              <Route path="/about" component={About} />
+              <Route path="/checkout" component={Checkout} />
+              <Route path="/cra" component={Cra} />
+              <SentryRoute
+                path="/employee/:name"
+                component={Employee}
+              ></SentryRoute>
+              <SentryRoute
+                path="/product/:id"
+                component={Product}
+              ></SentryRoute>
+              <Route path="/products">
+                <Products />
+              </Route>
+              <Route component={NotFound} />
+            </Switch>
           </div>
-        </nav>
 
-        <div id="body-container">
-          <Switch>
-            <Route exact path="/" component={Home} />
-            <Route path="/about" component={About} />
-            <Route path="/checkout" component={Checkout} />
-            <Route path="/cra" component={Cra} />
-            <SentryRoute
-              path="/employee/:name"
-              component={Employee}
-            ></SentryRoute>
-            <SentryRoute path="/product/:id" component={Product}></SentryRoute>
-            <Route path="/products">
-              <Products
-                products={products}
-                cart={cart}
-                setCart={setCart}
-              ></Products>
-            </Route>
-            <Route component={NotFound} />
-          </Switch>
-        </div>
-
-        <footer id="footer">
-          <div>
-            <h2>Sign up for plant tech news</h2>
-            <form>
-              <label for="email-subscribe">Email</label>
-              <input
-                type="email"
-                name="email-subscribe"
-                id="email-subscribe"
-              ></input>
-              <input type="submit" value="Subscribe"></input>
-            </form>
-          </div>
-        </footer>
-      </Router>
+          <footer id="footer">
+            <div>
+              <h2>Sign up for plant tech news</h2>
+              <form>
+                <label for="email-subscribe">Email</label>
+                <input
+                  type="email"
+                  name="email-subscribe"
+                  id="email-subscribe"
+                ></input>
+                <input type="submit" value="Subscribe"></input>
+              </form>
+            </div>
+          </footer>
+        </Router>
+      </Context.Provider>
     </React.StrictMode>
   );
 };
