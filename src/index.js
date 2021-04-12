@@ -13,10 +13,14 @@ import { Integrations } from '@sentry/tracing';
 import { createBrowserHistory } from 'history';
 
 import productOne from './components/products/1';
+import productTwo from './components/products/2';
+import productThree from './components/products/3';
+import productFour from './components/products/4';
 
 import { BrowserRouter as Router, Switch, Route, Link } from 'react-router-dom';
 
 import logo from './assets/logo.svg';
+import EPlogo from './assets/empowerplant-logo.svg';
 
 // from Creat New React App
 // ReactDOM.render(
@@ -49,7 +53,12 @@ Sentry.init({
 });
 
 const App = () => {
-  const [products, setProducts] = useState([productOne]);
+  const [products, setProducts] = useState([
+    productOne,
+    productTwo,
+    productThree,
+    productFour,
+  ]);
   const [cart, setCart] = useState([]);
   console.log(products);
 
@@ -58,7 +67,7 @@ const App = () => {
       <Router history={history}>
         <nav id="top-nav">
           <Link to="/" id="home-link">
-            <img src={logo} className="logo" alt="logo" />
+            <img src={EPlogo} className="logo" alt="logo" />
             Empower Plant
           </Link>
 
