@@ -7,7 +7,7 @@ const Product = ({ match }) => {
     (async () => {
       if (match.params.id) {
         const data = await import(`./products/${match.params.id}`);
-        setProduct(data);
+        setProduct(data.default);
       }
     })();
   }, [match.params.id]);
