@@ -58,14 +58,13 @@ const cartReducer = (state, { action, product }) => {
   const newState = { ...state };
 
   switch (action) {
-    case 'add':
-      {
-        let item = newState.items.find((x) => x.id === product.id);
-        if (!item) newState.items.push(product);
-        newState.quantities[product.id] = newState.quantities[product.id] || 0;
-        newState.quantities[product.id]++;
-      }
-      return newState;
+    case 'add': {
+      let item = newState.items.find((x) => x.id === product.id);
+      if (!item) newState.items.push(product);
+      newState.quantities[product.id] = newState.quantities[product.id] || 0;
+      newState.quantities[product.id]++;
+      break;
+    }
     case 'remove': {
       let item = newState.items.find((x) => x.id === product.id);
       if (!item) return newState;
@@ -75,11 +74,18 @@ const cartReducer = (state, { action, product }) => {
         const i = newState.items.findIndex((x) => x.id === product.id);
         newState.items.splice(i, 1);
       }
-      return newState;
+      break;
     }
     default:
       throw new Error('Unknown cart action');
   }
+
+  newState.total = newState.items.reduce((a, item) => {
+    const itemTotal = item.price * newState.quantities[item.id];
+    return a + itemTotal;
+  }, 0);
+
+  return newState;
 };
 
 export const Context = React.createContext({

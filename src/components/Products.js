@@ -12,19 +12,22 @@ function Products(props) {
       <aside>
         <h3>Cart</h3>
         {cart.items.length > 0 ? (
-          <ul>
-            {cart.items.map((item) => {
-              const quantity = cart.quantities[item.id];
-              return (
-                <li>
-                  <h4>
-                    {item.title} (x {quantity})
-                  </h4>
-                  <p>${item.price * quantity}</p>
-                </li>
-              );
-            })}
-          </ul>
+          <>
+            <ul>
+              {cart.items.map((item) => {
+                const quantity = cart.quantities[item.id];
+                return (
+                  <li>
+                    <h4>
+                      {item.title} (x {quantity})
+                    </h4>
+                    <p>${item.price * quantity}</p>
+                  </li>
+                );
+              })}
+            </ul>
+            <p>Total: ${cart.total}</p>
+          </>
         ) : (
           <p>Please add items to the cart</p>
         )}
