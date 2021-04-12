@@ -1,0 +1,17 @@
+.products-list {
+  list-style: none;
+  padding: 0;
+}
+
+.products-list li a {
+  outline: 1px solid;
+  display: flex;
+}
+
+.products-list li a img {
+  margin-right: 1rem;
+}
+
+.products-list li a div:first-of-type {
+  flex: 1;
+}
