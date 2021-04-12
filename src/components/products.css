@@ -3,15 +3,10 @@
   padding: 0;
 }
 
-.products-list li a {
-  outline: 1px solid;
-  display: flex;
+.products-list li {
+  outline: 1px solid red;
 }
 
-.products-list li a img {
-  margin-right: 1rem;
-}
-
-.products-list li a div:first-of-type {
-  flex: 1;
+.products-list li img {
+  outline: 1px solid blue;
 }

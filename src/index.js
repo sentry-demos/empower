@@ -13,10 +13,14 @@ import { Integrations } from '@sentry/tracing';
 import { createBrowserHistory } from 'history';
 
 import productOne from './components/products/1';
+import productTwo from './components/products/2';
+import productThree from './components/products/3';
+import productFour from './components/products/4';
 
 import { BrowserRouter as Router, Switch, Route, Link } from 'react-router-dom';
 
 import logo from './assets/logo.svg';
+import EPlogo from './assets/empowerplant-logo.svg';
 
 // from Creat New React App
 // ReactDOM.render(
@@ -95,7 +99,7 @@ const App = () => {
       <Context.Provider
         value={{
           cart: { ...cart, update: dispatch },
-          products: [productOne],
+          products: [productOne, productTwo, productThree, productFour],
         }}
       >
         <Router history={history}>
