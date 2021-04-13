@@ -12,6 +12,10 @@ code {
     monospace;
 }
 
+button:hover {
+  cursor: pointer;
+}
+
 #top-nav,
 #body-container,
 #footer > div {
@@ -30,6 +34,10 @@ code {
   padding: 0.5rem 1rem;
 }
 
+#top-nav a {
+  text-decoration: none;
+}
+
 #home-link,
 #top-right-links {
   align-items: center;
@@ -37,9 +45,13 @@ code {
   display: flex;
 }
 
+#home-link {
+  font-size: 1.5em;
+}
 #home-link img {
   max-height: 4rem;
   width: auto;
+  margin-right: 0.5rem;
 }
 
 #top-right-links {
