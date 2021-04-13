@@ -14,17 +14,22 @@ function Products(props) {
           const itemLink = '/product/' + product.id;
           return (
             <li>
-              <Link to={itemLink}>
-                <img src="https://via.placeholder.com/500x250" alt="product" />
-                <div>
-                  <h2>{product.title}</h2>
-                  <p className="product-description">{product.description}</p>
-                </div>
-              </Link>
               <div>
-                <p className="price">${product.price}.00</p>
-                <button onClick={() => cart.update({ action: 'add', product })}>
-                  Add to cart
+                <Link to={itemLink}>
+                  <img
+                    src="https://via.placeholder.com/500x250"
+                    alt="product"
+                  />
+                  <div>
+                    <h2>{product.title}</h2>
+                    <p className="product-description">{product.description}</p>
+                  </div>
+                </Link>
+                <button
+                  className="add-cart-btn"
+                  onClick={() => cart.update({ action: 'add', product })}
+                >
+                  Add to cart — ${product.price}.00
                 </button>
                 <button
                   onClick={() => cart.update({ action: 'remove', product })}

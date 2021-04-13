@@ -1,12 +1,12 @@
 import { useContext } from 'react';
 import { Context } from '../index';
 import { Link } from 'react-router-dom';
-import './products.css';
+import './cart.css';
 
 function Checkout(props) {
   const { cart } = useContext(Context);
   return (
-    <div>
+    <div className="cart-container">
       <h3>Cart</h3>
       {cart.items.length > 0 ? (
         <>
@@ -15,19 +15,25 @@ function Checkout(props) {
               const quantity = cart.quantities[item.id];
               const itemLink = '/product/' + item.id;
               return (
-                <li>
+                <li className="cart-item">
                   <Link to={itemLink}>
-                    <p>{itemLink}</p>
-                    <h4>
-                      {item.title} (x {quantity})
-                    </h4>
+                    <h4>{item.title}</h4>
                   </Link>
+                  <p>${item.price}</p>
+                  <div>
+                    {/* TODO: @cameronmcefee these two buttons should incrementally add or remove the item */}
+                    <button className="add-cart-btn" onClick={() => {}}>
+                      +
+                    </button>
+                    <span>{quantity}</span>
+                    <button onClick={() => {}}>–</button>
+                  </div>
                   <p>${item.price * quantity}</p>
                 </li>
               );
             })}
           </ul>
-          <p>Total: ${cart.total}</p>
+          <p>Cart Subtotal: ${cart.total}</p>
         </>
       ) : (
         <p>Please add items to the cart</p>

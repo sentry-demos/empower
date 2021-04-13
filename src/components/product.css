@@ -1,0 +1,7 @@
+.product-layout {
+  display: flex;
+  padding-top: 2rem;
+}
+.product-layout > div {
+  flex: 1;
+}

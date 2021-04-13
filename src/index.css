@@ -21,11 +21,13 @@ code {
 
 #top-nav {
   position: fixed;
+  background: #fff;
   top: 0;
   left: 0;
   right: 0;
   display: flex;
   justify-content: space-between;
+  padding: 0 1rem;
 }
 
 #home-link,
@@ -50,12 +52,13 @@ code {
 #body-container {
   min-height: 80vh;
   margin-top: 4rem;
+  padding: 0 1rem;
 }
 
 #footer {
   background: salmon;
   text-align: center;
-  padding: 5vh 0 8vh;
+  padding: 5vh 1rem 8vh;
 }
 
 .hero {
