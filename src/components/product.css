@@ -5,3 +5,12 @@
 .product-layout > div {
   flex: 1;
 }
+
+.product-layout img {
+  width: 100%;
+}
+
+.product-info {
+  margin-left: 2rem;
+  border-top: 2px solid;
+}

@@ -27,7 +27,7 @@ code {
   right: 0;
   display: flex;
   justify-content: space-between;
-  padding: 0 1rem;
+  padding: 0.5rem 1rem;
 }
 
 #home-link,
@@ -51,7 +51,7 @@ code {
 
 #body-container {
   min-height: 80vh;
-  margin-top: 4rem;
+  margin-top: 6rem;
   padding: 0 1rem;
 }
 

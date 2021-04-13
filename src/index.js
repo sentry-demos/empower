@@ -116,7 +116,10 @@ const App = (props) => {
 
             <div id="top-right-links">
               <Link to="/products">Products</Link>
-              <Link to="/cart">Cart</Link>
+              <Link to="/cart">
+                Cart
+                {cart.items.length > 0 ? <span> (${cart.total}.00)</span> : ''}
+              </Link>
             </div>
           </nav>
 

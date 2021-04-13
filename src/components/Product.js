@@ -1,8 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
+import { Context } from '../index';
 import './product.css';
 
 const Product = ({ match }) => {
   const [product, setProduct] = useState(null);
+  const { cart } = useContext(Context);
 
   useEffect(() => {
     (async () => {
@@ -17,12 +19,21 @@ const Product = ({ match }) => {
     <div className="product-layout">
       {/* <pre>{JSON.stringify(product, null, 2)}</pre> */}
 
-      <div>image</div>
       <div>
-        <hr />
+        <img src="https://via.placeholder.com/1000x800" alt="product" />
+      </div>
+      <div className="product-info">
         <h1>{product.title}</h1>
         <p>{product.description}</p>
-        <button>Add to cart — ${product.price}.00</button>
+        <button
+          className="add-cart-btn"
+          onClick={() => cart.update({ action: 'add', product })}
+        >
+          Add to cart — ${product.price}.00
+        </button>
+        <button onClick={() => cart.update({ action: 'remove', product })}>
+          Remove from cart
+        </button>
       </div>
     </div>
   ) : (

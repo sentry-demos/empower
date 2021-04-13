@@ -7,8 +7,6 @@ function Products(props) {
   const { cart, products } = useContext(Context);
   return (
     <div>
-      <h1>Products catalog</h1>
-
       <ul className="products-list">
         {products.map((product) => {
           const itemLink = '/product/' + product.id;
