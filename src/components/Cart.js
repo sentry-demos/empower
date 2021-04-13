@@ -17,6 +17,9 @@ function Checkout(props) {
               return (
                 <li className="cart-item" key={item.id}>
                   <Link to={itemLink}>
+                    <img src={item.img} alt="item-thumbnail" />
+                  </Link>
+                  <Link to={itemLink}>
                     <h4>{item.title}</h4>
                   </Link>
                   <p>${item.price}</p>

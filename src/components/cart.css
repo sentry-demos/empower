@@ -5,6 +5,7 @@
   border-top: 1px solid;
   display: flex;
   align-items: center;
+  padding: 1rem 0;
   justify-content: space-between;
   text-align: right;
 }
@@ -15,4 +16,10 @@
 
 .cart-item a {
   text-align: left;
+}
+
+.cart-item img {
+  width: 12rem;
+  height: auto;
+  display: inline;
 }

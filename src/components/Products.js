@@ -14,10 +14,7 @@ function Products(props) {
             <li>
               <div>
                 <Link to={itemLink}>
-                  <img
-                    src="https://via.placeholder.com/500x250"
-                    alt="product"
-                  />
+                  <img src={product.img} alt="product" />
                   <div>
                     <h2>{product.title}</h2>
                     <p className="product-description">{product.description}</p>
@@ -28,11 +25,6 @@ function Products(props) {
                   onClick={() => cart.update({ action: 'add', product })}
                 >
                   Add to cart — ${product.price}.00
-                </button>
-                <button
-                  onClick={() => cart.update({ action: 'remove', product })}
-                >
-                  Remove from cart
                 </button>
               </div>
             </li>

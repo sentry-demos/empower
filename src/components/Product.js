@@ -20,7 +20,7 @@ const Product = ({ match }) => {
       {/* <pre>{JSON.stringify(product, null, 2)}</pre> */}
 
       <div>
-        <img src="https://via.placeholder.com/1000x800" alt="product" />
+        <img src={product.img} alt="product" />
       </div>
       <div className="product-info">
         <h1>{product.title}</h1>
