@@ -34,6 +34,9 @@ function Checkout(props) {
             })}
           </ul>
           <p>Cart Subtotal: ${cart.total}</p>
+          <Link to="/checkout">
+            <h4>Proceed to checkout</h4>
+          </Link>
         </>
       ) : (
         <p>Please add items to the cart</p>

@@ -31,9 +31,6 @@ const Product = ({ match }) => {
         >
           Add to cart — ${product.price}.00
         </button>
-        <button onClick={() => cart.update({ action: 'remove', product })}>
-          Remove from cart
-        </button>
       </div>
     </div>
   ) : (
