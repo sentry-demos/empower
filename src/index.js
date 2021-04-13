@@ -15,6 +15,7 @@ import Product from './components/Product';
 import Products from './components/Products';
 
 import EPlogo from './assets/empowerplant-logo.svg';
+import plantsBackground from './assets/plants-background-img.jpg';
 
 import productOne from './components/products/1';
 import productTwo from './components/products/2';
@@ -169,8 +170,11 @@ const App = (props) => {
 ReactDOM.render(<App />, document.getElementById('root'));
 
 function Home() {
+  const divStyle = {
+    backgroundImage: 'url(' + plantsBackground + ')',
+  };
   return (
-    <div className="hero">
+    <div className="hero" style={divStyle}>
       <h1>Empower your plants</h1>
       <p>Keep your houseplants happy.</p>
       <Link to="/products">Browse Products</Link>
