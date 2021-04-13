@@ -15,18 +15,28 @@ function Checkout(props) {
               const quantity = cart.quantities[item.id];
               const itemLink = '/product/' + item.id;
               return (
-                <li className="cart-item">
+                <li className="cart-item" key={item.id}>
                   <Link to={itemLink}>
                     <h4>{item.title}</h4>
                   </Link>
                   <p>${item.price}</p>
                   <div>
-                    {/* TODO: @cameronmcefee these two buttons should incrementally add or remove the item */}
-                    <button className="add-cart-btn" onClick={() => {}}>
+                    <button
+                      className="add-cart-btn"
+                      onClick={() =>
+                        cart.update({ action: 'add', product: item })
+                      }
+                    >
                       +
                     </button>
                     <span>{quantity}</span>
-                    <button onClick={() => {}}>–</button>
+                    <button
+                      onClick={() =>
+                        cart.update({ action: 'remove', product: item })
+                      }
+                    >
+                      –
+                    </button>
                   </div>
                   <p>${item.price * quantity}</p>
                 </li>
