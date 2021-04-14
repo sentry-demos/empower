@@ -149,7 +149,7 @@ const App = (props) => {
             <div>
               <h2>Sign up for plant tech news</h2>
               <form>
-                <label for="email-subscribe">Email</label>
+                <label htmlFor="email-subscribe">Email</label>
                 <input
                   type="email"
                   name="email-subscribe"
