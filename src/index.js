@@ -174,10 +174,13 @@ function Home() {
     backgroundImage: 'url(' + plantsBackground + ')',
   };
   return (
-    <div className="hero" style={divStyle}>
-      <h1>Empower your plants</h1>
-      <p>Keep your houseplants happy.</p>
-      <Link to="/products">Browse Products</Link>
+    <div className="hero">
+      <div className="hero-bg-img" style={divStyle}></div>
+      <div className="hero-content">
+        <h1>Empower your plants</h1>
+        <p>Keep your houseplants happy.</p>
+        <Link to="/products">Browse Products</Link>
+      </div>
     </div>
   );
 }
