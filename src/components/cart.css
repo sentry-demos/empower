@@ -23,3 +23,7 @@
   height: auto;
   display: inline;
 }
+
+.quantity-adjust span {
+  margin: 0 0.5rem;
+}

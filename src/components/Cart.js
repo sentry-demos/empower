@@ -23,7 +23,15 @@ function Checkout(props) {
                     <h4>{item.title}</h4>
                   </Link>
                   <p>${item.price}</p>
-                  <div>
+                  <div className="quantity-adjust">
+                    <button
+                      onClick={() =>
+                        cart.update({ action: 'remove', product: item })
+                      }
+                    >
+                      –
+                    </button>
+                    <span>{quantity}</span>
                     <button
                       className="add-cart-btn"
                       onClick={() =>
@@ -31,14 +39,6 @@ function Checkout(props) {
                       }
                     >
                       +
-                    </button>
-                    <span>{quantity}</span>
-                    <button
-                      onClick={() =>
-                        cart.update({ action: 'remove', product: item })
-                      }
-                    >
-                      –
                     </button>
                   </div>
                   <p>${item.price * quantity}</p>
