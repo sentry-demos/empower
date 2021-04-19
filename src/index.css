@@ -39,6 +39,7 @@ h1 {
 }
 
 h2 {
+  margin-top: 0.5rem;
   font-size: 2.441rem;
 }
 
@@ -48,6 +49,7 @@ h3,
 }
 
 h4 {
+  margin: 0;
   font-size: 1.563rem;
 }
 
@@ -76,9 +78,19 @@ input[type='submit'] {
   border: none;
   text-decoration: none;
   font-size: 1rem;
+  margin-top: 0.25rem;
 }
-button:hover {
+button:hover,
+a.btn:hover,
+input[type='submit']:hover {
   cursor: pointer;
+  background-color: #dddc4e;
+  color: #002626;
+}
+button:active,
+a.btn:active,
+input[type='submit']:active {
+  background-color: #f6cfb2;
 }
 
 input {
@@ -90,6 +102,8 @@ input[type='email'] {
   margin: 1rem auto;
   line-height: 1.5;
   font-size: 1.25rem;
+  border: 1px solid;
+  border-radius: 0.25em;
 }
 
 #top-nav .nav-contents,
@@ -116,6 +130,10 @@ input[type='email'] {
 }
 
 #top-nav a {
+  text-decoration: none;
+}
+
+#top-nav a:active {
   text-decoration: none;
 }
 
@@ -157,7 +175,7 @@ input[type='email'] {
 }
 
 #footer > div {
-  padding: 8rem 0 7rem;
+  padding: 8rem 0 4rem;
 }
 
 #footer form {

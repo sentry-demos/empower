@@ -164,6 +164,7 @@ const App = (props) => {
                 ></input>
                 <input type="submit" value="Subscribe"></input>
               </form>
+              <p>© 2021 • Empower Plant</p>
             </div>
           </footer>
         </Router>

@@ -16,14 +16,19 @@
 
 .cart-item a {
   text-align: left;
+  text-decoration: none;
 }
 
 .cart-item img {
-  width: 12rem;
+  width: calc(100% - 1rem);
   height: auto;
-  display: inline;
+  display: block;
 }
 
 .quantity-adjust span {
   margin: 0 0.5rem;
+}
+
+p.cart-subtotal {
+  font-size: 1.953rem;
 }

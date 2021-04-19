@@ -7,7 +7,7 @@ function Checkout(props) {
   const { cart } = useContext(Context);
   return (
     <div className="cart-container">
-      <h3>Cart</h3>
+      <h2>Cart</h2>
       {cart.items.length > 0 ? (
         <>
           <ul>
@@ -46,9 +46,9 @@ function Checkout(props) {
               );
             })}
           </ul>
-          <p>Cart Subtotal: ${cart.total}</p>
-          <Link to="/checkout">
-            <h4>Proceed to checkout</h4>
+          <h3 className="cart-subtotal">Cart Subtotal: ${cart.total}</h3>
+          <Link to="/checkout" className="btn">
+            Proceed to checkout
           </Link>
         </>
       ) : (
