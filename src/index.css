@@ -78,8 +78,9 @@ input[type='submit'] {
   border: none;
   text-decoration: none;
   font-size: 1rem;
-  margin-top: 0.25rem;
+  margin: 0.5rem 0;
 }
+
 button:hover,
 a.btn:hover,
 input[type='submit']:hover {
@@ -95,11 +96,15 @@ input[type='submit']:active {
 
 input {
   padding: 0.5rem;
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-input[type='email'] {
+input[type='email'],
+input[type='text'] {
   display: block;
-  margin: 1rem auto;
+  margin: 0.5rem auto 1rem;
   line-height: 1.5;
   font-size: 1.25rem;
   border: 1px solid;
@@ -126,7 +131,7 @@ input[type='email'] {
 #top-nav .nav-contents {
   display: flex;
   justify-content: space-between;
-  padding: 0.75rem 0;
+  padding: 0.75rem 1rem;
 }
 
 #top-nav a {
@@ -190,9 +195,6 @@ input[type='email'] {
 }
 
 #footer form input {
-  width: 100%;
-  display: block;
-  box-sizing: border-box;
   font-size: 1.25rem;
   margin: 0.5rem auto 1rem;
 }
