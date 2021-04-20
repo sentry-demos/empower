@@ -14,6 +14,8 @@ import NotFound from './components/NotFound';
 import Product from './components/Product';
 import Products from './components/Products';
 
+import ScrollToTop from './components/ScrollToTop';
+
 import EPlogo from './assets/empowerplant-logo.svg';
 import plantsBackground from './assets/plants-background-img.jpg';
 
@@ -131,6 +133,7 @@ const App = (props) => {
           </nav>
 
           <div id="body-container">
+            <ScrollToTop />
             <Switch>
               <Route exact path="/" component={Home} />
               <Route path="/about" component={About} />
