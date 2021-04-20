@@ -1,4 +1,5 @@
 import productImg from '../../assets/nodes.png';
+import productImgCropped from '../../assets/nodes-cropped.jpg';
 
 const product4 = {
   id: 4,
@@ -6,6 +7,7 @@ const product4 = {
   description: 'Listen more carefully to your plants.',
   price: 25,
   img: productImg,
+  imgCrop: productImgCropped,
 };
 
 export default product4;
