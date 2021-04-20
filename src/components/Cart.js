@@ -10,7 +10,7 @@ function Checkout(props) {
       <h2>Cart</h2>
       {cart.items.length > 0 ? (
         <>
-          <ul>
+          <ul className="cart-list">
             {cart.items.map((item) => {
               const quantity = cart.quantities[item.id];
               const itemLink = '/product/' + item.id;
@@ -22,7 +22,7 @@ function Checkout(props) {
                   <Link to={itemLink}>
                     <h4>{item.title}</h4>
                   </Link>
-                  <p>${item.price}</p>
+                  <p>${item.price}.00</p>
                   <div className="quantity-adjust">
                     <button
                       onClick={() =>
@@ -41,13 +41,13 @@ function Checkout(props) {
                       +
                     </button>
                   </div>
-                  <p>${item.price * quantity}</p>
+                  <p>${item.price * quantity}.00</p>
                 </li>
               );
             })}
           </ul>
-          <h3 className="cart-subtotal">Cart Subtotal: ${cart.total}</h3>
-          <Link to="/checkout" className="btn">
+          <h3 className="cart-subtotal">Cart Subtotal: ${cart.total}.00</h3>
+          <Link to="/checkout" className="btn checkout-btn">
             Proceed to checkout
           </Link>
         </>
