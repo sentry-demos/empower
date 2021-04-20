@@ -111,7 +111,27 @@ const App = (props) => {
         }}
       >
         <Router history={history}>
-          <nav id="top-nav">
+          <nav id="top-nav" className="show-mobile">
+            <div className="nav-contents">
+              <Link to="/" id="home-link">
+                <img src={EPlogo} className="logo" alt="logo" />
+              </Link>
+
+              <div id="top-right-links">
+                <Link to="/products">Products</Link>
+                <Link to="/cart">
+                  Cart
+                  {cart.items.length > 0 ? (
+                    <span> (${cart.total}.00)</span>
+                  ) : (
+                    ''
+                  )}
+                </Link>
+              </div>
+            </div>
+          </nav>
+
+          <nav id="top-nav" className="show-desktop">
             <div className="nav-contents">
               <Link to="/" id="home-link">
                 <img src={EPlogo} className="logo" alt="logo" />

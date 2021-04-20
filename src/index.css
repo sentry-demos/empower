@@ -142,10 +142,22 @@ input[type='text'] {
   text-decoration: none;
 }
 
+nav.show-desktop {
+  display: none;
+}
+@media screen and (min-width: 600px) {
+  nav.show-mobile {
+    display: none;
+  }
+  nav.show-desktop {
+    display: block;
+  }
+}
+
 #home-link,
 #top-right-links {
   align-items: center;
-  flex: 1;
+
   display: flex;
 }
 
