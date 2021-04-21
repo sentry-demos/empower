@@ -1,12 +1,7 @@
-import { useContext } from 'react';
-import { Context } from '../index';
 import { Link } from 'react-router-dom';
 import './complete.css';
 
-function Complete(props) {
-  const { cart } = useContext(Context);
-  const RandomNumber = Math.floor(Math.random() * 99999) + 10000;
-
+function CompleteError() {
   return (
     <div className="checkout-container-complete">
       <h2>We're having some trouble</h2>
@@ -19,4 +14,4 @@ function Complete(props) {
   );
 }
 
-export default Complete;
+export default CompleteError;
