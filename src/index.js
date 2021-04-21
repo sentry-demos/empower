@@ -8,6 +8,8 @@ import { BrowserRouter as Router, Switch, Route, Link } from 'react-router-dom';
 import About from './components/About';
 import Cart from './components/Cart';
 import Checkout from './components/Checkout';
+import Complete from './components/Complete';
+import CompleteError from './components/CompleteError';
 import Cra from './components/Cra';
 import Employee from './components/Employee';
 import NotFound from './components/NotFound';
@@ -159,6 +161,8 @@ const App = (props) => {
               <Route path="/about" component={About} />
               <Route path="/cart" component={Cart} />
               <Route path="/checkout" component={Checkout} />
+              <Route path="/complete" component={Complete} />
+              <Route path="/error" component={CompleteError} />
               <Route path="/cra" component={Cra} />
               <SentryRoute
                 path="/employee/:name"
