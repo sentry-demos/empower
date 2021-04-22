@@ -16,6 +16,10 @@ import NotFound from './components/NotFound';
 import Product from './components/Product';
 import Products from './components/Products';
 
+import Button from './components/Button';
+import Footer from './components/Footer';
+import Nav from './components/Nav';
+
 import ScrollToTop from './components/ScrollToTop';
 
 import EPlogo from './assets/empowerplant-logo.svg';
@@ -25,14 +29,6 @@ import productOne from './components/products/1';
 import productTwo from './components/products/2';
 import productThree from './components/products/3';
 import productFour from './components/products/4';
-
-// from Creat New React App
-// ReactDOM.render(
-//   <React.StrictMode>
-//     <AppOld />
-//   </React.StrictMode>,
-//   document.getElementById('root')
-// );
 
 const tracingOrigins = ['localhost', 'empowerplant.io', /^\//];
 
@@ -113,46 +109,7 @@ const App = (props) => {
         }}
       >
         <Router history={history}>
-          <nav id="top-nav" className="show-mobile">
-            <div className="nav-contents">
-              <Link to="/" id="home-link">
-                <img src={EPlogo} className="logo" alt="logo" />
-              </Link>
-
-              <div id="top-right-links">
-                <Link to="/products">Products</Link>
-                <Link to="/cart">
-                  Cart
-                  {cart.items.length > 0 ? (
-                    <span> (${cart.total}.00)</span>
-                  ) : (
-                    ''
-                  )}
-                </Link>
-              </div>
-            </div>
-          </nav>
-
-          <nav id="top-nav" className="show-desktop">
-            <div className="nav-contents">
-              <Link to="/" id="home-link">
-                <img src={EPlogo} className="logo" alt="logo" />
-                Empower Plant
-              </Link>
-
-              <div id="top-right-links">
-                <Link to="/products">Products</Link>
-                <Link to="/cart">
-                  Cart
-                  {cart.items.length > 0 ? (
-                    <span> (${cart.total}.00)</span>
-                  ) : (
-                    ''
-                  )}
-                </Link>
-              </div>
-            </div>
-          </nav>
+          <Nav />
 
           <div id="body-container">
             <ScrollToTop />
@@ -179,21 +136,7 @@ const App = (props) => {
             </Switch>
           </div>
 
-          <footer id="footer">
-            <div>
-              <h2 className="h3">Sign up for plant tech news</h2>
-              <form>
-                <label htmlFor="email-subscribe">Email</label>
-                <input
-                  type="email"
-                  name="email-subscribe"
-                  id="email-subscribe"
-                ></input>
-                <input type="submit" value="Subscribe"></input>
-              </form>
-              <p>© 2021 • Empower Plant</p>
-            </div>
-          </footer>
+          <Footer />
         </Router>
       </Context.Provider>
     </React.StrictMode>
@@ -213,9 +156,7 @@ function Home() {
       <div className="hero-content">
         <h1>Empower your plants</h1>
         <p>Keep your houseplants happy.</p>
-        <Link to="/products" className="btn">
-          Browse Products
-        </Link>
+        <Button to="/products">Browse products</Button>
       </div>
     </div>
   );

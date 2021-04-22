@@ -3,6 +3,8 @@ import { Context } from '../index';
 import { Link } from 'react-router-dom';
 import './products.css';
 
+import Button from './Button';
+
 function Products(props) {
   const { cart, products } = useContext(Context);
   return (
@@ -20,12 +22,9 @@ function Products(props) {
                     <p className="product-description">{product.description}</p>
                   </div>
                 </Link>
-                <button
-                  className="add-cart-btn"
-                  onClick={() => cart.update({ action: 'add', product })}
-                >
+                <Button onClick={() => cart.update({ action: 'add', product })}>
                   Add to cart — ${product.price}.00
-                </button>
+                </Button>
               </div>
             </li>
           );
