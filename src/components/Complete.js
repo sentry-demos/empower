@@ -13,7 +13,7 @@ function Complete(props) {
       <h4>
         Order No: {RandomNumber} — Total: ${cart.total}.00
       </h4>
-      <p>A confirmation email has been sent to the email you provided.</p>
+      <p>A confirmation email has been sent to the address you provided.</p>
       <p>
         Your plants will thank you. You can <Link to="/">track your order</Link>{' '}
         or <Link to="/">contact us</Link> if you have any questions. Have a
