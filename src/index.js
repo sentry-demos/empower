@@ -5,6 +5,13 @@ import * as Sentry from '@sentry/react';
 import { Integrations } from '@sentry/tracing';
 import { createBrowserHistory } from 'history';
 import { BrowserRouter as Router, Switch, Route, Link } from 'react-router-dom';
+
+import ScrollToTop from './components/ScrollToTop';
+
+import Button from './components/Button';
+import Footer from './components/Footer';
+import Nav from './components/Nav';
+
 import About from './components/About';
 import Cart from './components/Cart';
 import Checkout from './components/Checkout';
@@ -16,19 +23,12 @@ import NotFound from './components/NotFound';
 import Product from './components/Product';
 import Products from './components/Products';
 
-import Button from './components/Button';
-import Footer from './components/Footer';
-import Nav from './components/Nav';
-
-import ScrollToTop from './components/ScrollToTop';
-
-import EPlogo from './assets/empowerplant-logo.svg';
-import plantsBackground from './assets/plants-background-img.jpg';
-
 import productOne from './components/products/1';
 import productTwo from './components/products/2';
 import productThree from './components/products/3';
 import productFour from './components/products/4';
+
+import plantsBackground from './assets/plants-background-img.jpg';
 
 const tracingOrigins = ['localhost', 'empowerplant.io', /^\//];
 

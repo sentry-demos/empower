@@ -54,13 +54,14 @@ nav.show-desktop {
   justify-content: flex-end;
 }
 #top-right-links a {
-  padding: 0.5rem 0.75rem;
+  margin-top: 3px;
+  padding: 0.5rem;
   font-size: 1.25em;
-  border-radius: 0.5rem;
+  border-bottom: 3px solid #fff;
 }
 #top-right-links a:hover {
-  background: #dae3e4;
+  border-color: #dae3e4;
 }
 #top-right-links a:active {
-  background: #f6cfb2;
+  border-color: #f6cfb2;
 }

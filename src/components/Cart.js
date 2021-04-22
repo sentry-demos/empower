@@ -3,6 +3,8 @@ import { Context } from '../index';
 import { Link } from 'react-router-dom';
 import './cart.css';
 
+import Button from './Button';
+
 function Checkout(props) {
   const { cart } = useContext(Context);
   return (
@@ -33,7 +35,6 @@ function Checkout(props) {
                     </button>
                     <span>{quantity}</span>
                     <button
-                      className="add-cart-btn"
                       onClick={() =>
                         cart.update({ action: 'add', product: item })
                       }
@@ -47,9 +48,7 @@ function Checkout(props) {
             })}
           </ul>
           <h3 className="cart-subtotal">Cart Subtotal: ${cart.total}.00</h3>
-          <Link to="/checkout" className="btn checkout-btn">
-            Proceed to checkout
-          </Link>
+          <Button to="/checkout">Proceed to checkout</Button>
         </>
       ) : (
         <p>Please add items to the cart</p>
