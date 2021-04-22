@@ -145,7 +145,7 @@ input[type='text'] {
 nav.show-desktop {
   display: none;
 }
-@media screen and (min-width: 600px) {
+@media screen and (min-width: 768px) {
   nav.show-mobile {
     display: none;
   }
@@ -175,6 +175,7 @@ nav.show-desktop {
 }
 #top-right-links a {
   padding: 0.5rem;
+  font-size: 1.25em;
 }
 
 #body-container {
