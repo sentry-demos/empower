@@ -28,8 +28,6 @@ import productTwo from './components/products/2';
 import productThree from './components/products/3';
 import productFour from './components/products/4';
 
-import employeeOne from './components/employees/1';
-
 import plantsBackground from './assets/plants-background-img.jpg';
 
 const tracingOrigins = ['localhost', 'empowerplant.io', /^\//];
@@ -93,7 +91,6 @@ const cartReducer = (state, { action, product }) => {
 export const Context = React.createContext({
   products: [],
   cart: { items: [] },
-  employees: [],
 });
 
 const App = (props) => {
@@ -109,7 +106,6 @@ const App = (props) => {
         value={{
           cart: { ...cart, update: dispatch },
           products: [productOne, productTwo, productThree, productFour],
-          employees: [employeeOne],
         }}
       >
         <Router history={history}>
