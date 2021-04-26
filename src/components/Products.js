@@ -13,7 +13,7 @@ function Products(props) {
         {products.map((product) => {
           const itemLink = '/product/' + product.id;
           return (
-            <li>
+            <li key={product.id}>
               <div>
                 <Link to={itemLink}>
                   <img src={product.img} alt="product" />
