@@ -114,7 +114,7 @@ input[type='text'] {
 #top-nav .nav-contents,
 #body-container,
 #footer > div {
-  max-width: 75rem;
+  max-width: 1200px;
   margin: 0 auto;
 }
 
