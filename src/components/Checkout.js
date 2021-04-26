@@ -1,6 +1,9 @@
 import { useState } from 'react';
+import { createBrowserHistory } from 'history';
 import { Link } from 'react-router-dom';
 import './checkout.css';
+
+const history = createBrowserHistory();
 
 function Checkout() {
   const [formState, setFormState] = useState({
@@ -20,8 +23,8 @@ function Checkout() {
   };
 
   const handleSubmit = (event) => {
-    event.preventDefault();
     console.log('Form Submitted', formState);
+    history.push('/error');
   };
 
   return (
