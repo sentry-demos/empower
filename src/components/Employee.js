@@ -1,18 +1,31 @@
-import React, { Component } from "react";
+import React, { useEffect, useState } from 'react';
+import './employee.css';
 
-class Employee extends Component {
-    constructor(props) {
-        super(props);
-        this.state = {};
-    }
+const Product = ({ match }) => {
+  const [employee, setEmployee] = useState(null);
 
-    async componentDidMount() {
-        console.log(this.props.match.params.name)
-    }
+  useEffect(() => {
+    (async () => {
+      if (match.params.slug) {
+        const data = await import(`./employees/${match.params.slug}`);
+        setEmployee(data.default);
+      }
+    })();
+  }, [match.params.slug]);
 
-    render() {
-        return <h2>Employee {this.props.match.params.name}</h2>;
-    }
-}
+  return employee ? (
+    <div>
+      <div>
+        <img src={employee.img} alt={employee.name} />
+      </div>
+      <div>
+        <h1>{employee.name}</h1>
+        <p>{employee.blurb}</p>
+      </div>
+    </div>
+  ) : (
+    <p>Loading…</p>
+  );
+};
 
-export default Employee
+export default Product;

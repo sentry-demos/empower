@@ -122,7 +122,7 @@ const App = (props) => {
               <Route path="/error" component={CompleteError} />
               <Route path="/cra" component={Cra} />
               <SentryRoute
-                path="/employee/:name"
+                path="/employee/:slug"
                 component={Employee}
               ></SentryRoute>
               <SentryRoute

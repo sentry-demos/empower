@@ -1,6 +1,11 @@
 import { Link } from 'react-router-dom';
+import slugify from '../utils/slugify';
 
 import './about.css';
+
+import Jimberly from './employees/jimberly';
+
+const employees = [Jimberly];
 
 function About() {
   return (
@@ -45,27 +50,17 @@ function About() {
       </div>
       <div>
         <ul className="employee-list">
-          <li>
-            <Link to="/">
-              <p>IMAGE</p>
-              <h3>Name Here</h3>
-              <p>Little blurb?</p>
-            </Link>
-          </li>
-          <li>
-            <Link to="/">
-              <p>IMAGE</p>
-              <h3>Name Here</h3>
-              <p>Little blurb?</p>
-            </Link>
-          </li>
-          <li>
-            <Link to="/">
-              <p>IMAGE</p>
-              <h3>Name Here</h3>
-              <p>Little blurb?</p>
-            </Link>
-          </li>
+          {employees.map((employee) => {
+            return (
+              <li key={employee.name}>
+                <Link to={`/employee/${slugify(employee.name)}`}>
+                  <img src={employee.img} alt={`${employee.name}`} />
+                  <h3>{employee.name}</h3>
+                  <p>{employee.blurb}</p>
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       </div>
     </div>
