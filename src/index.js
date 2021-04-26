@@ -109,10 +109,10 @@ const App = (props) => {
         }}
       >
         <Router history={history}>
+          <ScrollToTop />
           <Nav />
 
           <div id="body-container">
-            <ScrollToTop />
             <Switch>
               <Route exact path="/" component={Home} />
               <Route path="/about" component={About} />
