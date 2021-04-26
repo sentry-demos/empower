@@ -1,0 +1,40 @@
+.about-page {
+  text-align: left;
+  margin: 0 auto;
+  padding-top: 2rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.about-page > div {
+  flex: 1;
+}
+
+.about-info {
+  outline: 1px solid;
+  max-width: 45rem;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+@media screen and (min-width: 1200px) {
+  .about-page {
+    flex-direction: row;
+  }
+
+  .about-info {
+    padding: 0 2rem 0 0;
+  }
+}
+
+ul.employee-list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+}
+
+ul.employee-list li {
+  flex: 1;
+  background-color: blanchedalmond;
+  outline: 1px solid;
+}
