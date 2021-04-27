@@ -11,10 +11,9 @@
 }
 
 .about-info {
-  outline: 1px solid;
   max-width: 45rem;
   margin: 0 auto;
-  padding: 0 2rem;
+  padding: 0 1rem 1rem;
 }
 
 @media screen and (min-width: 1200px) {
@@ -31,10 +30,27 @@ ul.employee-list {
   list-style: none;
   padding: 0;
   display: flex;
+  flex-wrap: wrap;
+  max-width: 500px;
+  margin: 0 auto;
 }
 
 ul.employee-list li {
-  flex: 1;
-  background-color: blanchedalmond;
-  outline: 1px solid;
+  flex: 0 0 50%;
+  padding: 0 1rem;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+ul.employee-list li a {
+  text-decoration: none;
+}
+
+ul.employee-list li h5 {
+  margin: 0 0 2rem;
+}
+
+ul.employee-list li img {
+  width: 100%;
+  border-radius: 50%;
 }

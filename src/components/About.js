@@ -3,9 +3,14 @@ import slugify from '../utils/slugify';
 
 import './about.css';
 
-import Jimberly from './employees/jimberly';
+import Jane from './employees/jane';
+import Lily from './employees/lily';
+import Keith from './employees/keith';
+import Mason from './employees/mason';
+import Emma from './employees/emma';
+import Noah from './employees/noah';
 
-const employees = [Jimberly];
+const employees = [Jane, Lily, Keith, Mason, Emma, Noah];
 
 function About() {
   return (
@@ -53,10 +58,9 @@ function About() {
           {employees.map((employee) => {
             return (
               <li key={employee.name}>
-                <Link to={`/employee/${slugify(employee.name)}`}>
+                <Link to={`/employee/${slugify(employee.url)}`}>
                   <img src={employee.img} alt={`${employee.name}`} />
-                  <h3>{employee.name}</h3>
-                  <p>{employee.blurb}</p>
+                  <h5>{employee.name}</h5>
                 </Link>
               </li>
             );
