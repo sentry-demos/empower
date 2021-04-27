@@ -46,6 +46,10 @@ ul.employee-list li a {
   text-decoration: none;
 }
 
+ul.employee-list li a:hover {
+  opacity: 0.8;
+}
+
 ul.employee-list li h5 {
   margin: 0 0 2rem;
 }

@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import './footer.css';
 
 function Footer() {
@@ -14,7 +15,9 @@ function Footer() {
           ></input>
           <input type="submit" value="Subscribe"></input>
         </form>
-        <p>© 2021 • Empower Plant</p>
+        <p>
+          © 2021 • Empower Plant • <Link to="/about">About us</Link>
+        </p>
       </div>
     </footer>
   );

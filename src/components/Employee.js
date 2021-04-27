@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import './employee.css';
 
 const Product = ({ match }) => {
@@ -14,13 +15,14 @@ const Product = ({ match }) => {
   }, [match.params.slug]);
 
   return employee ? (
-    <div>
-      <div>
+    <div className="employee-page">
+      <div className="employee-image">
         <img src={employee.img} alt={employee.name} />
       </div>
-      <div>
+      <div className="employee-info">
+        <Link to="/about">Back</Link>
         <h1>{employee.name}</h1>
-        <p>{employee.blurb}</p>
+        <p>{employee.bio}</p>
       </div>
     </div>
   ) : (
