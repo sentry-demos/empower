@@ -3,7 +3,7 @@ import img from '../../assets/mason-kim.jpg';
 const Mason = {
   name: 'Mason Kim',
   bio:
-    "Sales. It takes dark in order to show light. If it's not what you want - stop and change it.",
+    "Sales. Fun fact: Mason will eat his vegetables, but he has no idea that cashews grow on trees and strawberries aren't really berries, but bananas are berries. Look it up.",
   url: 'mason',
   img,
 };

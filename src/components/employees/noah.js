@@ -3,7 +3,7 @@ import img from '../../assets/noah-miller.jpg';
 const Noah = {
   name: 'Noah Miller',
   bio:
-    'Marketing. Life is too short to be alone, too precious. Share it with a friend. I thought today we would do a happy little picture.',
+    'Marketing. Most days Noah is wearing company swag. He thinks plants are nice for decoration and really appreciates how his kids are so good at watering their indoor plants. His kids are priority #1.',
   url: 'noah',
   img,
 };
