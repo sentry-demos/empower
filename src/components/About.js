@@ -30,26 +30,11 @@ function About() {
             plant parent,” according to Plant Parenthood Magazine). Their
             original state-of-the-art product is a technological marvel built
             with a plant-first mindset, and they now offer a range of
-            plant-centric options through the online store on their website.
+            plant-centric options.
           </p>
           <p>
-            Today, the company employs 170 people (and 852 plants, according to
-            the Empower Plant Careers page) in San Francisco, New York City,
-            Denver, and Kiev. Generally speaking, employees at Empower Plant are
-            happy, fulfilled, and thriving. (The founding team, however, is
-            experiencing marital problems — an open secret that they’ve
-            unsuccessfully tried to keep out of the workplace.)
-          </p>
-          <p>
-            In the last week, however, everything seems to be going wrong with
-            Empower Plant’s software. Glitches cause misreads on plant moods,
-            causing users to accidentally mistreat their plant family members.
-            The website’s malfunctioning, too, and the checkout button in the
-            online store wasn’t working for a full day before anyone noticed.
-          </p>
-          <p>
-            Basically, Empower Plant’s in a state of pure pandemonium. And
-            someone’s gotta fix it.
+            Today, the company employs 170 people (and 852 plants) in San
+            Francisco, New York City, Denver, and Kiev.
           </p>
         </div>
       </div>
