@@ -3,7 +3,7 @@ import { Context } from '../index';
 import { Link } from 'react-router-dom';
 import './cart.css';
 
-import Button from './Button';
+import Button from './ButtonLink';
 
 function Checkout(props) {
   const { cart } = useContext(Context);

@@ -3,8 +3,6 @@ import { Context } from '../index';
 import { Link } from 'react-router-dom';
 import './products.css';
 
-import Button from './Button';
-
 function Products() {
   const { cart, products } = useContext(Context);
   return (
