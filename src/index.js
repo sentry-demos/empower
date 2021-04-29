@@ -8,7 +8,7 @@ import { BrowserRouter as Router, Switch, Route, Link } from 'react-router-dom';
 
 import ScrollToTop from './components/ScrollToTop';
 
-import Button from './components/Button';
+import Button from './components/ButtonLink';
 import Footer from './components/Footer';
 import Nav from './components/Nav';
 
