@@ -66,6 +66,10 @@ a {
   color: #002626;
 }
 
+button {
+  font-family: 'Poppins', sans-serif;
+}
+
 button,
 a.btn,
 input[type='submit'] {

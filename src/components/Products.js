@@ -5,7 +5,7 @@ import './products.css';
 
 import Button from './Button';
 
-function Products(props) {
+function Products() {
   const { cart, products } = useContext(Context);
   return (
     <div>
@@ -22,9 +22,9 @@ function Products(props) {
                     <p className="product-description">{product.description}</p>
                   </div>
                 </Link>
-                <Button onClick={() => cart.update({ action: 'add', product })}>
+                <button onClick={() => cart.update({ action: 'add', product })}>
                   Add to cart — ${product.price}.00
-                </Button>
+                </button>
               </div>
             </li>
           );
