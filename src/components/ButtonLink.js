@@ -1,11 +1,14 @@
+import { Component } from 'react';
 import { Link } from 'react-router-dom';
 
-function Button(props) {
-  return (
-    <Link {...props} className="btn">
-      {props.children}
-    </Link>
-  );
+class Button extends Component {
+  render() {
+    return (
+      <Link {...this.props} className="btn">
+        {this.props.children}
+      </Link>
+    );
+  }
 }
 
 export default Button;

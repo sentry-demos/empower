@@ -1,42 +1,51 @@
-import React, { useEffect, useState, useContext } from 'react';
-import { Context } from '../index';
+import React, { Component } from 'react';
+import Context from '../utils/context';
 import './product.css';
 
-const Product = ({ match }) => {
-  const [product, setProduct] = useState(null);
-  const { cart } = useContext(Context);
+class Product extends Component {
+  static contextType = Context;
 
-  useEffect(() => {
-    (async () => {
-      if (match.params.id) {
-        const data = await import(`./products/${match.params.id}`);
-        setProduct(data.default);
-      }
-    })();
-  }, [match.params.id]);
+  constructor() {
+    super();
+    this.state = {
+      product: null,
+    };
+  }
 
-  return product ? (
-    <div className="product-layout">
-      {/* <pre>{JSON.stringify(product, null, 2)}</pre> */}
+  async componentDidMount() {
+    const { match } = this.props;
+    if (match.params.id) {
+      const data = await import(`./products/${match.params.id}`);
+      this.setState({ product: data.default });
+    }
+  }
 
-      <div>
-        <img src={product.imgCrop} alt="product" />
+  render() {
+    const { product } = this.state;
+    const { cart } = this.context;
+    return product ? (
+      <div className="product-layout">
+        {/* <pre>{JSON.stringify(product, null, 2)}</pre> */}
+
+        <div>
+          <img src={product.imgCrop} alt="product" />
+        </div>
+        <div className="product-info">
+          <h1>{product.title}</h1>
+          <p>{product.description}</p>
+          <p>{product.descriptionFull}</p>
+          <button
+            className="add-cart-btn"
+            onClick={() => cart.update({ action: 'add', product })}
+          >
+            Add to cart — ${product.price}.00
+          </button>
+        </div>
       </div>
-      <div className="product-info">
-        <h1>{product.title}</h1>
-        <p>{product.description}</p>
-        <p>{product.descriptionFull}</p>
-        <button
-          className="add-cart-btn"
-          onClick={() => cart.update({ action: 'add', product })}
-        >
-          Add to cart — ${product.price}.00
-        </button>
-      </div>
-    </div>
-  ) : (
-    <p>Loading…</p>
-  );
-};
+    ) : (
+      <p>Loading…</p>
+    );
+  }
+}
 
 export default Product;
