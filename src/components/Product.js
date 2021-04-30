@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import Context from '../utils/context';
 import './product.css';
+import * as Sentry from '@sentry/react';
 
 class Product extends Component {
   static contextType = Context;

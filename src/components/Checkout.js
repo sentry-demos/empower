@@ -2,7 +2,7 @@ import { Component } from 'react';
 import { createBrowserHistory } from 'history';
 import { Link } from 'react-router-dom';
 import './checkout.css';
-
+import * as Sentry from '@sentry/react';
 const history = createBrowserHistory();
 
 class Checkout extends Component {

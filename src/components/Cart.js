@@ -2,7 +2,7 @@ import { Component } from 'react';
 import Context from '../utils/context';
 import { Link } from 'react-router-dom';
 import './cart.css';
-
+import * as Sentry from '@sentry/react';
 import Button from './ButtonLink';
 
 class Cart extends Component {

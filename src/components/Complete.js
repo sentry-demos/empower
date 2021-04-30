@@ -2,6 +2,7 @@ import { useContext } from 'react';
 import Context from '../utils/context';
 import { Link } from 'react-router-dom';
 import './complete.css';
+import * as Sentry from '@sentry/react';
 
 function Complete(props) {
   const { cart } = useContext(Context);

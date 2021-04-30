@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { Link } from 'react-router-dom';
 import './employee.css';
+import * as Sentry from '@sentry/react';
 
 class Employee extends Component {
   constructor() {

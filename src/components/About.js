@@ -1,7 +1,7 @@
 import { Component } from 'react';
 import { Link } from 'react-router-dom';
 import slugify from '../utils/slugify';
-
+import * as Sentry from '@sentry/react';
 import './about.css';
 
 import Jane from './employees/jane';
@@ -60,4 +60,5 @@ class About extends Component {
   }
 }
 
-export default About;
+// export default About;
+export default Sentry.withProfiler(About, { name: "About"})

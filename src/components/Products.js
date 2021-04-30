@@ -2,6 +2,7 @@ import { Component } from 'react';
 import Context from '../utils/context';
 import { Link } from 'react-router-dom';
 import './products.css';
+import * as Sentry from '@sentry/react';
 
 class Products extends Component {
   static contextType = Context;

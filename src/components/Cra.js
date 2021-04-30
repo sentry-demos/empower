@@ -1,7 +1,7 @@
 import { Component } from 'react';
 import logo from '../assets/logo.svg';
 import './Cra.css';
-
+import * as Sentry from '@sentry/react';
 class Cra extends Component {
   render() {
     return (
