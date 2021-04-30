@@ -39,7 +39,7 @@ function Checkout() {
           name="email"
           type="email"
           onChange={handleInputChange}
-          value={formState.email}
+          defaultValue={formState.email}
           placeholder="joebobson@joeb.com"
         />
 
@@ -48,7 +48,7 @@ function Checkout() {
           name="yes"
           type="checkbox"
           onChange={handleInputChange}
-          value={formState.yes}
+          defaultValue={formState.yes}
         />
         <label htmlFor="yes">Keep me updated with new sales and products</label>
 
@@ -59,7 +59,7 @@ function Checkout() {
           name="firstName"
           type="text"
           onChange={handleInputChange}
-          value={formState.firstName}
+          defaultValue={formState.firstName}
           placeholder="Joe"
           className="half-width"
         />
@@ -69,7 +69,7 @@ function Checkout() {
           name="lastName"
           type="text"
           onChange={handleInputChange}
-          value={formState.lastName}
+          defaultValue={formState.lastName}
           placeholder="Bobson"
         />
 
@@ -79,7 +79,7 @@ function Checkout() {
           name="address"
           type="text"
           onChange={handleInputChange}
-          value={formState.address}
+          defaultValue={formState.address}
           placeholder="123 Main Street"
         />
 
@@ -89,7 +89,7 @@ function Checkout() {
           name="city"
           type="text"
           onChange={handleInputChange}
-          value={formState.city}
+          defaultValue={formState.city}
           placeholder="Hope Springs"
         />
 
@@ -99,7 +99,7 @@ function Checkout() {
           name="country"
           type="text"
           onChange={handleInputChange}
-          value={formState.country}
+          defaultValue={formState.country}
           placeholder="United States of America"
         />
 
@@ -109,7 +109,7 @@ function Checkout() {
           name="state"
           type="text"
           onChange={handleInputChange}
-          value={formState.state}
+          defaultValue={formState.state}
           placeholder="Indiana"
         />
 
@@ -119,14 +119,14 @@ function Checkout() {
           name="zipCode"
           type="text"
           onChange={handleInputChange}
-          value={formState.zipCode}
+          defaultValue={formState.zipCode}
           placeholder="45678"
         />
 
         <input
           type="submit"
           className="complete-checkout-btn"
-          value="Complete order"
+          defaultValue="Complete order"
         />
       </form>
       <Link to="/cart">Back to cart</Link>
