@@ -33,3 +33,5 @@ npm build
 serve -s build
 ```
 
+Prod
+gcloud app deploy
