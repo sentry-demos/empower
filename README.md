@@ -45,4 +45,14 @@ serve -s build
 ```
 
 Prod
+npm run build && gcloud app deploy --version=<version>
+
+
+
+## gcloud
+gcloud app versions list
 gcloud app deploy
+gcloud app browse
+gcloud app services list
+gcloud app logs tail -s empower-plant-content-1
+gcloud app logs tail -s application-monitoring-flask
