@@ -1,6 +1,6 @@
   
 env: standard
-service: empower-plant-content
+service: empower-plant-content-1
 runtime: nodejs14
 
 handlers:
