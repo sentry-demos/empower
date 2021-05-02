@@ -6,6 +6,19 @@ import * as Sentry from '@sentry/react';
 
 class Products extends Component {
   static contextType = Context;
+
+  async componentDidMount(){
+    console.log('componentDidMount')
+    
+    // let response = await fetch(`http://localhost:8080/success`, {
+    let response = await fetch(`https://application-monitoring-flask-dot-sales-engineering-sf.appspot.com/products`, {
+      method: "GET",
+    })
+    .then(response => {return response.text()})
+    .catch((err) => { throw Error(err) })
+    console.log('RESPONSE is...', response)
+  }
+
   render() {
     const { cart, products } = this.context;
     return (
