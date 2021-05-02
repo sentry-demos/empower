@@ -25,6 +25,7 @@ env/
 .env
 **/.env
 
+.virtualenv
 **/.virtualenv
 
 node_modules/
