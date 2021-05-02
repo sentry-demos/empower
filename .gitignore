@@ -1,5 +1,5 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
+*.pyc
 # dependencies
 /node_modules
 /.pnp
@@ -12,6 +12,7 @@
 /build
 
 # misc
+.vscode
 .DS_Store
 .env.local
 .env.development.local
@@ -23,3 +24,4 @@ yarn-debug.log*
 yarn-error.log*
 
 notes.txt
+flask/.virtualenv
