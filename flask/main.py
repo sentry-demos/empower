@@ -31,13 +31,11 @@ CORS(app)
 @app.route('/success', methods=['GET'])
 def success():    
     # print('/successs')
-    # response = make_response("successs")
     return "successs"
 
 @app.route('/products', methods=['GET'])
 def products():    
     # print('/products')
-    # response = make_response("productss")
     return "products"
 
 if __name__ == '__main__':
