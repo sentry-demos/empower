@@ -60,4 +60,4 @@ class Cart extends Component {
   }
 }
 
-export default Cart;
+export default Sentry.withProfiler(Cart, { name: "Cart"})

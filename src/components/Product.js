@@ -49,4 +49,5 @@ class Product extends Component {
   }
 }
 
-export default Product;
+// export default Product;
+export default Sentry.withProfiler(Product, { name: "Product"})

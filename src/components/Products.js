@@ -17,6 +17,7 @@ class Products extends Component {
     .then(response => {return response.text()})
     .catch((err) => { throw Error(err) })
     console.log('RESPONSE is...', response)
+    return response
   }
 
   render() {
@@ -53,4 +54,5 @@ class Products extends Component {
   }
 }
 
-export default Products;
+// export default Products;
+export default Sentry.withProfiler(Products, { name: "Products"})

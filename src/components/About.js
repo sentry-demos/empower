@@ -60,5 +60,4 @@ class About extends Component {
   }
 }
 
-// export default About;
 export default Sentry.withProfiler(About, { name: "About"})

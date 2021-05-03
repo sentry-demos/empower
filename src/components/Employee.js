@@ -37,4 +37,4 @@ class Employee extends Component {
   }
 }
 
-export default Employee;
+export default Sentry.withProfiler(Employee, { name: "Employee"})

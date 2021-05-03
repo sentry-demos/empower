@@ -141,4 +141,4 @@ class Checkout extends Component {
   }
 }
 
-export default Checkout;
+export default Sentry.withProfiler(Checkout, { name: "Checkout"})

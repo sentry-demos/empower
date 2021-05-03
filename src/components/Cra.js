@@ -26,4 +26,4 @@ class Cra extends Component {
   }
 }
 
-export default Cra;
+export default Sentry.withProfiler(Cra, { name: "Cra"})

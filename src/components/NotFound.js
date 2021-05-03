@@ -22,3 +22,4 @@ class NotFound extends Component {
 }
 
 export default NotFound;
+// export default Sentry.withProfiler(NotFound, { name: "NotFound"})
