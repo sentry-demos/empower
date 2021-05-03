@@ -1,10 +1,11 @@
-import React, { useReducer } from 'react';
+import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
 import * as Sentry from '@sentry/react';
 import { Integrations } from '@sentry/tracing';
+import Context from './utils/context';
 import { createBrowserHistory } from 'history';
-import { BrowserRouter as Router, Switch, Route, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Switch, Route } from 'react-router-dom';
 
 import ScrollToTop from './components/ScrollToTop';
 
@@ -52,96 +53,100 @@ Sentry.init({
   },
 });
 
-const cartReducer = (state, { action, product }) => {
-  if (!product) throw new Error('Cart reducer requires a product');
+class App extends Component {
+  constructor() {
+    super();
+    this.state = {
+      cart: {
+        items: [],
+        quantities: {},
+        total: 0,
+      },
+    };
 
-  const newState = { ...state };
-
-  switch (action) {
-    case 'add': {
-      let item = newState.items.find((x) => x.id === product.id);
-      if (!item) newState.items.push(product);
-      newState.quantities[product.id] = newState.quantities[product.id] || 0;
-      newState.quantities[product.id]++;
-      break;
-    }
-    case 'remove': {
-      let item = newState.items.find((x) => x.id === product.id);
-      if (!item) return newState;
-      newState.quantities[product.id]--;
-      if (newState.quantities[product.id] === 0) {
-        delete newState.quantities[product.id];
-        const i = newState.items.findIndex((x) => x.id === product.id);
-        newState.items.splice(i, 1);
-      }
-      break;
-    }
-    default:
-      throw new Error('Unknown cart action');
+    this.cartReducer = this.cartReducer.bind(this);
   }
 
-  newState.total = newState.items.reduce((a, item) => {
-    const itemTotal = item.price * newState.quantities[item.id];
-    return a + itemTotal;
-  }, 0);
+  cartReducer({ action, product }) {
+    if (!product) throw new Error('Cart reducer requires a product');
 
-  return newState;
-};
+    const cart = { ...this.state.cart };
 
-export const Context = React.createContext({
-  products: [],
-  cart: { items: [] },
-});
+    switch (action) {
+      case 'add': {
+        let item = cart.items.find((x) => x.id === product.id);
+        if (!item) cart.items.push(product);
+        cart.quantities[product.id] = cart.quantities[product.id] || 0;
+        cart.quantities[product.id]++;
+        break;
+      }
+      case 'remove': {
+        let item = cart.items.find((x) => x.id === product.id);
+        if (!item) return cart;
+        cart.quantities[product.id]--;
+        if (cart.quantities[product.id] === 0) {
+          delete cart.quantities[product.id];
+          const i = cart.items.findIndex((x) => x.id === product.id);
+          cart.items.splice(i, 1);
+        }
+        break;
+      }
+      default:
+        throw new Error('Unknown cart action');
+    }
 
-const App = (props) => {
-  const [cart, dispatch] = useReducer(cartReducer, {
-    items: [],
-    quantities: {},
-    total: 0,
-  });
+    cart.total = cart.items.reduce((a, item) => {
+      const itemTotal = item.price * cart.quantities[item.id];
+      return a + itemTotal;
+    }, 0);
 
-  return (
-    <React.StrictMode>
-      <Context.Provider
-        value={{
-          cart: { ...cart, update: dispatch },
-          products: [productOne, productTwo, productThree, productFour],
-        }}
-      >
-        <Router history={history}>
-          <ScrollToTop />
-          <Nav />
+    this.setState({ cart });
+  }
 
-          <div id="body-container">
-            <Switch>
-              <Route exact path="/" component={Home} />
-              <Route path="/about" component={About} />
-              <Route path="/cart" component={Cart} />
-              <Route path="/checkout" component={Checkout} />
-              <Route path="/complete" component={Complete} />
-              <Route path="/error" component={CompleteError} />
-              <Route path="/cra" component={Cra} />
-              <SentryRoute
-                path="/employee/:slug"
-                component={Employee}
-              ></SentryRoute>
-              <SentryRoute
-                path="/product/:id"
-                component={Product}
-              ></SentryRoute>
-              <Route path="/products">
-                <Products />
-              </Route>
-              <Route component={NotFound} />
-            </Switch>
-          </div>
+  render() {
+    return (
+      <React.StrictMode>
+        <Context.Provider
+          value={{
+            cart: { ...this.state.cart, update: this.cartReducer },
+            products: [productOne, productTwo, productThree, productFour],
+          }}
+        >
+          <Router history={history}>
+            <ScrollToTop />
+            <Nav />
 
-          <Footer />
-        </Router>
-      </Context.Provider>
-    </React.StrictMode>
-  );
-};
+            <div id="body-container">
+              <Switch>
+                <Route exact path="/" component={Home} />
+                <Route path="/about" component={About} />
+                <Route path="/cart" component={Cart} />
+                <Route path="/checkout" component={Checkout} />
+                <Route path="/complete" component={Complete} />
+                <Route path="/error" component={CompleteError} />
+                <Route path="/cra" component={Cra} />
+                <SentryRoute
+                  path="/employee/:slug"
+                  component={Employee}
+                ></SentryRoute>
+                <SentryRoute
+                  path="/product/:id"
+                  component={Product}
+                ></SentryRoute>
+                <Route path="/products">
+                  <Products />
+                </Route>
+                <Route component={NotFound} />
+              </Switch>
+            </div>
+
+            <Footer />
+          </Router>
+        </Context.Provider>
+      </React.StrictMode>
+    );
+  }
+}
 
 // React-router in use here https://reactrouter.com/web/guides/quick-start
 ReactDOM.render(<App />, document.getElementById('root'));
