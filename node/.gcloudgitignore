@@ -1,0 +1,9 @@
+*.pyc
+*.egg-info
+.vscode
+.DS_STORE
+env
+.env
+node_modules
+*node_modules
+notes.txt

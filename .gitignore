@@ -29,3 +29,6 @@ yarn-error.log*
 notes.txt
 flask/.virtualenv
 **/.virtualenv
+
+node/node_modules
+node/package-lock.json
