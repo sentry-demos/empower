@@ -73,6 +73,7 @@ button {
 button,
 a.btn,
 input[type='submit'] {
+  -webkit-appearance: none;
   display: inline-block;
   background-color: #002626;
   color: #fff;
