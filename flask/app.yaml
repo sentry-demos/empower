@@ -1,0 +1,2 @@
+service: application-monitoring-flask
+runtime: python38

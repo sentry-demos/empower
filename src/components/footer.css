@@ -1,0 +1,33 @@
+#footer {
+  background: #f6cfb2;
+  text-align: center;
+  z-index: 1;
+  position: relative;
+  clip-path: polygon(0% 25%, 50% 0%, 100% 25%, 100% 100%, 0% 100%);
+}
+
+@media screen and (min-width: 800px) {
+  #footer {
+    clip-path: polygon(0% 50%, 50% 0%, 100% 50%, 100% 100%, 0% 100%);
+  }
+}
+
+#footer > div {
+  padding: 8rem 0 4rem;
+}
+
+#footer form {
+  width: 50%;
+  margin: 0 auto;
+  text-align: left;
+}
+
+#footer form label {
+  margin: 0;
+  display: inline-block;
+}
+
+#footer form input {
+  font-size: 1.25rem;
+  margin: 0.5rem auto;
+}

@@ -1,0 +1,18 @@
+.employee-page {
+  display: flex;
+  justify-content: center;
+  padding-top: 3rem;
+}
+.employee-image {
+  width: 25%;
+}
+.employee-page img {
+  width: 100%;
+  border-radius: 50%;
+}
+
+.employee-info {
+  width: 50%;
+  padding-left: 2rem;
+  box-sizing: border-box;
+}
