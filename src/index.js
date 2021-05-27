@@ -31,7 +31,7 @@ import productFour from './components/products/4';
 
 import plantsBackground from './assets/plants-background-img.jpg';
 
-const tracingOrigins = ['localhost', 'empowerplant.io', /^\//];
+const tracingOrigins = ['localhost', 'empowerplant.io', 'run.app', 'appspot.com', /^\//];
 
 const history = createBrowserHistory();
 const SentryRoute = Sentry.withSentryRouting(Route);
@@ -52,6 +52,7 @@ Sentry.init({
     console.log("event",event)
     return event;
   },
+  debug:true
 });
 
 class App extends Component {
@@ -106,7 +107,6 @@ class App extends Component {
 
   render() {
     return (
-      <React.StrictMode>
         <Context.Provider
           value={{
             cart: { ...this.state.cart, update: this.cartReducer },
@@ -140,11 +140,9 @@ class App extends Component {
                 <Route component={NotFound} />
               </Switch>
             </div>
-
             <Footer />
           </Router>
         </Context.Provider>
-      </React.StrictMode>
     );
   }
 }
