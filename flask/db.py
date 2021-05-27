@@ -32,20 +32,19 @@ else:
 def get_products():
     tools = []
     try:
-        with sentry_sdk.start_span(op="connect to db"):
-            conn = db.connect()
-        # Execute the query and fetch all results
-        with sentry_sdk.start_span(op="run query"):
-            wait(operator.le, 12, 1)
-            results = conn.execute(
-                "SELECT * FROM tools"
-            ).fetchall()
+        # with sentry_sdk.start_span(op="connect to db"):
+        conn = db.connect()
+        # with sentry_sdk.start_span(op="run query"):
+            # wait(operator.le, 12, 1)
+        results = conn.execute(
+            "SELECT * FROM tools"
+        ).fetchall()
         conn.close()
 
         rows = []
-        with sentry_sdk.start_span(op="format results"):
-            for row in results:
-                rows.append(dict(row))
+        # with sentry_sdk.start_span(op="format results"):
+        for row in results:
+            rows.append(dict(row))
         return json.dumps(rows)
     except Exception as err:
         raise(err)
