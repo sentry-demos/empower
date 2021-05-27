@@ -4,3 +4,4 @@ sentry-sdk==1.1.0
 python-dotenv==0.17.1
 blinker==1.4
 sqlalchemy==1.4.15
+psycopg2-binary==2.8.6

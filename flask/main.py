@@ -5,6 +5,8 @@ import sys
 from flask import Flask
 from flask_cors import CORS
 from dotenv import load_dotenv
+from db import get_products
+
 import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
 from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
@@ -50,8 +52,13 @@ def success():
 
 @app.route('/products', methods=['GET'])
 def products():    
-    # print('/products')
-    return "products"
+    print('/products')
+    try:
+        rows = get_products()
+    except Exception as err:
+        sentry_sdk.capture_exception(err)
+        raise(err)
+    return rows
 
 @app.route('/handled', methods=['GET'])
 def handled_exception():
