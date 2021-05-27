@@ -49,6 +49,7 @@ Sentry.init({
   release: new Date().getMonth() + '.' + new Date().getDate(),
   environment: 'test',
   beforeSend(event) {
+    console.log("event",event)
     return event;
   },
 });
