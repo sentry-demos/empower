@@ -1,2 +1,6 @@
 flask==1.1.2
 flask-cors==3.0.10
+sentry-sdk==1.1.0
+python-dotenv==0.17.1
+blinker==1.4
+sqlalchemy==1.4.15
