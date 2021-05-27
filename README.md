@@ -45,8 +45,13 @@ serve -s build
 ```
 
 Prod
+```
+# React
 npm run build && gcloud app deploy --version=<version>
 
+# Flask
+cd flask && gcloud app deploy
+```
 
 
 ## gcloud
