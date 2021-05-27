@@ -19,7 +19,7 @@ const express = require('express');
 const app = express();
 
 app.get('/', (req, res) => {
-  res.send('Sentry Node Service says Hello - turn me into a microservice for Payments, Shipping, Customers');
+  res.send('Sentry Node Service says Hello - turn me into a microservice that powers Payments, Shipping, or Customers');
 });
 
 // Listen to the App Engine-specified port, or 8080 otherwise

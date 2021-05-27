@@ -32,3 +32,4 @@ flask/.virtualenv
 
 node/node_modules
 node/package-lock.json
+ruby/Gemfile.lock
