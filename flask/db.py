@@ -10,9 +10,9 @@ HOST = os.getenv("HOST")
 DATABASE = os.getenv("DATABASE")
 USERNAME = os.getenv("USERNAME")
 PASSWORD = os.getenv("PASSWORD")
-ENV = os.environ.get("FLASK_ENV")
+FLASK_ENV = os.environ.get("FLASK_ENV")
 
-if ENV == "test":
+if FLASK_ENV == "test":
     db = create_engine('postgresql://' + USERNAME + ':' + PASSWORD + '@' + HOST + ':5432/' + DATABASE)
 else:
     cloud_sql_connection_name = "sales-engineering-sf:us-central1:tracing-db-pg"

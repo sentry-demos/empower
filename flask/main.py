@@ -12,20 +12,13 @@ from sentry_sdk.integrations.flask import FlaskIntegration
 from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 load_dotenv()
 
-## TODO util or rm this altogether, require always .env or shell script defined? TBD
-RELEASE = None
-if os.environ.get("RELEASE") is None:
-    d=datetime.date.today()
-    week=str((d.day-1)//7+1)
-    date_given = datetime.datetime.today().date()
-    month = str(date_given.month)
-    RELEASE = month + "." + week
-else:
-    RELEASE = os.environ.get("RELEASE")
-print("RELEASE is " + RELEASE)
-
 DSN = os.getenv("FLASK_APP_DSN")
+RELEASE = os.environ.get("RELEASE") or 123
+
 print("DSN", DSN)
+print("RELEASE", RELEASE)
+print("FLASK_ENV", os.environ.get("FLASK_ENV"))
+
 def before_send(event, hint):
     # TODO need this still?
     if event['request']['method'] == 'OPTIONS':
@@ -34,11 +27,11 @@ def before_send(event, hint):
     return event
 
 sentry_sdk.init(
-    dsn= DSN,
-    traces_sample_rate=1.0,
-    integrations=[FlaskIntegration(), SqlalchemyIntegration()],
+    dsn=DSN,
     release=RELEASE,
-    environment="dev",
+    environment="test",
+    integrations=[FlaskIntegration(), SqlalchemyIntegration()],
+    traces_sample_rate=1.0,
     before_send=before_send
 )
 
@@ -47,7 +40,6 @@ CORS(app)
  
 @app.route('/success', methods=['GET'])
 def success():    
-    # print('/successs')
     return "successs"
 
 @app.route('/products', methods=['GET'])

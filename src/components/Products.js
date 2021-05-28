@@ -10,8 +10,8 @@ class Products extends Component {
   async componentDidMount(){
     console.log('componentDidMount')
     
-    // let response = await fetch(`http://localhost:8080/success`, {
-    let response = await fetch(`https://application-monitoring-flask-dot-sales-engineering-sf.appspot.com/products`, {
+    // let response = await fetch(`https://application-monitoring-flask-dot-sales-engineering-sf.appspot.com/products`, {
+    let response = await fetch(`http://localhost:8080/products`, {
       method: "GET",
     })
     .then(response => {return response.text()})
