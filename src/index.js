@@ -152,6 +152,8 @@ class App extends Component {
 // React-router in use here https://reactrouter.com/web/guides/quick-start
 ReactDOM.render(<App />, document.getElementById('root'));
 
+// See Transaction for everything you get, without any xhr/ajax requests going on.
+// This page doesn't have any, it's pure static content
 function Home() {
   const divStyle = {
     backgroundImage: 'url(' + plantsBackground + ')',
