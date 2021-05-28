@@ -3,11 +3,12 @@
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
-| dependency    | version
+| non-sentry    | version
 | ------------- |:-------------:|
 | npx | 7.8.0 |
 | npm | 7.8.0 |
 | node | v.14.2.0 |
+| python | 3 |
 | react | ^17.0.2 |
 | react-dom | ^17.0.2 |
 | react-router-dom | ^5.2.0 |
@@ -15,9 +16,18 @@ This project was bootstrapped with [Create React App](https://github.com/faceboo
 
 redux, react-redux, redux-logger, will do later.
 
-sentry...6.2.5 @sentry/react @sentry/tracing
-flask 1.1.2
-python3...
+| sentry    | version
+| ------------- |:-------------:|
+| @sentry/react | ^6.2.5 |
+| @sentry/tracing | ^6.2.5 |
+| sentry_sdk | 1.1.0 |
+
+#### Sentry Integrations
+BrowserTracing (Performance)  
+Sentry.Profiler (class components)  
+Sentry.withSentryRouting(Route); (react-router)  
+FlaskIntegration, SqlAlchemyIntegration
+
 
 ## Setup
 ```
