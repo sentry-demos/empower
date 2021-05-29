@@ -12,5 +12,10 @@ fi
 RELEASE="$month.$week"
 echo $RELEASE
 
+# TODO - test all this, and remove Release code above
 
-# pass $RELEASE into app engine deploy
+# RELEASE was already baked into the prod build, so no need to `--update-env-vars` it for the React app
+gcloud app deploy
+
+# `gcloud app deploy` does not support `--update-env-vars RELEASE=$RELEASE`
+cd flask && gcloud app deploy 
