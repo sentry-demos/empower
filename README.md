@@ -14,6 +14,13 @@ This project was bootstrapped with [Create React App](https://github.com/faceboo
 | react-router-dom | ^5.2.0 |
 | react-scripts | 4.0.3 |
 
+don't use versions any higher than:  
+```
+sqlalchemy==1.3.15
+pg8000==1.12.5
+```
+or else db won't work
+
 redux, react-redux, redux-logger, will do later.
 
 | sentry    | version
@@ -64,6 +71,11 @@ npm run build && gcloud app deploy --version=<version>
 cd flask && gcloud app deploy
 ```
 
+--update-env-vars is not available for `gcloud app deploy`, so creating the dynamic Release inside of main.py. Hard-coding it into .env wouldn't help (as it needs to be dynamic)
+
+two different apps are usually not the same app version, but we're choosing so with Calendar versioning.
+
+TODO add .png to react's `app.yaml` here: (json|ico|js)$ so don't get, "Error while trying to use the following icon from the Manifest: https://empower-plant-content-1-dot-sales-engineering-sf.appspot.com/logo192.png (Download error or resource isn't a valid image)"
 
 ## gcloud
 gcloud app versions list
