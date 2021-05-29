@@ -13,8 +13,10 @@ PASSWORD = os.getenv("PASSWORD")
 FLASK_ENV = os.environ.get("FLASK_ENV")
 
 if FLASK_ENV == "test":
+    print("> TEST ")
     db = create_engine('postgresql://' + USERNAME + ':' + PASSWORD + '@' + HOST + ':5432/' + DATABASE)
 else:
+    print("> PRODUCTION ")
     cloud_sql_connection_name = "sales-engineering-sf:us-central1:tracing-db-pg"
     db = sqlalchemy.create_engine(
         sqlalchemy.engine.url.URL(
