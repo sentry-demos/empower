@@ -45,7 +45,8 @@ npm start
 ```
 
 ```
-python3 main.py
+cd flask && ./run.sh
+#python3 main.py
 ```
 
 Prod
