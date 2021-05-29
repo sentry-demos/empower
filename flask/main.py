@@ -6,14 +6,14 @@ from flask import Flask
 from flask_cors import CORS
 from dotenv import load_dotenv
 from db import get_products
-
+from utils import release
 import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
 from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 load_dotenv()
 
+RELEASE = os.environ.get("RELEASE") or release()
 DSN = os.getenv("FLASK_APP_DSN")
-RELEASE = os.environ.get("RELEASE") or 123
 
 print("DSN", DSN)
 print("RELEASE", RELEASE)
