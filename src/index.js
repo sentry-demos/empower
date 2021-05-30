@@ -35,11 +35,11 @@ const tracingOrigins = ['localhost', 'empowerplant.io', 'run.app', 'appspot.com'
 
 const history = createBrowserHistory();
 const SentryRoute = Sentry.withSentryRouting(Route);
-console.log("process.env.DSN", process.env.REACT_APP_DSN)
-const DSN = process.env.REACT_APP_DSN
 
-// TODO .env for REACT_APP variables
-// TODO local build vs prod build
+const DSN = process.env.REACT_APP_DSN
+const RELEASE = process.env.REACT_APP_RELEASE
+console.log("RELEASE", RELEASE)
+
 Sentry.init({
   dsn: DSN,
   integrations: [
@@ -49,14 +49,13 @@ Sentry.init({
     }),
   ],
   tracesSampleRate: 1.0,
-  // TODO
-  release: new Date().getMonth() + '.' + new Date().getDate(),
+  release: RELEASE,
   environment: 'dev',
   beforeSend(event) {
     console.log("event",event)
     return event;
-  }
-  // debug:true
+  },
+  debug:true
 });
 
 class App extends Component {
