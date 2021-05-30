@@ -12,10 +12,20 @@ fi
 RELEASE="$month.$week"
 echo $RELEASE
 
-# TODO - test all this, and remove Release code above
+SENTRY_ORG=testorg-az
+SENTRY_PROJECT=javascript-react
+PREFIX=static/js
+REPOSITORY=us.gcr.io/sales-engineering-sf
+
+sentry-cli releases -o $SENTRY_ORG new -p $SENTRY_PROJECT $RELEASE
+sentry-cli releases -o $SENTRY_ORG -p $SENTRY_PROJECT set-commits --auto $RELEASE
+sentry-cli releases -o $SENTRY_ORG -p $SENTRY_PROJECT files $RELEASE upload-sourcemaps --url-prefix "~/static/js" --validate react/build/$PREFIX
 
 # RELEASE was already baked into the prod build, so no need to `--update-env-vars` it for the React app
-gcloud app deploy
+npm run build && gcloud app deploy
+echo 'REACT DEPLOY DONE'
+
 
 # `gcloud app deploy` does not support `--update-env-vars RELEASE=$RELEASE`
-cd flask && gcloud app deploy 
+# cd flask && gcloud app deploy 
+echo 'FLASK DEPLOY DONE'
