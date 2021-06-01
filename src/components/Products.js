@@ -4,19 +4,27 @@ import { Link } from 'react-router-dom';
 import './products.css';
 import * as Sentry from '@sentry/react';
 
+console.log("window.location", window.location)
+var BACKEND = ""
+if (window.location.hostname === "localhost") {
+  BACKEND = "http://localhost:8080"
+} else {
+  BACKEND = process.env.REACT_APP_BACKEND
+}
+console.log("BACKEND", BACKEND)
+
 class Products extends Component {
   static contextType = Context;
 
   async componentDidMount(){
-    console.log('componentDidMount')
+    // Sentry.captureException(new Error("products page"))
     
-    // let response = await fetch(`http://localhost:8080/success`, {
-    let response = await fetch(`https://application-monitoring-flask-dot-sales-engineering-sf.appspot.com/products`, {
+    let response = await fetch(`${BACKEND}/products`, {
       method: "GET",
     })
     .then(response => {return response.text()})
     .catch((err) => { throw Error(err) })
-    console.log('RESPONSE is...', response)
+    console.log('Total items in response', JSON.parse(response).length)
     return response
   }
 
@@ -54,5 +62,4 @@ class Products extends Component {
   }
 }
 
-// export default Products;
 export default Sentry.withProfiler(Products, { name: "Products"})

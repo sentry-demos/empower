@@ -21,8 +21,8 @@ __pycache__/
 
 env
 env/
-.env
-**/.env
+
+.env.default
 
 .virtualenv
 **/.virtualenv

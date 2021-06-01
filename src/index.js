@@ -31,14 +31,17 @@ import productFour from './components/products/4';
 
 import plantsBackground from './assets/plants-background-img.jpg';
 
-const tracingOrigins = ['localhost', 'empowerplant.io', /^\//];
+const tracingOrigins = ['localhost', 'empowerplant.io', 'run.app', 'appspot.com', /^\//];
 
 const history = createBrowserHistory();
 const SentryRoute = Sentry.withSentryRouting(Route);
 
+const DSN = process.env.REACT_APP_DSN
+const RELEASE = process.env.REACT_APP_RELEASE
+console.log("RELEASE", RELEASE)
+
 Sentry.init({
-  dsn:
-    'https://19349cefec81421f89ba3c572f5a1f59@o262702.ingest.sentry.io/5711949',
+  dsn: DSN,
   integrations: [
     new Integrations.BrowserTracing({
       tracingOrigins: tracingOrigins,
@@ -46,12 +49,13 @@ Sentry.init({
     }),
   ],
   tracesSampleRate: 1.0,
-  release: new Date().getMonth() + '.' + new Date().getDate(),
-  environment: 'test',
+  release: RELEASE,
+  environment: 'dev',
   beforeSend(event) {
     console.log("event",event)
     return event;
   },
+  debug:true
 });
 
 class App extends Component {
@@ -106,7 +110,6 @@ class App extends Component {
 
   render() {
     return (
-      <React.StrictMode>
         <Context.Provider
           value={{
             cart: { ...this.state.cart, update: this.cartReducer },
@@ -140,11 +143,9 @@ class App extends Component {
                 <Route component={NotFound} />
               </Switch>
             </div>
-
             <Footer />
           </Router>
         </Context.Provider>
-      </React.StrictMode>
     );
   }
 }
@@ -152,6 +153,8 @@ class App extends Component {
 // React-router in use here https://reactrouter.com/web/guides/quick-start
 ReactDOM.render(<App />, document.getElementById('root'));
 
+// See Transaction for everything you get, without any xhr/ajax requests going on.
+// This page doesn't have any, it's pure static content
 function Home() {
   const divStyle = {
     backgroundImage: 'url(' + plantsBackground + ')',

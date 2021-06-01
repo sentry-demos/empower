@@ -1,47 +1,72 @@
+import datetime
+import os
 import sys
-# import os
 # from flask import Flask, request, json, abort, make_response, jsonify
 from flask import Flask
 from flask_cors import CORS
-# from dotenv import load_dotenv
-# from dotenv import load_dotenv
-# import sentry_sdk
-# from sentry_sdk.integrations.flask import FlaskIntegration
-# load_dotenv()
+from dotenv import load_dotenv
+from db import get_products
+from utils import release
+import sentry_sdk
+from sentry_sdk.integrations.flask import FlaskIntegration
+from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
+load_dotenv()
 
-# DSN = os.getenv("FLASK_APP_DSN")
+RELEASE = os.environ.get("RELEASE") or release()
+DSN = os.getenv("FLASK_APP_DSN")
 
-# def before_send(event, hint):
-#     if event['request']['method'] == 'OPTIONS':
-#         return null
-#     return event
+print("DSN", DSN)
+print("RELEASE", RELEASE)
+print("FLASK_ENV", os.environ.get("FLASK_ENV"))
 
-# sentry_sdk.init(
-#     dsn= DSN
-#     traces_sample_rate=1.0,
-#     integrations=[FlaskIntegration()],
-#     release=RELEASE,
-#     environment="production",
-#     before_send=before_send
-# )
+def before_send(event, hint):
+    # TODO need this still?
+    if event['request']['method'] == 'OPTIONS':
+        return null
+    print("> event", event)
+    return event
+
+sentry_sdk.init(
+    dsn=DSN,
+    release=RELEASE,
+    environment="test",
+    integrations=[FlaskIntegration(), SqlalchemyIntegration()],
+    traces_sample_rate=1.0,
+    before_send=before_send
+)
 
 app = Flask(__name__)
 CORS(app)
  
 @app.route('/success', methods=['GET'])
 def success():    
-    # print('/successs')
     return "successs"
 
 @app.route('/products', methods=['GET'])
 def products():    
-    # print('/products')
-    return "products"
+    print('/products')
+    try:
+        rows = get_products()
+    except Exception as err:
+        sentry_sdk.capture_exception(err)
+        raise(err)
+    return rows
+
+@app.route('/handled', methods=['GET'])
+def handled_exception():
+    try:
+        '2' + 2
+    except Exception as err:
+        sentry_sdk.capture_exception(err)
+    return 'failed'
+
+@app.route('/unhandled', methods=['GET'])
+def unhandled_exception():
+    obj = {}
+    obj['keyDoesntExist']
 
 if __name__ == '__main__':
     i = sys.version_info
-    print(i.major)
-    # if i.major != "3":
     if sys.version_info[0] < 3:
         raise SystemExit("Failed to start: need python3")
         # sys.exit()

@@ -3,21 +3,38 @@
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
-| dependency    | version
+| non-sentry    | version
 | ------------- |:-------------:|
 | npx | 7.8.0 |
 | npm | 7.8.0 |
 | node | v.14.2.0 |
+| python | 3 |
 | react | ^17.0.2 |
 | react-dom | ^17.0.2 |
 | react-router-dom | ^5.2.0 |
 | react-scripts | 4.0.3 |
 
+don't use versions any higher than:  
+```
+sqlalchemy==1.3.15
+pg8000==1.12.5
+```
+or else db won't work
+
 redux, react-redux, redux-logger, will do later.
 
-sentry...6.2.5 @sentry/react @sentry/tracing
-flask 1.1.2
-python3...
+| sentry    | version
+| ------------- |:-------------:|
+| @sentry/react | ^6.2.5 |
+| @sentry/tracing | ^6.2.5 |
+| sentry_sdk | 1.1.0 |
+
+#### Sentry Integrations
+BrowserTracing (Performance)  
+Sentry.Profiler (class components)  
+Sentry.withSentryRouting(Route); (react-router)  
+FlaskIntegration, SqlAlchemyIntegration
+
 
 ## Setup
 ```
@@ -35,7 +52,8 @@ npm start
 ```
 
 ```
-python3 main.py
+cd flask && ./run.sh
+#python3 main.py
 ```
 
 Prod
@@ -45,9 +63,19 @@ serve -s build
 ```
 
 Prod
+```
+# React
 npm run build && gcloud app deploy --version=<version>
 
+# Flask
+cd flask && gcloud app deploy
+```
 
+--update-env-vars is not available for `gcloud app deploy`, so creating the dynamic Release inside of main.py. Hard-coding it into .env wouldn't help (as it needs to be dynamic)
+
+two different apps are usually not the same app version, but we're choosing so with Calendar versioning.
+
+TODO add .png to react's `app.yaml` here: (json|ico|js)$ so don't get, "Error while trying to use the following icon from the Manifest: https://empower-plant-content-1-dot-sales-engineering-sf.appspot.com/logo192.png (Download error or resource isn't a valid image)"
 
 ## gcloud
 gcloud app versions list
