@@ -70,8 +70,19 @@ class App extends Component {
     };
 
     this.cartReducer = this.cartReducer.bind(this);
+    this.productsReducer = this.productsReducer.bind(this);
   }
 
+  productsReducer({ action, _products }) {
+    const products = { ...this.state.products };
+    switch (action) {
+      case 'add': {
+        products.push(_products);
+        break;
+      }
+    }
+    this.setState({ products })
+  }
   cartReducer({ action, product }) {
     if (!product) throw new Error('Cart reducer requires a product');
 
@@ -113,7 +124,8 @@ class App extends Component {
         <Context.Provider
           value={{
             cart: { ...this.state.cart, update: this.cartReducer },
-            products: [productOne, productTwo, productThree, productFour],
+            // products: [productOne, productTwo, productThree, productFour],
+            products: { ...this.state.products, update: this.productsReducer }
           }}
         >
           <Router history={history}>
