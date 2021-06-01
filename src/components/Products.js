@@ -25,7 +25,9 @@ class Products extends Component {
     .then(response => {return response.text()})
     .catch((err) => { throw Error(err) })
     console.log('Total items in response', JSON.parse(response).length)
-    return response
+    const { products } = this.context;
+    products.update({ action: 'add', products: JSON.parse(response) })
+    // return response
   }
 
   render() {
