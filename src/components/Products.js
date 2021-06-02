@@ -17,31 +17,23 @@ class Products extends Component {
   static contextType = Context;
 
   async componentDidMount(){
-    // Sentry.captureException(new Error("products page"))
+    const { products } = this.context;
     
     let result = await fetch(`${BACKEND}/products`, {
       method: "GET",
     })
-    .then(response => {
-      return response.text()
-    })
-    .catch((err) => { throw Error(err) })
-    console.log('Total items in response', JSON.parse(result).length)
-    const { products } = this.context;
-    console.log("RESULT", result)
+      .then(response => { return response.text() })
+      .catch((err) => { throw Error(err) })
+
+    console.log('> Products from backend', JSON.parse(result))
+
     products.update({ action: 'add', response: JSON.parse(result) })
     return result
   }
 
   render() {
     const { cart, products } = this.context;
-    console.log("RENDER", products)
-    if (products.length == 0) {
-      console.log("ZERO LENGTH")
-      return (
-        <div>loading...</div>
-      )
-    }
+
     return (
       <div>
         <ul className="products-list">

@@ -70,7 +70,7 @@ class App extends Component {
       products: {
         response: []
       }
-      // products: []
+      // products: [] // <-- prefer to use this, but get error "products.map is not a function" in Products.js
     };
 
     this.cartReducer = this.cartReducer.bind(this);
@@ -79,14 +79,13 @@ class App extends Component {
 
   productsReducer({ action, response }) {
     if (!response) throw new Error('Products reducer requires a response');
+    
     const products = { ...this.state.products };
-    console.log("***_products****", products) // undefined
 
     switch (action) {
       case 'add': {
-        // products.push(_products); // Unhandled Rejection (TypeError): products.push is not a function
-        // products = _products // Unhandled Rejection (TypeError): Assignment to constant variable.
         products.response = response
+        // products = response // <-- prefer to use this, but get error "products.map is not a function" in Products.js
         break;
       }
       default:
