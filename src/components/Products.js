@@ -34,7 +34,7 @@ class Products extends Component {
     const { cart, products } = this.context;
     return (
       <div>
-        <ul className="products-list">
+        {/* <ul className="products-list">
           {products.map((product) => {
             const itemLink = '/product/' + product.id;
             return (
@@ -58,7 +58,7 @@ class Products extends Component {
               </li>
             );
           })}
-        </ul>
+        </ul> */}
       </div>
     );
   }
