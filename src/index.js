@@ -67,6 +67,7 @@ class App extends Component {
         quantities: {},
         total: 0,
       },
+      products: []
     };
 
     this.cartReducer = this.cartReducer.bind(this);
@@ -74,12 +75,18 @@ class App extends Component {
   }
 
   productsReducer({ action, _products }) {
+    console.log("***_products****", _products) // undefined
     const products = { ...this.state.products };
+    
     switch (action) {
       case 'add': {
-        products.push(_products);
+        // products.push(_products); // Unhandled Rejection (TypeError): products.push is not a function
+        // products = _products // Unhandled Rejection (TypeError): Assignment to constant variable.
+        products.push(_products)
         break;
       }
+      default:
+        throw new Error('Unknown products action');
     }
     this.setState({ products })
   }
