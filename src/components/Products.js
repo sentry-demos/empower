@@ -19,23 +19,33 @@ class Products extends Component {
   async componentDidMount(){
     // Sentry.captureException(new Error("products page"))
     
-    let response = await fetch(`${BACKEND}/products`, {
+    let result = await fetch(`${BACKEND}/products`, {
       method: "GET",
     })
-    .then(response => {return response.text()})
+    .then(response => {
+      return response.text()
+    })
     .catch((err) => { throw Error(err) })
-    console.log('Total items in response', JSON.parse(response).length)
+    console.log('Total items in response', JSON.parse(result).length)
     const { products } = this.context;
-    products.update({ action: 'add', products: JSON.parse(response) })
-    // return response
+    console.log("RESULT", result)
+    products.update({ action: 'add', response: JSON.parse(result) })
+    return result
   }
 
   render() {
     const { cart, products } = this.context;
+    console.log("RENDER", products)
+    if (products.length == 0) {
+      console.log("ZERO LENGTH")
+      return (
+        <div>loading...</div>
+      )
+    }
     return (
       <div>
-        {/* <ul className="products-list">
-          {products.map((product) => {
+        <ul className="products-list">
+          {products.response.map((product) => {
             const itemLink = '/product/' + product.id;
             return (
               <li key={product.id}>
@@ -58,7 +68,7 @@ class Products extends Component {
               </li>
             );
           })}
-        </ul> */}
+        </ul>
       </div>
     );
   }

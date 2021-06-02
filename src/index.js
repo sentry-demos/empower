@@ -54,8 +54,8 @@ Sentry.init({
   beforeSend(event) {
     console.log("event",event)
     return event;
-  },
-  debug:true
+  }
+  // debug:true
 });
 
 class App extends Component {
@@ -67,22 +67,26 @@ class App extends Component {
         quantities: {},
         total: 0,
       },
-      products: []
+      products: {
+        response: []
+      }
+      // products: []
     };
 
     this.cartReducer = this.cartReducer.bind(this);
     this.productsReducer = this.productsReducer.bind(this);
   }
 
-  productsReducer({ action, _products }) {
-    console.log("***_products****", _products) // undefined
+  productsReducer({ action, response }) {
+    if (!response) throw new Error('Products reducer requires a response');
     const products = { ...this.state.products };
-    
+    console.log("***_products****", products) // undefined
+
     switch (action) {
       case 'add': {
         // products.push(_products); // Unhandled Rejection (TypeError): products.push is not a function
         // products = _products // Unhandled Rejection (TypeError): Assignment to constant variable.
-        products.push(_products)
+        products.response = response
         break;
       }
       default:
