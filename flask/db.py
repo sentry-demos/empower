@@ -39,7 +39,7 @@ def get_products():
         # with sentry_sdk.start_span(op="run query"):
             # wait(operator.le, 12, 1)
         results = conn.execute(
-            "SELECT * FROM tools"
+            "SELECT * FROM products"
         ).fetchall()
         conn.close()
 
