@@ -33,7 +33,6 @@ class Products extends Component {
 
   render() {
     const { cart, products } = this.context;
-
     return (
       <div>
         <ul className="products-list">

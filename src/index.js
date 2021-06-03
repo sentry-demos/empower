@@ -54,8 +54,8 @@ Sentry.init({
   beforeSend(event) {
     console.log("event",event)
     return event;
-  }
-  // debug:true
+  },
+  debug:true
 });
 
 class App extends Component {
