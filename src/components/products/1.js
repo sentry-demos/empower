@@ -1,6 +1,7 @@
 import productImg from '../../assets/mood-planter.jpg';
 import productImgCropped from '../../assets/mood-planter-cropped.jpg';
 
+// 06/03/21 this data is served to product.js. This data is also in Cloudsql, for serving to products.js
 const product1 = {
   id: 1,
   title: 'Plant Mood',
