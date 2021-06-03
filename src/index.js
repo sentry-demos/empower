@@ -67,11 +67,32 @@ class App extends Component {
         quantities: {},
         total: 0,
       },
+      products: {
+        response: []
+      }
+      // products: [] // <-- prefer to use this, but get error "products.map is not a function" in Products.js
     };
 
     this.cartReducer = this.cartReducer.bind(this);
+    this.productsReducer = this.productsReducer.bind(this);
   }
 
+  productsReducer({ action, response }) {
+    if (!response) throw new Error('Products reducer requires a response');
+    
+    const products = { ...this.state.products };
+
+    switch (action) {
+      case 'add': {
+        products.response = response
+        // products = response // <-- prefer to use this, but get error "products.map is not a function" in Products.js
+        break;
+      }
+      default:
+        throw new Error('Unknown products action');
+    }
+    this.setState({ products })
+  }
   cartReducer({ action, product }) {
     if (!product) throw new Error('Cart reducer requires a product');
 
@@ -113,7 +134,8 @@ class App extends Component {
         <Context.Provider
           value={{
             cart: { ...this.state.cart, update: this.cartReducer },
-            products: [productOne, productTwo, productThree, productFour],
+            // products: [productOne, productTwo, productThree, productFour],
+            products: { ...this.state.products, update: this.productsReducer }
           }}
         >
           <Router history={history}>
