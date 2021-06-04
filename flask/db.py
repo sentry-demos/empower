@@ -39,19 +39,24 @@ def get_products():
             "SELECT * FROM products"
         ).fetchall()
         
-        # TODO
-        # conn.close()
-
-        response = []
+        results = []
 
         for product in products:
-            print("> product.id", product.id)
             reviews = conn.execute(
                 "SELECT * FROM reviews WHERE productId = {}".format(product.id)
             ).fetchall()
-            print("> len(reviews)", len(reviews))
-            response.append(dict(product))
-        return json.dumps(response)
+            
+            result = dict(product)
+            # result["reviews"] = reviews
+            # result["reviews"] = ["yoyoyo"]
+            result["reviews"] = []
+            for review in reviews:
+                # result["reviews"].append(dict(review))
+                result["reviews"].append("hi")
+
+            # results.append(dict(product))
+            results.append(result)
+        return json.dumps(results)
     except Exception as err:
         raise(err)
 
