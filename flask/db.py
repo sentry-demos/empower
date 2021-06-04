@@ -31,24 +31,24 @@ else:
     )
 
 def get_products():
-    tools = []
+    results = []
     try:
         conn = db.connect()
         products = conn.execute(
             "SELECT * FROM products"
         ).fetchall()
         
-        results = []
-
         for product in products:
             reviews = conn.execute(
                 "SELECT * FROM reviews WHERE productId = {}".format(product.id)
             ).fetchall()
             result = dict(product)
             result["reviews"] = []
+
             for review in reviews:
                 result["reviews"].append(dict(review))
             results.append(result)
+            
         # 'default' is a function applied to objects that aren't serializable.
         # use 'default' or else you get "Object of type datetime is not JSON serializable"
         return json.dumps(results, default=str)
