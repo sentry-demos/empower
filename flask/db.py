@@ -65,13 +65,17 @@ def get_products_join():
         ).fetchall()
         for product in products:
             result = dict(product)
-            results.append(result) # TMP
+            result["reviews"] = []
 
         reviews = conn.execute(
-            "SELECT products.id, products.title, reviews.id AS reviewId, reviews.rating FROM reviews INNER JOIN products ON reviews.productId = products.id"
+            "SELECT reviews.id, products.id AS productid, reviews.rating, reviews.customerId, reviews.description, reviews.created FROM reviews INNER JOIN products ON reviews.productId = products.id"
         ).fetchall()
 
-        return json.dumps(results)
+        for review in reviews:
+            result["reviews"].append(dict(review))
+        results.append(result)
+
+        return json.dumps(results, default=str)
     except Exception as err:
         raise(err)
 
