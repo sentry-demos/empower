@@ -63,38 +63,19 @@ def get_products_join():
         products = conn.execute(
             "SELECT * FROM products"
         ).fetchall()
-        for product in products:
-            result = dict(product)
-            result["reviews"] = []
 
         reviews = conn.execute(
             "SELECT reviews.id, products.id AS productid, reviews.rating, reviews.customerId, reviews.description, reviews.created FROM reviews INNER JOIN products ON reviews.productId = products.id"
         ).fetchall()
 
-        for review in reviews:
-            result["reviews"].append(dict(review))
-        results.append(result)
+        for product in products:
+            result = dict(product)
+            result["reviews"] = []
+
+            for review in reviews:
+                result["reviews"].append(dict(review))
+            results.append(result)
 
         return json.dumps(results, default=str)
     except Exception as err:
         raise(err)
-
-# def get_products_og():
-#     tools = []
-#     try:
-#         # with sentry_sdk.start_span(op="connect to db"):
-#         conn = db.connect()
-#         # with sentry_sdk.start_span(op="run query"):
-#             # wait(operator.le, 12, 1)
-#         results = conn.execute(
-#             "SELECT * FROM products"
-#         ).fetchall()
-#         conn.close()
-
-#         rows = []
-#         # with sentry_sdk.start_span(op="format results"):
-#         for row in results:
-#             rows.append(dict(row))
-#         return json.dumps(rows)
-#     except Exception as err:
-#         raise(err)
