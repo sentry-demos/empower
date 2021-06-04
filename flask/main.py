@@ -5,7 +5,7 @@ import sys
 from flask import Flask
 from flask_cors import CORS
 from dotenv import load_dotenv
-from db import get_products
+from db import get_products, get_products_join
 from utils import release
 import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
@@ -48,6 +48,16 @@ def products():
     print('/products')
     try:
         rows = get_products()
+    except Exception as err:
+        sentry_sdk.capture_exception(err)
+        raise(err)
+    return rows
+
+@app.route('/products-join', methods=['GET'])
+def products_join():    
+    print('/products-join')
+    try:
+        rows = get_products_join()
     except Exception as err:
         sentry_sdk.capture_exception(err)
         raise(err)
