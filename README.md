@@ -13,6 +13,10 @@ Also called the Empower Plant UI/UX. This project was bootstrapped with [Create 
 | sentry_sdk | 1.1.0 |
 
 ## Setup
+**Test** - Create a .env and a flask/.env and put your DSN in it. See .env.default and flask/.env.default for examples
+
+**Production** - (AppEngine) you'll need REACT_APP_BACKEND in .env and the db credentials in flask/.env
+
 ```
 # React
 npm install
@@ -84,3 +88,7 @@ Don't use a sqlalchemy or pg8000 that is higher than sqlalchemy==1.3.15, pg8000=
 | react-scripts | 4.0.3 |
 
 TODO redux, react-redux, redux-logger.
+
+'default' is a function applied to objects that aren't serializable.  
+use 'default' or else you get "Object of type datetime is not JSON serializable":  
+json.dumps(results, default=str)  
