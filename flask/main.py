@@ -14,10 +14,11 @@ load_dotenv()
 
 RELEASE = os.environ.get("RELEASE") or release()
 DSN = os.getenv("FLASK_APP_DSN")
+ENVIRONMENT = os.environ.get("FLASK_ENV") or "production"
 
-print("DSN", DSN)
-print("RELEASE", RELEASE)
-print("FLASK_ENV", os.environ.get("FLASK_ENV"))
+print("> DSN", DSN)
+print("> RELEASE", RELEASE)
+print("> ENVIRONMENT", ENVIRONMENT)
 
 def before_send(event, hint):
     # TODO need this still?
@@ -69,9 +70,6 @@ if __name__ == '__main__':
     i = sys.version_info
     if sys.version_info[0] < 3:
         raise SystemExit("Failed to start: need python3")
-        # sys.exit()
-    # else:
-        # print("it is", typeof(i.major))
     # This is used when running locally only. When deploying to Google App
     # Engine, a webserver process such as Gunicorn will serve the app.
     app.run(host='127.0.0.1', port=8080, debug=True)
