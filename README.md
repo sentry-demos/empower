@@ -25,31 +25,31 @@ pip install -r requirements.txt
 ```
 
 ## Run
-Test
+**Test**
 ```
-## React, the 'start' script in package.json sets the Release
+# React, the 'start' script in package.json sets the Release
 npm start
 
-## Flask
+# Flask
 cd flask && ./run.sh
 ```
 
-Prod
+**Prod**
 ```
-## React, the 'build' script in package.json sets the RElease
+# React, the 'build' script in package.json sets the Release
 npm build && serve -s build
 
-## Flask
+# Flask, run.sh sets the Release and environment
 cd flask && ./run.sh
 ```
 
 ## Deploy
-Prod
+**Prod**
 ```
 # React
 npm run build && gcloud app deploy --version=<version>
 
-# Flask
+# Flask, run.sh is not used here, so the environment will default to production...?
 cd flask && gcloud app deploy
 ```
 
