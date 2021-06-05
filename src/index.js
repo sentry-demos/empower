@@ -23,7 +23,7 @@ import Employee from './components/Employee';
 import NotFound from './components/NotFound';
 import Product from './components/Product';
 import Products from './components/Products';
-
+import ProductsJoin from './components/ProductsJoin';
 import productOne from './components/products/1';
 import productTwo from './components/products/2';
 import productThree from './components/products/3';
@@ -161,6 +161,9 @@ class App extends Component {
                 ></SentryRoute>
                 <Route path="/products">
                   <Products />
+                </Route>
+                <Route path="/products-join">
+                  <ProductsJoin />
                 </Route>
                 <Route component={NotFound} />
               </Switch>
