@@ -30,7 +30,7 @@ def before_send(event, hint):
 sentry_sdk.init(
     dsn=DSN,
     release=RELEASE,
-    environment="test",
+    environment=ENVIRONMENT,
     integrations=[FlaskIntegration(), SqlalchemyIntegration()],
     traces_sample_rate=1.0,
     before_send=before_send
