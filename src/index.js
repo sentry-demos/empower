@@ -38,7 +38,14 @@ const SentryRoute = Sentry.withSentryRouting(Route);
 
 const DSN = process.env.REACT_APP_DSN
 const RELEASE = process.env.REACT_APP_RELEASE
+let ENVIRONMENT
+if (window.location.hostname === "localhost") {
+  ENVIRONMENT = "test"
+} else {
+  ENVIRONMENT = "production"
+}
 console.log("RELEASE", RELEASE)
+console.log("ENVIRONMENT", ENVIRONMENT)
 
 Sentry.init({
   dsn: DSN,
@@ -50,7 +57,7 @@ Sentry.init({
   ],
   tracesSampleRate: 1.0,
   release: RELEASE,
-  environment: 'dev',
+  environment: ENVIRONMENT,
   beforeSend(event) {
     console.log("event",event)
     return event;
