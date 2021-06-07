@@ -5,7 +5,7 @@ import * as Sentry from '@sentry/react';
 import { Integrations } from '@sentry/tracing';
 import Context from './utils/context';
 import { createBrowserHistory } from 'history';
-import { BrowserRouter as Router, Switch, Route } from 'react-router-dom';
+import { Router, Switch, Route } from 'react-router-dom';
 
 import ScrollToTop from './components/ScrollToTop';
 
