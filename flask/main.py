@@ -30,7 +30,7 @@ def before_send(event, hint):
 sentry_sdk.init(
     dsn=DSN,
     release=RELEASE,
-    environment="test",
+    environment=ENVIRONMENT,
     integrations=[FlaskIntegration(), SqlalchemyIntegration()],
     traces_sample_rate=1.0,
     before_send=before_send
@@ -38,6 +38,28 @@ sentry_sdk.init(
 
 app = Flask(__name__)
 CORS(app)
+
+@app.route('/checkout', methods=['POST'])
+def checkout():
+
+    order = json.loads(request.data)
+    print("Processing order for: " + request.headers.get('email'))
+    cart = order["cart"]
+
+    try:
+        rows = get_inventory()
+    except Exception as err:
+        sentry_sdk.capture_exception(err)
+        raise(err)
+
+    process_order(cart)
+
+    try:
+        rows = update_inventory()
+    except Exception as err:
+        raise(err)
+
+    return 'Success'
  
 @app.route('/success', methods=['GET'])
 def success():    

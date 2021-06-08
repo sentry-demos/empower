@@ -11,6 +11,7 @@ const product1 = {
   price: 155,
   img: productImg,
   imgCrop: productImgCropped,
+  reviews: [{"id": 1, "productid": 3, "rating": 5, "customerid": null, "description": null, "created": "2021-06-04 00:04:01.739234"}, {"id": 2, "productid": 3, "rating": 4, "customerid": null, "description": null, "created": "2021-06-04 00:04:26.233562"}, {"id": 3, "productid": 3, "rating": 3, "customerid": null, "description": null, "created": "2021-06-04 00:05:05.060103"}], 
 };
 
 export default product1;

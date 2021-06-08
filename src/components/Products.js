@@ -39,10 +39,6 @@ class Products extends Component {
           {products.response.map((product) => {
             const itemLink = '/product/' + product.id;
             const averageRating = (product.reviews.reduce((a,b) => a + (b["rating"] || 0),0) / 3).toFixed(1)
-            // X Star Rating
-            // Rate X Stars
-            // X Stars
-            // values 4.0, 5.7, consistent with one decimal place here
             return (
               <li key={product.id}>
                 <div>
