@@ -24,6 +24,10 @@ class Product extends Component {
   render() {
     const { product } = this.state;
     const { cart } = this.context;
+    let averageRating
+    if (product) {
+      averageRating = (product.reviews.reduce((a,b) => a + (b["rating"] || 0),0) / 3).toFixed(1)
+    }
     return product ? (
       <div className="product-layout">
         {/* <pre>{JSON.stringify(product, null, 2)}</pre> */}
@@ -41,6 +45,7 @@ class Product extends Component {
           >
             Add to cart — ${product.price}.00
           </button>
+          <p>{averageRating} Star Rating</p>
         </div>
       </div>
     ) : (
@@ -49,5 +54,4 @@ class Product extends Component {
   }
 }
 
-// export default Product;
 export default Sentry.withProfiler(Product, { name: "Product"})
