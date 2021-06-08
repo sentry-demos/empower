@@ -2,6 +2,10 @@ import React, { Component } from 'react';
 import Context from '../utils/context';
 import './product.css';
 import * as Sentry from '@sentry/react';
+import productOne from './products/1';
+import productTwo from './products/2';
+import productThree from './products/3';
+import productFour from './products/4';
 
 class Product extends Component {
   static contextType = Context;
@@ -16,8 +20,26 @@ class Product extends Component {
   async componentDidMount() {
     const { match } = this.props;
     if (match.params.id) {
-      const data = await import(`./products/${match.params.id}`);
-      this.setState({ product: data.default });
+      let data
+      switch (match.params.id) {
+        case "3":
+          data = productOne
+          break;
+        case "4":
+          data = productTwo
+          break;
+        case "5":
+          data = productThree
+          break;
+        case "6":
+          data = productFour
+          break;
+        default:
+          console.log("Default")
+      }
+      // const data = await import(`./products/${match.params.id}`);
+      // this.setState({ product: data.default });
+      this.setState({ product: data });
     }
   }
 
