@@ -31,8 +31,12 @@ pip install -r requirements.txt
 ## Run
 **Test**
 ```
-# React, the 'start' script in package.json sets the Release
+# Builds and serves the js bundle, uploads sourcemaps and does suspect commits
+./run.sh
+
+# Hot reload for development, no sourcemaps or suspect commits
 npm start
+
 
 # Flask
 cd flask && ./run.sh
@@ -92,3 +96,5 @@ TODO redux, react-redux, redux-logger.
 'default' is a function applied to objects that aren't serializable.  
 use 'default' or else you get "Object of type datetime is not JSON serializable":  
 json.dumps(results, default=str)  
+
+`gcloud app deploy` does not support `--update-env-vars RELEASE=$RELEASE` like `gcloud run deploy` does with Cloud Run

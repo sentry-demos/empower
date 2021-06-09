@@ -26,14 +26,14 @@ class Products extends Component {
       .catch((err) => { throw Error(err) })
 
     console.log('> Products from backend', JSON.parse(result))
-
+    Sentry.captureException(new Error("this is an exception"))
     products.update({ action: 'add', response: JSON.parse(result) })
     return result
   }
 
   render() {
     const { cart, products } = this.context;
-    return (
+    return products.response.length > 0 ? (
       <div>
         <ul className="products-list">
           {products.response.map((product) => {
@@ -63,7 +63,9 @@ class Products extends Component {
           })}
         </ul>
       </div>
-    );
+    ) : (
+      <h3>Loading…</h3>
+    )
   }
 }
 
