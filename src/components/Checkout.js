@@ -1,11 +1,20 @@
 import { Component } from 'react';
 import { createBrowserHistory } from 'history';
+import Context from '../utils/context';
 import { Link } from 'react-router-dom';
 import './checkout.css';
 import * as Sentry from '@sentry/react';
 const history = createBrowserHistory();
+var BACKEND = ""
+if (window.location.hostname === "localhost") {
+  BACKEND = "http://localhost:8080"
+} else {
+  BACKEND = process.env.REACT_APP_BACKEND
+}
 
 class Checkout extends Component {
+  static contextType = Context;
+
   constructor() {
     super();
     this.handleSubmit = this.handleSubmit.bind(this);
@@ -24,8 +33,26 @@ class Checkout extends Component {
     });
   }
 
-  handleSubmit(event) {
+  async handleSubmit(event) {
+    event.preventDefault();
+
     console.log('Form Submitted', this.state);
+    const { cart } = this.context;
+    console.log('Form Submitted - Cart', cart);
+
+
+    let result = await fetch(`${BACKEND}/checkout`, {
+      headers: {
+        "Content-Type": "application/json"
+      },
+      method: "POST",
+      body: JSON.stringify({"hi": "hi"})
+    })
+      .then(response => { return response.text() })
+      .catch((err) => { throw Error(err) })
+    console.log("result test", result)
+    
+    // TODO nav to this
     history.push('/error');
   }
 
@@ -48,13 +75,13 @@ class Checkout extends Component {
           />
 
           <input
-            id="yes"
-            name="yes"
+            id="subscribe"
+            name="subscribe"
             type="checkbox"
             onChange={handleInputChange}
-            defaultValue={this.state.yes}
+            defaultValue={this.state.subscribe}
           />
-          <label htmlFor="yes">
+          <label htmlFor="subscribe">
             Keep me updated with new sales and products
           </label>
 
