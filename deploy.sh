@@ -1,10 +1,9 @@
 RELEASE=`./release.sh`
 echo $RELEASE
 
-SENTRY_ORG=will-captel
+SENTRY_ORG=testorg-az
 SENTRY_PROJECT=application-monitoring-javascript
 PREFIX=static/js
-REPOSITORY=us.gcr.io/sales-engineering-sf
 
 npm run build
 
@@ -15,5 +14,4 @@ sentry-cli releases -o $SENTRY_ORG -p $SENTRY_PROJECT files $RELEASE upload-sour
 # The release was set in the static prod build
 gcloud app deploy
 
-# # `gcloud app deploy` does not support `--update-env-vars RELEASE=$RELEASE`
 cd flask && gcloud app deploy 
