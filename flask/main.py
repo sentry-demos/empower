@@ -62,7 +62,7 @@ def checkout():
     # except Exception as err:
     #     raise(err)
 
-    return 'Success Checkout'
+    return 'Checkout response'
  
 @app.route('/success', methods=['GET'])
 def success():    

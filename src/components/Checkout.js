@@ -2,6 +2,7 @@ import { Component } from 'react';
 import { createBrowserHistory } from 'history';
 import Context from '../utils/context';
 import { Link } from 'react-router-dom';
+import { useHistory } from "react-router-dom";
 import './checkout.css';
 import * as Sentry from '@sentry/react';
 const history = createBrowserHistory();
@@ -36,10 +37,9 @@ class Checkout extends Component {
   async handleSubmit(event) {
     event.preventDefault();
 
-    console.log('Form Submitted', this.state);
     const { cart } = this.context;
+    console.log('Form Submitted - Form', this.state);
     console.log('Form Submitted - Cart', cart);
-
 
     let result = await fetch(`${BACKEND}/checkout`, {
       headers: {
@@ -53,10 +53,18 @@ class Checkout extends Component {
     })
       .then(response => { return response.text() })
       .catch((err) => { throw Error(err) })
-    console.log("result test", result)
-    
-    // TODO nav to this
+   
+    console.log("> result", result)
+
+    // TODO if error then go to /error page
+    // TODO if no error then go to /complete page
+
+    // This history.push doesn't do anything. It only works if you remove async operations (await) above, and remove the event.preventDefault()
+    // Can't use  `static history = useHistory()` because we're in a React Hook and not Class Component
+    // tried putting this in the .then block but still didn't work
     history.push('/error');
+    
+    // window.open(`/error`) opened a new tab, which is not what we want
   }
 
   render() {
