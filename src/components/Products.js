@@ -26,7 +26,7 @@ class Products extends Component {
       .catch((err) => { throw Error(err) })
 
     console.log('> Products from backend', JSON.parse(result))
-
+    Sentry.captureException(new Error("this is an exception"))
     products.update({ action: 'add', response: JSON.parse(result) })
     return result
   }
