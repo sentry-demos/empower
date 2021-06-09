@@ -4,7 +4,6 @@ import { Link } from 'react-router-dom';
 import './products.css';
 import * as Sentry from '@sentry/react';
 
-console.log("window.location", window.location)
 var BACKEND = ""
 if (window.location.hostname === "localhost") {
   BACKEND = "http://localhost:8080"
