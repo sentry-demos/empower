@@ -46,7 +46,10 @@ class Checkout extends Component {
         "Content-Type": "application/json"
       },
       method: "POST",
-      body: JSON.stringify({"hi": "hi"})
+      body: JSON.stringify({
+        cart: cart,
+        form: this.state
+      })
     })
       .then(response => { return response.text() })
       .catch((err) => { throw Error(err) })

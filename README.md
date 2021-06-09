@@ -98,9 +98,3 @@ use 'default' or else you get "Object of type datetime is not JSON serializable"
 json.dumps(results, default=str)  
 
 `gcloud app deploy` does not support `--update-env-vars RELEASE=$RELEASE` like `gcloud run deploy` does with Cloud Run
-
-#### Potential errors
-- item * quantity * price not equalling the 'total'
-- form, missing Contact Details attribute
-- not enough inventory
-- Order Complete / Order Error Page showing why there was an error.
