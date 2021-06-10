@@ -58,7 +58,8 @@ class Checkout extends Component {
 
     // TODO if error then go to /error page
     // TODO if no error then go to /complete page
-    this.props.history.push('/error', { state: {"example error": "info"}}) // don't have to pass response data here, but could write it to context.js's state
+    // try componentDidCatch?
+    this.props.history.push('/error', { state: {"example error": result}})
   }
 
   render() {
