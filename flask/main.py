@@ -1,8 +1,8 @@
 import datetime
 import os
 import sys
-# from flask import abort, make_response, jsonify
-from flask import Flask, json, request
+# from flask import abort, jsonify
+from flask import Flask, json, request, make_response
 from flask_cors import CORS
 from dotenv import load_dotenv
 from db import get_products, get_products_join
@@ -39,17 +39,31 @@ sentry_sdk.init(
 app = Flask(__name__)
 CORS(app)
 
+# @app.after_request
+# def add_header(response):
+#     response.headers['Access-Control-Allow-Origin'] = '*'
+#     return response
+    
 @app.route('/checkout', methods=['POST'])
 def checkout():
     # print(json.loads(request.data))
 
-    try:
-        1 / 0
-    except Exception as err:
-        # sentry_sdk.capture_exception(err)
-        raise(err)
+    # raise Exception("Something bad happening")
 
-    return 'response from backend'
+    obj = {}
+    obj['keyDoesntExist']
+
+    # response = make_response("response from backend")
+    # response.headers['Access-Control-Allow-Origin'] = '*'
+
+    # try:
+    #     1 / 0
+    # except Exception as err:
+    #     sentry_sdk.capture_exception(err)
+    #     # raise(err)
+
+    # return response
+    return "heyo"
  
 @app.route('/success', methods=['GET'])
 def success():    
@@ -94,4 +108,4 @@ if __name__ == '__main__':
         raise SystemExit("Failed to start: need python3")
     # This is used when running locally only. When deploying to Google App
     # Engine, a webserver process such as Gunicorn will serve the app.
-    app.run(host='127.0.0.1', port=8080, debug=True)
+    app.run(host='127.0.0.1', port=8080, debug=False)
