@@ -104,3 +104,11 @@ json.dumps(results, default=str)
 https://dev.to/brad_beggs/handling-react-form-submit-with-redirect-async-await-for-the-beyond-beginner-57of
 
 https://www.pluralsight.com/guides/how-to-transition-to-another-route-on-successful-async-redux-action
+
+https://reactjs.org/docs/forms.html
+
+State Hooks vs Effect Hooks vs Context
+https://reactjs.org/docs/hooks-state.html
+
+Context
+https://reactjs.org/docs/hooks-effect.html
