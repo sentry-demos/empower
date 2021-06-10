@@ -42,24 +42,28 @@ class Checkout extends Component {
     console.log('Form Submitted - Cart', cart);
 
     let result = await fetch(`${BACKEND}/checkout`, {
-      // headers: {
-      //   "Content-Type": "application/json"
-      // },
       method: "POST",
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        // "Access-Control-Allow-Headers": "Content-Type, Authorization",
+        // "Content-Type": "application/json"
+        // "Content-Type": "application/x-www-form-urlencoded"
+      },
       body: JSON.stringify({
         cart: cart,
         form: this.state
       })
     })
       .then(response => { return response.text() })
-      .catch((err) => { throw Error(err) })
-   
+      .catch((err) => { 
+        // console.log("> catches error")
+        throw Error(err) 
+      })
+      
     console.log("> /checkout", result)
 
-    // TODO if error then go to /error page
-    // TODO if no error then go to /complete page
-    // try componentDidCatch?
-    this.props.history.push('/error', { state: {"example error": result}})
+    // TODO if error then go to /error page, if no error then go to /complete page
+    this.props.history.push('/error', { state: {"example": "error"}})
   }
 
   render() {

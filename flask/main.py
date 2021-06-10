@@ -41,26 +41,13 @@ CORS(app)
 
 @app.route('/checkout', methods=['POST'])
 def checkout():
-    # payload = json.loads(request.data)
-    print("1111111")
-    print(json.loads(request.data))
-    print("2222222")
-    # order = json.loads(request.data)
-    # print("Processing order for: " + request.headers.get('email'))
-    # cart = order["cart"]
+    # print(json.loads(request.data))
 
-    # try:
-    #     rows = get_inventory()
-    # except Exception as err:
-    #     sentry_sdk.capture_exception(err)
-    #     raise(err)
-
-    # process_order(cart)
-
-    # try:
-    #     rows = update_inventory()
-    # except Exception as err:
-    #     raise(err)
+    try:
+        1 / 0
+    except Exception as err:
+        # sentry_sdk.capture_exception(err)
+        raise(err)
 
     return 'response from backend'
  
