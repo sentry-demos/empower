@@ -2,10 +2,10 @@ import { Component } from 'react';
 import { createBrowserHistory } from 'history';
 import Context from '../utils/context';
 import { Link } from 'react-router-dom';
-import { useHistory } from "react-router-dom";
+// import { useHistory } from "react-router-dom";
 import './checkout.css';
 import * as Sentry from '@sentry/react';
-const history = createBrowserHistory();
+// const history = createBrowserHistory();
 var BACKEND = ""
 if (window.location.hostname === "localhost") {
   BACKEND = "http://localhost:8080"
@@ -38,13 +38,13 @@ class Checkout extends Component {
     event.preventDefault();
 
     const { cart } = this.context;
-    console.log('Form Submitted - Form', this.state);
+    console.log('Form Submitted - state', this.state);
     console.log('Form Submitted - Cart', cart);
 
     let result = await fetch(`${BACKEND}/checkout`, {
-      headers: {
-        "Content-Type": "application/json"
-      },
+      // headers: {
+      //   "Content-Type": "application/json"
+      // },
       method: "POST",
       body: JSON.stringify({
         cart: cart,
@@ -54,17 +54,11 @@ class Checkout extends Component {
       .then(response => { return response.text() })
       .catch((err) => { throw Error(err) })
    
-    console.log("> result", result)
+    console.log("> /checkout", result)
 
     // TODO if error then go to /error page
     // TODO if no error then go to /complete page
-
-    // This history.push doesn't do anything. It only works if you remove async operations (await) above, and remove the event.preventDefault()
-    // Can't use  `static history = useHistory()` because we're in a React Hook and not Class Component
-    // tried putting this in the .then block but still didn't work
-    history.push('/error');
-    
-    // window.open(`/error`) opened a new tab, which is not what we want
+    this.props.history.push('/error', { state: {"example error": "info"}}) // don't have to pass response data here, but could write it to context.js's state
   }
 
   render() {
