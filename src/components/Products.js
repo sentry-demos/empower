@@ -4,7 +4,6 @@ import { Link } from 'react-router-dom';
 import './products.css';
 import * as Sentry from '@sentry/react';
 
-console.log("window.location", window.location)
 var BACKEND = ""
 if (window.location.hostname === "localhost") {
   BACKEND = "http://localhost:8080"
@@ -26,7 +25,7 @@ class Products extends Component {
       .catch((err) => { throw Error(err) })
 
     console.log('> Products from backend', JSON.parse(result))
-    Sentry.captureException(new Error("this is an exception"))
+    // Sentry.captureException(new Error("this is an exception"))
     products.update({ action: 'add', response: JSON.parse(result) })
     return result
   }

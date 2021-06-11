@@ -1,11 +1,21 @@
 import { Component } from 'react';
 import { createBrowserHistory } from 'history';
+import Context from '../utils/context';
 import { Link } from 'react-router-dom';
+// import { useHistory } from "react-router-dom";
 import './checkout.css';
 import * as Sentry from '@sentry/react';
-const history = createBrowserHistory();
+// const history = createBrowserHistory();
+var BACKEND = ""
+if (window.location.hostname === "localhost") {
+  BACKEND = "http://localhost:8080"
+} else {
+  BACKEND = process.env.REACT_APP_BACKEND
+}
 
 class Checkout extends Component {
+  static contextType = Context;
+
   constructor() {
     super();
     this.handleSubmit = this.handleSubmit.bind(this);
@@ -24,9 +34,33 @@ class Checkout extends Component {
     });
   }
 
-  handleSubmit(event) {
-    console.log('Form Submitted', this.state);
-    history.push('/error');
+  async handleSubmit(event) {
+    event.preventDefault();
+
+    const { cart } = this.context;
+    console.log('Form Submitted - state', this.state);
+    console.log('Form Submitted - Cart', cart);
+
+    let response = await fetch(`${BACKEND}/checkout`, {
+      method: "POST",
+      body: JSON.stringify({
+        cart: cart,
+        form: this.state
+      })
+    })
+    .catch((err) => { 
+      console.log("> catches error", err)
+      throw Error(err) 
+    })
+
+    console.log("> response", response)
+    console.log("> ok | status | statusText", response.ok, response.status, response.statusText)
+
+    if (!response.ok) {
+      this.props.history.push('/error', {"error": "errorInfo"})
+    } else {
+      this.props.history.push('/complete', {"complete": "completeOrderInfo"})
+    }
   }
 
   render() {
@@ -48,13 +82,13 @@ class Checkout extends Component {
           />
 
           <input
-            id="yes"
-            name="yes"
+            id="subscribe"
+            name="subscribe"
             type="checkbox"
             onChange={handleInputChange}
-            defaultValue={this.state.yes}
+            defaultValue={this.state.subscribe}
           />
-          <label htmlFor="yes">
+          <label htmlFor="subscribe">
             Keep me updated with new sales and products
           </label>
 

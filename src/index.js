@@ -24,10 +24,10 @@ import NotFound from './components/NotFound';
 import Product from './components/Product';
 import Products from './components/Products';
 import ProductsJoin from './components/ProductsJoin';
-import productOne from './components/products/1';
-import productTwo from './components/products/2';
-import productThree from './components/products/3';
-import productFour from './components/products/4';
+// import productOne from './components/products/1';
+// import productTwo from './components/products/2';
+// import productThree from './components/products/3';
+// import productFour from './components/products/4';
 
 import plantsBackground from './assets/plants-background-img.jpg';
 
@@ -36,16 +36,17 @@ const tracingOrigins = ['localhost', 'empowerplant.io', 'run.app', 'appspot.com'
 const history = createBrowserHistory();
 const SentryRoute = Sentry.withSentryRouting(Route);
 
-const DSN = process.env.REACT_APP_DSN
-const RELEASE = process.env.REACT_APP_RELEASE
 let ENVIRONMENT
+console.log("window.location", window.location)
 if (window.location.hostname === "localhost") {
   ENVIRONMENT = "test"
 } else {
   ENVIRONMENT = "production"
 }
-console.log("RELEASE", RELEASE)
+const DSN = process.env.REACT_APP_DSN
+const RELEASE = process.env.REACT_APP_RELEASE
 console.log("ENVIRONMENT", ENVIRONMENT)
+console.log("RELEASE", RELEASE)
 
 Sentry.init({
   dsn: DSN,
@@ -59,10 +60,10 @@ Sentry.init({
   release: RELEASE,
   environment: ENVIRONMENT,
   beforeSend(event) {
-    console.log("event",event)
+    // console.log("event",event)
     return event;
-  },
-  debug:true
+  }
+  // debug:true
 });
 
 class App extends Component {

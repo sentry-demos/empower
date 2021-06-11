@@ -4,14 +4,12 @@ import { Link } from 'react-router-dom';
 import './products.css';
 import * as Sentry from '@sentry/react';
 
-console.log("window.location", window.location)
 var BACKEND = ""
 if (window.location.hostname === "localhost") {
   BACKEND = "http://localhost:8080"
 } else {
   BACKEND = process.env.REACT_APP_BACKEND
 }
-console.log("BACKEND", BACKEND)
 
 class Products extends Component {
   static contextType = Context;

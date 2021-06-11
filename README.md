@@ -98,3 +98,17 @@ use 'default' or else you get "Object of type datetime is not JSON serializable"
 json.dumps(results, default=str)  
 
 `gcloud app deploy` does not support `--update-env-vars RELEASE=$RELEASE` like `gcloud run deploy` does with Cloud Run
+
+
+
+https://dev.to/brad_beggs/handling-react-form-submit-with-redirect-async-await-for-the-beyond-beginner-57of
+
+https://www.pluralsight.com/guides/how-to-transition-to-another-route-on-successful-async-redux-action
+
+https://reactjs.org/docs/forms.html
+
+State Hooks vs Effect Hooks vs Context
+https://reactjs.org/docs/hooks-state.html
+
+Context
+https://reactjs.org/docs/hooks-effect.html

@@ -1,8 +1,8 @@
 import datetime
 import os
 import sys
-# from flask import Flask, request, json, abort, make_response, jsonify
-from flask import Flask
+# from flask import abort, jsonify
+from flask import Flask, json, request, make_response
 from flask_cors import CORS
 from dotenv import load_dotenv
 from db import get_products, get_products_join
@@ -23,6 +23,7 @@ print("> ENVIRONMENT", ENVIRONMENT)
 def before_send(event, hint):
     # TODO need this still?
     if event['request']['method'] == 'OPTIONS':
+        console.log("*** OPTIONS ***")
         return null
     print("> event", event)
     return event
@@ -41,25 +42,15 @@ CORS(app)
 
 @app.route('/checkout', methods=['POST'])
 def checkout():
+    # print(json.loads(request.data))
 
-    order = json.loads(request.data)
-    print("Processing order for: " + request.headers.get('email'))
-    cart = order["cart"]
+    # This sends a 500 response
+    # obj = {}
+    # obj['keyDoesntExist']
 
-    try:
-        rows = get_inventory()
-    except Exception as err:
-        sentry_sdk.capture_exception(err)
-        raise(err)
-
-    process_order(cart)
-
-    try:
-        rows = update_inventory()
-    except Exception as err:
-        raise(err)
-
-    return 'Success'
+    # This sends a 200 response
+    response = make_response("response from backend")
+    return response
  
 @app.route('/success', methods=['GET'])
 def success():    
@@ -104,4 +95,4 @@ if __name__ == '__main__':
         raise SystemExit("Failed to start: need python3")
     # This is used when running locally only. When deploying to Google App
     # Engine, a webserver process such as Gunicorn will serve the app.
-    app.run(host='127.0.0.1', port=8080, debug=True)
+    app.run(host='127.0.0.1', port=8080, debug=False)
