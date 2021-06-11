@@ -23,6 +23,7 @@ print("> ENVIRONMENT", ENVIRONMENT)
 def before_send(event, hint):
     # TODO need this still?
     if event['request']['method'] == 'OPTIONS':
+        console.log("*** OPTIONS ***")
         return null
     print("> event", event)
     return event
@@ -39,31 +40,17 @@ sentry_sdk.init(
 app = Flask(__name__)
 CORS(app)
 
-# @app.after_request
-# def add_header(response):
-#     response.headers['Access-Control-Allow-Origin'] = '*'
-#     return response
-    
 @app.route('/checkout', methods=['POST'])
 def checkout():
     # print(json.loads(request.data))
 
-    # raise Exception("Something bad happening")
+    # This sends a 500 response
+    # obj = {}
+    # obj['keyDoesntExist']
 
-    obj = {}
-    obj['keyDoesntExist']
-
-    # response = make_response("response from backend")
-    # response.headers['Access-Control-Allow-Origin'] = '*'
-
-    # try:
-    #     1 / 0
-    # except Exception as err:
-    #     sentry_sdk.capture_exception(err)
-    #     # raise(err)
-
-    # return response
-    return "heyo"
+    # This sends a 200 response
+    response = make_response("response from backend")
+    return response
  
 @app.route('/success', methods=['GET'])
 def success():    
