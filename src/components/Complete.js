@@ -7,6 +7,9 @@ function Complete(props) {
   const { cart } = useContext(Context);
   const RandomNumber = Math.floor(Math.random() * 99999) + 10000;
 
+  let completeOrderInfo = props.history.location.state
+  console.log("> completeOrderInfo", completeOrderInfo)
+  
   return (
     <div className="checkout-container-complete">
       <h2>Checkout complete</h2>

@@ -43,29 +43,24 @@ class Checkout extends Component {
 
     let response = await fetch(`${BACKEND}/checkout`, {
       method: "POST",
-      // headers: {
-      //   "Access-Control-Allow-Origin": "*",
-      //   // "Access-Control-Allow-Headers": "Content-Type, Authorization",
-      //   // "Content-Type": "application/json"
-      //   // "Content-Type": "application/x-www-form-urlencoded"
-      // },
       body: JSON.stringify({
         cart: cart,
         form: this.state
       })
     })
-      // .then(response => { return response }) // if you do response.text() then .ok .status aren't available later
-      .catch((err) => { 
-        console.log("> catches error", err)
-        throw Error(err) 
-      })
+    .catch((err) => { 
+      console.log("> catches error", err)
+      throw Error(err) 
+    })
 
     console.log("> response", response)
     console.log("> ok | status | statusText", response.ok, response.status, response.statusText)
-    // console.log("> /checkout status", response.status)
 
-    // TODO if error then go to /error page, if no error then go to /complete page
-    this.props.history.push('/error', { state: {"example": "error"}})
+    if (!response.ok) {
+      this.props.history.push('/error', {"error": "errorInfo"})
+    } else {
+      this.props.history.push('/complete', {"complete": "completeOrderInfo"})
+    }
   }
 
   render() {
