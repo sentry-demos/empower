@@ -42,19 +42,23 @@ CORS(app)
 
 @app.route('/checkout', methods=['POST'])
 def checkout():
-    # print(request.data)
     order = json.loads(request.data)
     cart = order["cart"]
     form = order["form"]
-    print("> form", form)
+    # print("> form", form)
 
     # TODO
-    results = []
+    inventory = []
     try:
-        results = get_inventory(cart)
+        inventory = get_inventory(cart)
     except Exception as err:
+        print(err)
         sentry_sdk.capture_exception(err)
-    print("> /checkout results", results)
+    print("> /checkout inventory", inventory)
+
+    for item in inventory:
+        print("> item.count", item['count'])
+
 
     response = make_response("response from backend")
     return response
