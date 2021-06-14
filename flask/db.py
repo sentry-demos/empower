@@ -79,3 +79,20 @@ def get_products_join():
         return json.dumps(results, default=str)
     except Exception as err:
         raise(err)
+
+def get_inventory(cart):
+    print("> get_inventory")
+
+    items = cart["items"]
+    quantities = cart['quantities']
+    total = cart["total"]
+
+    print("> items", items)
+    print("> quantities", quantities)
+    print("> total", total)
+    
+    # This sends a 500 response
+    # obj = {}
+    # obj['keyDoesntExist']
+
+    return "results"
