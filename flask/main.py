@@ -54,10 +54,14 @@ def checkout():
         sentry_sdk.capture_exception(err)
     print("> /checkout inventory", inventory)
 
-    # TODO proceed with comparing 'quantities' versus inventory
-    for item in inventory:
-        print("> item.count", item['count'])
-
+    quantities = cart['quantities']
+    for cartItem in quantities:
+        for inventoryItem in inventory:
+            print("> inventoryItem.count", inventoryItem['count'])
+            if (inventoryItem.count < quantities[cartItem]):
+                raise Exception("Not enough inventory for " + "product")
+        
+    # TODO rename 'count' as 'quantity'?
     response = make_response("response from backend")
     return response
  
