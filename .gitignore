@@ -29,7 +29,7 @@ yarn-error.log*
 notes.txt
 flask/.virtualenv
 **/.virtualenv
-
+flask/envtest
 node/node_modules
 node/package-lock.json
 ruby/Gemfile.lock
