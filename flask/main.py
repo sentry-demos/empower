@@ -45,9 +45,7 @@ def checkout():
     order = json.loads(request.data)
     cart = order["cart"]
     form = order["form"]
-    # print("> form", form)
 
-    # TODO
     inventory = []
     try:
         inventory = get_inventory(cart)
@@ -56,9 +54,9 @@ def checkout():
         sentry_sdk.capture_exception(err)
     print("> /checkout inventory", inventory)
 
+    # TODO proceed with comparing 'quantities' versus inventory
     for item in inventory:
         print("> item.count", item['count'])
-
 
     response = make_response("response from backend")
     return response

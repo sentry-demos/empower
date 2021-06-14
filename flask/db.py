@@ -89,13 +89,10 @@ def get_inventory(cart):
 
     productIds = []
     for productId in quantities:
-        print("product Id %s | quantity %s" % (productId, quantities[productId]))
         productIds.append(productId)
 
+    productIds = formatArray(productIds)
     print("> productIds", productIds)
-    
-    # TODO
-    productIds = "(3,4,5,6)"
 
     try:
         connection = db.connect()
@@ -108,3 +105,13 @@ def get_inventory(cart):
         Sentry.capture_exception(exception)
 
     return inventory
+
+
+
+def formatArray(ids):
+    numbers = ""
+    for _id in ids:
+        numbers += (_id + ",")
+    print("> numbers", numbers)
+    output = "(" + numbers[:-1] + ")"
+    return output
