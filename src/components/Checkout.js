@@ -41,6 +41,10 @@ class Checkout extends Component {
     console.log('Form Submitted - state', this.state);
     console.log('Form Submitted - Cart', cart);
 
+    const transaction = Sentry.startTransaction({ name: "checkout" });
+    // Do this or the trace won't include the backend transaction
+    Sentry.configureScope(scope => scope.setSpan(transaction));
+
     let response = await fetch(`${BACKEND}/checkout`, {
       method: "POST",
       body: JSON.stringify({
@@ -55,6 +59,8 @@ class Checkout extends Component {
 
     console.log("> response", response)
     console.log("> ok | status | statusText", response.ok, response.status, response.statusText)
+
+    transaction.finish();
 
     if (!response.ok) {
       this.props.history.push('/error', {"error": "errorInfo"})
