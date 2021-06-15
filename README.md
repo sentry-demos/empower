@@ -117,3 +117,6 @@ https://reactjs.org/docs/hooks-state.html
 
 Context
 https://reactjs.org/docs/hooks-effect.html
+
+
+/cart -> /checkout (auto tx) -> checkout (custom tx)
