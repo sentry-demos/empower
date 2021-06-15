@@ -36,13 +36,13 @@ else:
 def get_products():
     results = []
     try:
-        conn = db.connect()
-        products = conn.execute(
+        connection = db.connect()
+        products = connection.execute(
             "SELECT * FROM products"
         ).fetchall()
         
         for product in products:
-            reviews = conn.execute(
+            reviews = connection.execute(
                 "SELECT * FROM reviews WHERE productId = {}".format(product.id)
             ).fetchall()
             result = dict(product)
@@ -59,12 +59,12 @@ def get_products():
 def get_products_join():
     results = []
     try:
-        conn = db.connect()
-        products = conn.execute(
+        connection = db.connect()
+        products = connection.execute(
             "SELECT * FROM products"
         ).fetchall()
 
-        reviews = conn.execute(
+        reviews = connection.execute(
             "SELECT reviews.id, products.id AS productid, reviews.rating, reviews.customerId, reviews.description, reviews.created FROM reviews INNER JOIN products ON reviews.productId = products.id"
         ).fetchall()
 
@@ -79,3 +79,39 @@ def get_products_join():
         return json.dumps(results, default=str)
     except Exception as err:
         raise(err)
+
+def get_inventory(cart):
+    print("> get_inventory")
+
+    quantities = cart['quantities']
+
+    print("> quantities", quantities)
+
+    productIds = []
+    for productId in quantities:
+        productIds.append(productId)
+
+    productIds = formatArray(productIds)
+    print("> productIds", productIds)
+
+    try:
+        connection = db.connect()
+        inventory = connection.execute(
+            "SELECT * FROM inventory WHERE productId in %s" % (productIds)
+        ).fetchall()
+
+    except Exception as exception:
+        print(exception)
+        Sentry.capture_exception(exception)
+
+    return inventory
+
+
+
+def formatArray(ids):
+    numbers = ""
+    for _id in ids:
+        numbers += (_id + ",")
+    print("> numbers", numbers)
+    output = "(" + numbers[:-1] + ")"
+    return output

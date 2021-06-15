@@ -13,9 +13,14 @@ Also called the Empower Plant UI/UX. This project was bootstrapped with [Create 
 | sentry_sdk | 1.1.0 |
 
 ## Setup
-**Test** - Create a .env and a flask/.env and put your DSN in it. See .env.default and flask/.env.default for examples
+Permit your IP address in CloudSQL.
 
-**Production** - (AppEngine) you'll need REACT_APP_BACKEND in .env and the db credentials in flask/.env
+**Test**
+1. Create a .env and enter your DSN. See .env.example for an example.
+2. Create a flask/.env and enter your DSN. See .env.example for an example. Fill out all fields so data can be read from the database.
+
+**Production** - AppEngine
+1. Enter a value for REACT_APP_BACKEND in .env, as this represents the Flask AppEngine.
 
 ```
 # React
@@ -112,3 +117,6 @@ https://reactjs.org/docs/hooks-state.html
 
 Context
 https://reactjs.org/docs/hooks-effect.html
+
+
+/cart -> /checkout (auto tx) -> checkout (custom tx)

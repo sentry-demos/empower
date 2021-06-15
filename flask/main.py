@@ -5,7 +5,7 @@ import sys
 from flask import Flask, json, request, make_response
 from flask_cors import CORS
 from dotenv import load_dotenv
-from db import get_products, get_products_join
+from db import get_products, get_products_join, get_inventory
 from utils import release
 import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
@@ -25,7 +25,7 @@ def before_send(event, hint):
     if event['request']['method'] == 'OPTIONS':
         console.log("*** OPTIONS ***")
         return null
-    print("> event", event)
+    # print("> event", event)
     return event
 
 sentry_sdk.init(
@@ -42,13 +42,25 @@ CORS(app)
 
 @app.route('/checkout', methods=['POST'])
 def checkout():
-    # print(json.loads(request.data))
+    order = json.loads(request.data)
+    cart = order["cart"]
+    form = order["form"]
 
-    # This sends a 500 response
-    # obj = {}
-    # obj['keyDoesntExist']
+    inventory = []
+    try:
+        inventory = get_inventory(cart)
+    except Exception as err:
+        print(err)
+        sentry_sdk.capture_exception(err)
+    print("> /checkout inventory", inventory)
 
-    # This sends a 200 response
+    quantities = cart['quantities']
+    for cartItem in quantities:
+        for inventoryItem in inventory:
+            print("> inventoryItem.count", inventoryItem['count'])
+            if (inventoryItem.count < quantities[cartItem]):
+                raise Exception("Not enough inventory for " + "product")
+        
     response = make_response("response from backend")
     return response
  
