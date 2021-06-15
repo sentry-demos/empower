@@ -61,7 +61,6 @@ def checkout():
             if (inventoryItem.count < quantities[cartItem]):
                 raise Exception("Not enough inventory for " + "product")
         
-    # TODO rename 'count' as 'quantity'?
     response = make_response("response from backend")
     return response
  

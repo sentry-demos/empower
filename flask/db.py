@@ -64,7 +64,7 @@ def get_products_join():
             "SELECT * FROM products"
         ).fetchall()
 
-        reviews = conn.execute(
+        reviews = connection.execute(
             "SELECT reviews.id, products.id AS productid, reviews.rating, reviews.customerId, reviews.description, reviews.created FROM reviews INNER JOIN products ON reviews.productId = products.id"
         ).fetchall()
 
