@@ -1,0 +1,4 @@
+# endpoints should NOT have "/" at the end
+
+react_endpoints:
+ - https://empower-plant-content-1-dot-sales-engineering-sf.appspot.com/

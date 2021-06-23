@@ -1,0 +1,1 @@
+while true; do clear && pytest -s -n 10 frontend_tests; done
