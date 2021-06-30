@@ -153,3 +153,16 @@ input[type='text'] {
 .hero-content a.btn {
   margin-top: 0.5rem;
 }
+
+.star {
+  /* lighter */
+  /* color: #F1B71C; */
+  
+  color: #E8C71B;
+  
+  /* for more contrast */
+  /* color: #AA6100; */
+
+  /* makes the star bigger */
+  font-size: 21px;
+}
