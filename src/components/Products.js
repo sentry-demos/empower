@@ -55,7 +55,8 @@ class Products extends Component {
                   >
                     Add to cart — ${product.price}.00
                   </button>
-                  <p>{averageRating} Star Rating</p>
+                  <p>{averageRating} &#9733;</p>
+                  <p>I will display &#9734;</p>
                 </div>
               </li>
             );
