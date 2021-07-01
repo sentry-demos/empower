@@ -50,7 +50,7 @@ cd flask && ./run.sh
 **Prod**
 ```
 # React, the 'build' script in package.json sets the Release
-npm build && serve -s build
+npm run build && serve -s build
 
 # Flask, run.sh sets the Release and environment
 cd flask && ./run.sh
