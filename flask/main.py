@@ -24,6 +24,7 @@ def before_send(event, hint):
     return event
 
 def traces_sampler(sampling_context):
+    sentry_sdk.set_context("sampling_context", sampling_context)
     REQUEST_METHOD=sampling_context['wsgi_environ']['REQUEST_METHOD']
     if REQUEST_METHOD == 'OPTIONS':
         return 0.0
