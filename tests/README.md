@@ -12,9 +12,11 @@ create_cron_job.sh -> GCP-cron job (runs every 20 min from midnight-6am) -> Trav
 # Tests
 
 ## Setup
-python -m venv env
+```
+python3 -m venv env
 source env/bin/activate
 pip install -r requirements.txt
+```
 
 ## FrontEnd / Selenium (`frontend_tests` directory)
 Pulls up Sentry frontend in various browsers in parallel via selenium scripts.
