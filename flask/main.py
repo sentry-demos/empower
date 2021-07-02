@@ -21,12 +21,14 @@ print("> RELEASE", RELEASE)
 print("> ENVIRONMENT", ENVIRONMENT)
 
 def before_send(event, hint):
-    # TODO need this still?
-    if event['request']['method'] == 'OPTIONS':
-        console.log("*** OPTIONS ***")
-        return null
-    # print("> event", event)
     return event
+
+def traces_sampler(sampling_context):
+    REQUEST_METHOD=sampling_context['wsgi_environ']['REQUEST_METHOD']
+    if REQUEST_METHOD == 'OPTIONS':
+        return 0.0
+    else:
+        return 1.0
 
 sentry_sdk.init(
     dsn=DSN,
@@ -34,7 +36,8 @@ sentry_sdk.init(
     environment=ENVIRONMENT,
     integrations=[FlaskIntegration(), SqlalchemyIntegration()],
     traces_sample_rate=1.0,
-    before_send=before_send
+    before_send=before_send,
+    traces_sampler=traces_sampler
 )
 
 app = Flask(__name__)
