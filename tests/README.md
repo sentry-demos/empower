@@ -18,6 +18,10 @@ source env/bin/activate
 pip install -r requirements.txt
 ```
 
+Update your endpoint (URL) in `endpoints.yaml`  
+http://application-monitoring-react-dot-sales-engineering-sf.appspot.com/ <-- '/' at end?  
+http://localhost:5000/  
+
 ## FrontEnd / Selenium (`frontend_tests` directory)
 Pulls up Sentry frontend in various browsers in parallel via selenium scripts.
 Test case will add items to cart and then click checkout
@@ -72,3 +76,13 @@ How to stop it
 ps fjx
 kill -9 <PID of the script.sh>
 ```
+
+
+## Todo
+Why are OPTIONS http.method transactions surfacing for the AppEngine instance?  
+This doesn't happen when hitting localhost:5000/products
+TRY accessing application-monitoring.com/products manually, see if it happens
+
+
+The average `i` should be 10?  
+for i in range(random.randrange(20))
