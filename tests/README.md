@@ -76,13 +76,3 @@ How to stop it
 ps fjx
 kill -9 <PID of the script.sh>
 ```
-
-
-## Todo
-Why are OPTIONS http.method transactions surfacing for the AppEngine instance?  
-This doesn't happen when hitting localhost:5000/products
-TRY accessing application-monitoring.com/products manually, see if it happens
-
-
-The average `i` should be 10?  
-for i in range(random.randrange(20))
