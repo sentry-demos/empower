@@ -61,8 +61,7 @@ class Checkout extends Component {
     console.log("> ok | status | statusText", response.ok, response.status, response.statusText)
 
     if (!response.ok) {
-      console.log("!response.ok")
-      Sentry.captureException(new Error(response.status + " - " + (response.statusText || "INTERNAL SERVER ERROR")))
+      Sentry.captureException(new Error(response.status + " - " + (response.statusText || "Internal Server Error")))
     }
     
     transaction.finish();
