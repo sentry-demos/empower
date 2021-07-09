@@ -105,7 +105,6 @@ json.dumps(results, default=str)
 `gcloud app deploy` does not support `--update-env-vars RELEASE=$RELEASE` like `gcloud run deploy` does with Cloud Run
 
 
-
 https://dev.to/brad_beggs/handling-react-form-submit-with-redirect-async-await-for-the-beyond-beginner-57of
 
 https://www.pluralsight.com/guides/how-to-transition-to-another-route-on-successful-async-redux-action
@@ -119,4 +118,8 @@ Context
 https://reactjs.org/docs/hooks-effect.html
 
 
-/cart -> /checkout (auto tx) -> checkout (custom tx)
+https://docs.sentry.io/platforms/python/guides/flask/configuration/filtering/#using-sampling-to-filter-transaction-events
+
+Pretty printing in python  
+stuff=sampling_context['wsgi_environ']  
+pp = pprint.PrettyPrinter(indent=4)  

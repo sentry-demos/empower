@@ -38,7 +38,6 @@ class Products extends Component {
           {products.response.map((product) => {
             const itemLink = '/product/' + product.id;
             const averageRating = (product.reviews.reduce((a,b) => a + (b["rating"] || 0),0) / product.reviews.length).toFixed(1)
-            console.log("averageRating", averageRating)
 
             let stars = [1,2,3,4,5].map((index) => {
               if (index <= averageRating) {
