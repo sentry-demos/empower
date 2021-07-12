@@ -12,10 +12,20 @@ if (window.location.hostname === "localhost") {
 }
 console.log("BACKEND", BACKEND)
 
+// function useQuery() {
+//   return new URLSearchParams(useLocation().search);
+// }
+
 class Products extends Component {
   static contextType = Context;
 
   async componentDidMount(){
+    // let query = useQuery();
+    let queryParams = this.props.history.location.search
+    console.log("queryParams", queryParams)
+
+    // http://localhost:3000/products?se=will
+
     const { products } = this.context;
     
     let result = await fetch(`${BACKEND}/products`, {
@@ -32,6 +42,7 @@ class Products extends Component {
 
   render() {
     const { cart, products } = this.context;
+
     return products.response.length > 0 ? (
       <div>
         <ul className="products-list">

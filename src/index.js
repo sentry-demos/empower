@@ -6,6 +6,7 @@ import { Integrations } from '@sentry/tracing';
 import Context from './utils/context';
 import { createBrowserHistory } from 'history';
 import { Router, Switch, Route } from 'react-router-dom';
+// import { BrowserRouter as Router, Switch, Route } from 'react-router-dom';
 
 import ScrollToTop from './components/ScrollToTop';
 
@@ -167,8 +168,7 @@ class App extends Component {
                   path="/product/:id"
                   component={Product}
                 ></SentryRoute>
-                <Route path="/products">
-                  <Products />
+                <Route path="/products" component={Products}>
                 </Route>
                 <Route path="/products-join">
                   <ProductsJoin />
