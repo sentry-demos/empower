@@ -159,19 +159,10 @@ class App extends Component {
                 <Route path="/complete" component={Complete} />
                 <Route path="/error" component={CompleteError} />
                 <Route path="/cra" component={Cra} />
-                <SentryRoute
-                  path="/employee/:slug"
-                  component={Employee}
-                ></SentryRoute>
-                <SentryRoute
-                  path="/product/:id"
-                  component={Product}
-                ></SentryRoute>
-                <Route path="/products" component={Products}>
-                </Route>
-                <Route path="/products-join">
-                  <ProductsJoin />
-                </Route>
+                <SentryRoute path="/employee/:slug" component={Employee}></SentryRoute>
+                <SentryRoute path="/product/:id" component={Product}></SentryRoute>
+                <Route path="/products" component={Products} />
+                <Route path="/products-join" component={ProductsJoin} />
                 <Route component={NotFound} />
               </Switch>
             </div>

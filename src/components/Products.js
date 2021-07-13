@@ -16,8 +16,6 @@ class Products extends Component {
   static contextType = Context;
 
   async componentDidMount(){
-    console.log("this.props", this.props)
-
     let query = this.props.history.location?.search 
     query ? 
       Sentry.configureScope(scope => {
