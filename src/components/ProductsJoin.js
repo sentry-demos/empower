@@ -15,6 +15,13 @@ class Products extends Component {
   static contextType = Context;
 
   async componentDidMount(){
+    let query = this.props.history.location?.search 
+    query ? 
+      Sentry.configureScope(scope => {
+        scope.setTag("se", query.split("se=").pop())
+      })
+      :console.log("no query string")
+      
     const { products } = this.context;
     
     let result = await fetch(`${BACKEND}/products-join`, {
