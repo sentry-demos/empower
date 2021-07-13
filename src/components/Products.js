@@ -12,19 +12,18 @@ if (window.location.hostname === "localhost") {
 }
 console.log("BACKEND", BACKEND)
 
-// function useQuery() {
-//   return new URLSearchParams(useLocation().search);
-// }
-
 class Products extends Component {
   static contextType = Context;
 
   async componentDidMount(){
-    // let query = useQuery();
-    let queryParams = this.props.history.location.search
-    console.log("queryParams", queryParams)
+    console.log("this.props", this.props)
 
-    // http://localhost:3000/products?se=will
+    let query = this.props.history.location?.search 
+    query ? 
+      Sentry.configureScope(scope => {
+        scope.setTag("se", query.split("se=").pop())
+      })
+      :console.log("no query string")
 
     const { products } = this.context;
     
