@@ -123,3 +123,5 @@ https://docs.sentry.io/platforms/python/guides/flask/configuration/filtering/#us
 Pretty printing in python  
 stuff=sampling_context['wsgi_environ']  
 pp = pprint.PrettyPrinter(indent=4)  
+
+products: [] // <-- prefer to use this, but get error "products.map is not a function" in Products.js
