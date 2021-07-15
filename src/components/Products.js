@@ -16,17 +16,19 @@ class Products extends Component {
   static contextType = Context;
 
   async componentDidMount(){
-    let query = this.props.history.location?.search 
-    query ? 
-      Sentry.configureScope(scope => {
-        scope.setTag("se", query.split("se=").pop())
-      })
-      :console.log("no query string")
-
     const { products } = this.context;
-    
+
+    let se
+    Sentry.withScope(function(scope) {
+      se = scope._tags.se
+      console.log("scope._tags.se", se)
+    });
+
     let result = await fetch(`${BACKEND}/products`, {
       method: "GET",
+      headers: {
+        'se': se
+      }
     })
       .then(response => { return response.text() })
       .catch((err) => { throw Error(err) })
