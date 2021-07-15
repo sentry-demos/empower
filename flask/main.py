@@ -106,9 +106,19 @@ def unhandled_exception():
 
 @app.before_request
 def sentry_event_context():
+    print(" > REQUEST.HEADERS", request.headers)
+    
     se = request.headers.get('se')
     if se not in [None, "undefined"]:
         sentry_sdk.set_tag("se", se)
+    
+    customerType = request.headers.get('customerType')
+    if customerType not in [None, "undefined"]:
+        sentry_sdk.set_tag("customerType", customerType)
+    
+    email = request.headers.get('email')
+    if email not in [None, "undefined"]:
+        sentry_sdk.set_user({ "email" : email })
 
 if __name__ == '__main__':
     i = sys.version_info

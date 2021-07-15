@@ -45,17 +45,15 @@ class Checkout extends Component {
     // Do this or the trace won't include the backend transaction
     Sentry.configureScope(scope => scope.setSpan(transaction));
 
-    let se
+    let se, customerType, email
     Sentry.withScope(function(scope) {
-      se = scope._tags.se
-      console.log("scope._tags.se", se)
+      [ se, customerType ] = [scope._tags.se, scope._tags.customerType ]
+      email = scope._user.email
     });
 
     let response = await fetch(`${BACKEND}/checkout`, {
       method: "POST",
-      headers: {
-        'se': se
-      },
+      headers: { se, customerType, email },
       body: JSON.stringify({
         cart: cart,
         form: this.state
@@ -65,8 +63,6 @@ class Checkout extends Component {
       console.log("> catches error", err)
       throw Error(err) 
     })
-
-    console.log("> response", response)
     console.log("> ok | status | statusText", response.ok, response.status, response.statusText)
 
     if (!response.ok) {

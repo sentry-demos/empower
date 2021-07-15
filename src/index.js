@@ -75,13 +75,24 @@ class App extends Component {
 
     this.cartReducer = this.cartReducer.bind(this);
     this.productsReducer = this.productsReducer.bind(this);
+    // These also get passed via request headers
+    Sentry.configureScope(scope => {
+      
+      const customerType = ["medium-plan", "large-plan", "small-plan", "enterprise"][Math.floor(Math.random() * 4)]
+      console.log("index CUSTEROMTYPE", customerType)
+      scope.setTag("customerType", customerType )
+      
+      let queryParam = history.location.search
+      if (queryParam.includes("se=")) {
+        const se = queryParam.split("se=").pop()
+        console.log("index SE", se)
+        scope.setTag("se", se)
+      }
 
-    let queryParam = history.location.search
-    if (queryParam) {
-      Sentry.configureScope(scope => {
-        scope.setTag("se", queryParam.split("se=").pop())
-      })
-    }
+      let email = Math.random().toString(36).substring(2, 6) + "@yahoo.com";
+      console.log("index EMAIL", email)
+      scope.setUser({ email: email })
+    })
   }
 
   productsReducer({ action, response }) {
