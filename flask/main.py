@@ -1,7 +1,6 @@
 import datetime
 import os
 import sys
-# from flask import abort, jsonify
 from flask import Flask, json, request, make_response
 from flask_cors import CORS
 from dotenv import load_dotenv
@@ -104,6 +103,20 @@ def handled_exception():
 def unhandled_exception():
     obj = {}
     obj['keyDoesntExist']
+
+@app.before_request
+def sentry_event_context():
+    se = request.headers.get('se')
+    if se not in [None, "undefined"]:
+        sentry_sdk.set_tag("se", se)
+    
+    customerType = request.headers.get('customerType')
+    if customerType not in [None, "undefined"]:
+        sentry_sdk.set_tag("customerType", customerType)
+    
+    email = request.headers.get('email')
+    if email not in [None, "undefined"]:
+        sentry_sdk.set_user({ "email" : email })
 
 if __name__ == '__main__':
     i = sys.version_info

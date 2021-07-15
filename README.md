@@ -117,9 +117,4 @@ https://reactjs.org/docs/hooks-state.html
 Context
 https://reactjs.org/docs/hooks-effect.html
 
-
 https://docs.sentry.io/platforms/python/guides/flask/configuration/filtering/#using-sampling-to-filter-transaction-events
-
-Pretty printing in python  
-stuff=sampling_context['wsgi_environ']  
-pp = pprint.PrettyPrinter(indent=4)  

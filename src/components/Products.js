@@ -17,9 +17,16 @@ class Products extends Component {
 
   async componentDidMount(){
     const { products } = this.context;
-    
+
+    let se, customerType, email
+    Sentry.withScope(function(scope) {
+      [ se, customerType ] = [scope._tags.se, scope._tags.customerType ]
+      email = scope._user.email
+    });
+
     let result = await fetch(`${BACKEND}/products`, {
       method: "GET",
+      headers: { se, customerType, email }
     })
       .then(response => { return response.text() })
       .catch((err) => { throw Error(err) })

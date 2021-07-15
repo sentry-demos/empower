@@ -8,11 +8,9 @@ import { createBrowserHistory } from 'history';
 import { Router, Switch, Route } from 'react-router-dom';
 
 import ScrollToTop from './components/ScrollToTop';
-
 import Button from './components/ButtonLink';
 import Footer from './components/Footer';
 import Nav from './components/Nav';
-
 import About from './components/About';
 import Cart from './components/Cart';
 import Checkout from './components/Checkout';
@@ -24,10 +22,6 @@ import NotFound from './components/NotFound';
 import Product from './components/Product';
 import Products from './components/Products';
 import ProductsJoin from './components/ProductsJoin';
-// import productOne from './components/products/1';
-// import productTwo from './components/products/2';
-// import productThree from './components/products/3';
-// import productFour from './components/products/4';
 
 import plantsBackground from './assets/plants-background-img.jpg';
 
@@ -40,7 +34,7 @@ let ENVIRONMENT
 console.log("window.location", window.location)
 if (window.location.hostname === "localhost") {
   ENVIRONMENT = "test"
-} else {
+} else { // App Engine
   ENVIRONMENT = "production"
 }
 const DSN = process.env.REACT_APP_DSN
@@ -60,13 +54,12 @@ Sentry.init({
   release: RELEASE,
   environment: ENVIRONMENT,
   beforeSend(event) {
-    // console.log("event",event)
     return event;
   }
-  // debug:true
 });
 
 class App extends Component {
+  
   constructor() {
     super();
     this.state = {
@@ -78,11 +71,26 @@ class App extends Component {
       products: {
         response: []
       }
-      // products: [] // <-- prefer to use this, but get error "products.map is not a function" in Products.js
     };
 
     this.cartReducer = this.cartReducer.bind(this);
     this.productsReducer = this.productsReducer.bind(this);
+    // These also get passed via request headers
+    Sentry.configureScope(scope => {
+      
+      const customerType = ["medium-plan", "large-plan", "small-plan", "enterprise"][Math.floor(Math.random() * 4)]
+      scope.setTag("customerType", customerType )
+      
+      let queryParam = history.location.search
+      if (queryParam.includes("se=")) {
+        const se = queryParam.split("se=").pop()
+        console.log("se", se)
+        scope.setTag("se", se)
+      }
+
+      let email = Math.random().toString(36).substring(2, 6) + "@yahoo.com";
+      scope.setUser({ email: email })
+    })
   }
 
   productsReducer({ action, response }) {
@@ -159,20 +167,10 @@ class App extends Component {
                 <Route path="/complete" component={Complete} />
                 <Route path="/error" component={CompleteError} />
                 <Route path="/cra" component={Cra} />
-                <SentryRoute
-                  path="/employee/:slug"
-                  component={Employee}
-                ></SentryRoute>
-                <SentryRoute
-                  path="/product/:id"
-                  component={Product}
-                ></SentryRoute>
-                <Route path="/products">
-                  <Products />
-                </Route>
-                <Route path="/products-join">
-                  <ProductsJoin />
-                </Route>
+                <SentryRoute path="/employee/:slug" component={Employee}></SentryRoute>
+                <SentryRoute path="/product/:id" component={Product}></SentryRoute>
+                <Route path="/products" component={Products} />
+                <Route path="/products-join" component={ProductsJoin} />
                 <Route component={NotFound} />
               </Switch>
             </div>
