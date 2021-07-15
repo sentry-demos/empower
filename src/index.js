@@ -8,11 +8,9 @@ import { createBrowserHistory } from 'history';
 import { Router, Switch, Route } from 'react-router-dom';
 
 import ScrollToTop from './components/ScrollToTop';
-
 import Button from './components/ButtonLink';
 import Footer from './components/Footer';
 import Nav from './components/Nav';
-
 import About from './components/About';
 import Cart from './components/Cart';
 import Checkout from './components/Checkout';
@@ -24,10 +22,6 @@ import NotFound from './components/NotFound';
 import Product from './components/Product';
 import Products from './components/Products';
 import ProductsJoin from './components/ProductsJoin';
-// import productOne from './components/products/1';
-// import productTwo from './components/products/2';
-// import productThree from './components/products/3';
-// import productFour from './components/products/4';
 
 import plantsBackground from './assets/plants-background-img.jpg';
 
@@ -38,9 +32,9 @@ const SentryRoute = Sentry.withSentryRouting(Route);
 
 let ENVIRONMENT
 console.log("window.location", window.location)
-if (window.location.hostname === "localhost") {
+if (window.location.hostname === "localhost") { // npm start, npm run build (run.sh)
   ENVIRONMENT = "test"
-} else {
+} else { // App Engine
   ENVIRONMENT = "production"
 }
 const DSN = process.env.REACT_APP_DSN
@@ -60,13 +54,12 @@ Sentry.init({
   release: RELEASE,
   environment: ENVIRONMENT,
   beforeSend(event) {
-    // console.log("event",event)
     return event;
   }
-  // debug:true
 });
 
 class App extends Component {
+  
   constructor() {
     super();
     this.state = {
@@ -78,11 +71,17 @@ class App extends Component {
       products: {
         response: []
       }
-      // products: [] // <-- prefer to use this, but get error "products.map is not a function" in Products.js
     };
 
     this.cartReducer = this.cartReducer.bind(this);
     this.productsReducer = this.productsReducer.bind(this);
+
+    let queryParam = history.location.search
+    if (queryParam) {
+      Sentry.configureScope(scope => {
+        scope.setTag("se", queryParam.split("se=").pop())
+      })
+    }
   }
 
   productsReducer({ action, response }) {
