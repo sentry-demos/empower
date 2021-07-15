@@ -107,8 +107,8 @@ def unhandled_exception():
 @app.before_request
 def sentry_event_context():
     se = request.headers.get('se')
-    print('\n> se', se)
-    sentry_sdk.set_tag("se", se)
+    if se not in [None, "undefined"]:
+        sentry_sdk.set_tag("se", se)
 
 if __name__ == '__main__':
     i = sys.version_info
