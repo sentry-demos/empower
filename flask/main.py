@@ -1,7 +1,6 @@
 import datetime
 import os
 import sys
-# from flask import abort, jsonify
 from flask import Flask, json, request, make_response
 from flask_cors import CORS
 from dotenv import load_dotenv
@@ -105,17 +104,11 @@ def unhandled_exception():
     obj = {}
     obj['keyDoesntExist']
 
-# TODO - when user arrives at your site, you don't know their email yet. email normally from a session/login, or signup/checkout field.
 @app.before_request
 def sentry_event_context():
     se = request.headers.get('se')
-    print('\n> request.headers se', se)
+    print('\n> se', se)
     sentry_sdk.set_tag("se", se)
-    # GLOBAL "configure_scope"
-    # print('\n> request.headers email', request.headers.get('email'))
-    # with sentry_sdk.configure_scope() as scope:
-        # scope.user = { "email" : request.headers.get('email') }
-        # scope.user = { "email" : request.headers.get('email') }
 
 if __name__ == '__main__':
     i = sys.version_info

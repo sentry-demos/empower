@@ -49,7 +49,6 @@ class Checkout extends Component {
       method: "POST",
       headers: {
         "se": "will"
-        // "email": this.state.email // email here is already in the body
       },
       body: JSON.stringify({
         cart: cart,
