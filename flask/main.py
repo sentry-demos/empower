@@ -106,8 +106,6 @@ def unhandled_exception():
 
 @app.before_request
 def sentry_event_context():
-    print(" > REQUEST.HEADERS", request.headers)
-    
     se = request.headers.get('se')
     if se not in [None, "undefined"]:
         sentry_sdk.set_tag("se", se)

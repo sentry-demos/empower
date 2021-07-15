@@ -79,18 +79,16 @@ class App extends Component {
     Sentry.configureScope(scope => {
       
       const customerType = ["medium-plan", "large-plan", "small-plan", "enterprise"][Math.floor(Math.random() * 4)]
-      console.log("index CUSTEROMTYPE", customerType)
       scope.setTag("customerType", customerType )
       
       let queryParam = history.location.search
       if (queryParam.includes("se=")) {
         const se = queryParam.split("se=").pop()
-        console.log("index SE", se)
+        console.log("se", se)
         scope.setTag("se", se)
       }
 
       let email = Math.random().toString(36).substring(2, 6) + "@yahoo.com";
-      console.log("index EMAIL", email)
       scope.setUser({ email: email })
     })
   }
