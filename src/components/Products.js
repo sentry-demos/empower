@@ -41,7 +41,6 @@ class Products extends Component {
 
   render() {
     const { cart, products } = this.context;
-
     return products.response.length > 0 ? (
       <div>
         <ul className="products-list">

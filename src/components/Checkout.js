@@ -45,7 +45,7 @@ class Checkout extends Component {
     // Do this or the trace won't include the backend transaction
     Sentry.configureScope(scope => scope.setSpan(transaction));
 
-    let se // TODO try configureScope so it persists after the error?
+    let se
     Sentry.withScope(function(scope) {
       se = scope._tags.se
       console.log("scope._tags.se", se)
