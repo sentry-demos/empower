@@ -196,8 +196,7 @@ function Home() {
       <div className="hero-content">
         <h1>Empower your plants</h1>
         <p>Keep your houseplants happy.</p>
-        <Button to="/products" visibility="visible">Browse products</Button>
-        <Button to="/products-join" visibility="hidden">Browse products-join</Button>
+        <Button to="/products">Browse products</Button>
       </div>
     </div>
   );

@@ -16,7 +16,6 @@ def test_add_to_cart(driver):
 
             # Clicks the 'Browse products' button to load /products page
             browse_btn = driver.find_element_by_css_selector('.btn')
-
             browse_btn.click()
 
             add_to_cart_btn = driver.find_element_by_css_selector('.products-list button')
