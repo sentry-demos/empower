@@ -73,7 +73,9 @@ def get_products_join():
             result["reviews"] = []
 
             for review in reviews:
-                result["reviews"].append(dict(review))
+                productId=review[1]
+                if productId == product["id"]:
+                    result["reviews"].append(dict(review))
             results.append(result)
 
         return json.dumps(results, default=str)
