@@ -43,11 +43,16 @@ class Products extends Component {
         <ul className="products-list">
           {products.response.map((product) => {
             const itemLink = '/product/' + product.id;
-            const averageRating = (product.reviews.reduce((a,b) => a + (b["rating"] || 0),0) / 3).toFixed(1)
-            // X Star Rating
-            // Rate X Stars
-            // X Stars
-            // values 4.0, 5.7, consistent with one decimal place here
+            const averageRating = (product.reviews.reduce((a,b) => a + (b["rating"] || 0),0) / product.reviews.length).toFixed(1)
+
+            let stars = [1,2,3,4,5].map((index) => {
+              if (index <= averageRating) {
+                return (<span className="star" key={index}>&#9733;</span>)
+              } else {
+                return (<span className="star" key={index}>&#9734;</span>)
+              }
+            })
+
             return (
               <li key={product.id}>
                 <div>
@@ -65,7 +70,7 @@ class Products extends Component {
                   >
                     Add to cart — ${product.price}.00
                   </button>
-                  <p>{averageRating} Star Rating</p>
+                  <p>{stars} ({product.reviews.length})</p>
                 </div>
               </li>
             );
