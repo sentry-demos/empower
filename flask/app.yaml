@@ -1,2 +1,2 @@
-service: application-monitoring-flask
+service: -<SERVICE_NAME_HERE>-
 runtime: python38

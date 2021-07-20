@@ -22,6 +22,12 @@ Update your endpoint (URL) in `endpoints.yaml`
 http://application-monitoring-react-dot-sales-engineering-sf.appspot.com/ <-- '/' at end?  
 http://localhost:5000/  
 
+Saucelabs Authentication  
+```
+export SAUCE_USERNAME=<>
+export SAUCE_ACCESS_KEY=<>
+```
+
 ## FrontEnd / Selenium (`frontend_tests` directory)
 Pulls up Sentry frontend in various browsers in parallel via selenium scripts.
 Test case will add items to cart and then click checkout
@@ -32,6 +38,11 @@ py.test -s -n 2 frontend_tests
 
 `-n` is for number of threads
 
+```
+nohup ./script.sh >/dev/null 2>&1 &
+ps fjx
+kill -9 <PID>
+```
 
 # Additional Setup instructions/context
 ### Python2

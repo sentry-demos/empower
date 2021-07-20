@@ -14,6 +14,7 @@ def test_add_to_cart(driver):
         for i in range(random.randrange(20)):
             driver.get(endpoint)
 
+            # Clicks the 'Browse products' button to load /products page
             browse_btn = driver.find_element_by_css_selector('.btn')
             browse_btn.click()
 

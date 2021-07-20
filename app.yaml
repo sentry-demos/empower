@@ -1,6 +1,6 @@
   
 env: standard
-service: application-monitoring-react
+service: -<SERVICE_NAME_HERE>-
 runtime: nodejs14
 
 handlers:
