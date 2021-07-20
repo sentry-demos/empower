@@ -166,7 +166,3 @@ input[type='text'] {
   /* makes the star bigger */
   font-size: 21px;
 }
-
-.btn-hidden {
-  visibility: hidden;
-}
