@@ -28,6 +28,10 @@ export SAUCE_USERNAME=<>
 export SAUCE_ACCESS_KEY=<>
 ```
 
+```
+chmod u+x tests/script.sh
+```
+
 ## FrontEnd / Selenium (`frontend_tests` directory)
 Pulls up Sentry frontend in various browsers in parallel via selenium scripts.
 Test case will add items to cart and then click checkout
