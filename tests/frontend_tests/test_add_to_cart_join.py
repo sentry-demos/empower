@@ -12,5 +12,6 @@ def test_add_to_cart(driver):
 
     for endpoint in endpoints:
         for i in range(random.randrange(20)):
-            driver.get(endpoint + "/products-join")
+            endpoint_products_join = endpoint + "/products-join"
+            driver.get(endpoint_products_join)
             time.sleep(random.randrange(3) + 3)
