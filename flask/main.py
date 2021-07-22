@@ -75,7 +75,10 @@ def success():
 def products():    
     print('/products')
     try:
-        rows = get_products()
+        with sentry_sdk.start_span(op="get_products", description="database") as span:
+            rows = get_products()
+            # span.set_tag("http.status_code", response.status_code)
+            # span.set_data("http.foobarsessionid", get_foobar_sessionid())
     except Exception as err:
         sentry_sdk.capture_exception(err)
         raise(err)

@@ -36,22 +36,31 @@ else:
 def get_products():
     results = []
     try:
-        connection = db.connect()
-        products = connection.execute(
-            "SELECT * FROM products"
-        ).fetchall()
-        
-        for product in products:
-            reviews = connection.execute(
-                "SELECT * FROM reviews WHERE productId = {}".format(product.id)
-            ).fetchall()
-            result = dict(product)
-            result["reviews"] = []
+        with sentry_sdk.start_span(op="get_products", description="db.connect"):
+            connection = db.connect()
 
-            for review in reviews:
-                result["reviews"].append(dict(review))
-            results.append(result)
-        return json.dumps(results, default=str)
+        with sentry_sdk.start_span(op="products", description="query") as span:
+            products = connection.execute(
+                "SELECT * FROM products"
+            ).fetchall()
+            span.set_tag("totalProducts",len(products))
+            span.set_data("data",products)
+        
+        with sentry_sdk.start_span(op="reviews", description="query") as span:
+            for product in products:
+                reviews = connection.execute(
+                    "SELECT * FROM reviews WHERE productId = {}".format(product.id)
+                ).fetchall()
+                result = dict(product)
+                result["reviews"] = []
+
+                for review in reviews:
+                    result["reviews"].append(dict(review))
+                results.append(result)
+        
+        with sentry_sdk.start_span(op="serialization", description="json"):
+            result = json.dumps(results, default=str)
+        return result
     except Exception as err:
         raise(err)
 
@@ -59,14 +68,18 @@ def get_products():
 def get_products_join():
     results = []
     try:
-        connection = db.connect()
-        products = connection.execute(
-            "SELECT * FROM products"
-        ).fetchall()
+        with sentry_sdk.start_span(op="get_products", description="db.connect"):
+            connection = db.connect()
+        
+        with sentry_sdk.start_span(op="products", description="query") as span:
+            products = connection.execute(
+                "SELECT * FROM products"
+            ).fetchall()
 
-        reviews = connection.execute(
-            "SELECT reviews.id, products.id AS productid, reviews.rating, reviews.customerId, reviews.description, reviews.created FROM reviews INNER JOIN products ON reviews.productId = products.id"
-        ).fetchall()
+        with sentry_sdk.start_span(op="products.join.reviews", description="query") as span:
+            reviews = connection.execute(
+                "SELECT reviews.id, products.id AS productid, reviews.rating, reviews.customerId, reviews.description, reviews.created FROM reviews INNER JOIN products ON reviews.productId = products.id"
+            ).fetchall()
 
         for product in products:
             result = dict(product)
@@ -78,7 +91,9 @@ def get_products_join():
                     result["reviews"].append(dict(review))
             results.append(result)
 
-        return json.dumps(results, default=str)
+        with sentry_sdk.start_span(op="serialization", description="json"):
+            result = json.dumps(results, default=str)
+        return result
     except Exception as err:
         raise(err)
 
