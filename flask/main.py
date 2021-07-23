@@ -5,7 +5,7 @@ from flask import Flask, json, request, make_response
 from flask_cors import CORS
 from dotenv import load_dotenv
 from db import get_products, get_products_join, get_inventory
-from utils import release
+from utils import release, wait
 import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
 from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
@@ -59,6 +59,7 @@ def checkout():
     print("> /checkout inventory", inventory)
 
     with sentry_sdk.start_span(op="process_order", description="function"):
+        wait(operator.ge, 14, .5)
         quantities = cart['quantities']
         for cartItem in quantities:
             for inventoryItem in inventory:

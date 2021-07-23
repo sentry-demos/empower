@@ -1,8 +1,10 @@
 import json
+import operator
 import os
 import sentry_sdk
 import sqlalchemy
 from sqlalchemy import create_engine
+from utils import wait
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -44,6 +46,7 @@ def get_products():
             ).fetchall()
             span.set_tag("totalProducts",len(products))
             span.set_data("products",products)
+            wait(operator.le, 12, 1)
         
         with sentry_sdk.start_span(op="get_products.reviews", description="db.query") as span:
             for product in products:
