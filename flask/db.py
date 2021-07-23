@@ -41,12 +41,12 @@ def get_products():
             connection = db.connect()
 
         with sentry_sdk.start_span(op="get_products", description="db.query") as span:
+            wait(operator.le, 12, 1)
             products = connection.execute(
                 "SELECT * FROM products"
             ).fetchall()
             span.set_tag("totalProducts",len(products))
             span.set_data("products",products)
-            wait(operator.le, 12, 1)
         
         with sentry_sdk.start_span(op="get_products.reviews", description="db.query") as span:
             for product in products:
