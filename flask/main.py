@@ -51,20 +51,22 @@ def checkout():
 
     inventory = []
     try:
-        inventory = get_inventory(cart)
+        with sentry_sdk.start_span(op="/checkout.get_inventory", description="function"):
+            inventory = get_inventory(cart)
     except Exception as err:
         print(err)
         sentry_sdk.capture_exception(err)
     print("> /checkout inventory", inventory)
 
-    quantities = cart['quantities']
-    for cartItem in quantities:
-        for inventoryItem in inventory:
-            print("> inventoryItem.count", inventoryItem['count'])
-            if (inventoryItem.count < quantities[cartItem]):
-                raise Exception("Not enough inventory for " + "product")
+    with sentry_sdk.start_span(op="process_order", description="function"):
+        quantities = cart['quantities']
+        for cartItem in quantities:
+            for inventoryItem in inventory:
+                print("> inventoryItem.count", inventoryItem['count'])
+                if (inventoryItem.count < quantities[cartItem]):
+                    raise Exception("Not enough inventory for " + "product")
         
-    response = make_response("response from backend")
+    response = make_response("success")
     return response
  
 @app.route('/success', methods=['GET'])
@@ -73,12 +75,9 @@ def success():
 
 @app.route('/products', methods=['GET'])
 def products():    
-    print('/products')
     try:
-        with sentry_sdk.start_span(op="get_products", description="database") as span:
+        with sentry_sdk.start_span(op="/products.get_products", description="function"):
             rows = get_products()
-            # span.set_tag("http.status_code", response.status_code)
-            # span.set_data("http.foobarsessionid", get_foobar_sessionid())
     except Exception as err:
         sentry_sdk.capture_exception(err)
         raise(err)
@@ -86,9 +85,9 @@ def products():
 
 @app.route('/products-join', methods=['GET'])
 def products_join():    
-    print('/products-join')
     try:
-        rows = get_products_join()
+        with sentry_sdk.start_span(op="/products-join.get_products_join", description="function"):
+            rows = get_products_join()
     except Exception as err:
         sentry_sdk.capture_exception(err)
         raise(err)
