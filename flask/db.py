@@ -41,9 +41,9 @@ def get_products():
             connection = db.connect()
 
         with sentry_sdk.start_span(op="get_products", description="db.query") as span:
-            wait(operator.le, 12, 1)
+            # TODO randomize pg_sleep(n) here on a log distribution of 1 - 10 seconds
             products = connection.execute(
-                "SELECT * FROM products"
+                "SELECT *, pg_sleep(2) FROM products"
             ).fetchall()
             span.set_tag("totalProducts",len(products))
             span.set_data("products",products)
