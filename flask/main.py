@@ -59,6 +59,7 @@ def checkout():
     print("> /checkout inventory", inventory)
 
     with sentry_sdk.start_span(op="process_order", description="function"):
+        # TODO put somewhere else?
         wait(operator.ge, 14, .5)
         quantities = cart['quantities']
         for cartItem in quantities:
