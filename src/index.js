@@ -85,9 +85,6 @@ class App extends Component {
       }
     };
 
-    // this.cartReducer = this.cartReducer.bind(this);
-    // this.productsReducer = this.productsReducer.bind(this);
-
     // These also get passed via request headers
     Sentry.configureScope(scope => {
       
@@ -106,57 +103,6 @@ class App extends Component {
     })
   }
 
-  // productsReducer({ action, response }) {
-  //   if (!response) throw new Error('Products reducer requires a response');
-    
-  //   const products = { ...this.state.products };
-
-  //   switch (action) {
-  //     case 'add': {
-  //       products.response = response
-  //       // products = response // <-- prefer to use this, but get error "products.map is not a function" in Products.js
-  //       break;
-  //     }
-  //     default:
-  //       throw new Error('Unknown products action');
-  //   }
-  //   this.setState({ products })
-  // }
-  // cartReducer({ action, product }) {
-  //   if (!product) throw new Error('Cart reducer requires a product');
-
-  //   const cart = { ...this.state.cart };
-
-  //   switch (action) {
-  //     case 'add': {
-  //       let item = cart.items.find((x) => x.id === product.id);
-  //       if (!item) cart.items.push(product);
-  //       cart.quantities[product.id] = cart.quantities[product.id] || 0;
-  //       cart.quantities[product.id]++;
-  //       break;
-  //     }
-  //     case 'remove': {
-  //       let item = cart.items.find((x) => x.id === product.id);
-  //       if (!item) return cart;
-  //       cart.quantities[product.id]--;
-  //       if (cart.quantities[product.id] === 0) {
-  //         delete cart.quantities[product.id];
-  //         const i = cart.items.findIndex((x) => x.id === product.id);
-  //         cart.items.splice(i, 1);
-  //       }
-  //       break;
-  //     }
-  //     default:
-  //       throw new Error('Unknown cart action');
-  //   }
-
-  //   cart.total = cart.items.reduce((a, item) => {
-  //     const itemTotal = item.price * cart.quantities[item.id];
-  //     return a + itemTotal;
-  //   }, 0);
-
-  //   this.setState({ cart });
-  // }
 
   render() {
     return (
