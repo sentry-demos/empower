@@ -63,8 +63,6 @@ class Cart extends Component {
   }
 }
 
-// export default Sentry.withProfiler(Cart, { name: "Cart"})
-
 const mapStateToProps = (state, ownProps) => {
   return {
     cart: state.cart,

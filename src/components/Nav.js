@@ -43,7 +43,7 @@ class Nav extends Component {
             <div id="top-right-links">
               <Link to="/products">Products</Link>
               <Link to="/cart">
-                Cart1
+                Cart
                 {cart.items.length > 0 ? <span> (${cart.total}.00)</span> : ''}
               </Link>
             </div>

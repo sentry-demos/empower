@@ -1,4 +1,4 @@
-
+// products: [productOne, productTwo, productThree, productFour]
 const initialState = {
     cart: {
         items: [],
@@ -30,7 +30,6 @@ const initialState = {
             const itemTotal = item.price * cart.quantities[item.id];
             return a + itemTotal;
           }, 0);
-          console.log("> CART", cart)
           return Object.assign({}, newState(cart, state.products))
 
         case "REMOVE_PRODUCT":
