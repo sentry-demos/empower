@@ -4,6 +4,9 @@ import { Link } from 'react-router-dom';
 import './products.css';
 import * as Sentry from '@sentry/react';
 
+import { connect } from 'react-redux'
+import { setProducts, addProduct } from '../actions'
+
 var BACKEND = ""
 if (window.location.hostname === "localhost") {
   BACKEND = "http://localhost:8080"
@@ -16,7 +19,7 @@ class Products extends Component {
   static contextType = Context;
 
   async componentDidMount(){
-    const { products } = this.context;
+    const { cart, products } = this.props;
 
     let se, customerType, email
     Sentry.withScope(function(scope) {
@@ -33,16 +36,17 @@ class Products extends Component {
 
     console.log('> Products from backend', JSON.parse(result))
     // Sentry.captureException(new Error("this is an exception"))
-    products.update({ action: 'add', response: JSON.parse(result) })
+    this.props.setProducts(JSON.parse(result))
     return result
   }
 
   render() {
-    const { cart, products } = this.context;
-    return products.response.length > 0 ? (
+    const { products } = this.props;
+    
+    return products.length > 0 ? (
       <div>
         <ul className="products-list">
-          {products.response.map((product) => {
+          {products.map((product) => {
             const itemLink = '/product/' + product.id;
             const averageRating = (product.reviews.reduce((a,b) => a + (b["rating"] || 0),0) / product.reviews.length).toFixed(1)
 
@@ -67,7 +71,7 @@ class Products extends Component {
                     </div>
                   </Link>
                   <button
-                    onClick={() => cart.update({ action: 'add', product })}
+                    onClick={() => this.props.addProduct(product)}
                   >
                     Add to cart — ${product.price}.00
                   </button>
@@ -84,4 +88,14 @@ class Products extends Component {
   }
 }
 
-export default Sentry.withProfiler(Products, { name: "Products"})
+const mapStateToProps = (state, ownProps) => {
+  return {
+    cart: state.cart,
+    products: state.products
+  }
+}
+
+export default connect(
+  mapStateToProps,
+  { setProducts, addProduct }
+)(Sentry.withProfiler(Products, { name: "Products"}))

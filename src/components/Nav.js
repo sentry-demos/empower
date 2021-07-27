@@ -2,6 +2,10 @@ import { Component } from 'react';
 import Context from '../utils/context';
 import { Link } from 'react-router-dom';
 import './nav.css';
+import * as Sentry from '@sentry/react';
+
+import { connect } from 'react-redux'
+import { resetCart, addProduct, setProducts } from '../actions'
 
 import EPlogo from '../assets/empowerplant-logo.svg';
 
@@ -9,7 +13,8 @@ class Nav extends Component {
   static contextType = Context;
 
   render() {
-    const { cart } = this.context;
+    const { cart } = this.props;
+
     return (
       <>
         <nav id="top-nav" className="show-mobile">
@@ -19,6 +24,7 @@ class Nav extends Component {
             </Link>
 
             <div id="top-right-links">
+              <Link to="/about">About</Link>
               <Link to="/products">Products</Link>
               <Link to="/cart">
                 Cart
@@ -36,6 +42,7 @@ class Nav extends Component {
             </Link>
 
             <div id="top-right-links">
+              <Link to="/about">About</Link>
               <Link to="/products">Products</Link>
               <Link to="/cart">
                 Cart
@@ -49,4 +56,14 @@ class Nav extends Component {
   }
 }
 
-export default Nav;
+const mapStateToProps = (state, ownProps) => {
+  return {
+    cart: state.cart,
+    products: state.products
+  }
+}
+
+export default connect(
+  mapStateToProps,
+  { resetCart, addProduct, setProducts }
+)(Sentry.withProfiler(Nav, { name: "Nav"}))

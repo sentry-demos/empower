@@ -1,10 +1,11 @@
-import { useContext } from 'react';
 import Context from '../utils/context';
 import { Link } from 'react-router-dom';
 import './complete.css';
+import { useSelector } from 'react-redux'
 
 function Complete(props) {
-  const { cart } = useContext(Context);
+  const cart = useSelector((state) => state.cart)
+
   const RandomNumber = Math.floor(Math.random() * 99999) + 10000;
 
   let completeOrderInfo = props.history.location.state
