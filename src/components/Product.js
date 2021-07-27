@@ -7,6 +7,9 @@ import productTwo from './products/2';
 import productThree from './products/3';
 import productFour from './products/4';
 
+import { connect } from 'react-redux'
+import { setProducts, addProduct } from '../actions'
+
 class Product extends Component {
   static contextType = Context;
 
@@ -42,10 +45,11 @@ class Product extends Component {
       this.setState({ product: data });
     }
   }
-
+  
   render() {
     const { product } = this.state;
     const { cart } = this.context;
+
     let averageRating
     if (product) {
       averageRating = (product.reviews.reduce((a,b) => a + (b["rating"] || 0),0) / 3).toFixed(1)
@@ -63,7 +67,7 @@ class Product extends Component {
           <p>{product.descriptionFull}</p>
           <button
             className="add-cart-btn"
-            onClick={() => cart.update({ action: 'add', product })}
+            onClick={() => this.props.addProduct(product)}
           >
             Add to cart — ${product.price}.00
           </button>
@@ -76,4 +80,14 @@ class Product extends Component {
   }
 }
 
-export default Sentry.withProfiler(Product, { name: "Product"})
+const mapStateToProps = (state, ownProps) => {
+  return {
+    cart: state.cart,
+    products: state.products
+  }
+}
+
+export default connect(
+  mapStateToProps,
+  { addProduct }
+)(Sentry.withProfiler(Product, { name: "Products"}))

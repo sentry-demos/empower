@@ -4,11 +4,14 @@ import { Link } from 'react-router-dom';
 import './cart.css';
 import * as Sentry from '@sentry/react';
 import Button from './ButtonLink';
+import { connect } from 'react-redux'
+import { setProducts, addProduct, removeProduct } from '../actions'
 
 class Cart extends Component {
   static contextType = Context;
   render() {
-    const { cart } = this.context;
+    const { cart } = this.props;
+
     return (
       <div className="cart-container">
         <h2>Cart</h2>
@@ -30,7 +33,7 @@ class Cart extends Component {
                     <div className="quantity-adjust">
                       <button
                         onClick={() =>
-                          cart.update({ action: 'remove', product: item })
+                          this.props.removeProduct(item)
                         }
                       >
                         –
@@ -38,7 +41,7 @@ class Cart extends Component {
                       <span>{quantity}</span>
                       <button
                         onClick={() =>
-                          cart.update({ action: 'add', product: item })
+                          this.props.addProduct(item)
                         }
                       >
                         +
@@ -60,4 +63,16 @@ class Cart extends Component {
   }
 }
 
-export default Sentry.withProfiler(Cart, { name: "Cart"})
+// export default Sentry.withProfiler(Cart, { name: "Cart"})
+
+const mapStateToProps = (state, ownProps) => {
+  return {
+    cart: state.cart,
+    products: state.products
+  }
+}
+
+export default connect(
+  mapStateToProps,
+  { setProducts, addProduct, removeProduct }
+)(Sentry.withProfiler(Cart, { name: "Cart"}))

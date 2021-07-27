@@ -5,6 +5,9 @@ import { Link } from 'react-router-dom';
 // import { useHistory } from "react-router-dom";
 import './checkout.css';
 import * as Sentry from '@sentry/react';
+import { connect } from 'react-redux'
+import { setProducts, addProduct, removeProduct } from '../actions'
+
 // const history = createBrowserHistory();
 var BACKEND = ""
 if (window.location.hostname === "localhost") {
@@ -37,7 +40,7 @@ class Checkout extends Component {
   async handleSubmit(event) {
     event.preventDefault();
 
-    const { cart } = this.context;
+    const {cart} = this.props;
     console.log('Form Submitted - state', this.state);
     console.log('Form Submitted - Cart', cart);
 
@@ -190,4 +193,14 @@ class Checkout extends Component {
   }
 }
 
-export default Sentry.withProfiler(Checkout, { name: "Checkout"})
+const mapStateToProps = (state, ownProps) => {
+  return {
+    cart: state.cart,
+    products: state.products
+  }
+}
+
+export default connect(
+  mapStateToProps,
+  { setProducts, addProduct }
+)(Sentry.withProfiler(Checkout, { name: "Checkout"}))
