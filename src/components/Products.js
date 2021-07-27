@@ -3,7 +3,6 @@ import Context from '../utils/context';
 import { Link } from 'react-router-dom';
 import './products.css';
 import * as Sentry from '@sentry/react';
-
 import { connect } from 'react-redux'
 import { setProducts, addProduct } from '../actions'
 
@@ -19,8 +18,6 @@ class Products extends Component {
   static contextType = Context;
 
   async componentDidMount(){
-    const { cart, products } = this.props;
-
     let se, customerType, email
     Sentry.withScope(function(scope) {
       [ se, customerType ] = [scope._tags.se, scope._tags.customerType ]
@@ -42,7 +39,6 @@ class Products extends Component {
 
   render() {
     const { products } = this.props;
-    
     return products.length > 0 ? (
       <div>
         <ul className="products-list">

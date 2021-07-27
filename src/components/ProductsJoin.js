@@ -3,6 +3,8 @@ import Context from '../utils/context';
 import { Link } from 'react-router-dom';
 import './products.css';
 import * as Sentry from '@sentry/react';
+import { connect } from 'react-redux'
+import { setProducts, addProduct } from '../actions'
 
 var BACKEND = ""
 if (window.location.hostname === "localhost") {
@@ -11,12 +13,10 @@ if (window.location.hostname === "localhost") {
   BACKEND = process.env.REACT_APP_BACKEND
 }
 
-class Products extends Component {
+class ProductsJoin extends Component {
   static contextType = Context;
 
   async componentDidMount(){
-    const { products } = this.context;
-
     let se, customerType, email
     Sentry.withScope(function(scope) {
       [ se, customerType ] = [scope._tags.se, scope._tags.customerType ]
@@ -31,17 +31,17 @@ class Products extends Component {
       .catch((err) => { throw Error(err) })
 
     console.log('> Products from backend', JSON.parse(result))
-
-    products.update({ action: 'add', response: JSON.parse(result) })
+    // Sentry.captureException(new Error("this is an exception"))
+    this.props.setProducts(JSON.parse(result))
     return result
   }
 
   render() {
-    const { cart, products } = this.context;
-    return (
+    const { products } = this.props;
+    return products.length > 0 ? (
       <div>
         <ul className="products-list">
-          {products.response.map((product) => {
+          {products.map((product) => {
             const itemLink = '/product/' + product.id;
             const averageRating = (product.reviews.reduce((a,b) => a + (b["rating"] || 0),0) / product.reviews.length).toFixed(1)
 
@@ -66,7 +66,7 @@ class Products extends Component {
                     </div>
                   </Link>
                   <button
-                    onClick={() => cart.update({ action: 'add', product })}
+                    onClick={() => this.props.addProduct(product)}
                   >
                     Add to cart — ${product.price}.00
                   </button>
@@ -77,8 +77,20 @@ class Products extends Component {
           })}
         </ul>
       </div>
-    );
+    ) : (
+      <h3>Loading…</h3>
+    )
   }
 }
 
-export default Sentry.withProfiler(Products, { name: "Products"})
+const mapStateToProps = (state, ownProps) => {
+  return {
+    cart: state.cart,
+    products: state.products
+  }
+}
+
+export default connect(
+  mapStateToProps,
+  { setProducts, addProduct }
+)(Sentry.withProfiler(ProductsJoin, { name: "ProductsJoin"}))
