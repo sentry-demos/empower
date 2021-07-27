@@ -7,7 +7,7 @@ import './checkout.css';
 import * as Sentry from '@sentry/react';
 import { connect } from 'react-redux'
 import { setProducts, addProduct, removeProduct } from '../actions'
-
+import Loader from "react-loader-spinner";
 // const history = createBrowserHistory();
 var BACKEND = ""
 if (window.location.hostname === "localhost") {
@@ -23,7 +23,9 @@ class Checkout extends Component {
     super();
     this.handleSubmit = this.handleSubmit.bind(this);
     this.handleInputChange = this.handleInputChange.bind(this);
-    this.state = {};
+    this.state = {
+      loading: false
+    };
   }
 
   handleInputChange(event) {
@@ -54,6 +56,12 @@ class Checkout extends Component {
       email = scope._user.email
     });
 
+    this.setState({...this.state,loading: true});
+    window.scrollTo({
+      top: 0, 
+      behavior: 'auto'
+    });
+
     let response = await fetch(`${BACKEND}/checkout`, {
       method: "POST",
       headers: { se, customerType, email },
@@ -71,6 +79,8 @@ class Checkout extends Component {
     if (!response.ok) {
       Sentry.captureException(new Error(response.status + " - " + (response.statusText || "Internal Server Error")))
     }
+
+    this.setState({...this.state,loading: false});
     
     transaction.finish();
 
@@ -85,6 +95,14 @@ class Checkout extends Component {
     const { handleSubmit, handleInputChange } = this;
     return (
       <div className="checkout-container">
+        {this.state.loading ? (
+        <Loader
+        type="ThreeDots"
+        color="#f6cfb2"
+        height={150}
+        width={150}
+        />) : (
+        <>
         <h2>Checkout</h2>
         <form className="checkout-form" onSubmit={handleSubmit}>
           <h4>Contact information</h4>
@@ -188,7 +206,9 @@ class Checkout extends Component {
           />
         </form>
         <Link to="/cart">Back to cart</Link>
-      </div>
+        </>
+        )}
+        </div>
     );
   }
 }

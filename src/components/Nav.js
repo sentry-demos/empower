@@ -24,6 +24,7 @@ class Nav extends Component {
             </Link>
 
             <div id="top-right-links">
+              <Link to="/about">About</Link>
               <Link to="/products">Products</Link>
               <Link to="/cart">
                 Cart
@@ -41,6 +42,7 @@ class Nav extends Component {
             </Link>
 
             <div id="top-right-links">
+              <Link to="/about">About</Link>
               <Link to="/products">Products</Link>
               <Link to="/cart">
                 Cart
