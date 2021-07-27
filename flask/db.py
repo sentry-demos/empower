@@ -1,8 +1,10 @@
 import json
+import operator
 import os
 import sentry_sdk
 import sqlalchemy
 from sqlalchemy import create_engine
+from utils import weighter
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -13,7 +15,6 @@ PASSWORD = os.getenv("PASSWORD")
 FLASK_ENV = os.environ.get("FLASK_ENV")
 CLOUD_SQL_CONNECTION_NAME = os.environ.get("CLOUD_SQL_CONNECTION_NAME")
 
-# TODO removed FLASK_ENV from .env.default, because passing it from run.sh. re-test all workflows.
 if FLASK_ENV == "test":
     print("> ENVIRONMENT test ")
     db = create_engine('postgresql://' + USERNAME + ':' + PASSWORD + '@' + HOST + ':5432/' + DATABASE)
@@ -36,22 +37,37 @@ else:
 def get_products():
     results = []
     try:
-        connection = db.connect()
-        products = connection.execute(
-            "SELECT * FROM products"
-        ).fetchall()
-        
-        for product in products:
-            reviews = connection.execute(
-                "SELECT * FROM reviews WHERE productId = {}".format(product.id)
-            ).fetchall()
-            result = dict(product)
-            result["reviews"] = []
+        with sentry_sdk.start_span(op="get_products", description="db.connect"):
+            connection = db.connect()
 
-            for review in reviews:
-                result["reviews"].append(dict(review))
-            results.append(result)
-        return json.dumps(results, default=str)
+        with sentry_sdk.start_span(op="get_products", description="db.query") as span:
+            # PROBLEM is that if you do pg_sleep(2) then it's not 2 seconds, it's somehow like 5 - 10 seconds...
+            # PROBLEM is that if you do pg_sleep(3) then it's not 3 seconds, it's somehow like 10 - 20 seconds...
+            n = weighter(operator.le, 12)
+            print("> n", n)
+
+            products = connection.execute(
+                "SELECT *, pg_sleep(%s) FROM products" % (n)
+            ).fetchall()
+            span.set_tag("totalProducts",len(products))
+            span.set_data("products",products)
+        
+        with sentry_sdk.start_span(op="get_products.reviews", description="db.query") as span:
+            for product in products:
+                reviews = connection.execute(
+                    "SELECT * FROM reviews WHERE productId = {}".format(product.id)
+                ).fetchall()
+                result = dict(product)
+                result["reviews"] = []
+
+                for review in reviews:
+                    result["reviews"].append(dict(review))
+                results.append(result)
+            span.set_data("reviews", results)
+
+        with sentry_sdk.start_span(op="serialization", description="json"):
+            result = json.dumps(results, default=str)
+        return result
     except Exception as err:
         raise(err)
 
@@ -59,26 +75,37 @@ def get_products():
 def get_products_join():
     results = []
     try:
-        connection = db.connect()
-        products = connection.execute(
-            "SELECT * FROM products"
-        ).fetchall()
+        with sentry_sdk.start_span(op="get_products_join", description="db.connect"):
+            connection = db.connect()
+        
+        with sentry_sdk.start_span(op="get_products_join", description="db.query") as span:
+            products = connection.execute(
+                "SELECT * FROM products"
+            ).fetchall()
+            span.set_tag("totalProducts",len(products))
+            span.set_data("products",products)
 
-        reviews = connection.execute(
-            "SELECT reviews.id, products.id AS productid, reviews.rating, reviews.customerId, reviews.description, reviews.created FROM reviews INNER JOIN products ON reviews.productId = products.id"
-        ).fetchall()
+        with sentry_sdk.start_span(op="get_products_join.reviews", description="db.query") as span:
+            reviews = connection.execute(
+                "SELECT reviews.id, products.id AS productid, reviews.rating, reviews.customerId, reviews.description, reviews.created FROM reviews INNER JOIN products ON reviews.productId = products.id"
+            ).fetchall()
+            span.set_data("reviews",reviews)
 
-        for product in products:
-            result = dict(product)
-            result["reviews"] = []
+        with sentry_sdk.start_span(op="get_products_join.format_results", description="function") as span:
+            for product in products:
+                result = dict(product)
+                result["reviews"] = []
 
-            for review in reviews:
-                productId=review[1]
-                if productId == product["id"]:
-                    result["reviews"].append(dict(review))
-            results.append(result)
+                for review in reviews:
+                    productId=review[1]
+                    if productId == product["id"]:
+                        result["reviews"].append(dict(review))
+                results.append(result)
+            span.set_data("results", results)
 
-        return json.dumps(results, default=str)
+        with sentry_sdk.start_span(op="serialization", description="json"):
+            result = json.dumps(results, default=str)
+        return result
     except Exception as err:
         raise(err)
 
@@ -97,10 +124,14 @@ def get_inventory(cart):
     print("> productIds", productIds)
 
     try:
-        connection = db.connect()
-        inventory = connection.execute(
-            "SELECT * FROM inventory WHERE productId in %s" % (productIds)
-        ).fetchall()
+        with sentry_sdk.start_span(op="get_inventory", description="db.connect"):
+            connection = db.connect()
+        with sentry_sdk.start_span(op="get_inventory", description="db.query") as span:
+            inventory = connection.execute(
+                "SELECT * FROM inventory WHERE productId in %s" % (productIds)
+            ).fetchall()
+            span.set_data("inventory",inventory)
+
 
     except Exception as exception:
         print(exception)
