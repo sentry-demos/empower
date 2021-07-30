@@ -34,33 +34,38 @@ pip install -r requirements.txt
 ```
 
 ## Run
+```
+cd react  
+cd flask
+```
+
 **Test**
 ```
-# Builds and serves the js bundle, uploads sourcemaps and does suspect commits
+# React w/ sourcemaps, suspect commits
 ./run.sh
 
-# Hot reload for development, no sourcemaps or suspect commits
+# React w/ hot reload
 npm start
 
 
 # Flask
-cd flask && ./run.sh
+./run.sh
 ```
 
 **Prod**
 ```
-# React, the 'build' script in package.json sets the Release
+# React
 npm run build && serve -s build
 
-# Flask, run.sh sets the Release and environment
-cd flask && ./run.sh
+# Flask
+./run.sh
 ```
 
 ## Deploy
 **Prod**
 ```
 # React
-npm run build && gcloud app deploy --version=<version>
+cd react && npm run build && gcloud app deploy --version=<version>
 
 # Flask, run.sh is not used here, so the environment will default to production...?
 cd flask && gcloud app deploy

@@ -1,3 +1,5 @@
+# Builds and serves the js bundle, uploads sourcemaps and does suspect commits
+
 RELEASE=`../release.sh`
 echo $RELEASE
 
