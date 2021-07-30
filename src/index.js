@@ -86,6 +86,10 @@ class App extends Component {
       }
     };
 
+    new PerformanceObserver(entryList => {
+      console.log(entryList.getEntries());
+    }).observe({ type: "largest-contentful-paint", buffered: true });
+
     // These also get passed via request headers
     Sentry.configureScope(scope => {
       
