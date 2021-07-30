@@ -41,10 +41,9 @@ def get_products():
             connection = db.connect()
 
         with sentry_sdk.start_span(op="get_products", description="db.query") as span:
-            # PROBLEM is that if you do pg_sleep(2) then it's not 2 seconds, it's somehow like 5 - 10 seconds...
-            # PROBLEM is that if you do pg_sleep(3) then it's not 3 seconds, it's somehow like 10 - 20 seconds...
+            # WARNING if you do pg_sleep(2) then it's not 2 seconds, it's somehow like 5 - 10 seconds...
+            # WARNING if you do pg_sleep(3) then it's not 3 seconds, it's somehow like 10 - 20 seconds...
             n = weighter(operator.le, 12)
-            print("> n", n)
 
             products = connection.execute(
                 "SELECT *, pg_sleep(%s) FROM products" % (n)
@@ -145,6 +144,5 @@ def formatArray(ids):
     numbers = ""
     for _id in ids:
         numbers += (_id + ",")
-    print("> numbers", numbers)
     output = "(" + numbers[:-1] + ")"
     return output
