@@ -101,6 +101,10 @@ class App extends Component {
 
       let email = Math.random().toString(36).substring(2, 6) + "@yahoo.com";
       scope.setUser({ email: email })
+
+      new PerformanceObserver(entryList => {
+        console.log(entryList.getEntries());
+      }).observe({ type: "largest-contentful-paint", buffered: true });
     })
   }
 
