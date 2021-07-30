@@ -1,4 +1,4 @@
-RELEASE=`./release.sh`
+RELEASE=`../release.sh`
 echo $RELEASE
 
 SENTRY_ORG=testorg-az
