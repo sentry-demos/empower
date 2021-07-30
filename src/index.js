@@ -54,6 +54,7 @@ Sentry.init({
     new Integrations.BrowserTracing({
       tracingOrigins: tracingOrigins,
       routingInstrumentation: Sentry.reactRouterV5Instrumentation(history),
+      idleTimeout: 10000
     }),
   ],
   tracesSampleRate: 1.0,
@@ -86,6 +87,10 @@ class App extends Component {
       }
     };
 
+    new PerformanceObserver(entryList => {
+      console.log(entryList.getEntries());
+    }).observe({ type: "largest-contentful-paint", buffered: true });
+
     // These also get passed via request headers
     Sentry.configureScope(scope => {
       
@@ -101,10 +106,6 @@ class App extends Component {
 
       let email = Math.random().toString(36).substring(2, 6) + "@yahoo.com";
       scope.setUser({ email: email })
-
-      new PerformanceObserver(entryList => {
-        console.log(entryList.getEntries());
-      }).observe({ type: "largest-contentful-paint", buffered: true });
     })
   }
 
