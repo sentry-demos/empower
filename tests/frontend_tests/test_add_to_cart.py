@@ -15,8 +15,13 @@ def test_add_to_cart(driver):
             driver.get(endpoint)
 
             # Clicks the 'Browse products' button to load /products page
-            browse_btn = driver.find_element_by_css_selector('.btn')
-            browse_btn.click()
+            # TODO is a navigation transaction or pageload???
+            # PRODUCTS_BUTTON = ".btn"
+            # browse_btn = driver.find_element_by_css_selector(PRODUCTS_BUTTON)
+            # browse_btn.click()
+
+            endpoint_products = endpoint + "/products"
+            driver.get(endpoint_products)
 
             add_to_cart_btn = driver.find_element_by_css_selector('.products-list button')
             for i in range(random.randrange(3) + 3):
