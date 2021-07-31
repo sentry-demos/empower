@@ -7,6 +7,7 @@ import { Integrations } from '@sentry/tracing';
 import Context from './utils/context';
 import { createBrowserHistory } from 'history';
 import { Router, Switch, Route } from 'react-router-dom';
+import crasher from './utils/errors'
 
 import { Provider } from 'react-redux'
 import { createStore, applyMiddleware, compose } from 'redux'
@@ -106,6 +107,9 @@ class App extends Component {
       let email = Math.random().toString(36).substring(2, 6) + "@yahoo.com";
       scope.setUser({ email: email })
     })
+
+    // TEST
+    crasher()
   }
 
 
@@ -147,6 +151,7 @@ ReactDOM.render(<App />, document.getElementById('root'));
 // See Transaction for everything you get, without any xhr/ajax requests going on.
 // This page doesn't have any, it's pure static content
 function Home() {
+
   const divStyle = {
     backgroundImage: 'url(' + plantsBackground + ')',
   };
