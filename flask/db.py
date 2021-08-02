@@ -44,7 +44,7 @@ def get_products():
             # WARNING if you do pg_sleep(2) then it's not 2 seconds, it's somehow like 5 - 10 seconds...
             # WARNING if you do pg_sleep(3) then it's not 3 seconds, it's somehow like 10 - 20 seconds...
             n = weighter(operator.le, 12)
-
+            print("> n",n)
             products = connection.execute(
                 "SELECT *, pg_sleep(%s) FROM products" % (n)
             ).fetchall()
@@ -54,7 +54,7 @@ def get_products():
         with sentry_sdk.start_span(op="get_products.reviews", description="db.query") as span:
             for product in products:
                 reviews = connection.execute(
-                    "SELECT * FROM reviews WHERE productId = {}".format(product.id)
+                    "SELECT *, pg_sleep(0.25) FROM reviews WHERE productId = {}".format(product.id)
                 ).fetchall()
                 result = dict(product)
                 result["reviews"] = []
