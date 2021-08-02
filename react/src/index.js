@@ -108,7 +108,6 @@ class App extends Component {
       scope.setUser({ email: email })
     })
 
-    // TEST
     crasher()
   }
 

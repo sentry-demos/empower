@@ -5,6 +5,7 @@ import './products.css';
 import * as Sentry from '@sentry/react';
 import { connect } from 'react-redux'
 import { setProducts, addProduct } from '../actions'
+import Loader from "react-loader-spinner";
 
 var BACKEND = ""
 if (window.location.hostname === "localhost") {
@@ -79,7 +80,14 @@ class Products extends Component {
         </ul>
       </div>
     ) : (
-      <h3>Loading…</h3>
+      <div className="loader-container">
+        <Loader
+          type="ThreeDots"
+          color="#f6cfb2"
+          height={150}
+          width={150}
+          />
+      </div>
     )
   }
 }

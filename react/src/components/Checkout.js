@@ -2,13 +2,12 @@ import { Component } from 'react';
 import { createBrowserHistory } from 'history';
 import Context from '../utils/context';
 import { Link } from 'react-router-dom';
-// import { useHistory } from "react-router-dom";
 import './checkout.css';
 import * as Sentry from '@sentry/react';
 import { connect } from 'react-redux'
 import { setProducts, addProduct, removeProduct } from '../actions'
 import Loader from "react-loader-spinner";
-// const history = createBrowserHistory();
+
 var BACKEND = ""
 if (window.location.hostname === "localhost") {
   BACKEND = "http://localhost:8080"
