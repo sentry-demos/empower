@@ -91,23 +91,24 @@ class App extends Component {
       console.log(entryList.getEntries());
     }).observe({ type: "largest-contentful-paint", buffered: true });
 
+    let queryParams = new URLSearchParams(history.location.search)
+
     // These also get passed via request headers
     Sentry.configureScope(scope => {
       
       const customerType = ["medium-plan", "large-plan", "small-plan", "enterprise"][Math.floor(Math.random() * 4)]
       scope.setTag("customerType", customerType )
-      
-      let queryParam = history.location.search
-      if (queryParam.includes("se=")) {
-        const se = queryParam.split("se=").pop()
-        console.log("se", se)
-        scope.setTag("se", se)
+
+      if (queryParams.get("se")) {
+        console.log("> se", queryParams.get("se"))
+        scope.setTag("se", queryParams.get("se"))
       }
 
       let email = Math.random().toString(36).substring(2, 6) + "@yahoo.com";
       scope.setUser({ email: email })
     })
 
+    // Crasher will parse the query params
     crasher()
   }
 
