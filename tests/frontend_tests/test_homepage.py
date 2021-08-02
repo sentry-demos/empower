@@ -12,5 +12,6 @@ def test_add_to_cart(driver):
 
     for endpoint in endpoints:
         for i in range(random.randrange(20)):
+            # TODO add in the queryParam for 'crasher'
             driver.get(endpoint)
             time.sleep(random.randrange(3) + 3)
