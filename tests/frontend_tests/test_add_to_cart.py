@@ -23,6 +23,7 @@ def test_add_to_cart(driver):
             endpoint_products = endpoint + "/products"
             driver.get(endpoint_products)
 
+            # "Unable to locate element", due to longer delays?
             add_to_cart_btn = driver.find_element_by_css_selector('.products-list button')
             for i in range(random.randrange(3) + 3):
                 add_to_cart_btn.click()

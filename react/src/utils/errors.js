@@ -13,7 +13,7 @@ const crasher = () => {
             console.log("> crash", crash)
             if (crash === "true" || probability(parseFloat(crash))) {
               // TODO make unique fingerprint
-              throw new Error('this is unhandled error')
+              throw new Error('this is a unhandled error test')
             }
       }
   } else {

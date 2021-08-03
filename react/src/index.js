@@ -87,9 +87,9 @@ class App extends Component {
       }
     };
 
-    new PerformanceObserver(entryList => {
-      console.log(entryList.getEntries());
-    }).observe({ type: "largest-contentful-paint", buffered: true });
+    // new PerformanceObserver(entryList => {
+    //   console.log(entryList.getEntries());
+    // }).observe({ type: "largest-contentful-paint", buffered: true });
 
     let queryParams = new URLSearchParams(history.location.search)
 

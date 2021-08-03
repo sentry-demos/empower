@@ -11,7 +11,14 @@ def test_add_to_cart(driver):
         endpoints = data_loaded['react_endpoints']
 
     for endpoint in endpoints:
+        endpoint = endpoint + "?se=tda&crash=0.2"
         for i in range(random.randrange(20)):
-            # TODO add in the queryParam for 'crasher'
+            
+            # Add queryParam crash=.5 and see how data is different
+
+            # Run once - how many /products /products-join python
+            # Run once - how many /products /products-join python, if no sleep timeouts
+
+            # Unique fingerprints somewhere, somehow
             driver.get(endpoint)
             time.sleep(random.randrange(3) + 3)
