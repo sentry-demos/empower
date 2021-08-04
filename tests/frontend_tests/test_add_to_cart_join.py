@@ -4,7 +4,8 @@ import yaml
 import random
 
 @pytest.mark.usefixtures("driver")
-def test_add_to_cart(driver):
+def test_add_to_cart_join(driver):
+    sentry_sdk.set_tag("pytestName", "test_add_to_cart_join")
 
     with open('endpoints.yaml', 'r') as stream:
         data_loaded = yaml.safe_load(stream)

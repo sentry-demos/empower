@@ -5,7 +5,8 @@ import random
 
 @pytest.mark.usefixtures("driver")
 def test_add_to_cart(driver):
-
+    sentry_sdk.set_tag("pytestName", "test_add_to_cart")
+    
     with open('endpoints.yaml', 'r') as stream:
         data_loaded = yaml.safe_load(stream)
         endpoints = data_loaded['react_endpoints']
