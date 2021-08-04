@@ -21,21 +21,22 @@ def test_add_to_cart(driver):
         sentry_sdk.set_tag("endpoint", endpoint)
         missedButtons = 0
 
-        for i in range(random.randrange(20)):
+        # for i in range(random.randrange(20)):
+        for i in range(10):
 
             # Buttons are not available if products didn't load before selection, so handle this
             try:
                 endpoint_products = endpoint + "/products"
                 driver.get(endpoint_products)
 
-                # EVAL - Wait for button to be loaded in
-                time.sleep(random.randrange(3) + 3)
+                # Wait for button to be loaded in
+                # randomizing the sleep statement does not add value to the demo (i.e. not captured as a span, or transaction duration)
+                time.sleep(5)
 
                 # TODO If "Unable to locate element", then sleep,wait, try again...
                 add_to_cart_btn = driver.find_element_by_css_selector('.products-list button')
                 for i in range(random.randrange(3) + 3):
                     add_to_cart_btn.click()
-
 
                 driver.find_element_by_css_selector('.show-desktop #top-right-links a[href="/cart"]').click()
                 time.sleep(random.randrange(2) + 1)
@@ -52,7 +53,13 @@ def test_add_to_cart(driver):
                 print("> err", err)
                 missedButtons = missedButtons + 1
                 sentry_sdk.set_tag("missedButtons", missedButtons)
-                # raise SystemExit(err) <-- instead, look at SeleniumSessionDone | Sauce Result Failed
+                sentry_sdk.set_tag("seleniumSessionId", driver.session_id)
+                
+                # error message is verbose, "NoSuchElementException: Message: no such element: Unable to locate element: {"method":"css selector","selector":".product..."
+                # so if you don't like that, then force a message capture instead, "missed a button" 
+                # and you'll still have the same tags available, seleniumSessionId, seleniumBrowser, seleniumPlatform
+                if err:
+                    sentry_sdk.capture_exception(err)
 
             time.sleep(random.randrange(2) + 1)
 

@@ -14,8 +14,15 @@ def test_homepage(driver):
 
     for endpoint in endpoints:
         sentry_sdk.set_tag("endpoint", endpoint)
-        endpoint = endpoint + "?se=tda&crash=0.2"
-        for i in range(random.randrange(20)):
+
+        # for a Failure Rate between 1% and 40% of the homepage '/' transaction
+        n = random.uniform(0.01, .04)
+
+        # filter in Performance and Discover by 'se:tda'
+        endpoint = endpoint + "?se=tda&crash=%s" % (n)
+        
+        # for i in range(random.randrange(20)):
+        for i in range(10):
             
             # Add queryParam crash=.5 and see how data is different
             # Run once - how many /products /products-join python
