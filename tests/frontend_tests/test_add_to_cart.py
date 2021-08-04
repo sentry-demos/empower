@@ -12,33 +12,40 @@ def test_add_to_cart(driver):
 
     for endpoint in endpoints:
         for i in range(random.randrange(20)):
-            driver.get(endpoint)
+            # EVAL, realized late that this was here...
+            # driver.get(endpoint)
 
-            # Clicks the 'Browse products' button to load /products page
-            # TODO is a navigation transaction or pageload???
-            # PRODUCTS_BUTTON = ".btn"
-            # browse_btn = driver.find_element_by_css_selector(PRODUCTS_BUTTON)
-            # browse_btn.click()
+            try:
+                endpoint_products = endpoint + "/products"
+                driver.get(endpoint_products)
 
-            endpoint_products = endpoint + "/products"
-            driver.get(endpoint_products)
+                # EVAL
+                # Wait for button to be loaded in
+                time.sleep(random.randrange(3) + 3)
 
-            # "Unable to locate element", due to longer delays?
-            add_to_cart_btn = driver.find_element_by_css_selector('.products-list button')
-            for i in range(random.randrange(3) + 3):
-                add_to_cart_btn.click()
+                # TODO If "Unable to locate element", then sleep,wait, try again...
+                add_to_cart_btn = driver.find_element_by_css_selector('.products-list button')
+                for i in range(random.randrange(3) + 3):
+                    add_to_cart_btn.click()
 
-            driver.find_element_by_css_selector('.show-desktop #top-right-links a[href="/cart"]').click()
-            time.sleep(random.randrange(3) + 3)
-            driver.find_element_by_css_selector('a[href="/checkout"]').click()
-            time.sleep(random.randrange(3) + 3)
 
-            # TODO dynamically fill out all fields
-            driver.find_element_by_css_selector('#email').send_keys("sampleEmail@email.com")
-            time.sleep(random.randrange(3) + 3)
+                driver.find_element_by_css_selector('.show-desktop #top-right-links a[href="/cart"]').click()
+                time.sleep(random.randrange(2) + 1)
+                driver.find_element_by_css_selector('a[href="/checkout"]').click()
+                time.sleep(random.randrange(2) + 1)
 
-            driver.find_element_by_css_selector('.complete-checkout-btn').click()
-            time.sleep(random.randrange(3) + 3)
+                driver.find_element_by_css_selector('#email').send_keys("sampleEmail@email.com")
+                time.sleep(random.randrange(2) + 1)
+
+                driver.find_element_by_css_selector('.complete-checkout-btn').click()
+                time.sleep(random.randrange(2) + 1)
+            except Exception as err:
+                    print("> err", err)
+                    raise SystemExit(err)
+
+            time.sleep(random.randrange(2) + 1)
+
+
 
 
 
