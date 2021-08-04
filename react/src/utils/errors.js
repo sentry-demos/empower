@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/react';
 import { createBrowserHistory } from 'history';
 const history = createBrowserHistory();
 
@@ -12,8 +13,18 @@ const crasher = () => {
       if (crash) {
             console.log("> crash", crash)
             if (crash === "true" || probability(parseFloat(crash))) {
-              // TODO make unique fingerprint
+              // TODO choose from 1 or 2 error types
               throw new Error('this is a unhandled error test')
+              
+              // TODO make unique fingerprint
+              // Sentry.withScope(function(scope) {
+                // // scope.setFingerprint(['{{ default }}', scope._session.release]);
+                // scope.setFingerprint(['test']); 
+                // Sentry.captureException(new Error('this is a unhandled error test')) // (grouped by custom fingerprint)
+                // throw new Error('this is a unhandled error test') // (grouped by exception stack-trace, in-app exception stack-trace)
+              // });
+              // throw new Error('this is a unhandled error test')
+
             }
       }
   } else {
