@@ -22,6 +22,7 @@ sentry_sdk.init(
     environment=ENV,
 )
 
+# Message captures for Selenium Sessions appear in order of browser/platform combos in this array.
 browsers = [
     {
         "seleniumVersion": '3.4.0',
