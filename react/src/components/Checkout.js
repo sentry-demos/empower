@@ -63,15 +63,15 @@ class Checkout extends Component {
 
     let response = await fetch(`${BACKEND}/checkout`, {
       method: "POST",
-      headers: { se, customerType, email },
+      headers: { se, customerType, email, "Content-Type": "application/json" },
       body: JSON.stringify({
         cart: cart,
         form: this.state
       })
     })
     .catch((err) => { 
+      // Firefox will error into this block
       console.log("> catches error", err)
-      throw Error(err) 
     })
     console.log("> ok | status | statusText", response.ok, response.status, response.statusText)
 
