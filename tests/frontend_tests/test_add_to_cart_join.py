@@ -2,6 +2,7 @@ import pytest
 import time
 import yaml
 import random
+import sentry_sdk
 
 @pytest.mark.usefixtures("driver")
 def test_add_to_cart_join(driver):
@@ -12,6 +13,8 @@ def test_add_to_cart_join(driver):
         endpoints = data_loaded['react_endpoints']
 
     for endpoint in endpoints:
+        sentry_sdk.set_tag("endpoint", endpoint)
+        
         for i in range(random.randrange(20)):
             endpoint_products_join = endpoint + "/products-join"
             driver.get(endpoint_products_join)

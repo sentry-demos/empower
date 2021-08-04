@@ -2,6 +2,7 @@ import pytest
 import time
 import yaml
 import random
+import sentry_sdk
 
 @pytest.mark.usefixtures("driver")
 def test_homepage(driver):
@@ -12,6 +13,7 @@ def test_homepage(driver):
         endpoints = data_loaded['react_endpoints']
 
     for endpoint in endpoints:
+        sentry_sdk.set_tag("endpoint", endpoint)
         endpoint = endpoint + "?se=tda&crash=0.2"
         for i in range(random.randrange(20)):
             

@@ -1,6 +1,6 @@
 import pytest
 from os import environ
-
+import os
 from selenium import webdriver
 from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.remote.remote_connection import RemoteConnection
@@ -62,9 +62,6 @@ def _generate_param_ids(name, values):
 def driver(request, browser_config):
     sentry_sdk.set_tag("seleniumPlatform", parsePlatform(request.node.name))
     sentry_sdk.set_tag("seleniumBrowser", parseBrowserName(request.node.name))
-    sentry_sdk.set_context("request.node.name", {
-        "request_node_name": request.node.name
-    })
 
     # if the assignment below does not make sense to you please read up on object assignments.
     # The point is to make a copy and not mess with the original test spec.
@@ -103,7 +100,7 @@ def driver(request, browser_config):
         raise WebDriverException("Never created!")
 
     yield browser
-    
+
     # Teardown starts here
     # report results
     # use the test result to send the pass/fail status to Sauce Labs
@@ -111,9 +108,6 @@ def driver(request, browser_config):
     
     # Handler failure scenario, send to Sentry job-monitor-application-monitoring
     if sauce_result == "failed":
-        sentry_sdk.set_context("sauce_result", {
-            "test_name": test_name
-        })
         sentry_sdk.capture_message("Sauce Result: %s" % (sauce_result))
 
     browser.execute_script("sauce:job-result={}".format(sauce_result))
@@ -122,7 +116,7 @@ def driver(request, browser_config):
     # If the test errors on not finding a button, then this should still execute
     # because it's part of Teardown which always runs
     sentry_sdk.set_tag("session_id", browser.session_id)
-    sentry_sdk.capture_message("Selenium Session Done")
+    sentry_sdk.capture_message("Selenium Session Done %s" % (browser.session_id))
 
 
 @pytest.hookimpl(hookwrapper=True, tryfirst=True)
@@ -143,6 +137,7 @@ def parsePlatform(requestNodeName):
     else:
         platform = "OSX"
     return platform
+
 def parseBrowserName(requestNodeName):
     browserName = ""
     if "chrome" in requestNodeName.lower():
