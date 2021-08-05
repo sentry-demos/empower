@@ -1,2 +1,2 @@
-service: staging-application-monitoring-flask
+service: -<NAME>-
 runtime: python38

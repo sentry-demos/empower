@@ -1,6 +1,6 @@
   
 env: standard
-service: staging-application-monitoring-react
+service: -<NAME>-
 runtime: nodejs14
 
 handlers:
