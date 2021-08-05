@@ -44,7 +44,6 @@ def get_products():
             n = weighter(operator.le, 12)
 
             products = connection.execute(
-                # "SELECT * FROM products"
                 "SELECT *, pg_sleep(%s) FROM products" % (n)
             ).fetchall()
             span.set_tag("totalProducts",len(products))
@@ -53,7 +52,6 @@ def get_products():
         with sentry_sdk.start_span(op="get_products.reviews", description="db.query") as span:
             for product in products:
                 reviews = connection.execute(
-                    # "SELECT * FROM reviews WHERE productId = {}".format(product.id)
                     "SELECT *, pg_sleep(0.25) FROM reviews WHERE productId = {}".format(product.id)
                 ).fetchall()
                 result = dict(product)
