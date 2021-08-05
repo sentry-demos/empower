@@ -13,18 +13,7 @@ const crasher = () => {
       if (crash) {
             console.log("> crash", crash)
             if (crash === "true" || probability(parseFloat(crash))) {
-              // TODO choose from 1 or 2 error types
-              throw new Error('this is a unhandled error test')
-              
-              // TODO make unique fingerprint
-              // Sentry.withScope(function(scope) {
-                // // scope.setFingerprint(['{{ default }}', scope._session.release]);
-                // scope.setFingerprint(['test']); 
-                // Sentry.captureException(new Error('this is a unhandled error test')) // (grouped by custom fingerprint)
-                // throw new Error('this is a unhandled error test') // (grouped by exception stack-trace, in-app exception stack-trace)
-              // });
-              // throw new Error('this is a unhandled error test')
-
+              throw new UnhandledException('unhandled error')
             }
       }
   } else {
@@ -32,10 +21,11 @@ const crasher = () => {
   }
 }
 
-export default crasher
+// Based on the official example https://docs.sentry.io/platforms/javascript/usage/sdk-fingerprinting/#group-errors-with-greater-granularity
+class UnhandledException extends Error {
+  constructor(message, functionName) {
+    super(message);
+  }
+}
 
-// REDO
-// var deltaArray = [{ func: function () {}}];
-// TODO
-// error1
-// error2
+export { crasher, UnhandledException }

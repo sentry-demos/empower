@@ -6,7 +6,7 @@ import * as Sentry from '@sentry/react';
 import { Integrations } from '@sentry/tracing';
 import { createBrowserHistory } from 'history';
 import { Router, Switch, Route } from 'react-router-dom';
-import crasher from './utils/errors'
+import { crasher, UnhandledException } from './utils/errors'
 
 import { Provider } from 'react-redux'
 import { createStore, applyMiddleware, compose } from 'redux'
@@ -59,7 +59,12 @@ Sentry.init({
   tracesSampleRate: 1.0,
   release: RELEASE,
   environment: ENVIRONMENT,
-  beforeSend(event) {
+  beforeSend(event, hint) {
+    // Issue Grouping - for UnhandledExceptions
+    const exception = hint.originalException
+    if (exception instanceof UnhandledException) {
+      event.fingerprint = ['{{ default }}', process.env.REACT_APP_RELEASE ];
+    }
     return event;
   }
 });
