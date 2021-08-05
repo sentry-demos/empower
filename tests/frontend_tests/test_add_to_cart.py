@@ -35,7 +35,7 @@ def test_add_to_cart(driver):
 
                 # TODO If "Unable to locate element", then sleep,wait, try again...
                 add_to_cart_btn = driver.find_element_by_css_selector('.products-list button')
-                for i in range(random.randrange(3) + 3):
+                for i in range(random.randrange(4) + 1):
                     add_to_cart_btn.click()
 
                 driver.find_element_by_css_selector('.show-desktop #top-right-links a[href="/cart"]').click()
