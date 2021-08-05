@@ -30,3 +30,7 @@
 .products-list li a {
   text-decoration: none;
 }
+
+.loader-container {
+  text-align: center;
+}

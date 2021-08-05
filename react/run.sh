@@ -1,4 +1,6 @@
-RELEASE=`./release.sh`
+# Builds and serves the js bundle, uploads sourcemaps and does suspect commits
+
+RELEASE=`../release.sh`
 echo $RELEASE
 
 SENTRY_ORG=testorg-az

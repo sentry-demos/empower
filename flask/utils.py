@@ -22,7 +22,7 @@ def wait(condition, hour, number):
 
 # https://www.postgresql.org/docs/9.0/functions-datetime.html
 # 'n' seconds input for pg_sleep, but actual sleep time ends up being much longer
-times = [0.1, 0.5, 1.0, 1.5, 2.0, 2.5]
+times = [0.05, 0.25, 0.5, .75, 1.0, 1.25]
 # weight distribution that favors faster times
 weights1 = [0.16, 0.5, 0.14, 0.1, 0.06, 0.04]
 # weight distribution that favors the slower times

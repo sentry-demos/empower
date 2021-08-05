@@ -1,6 +1,7 @@
 # Sets a release according to Calendar Versioning. Month, followed by week of the month.
 # In sentry-demos/tracing, we did not manage this whatsoever
-# This release.sh is re-used in many places so that we don't need 3 different Makefiles like in sentry-demos/tracing
+# /react and /flask both have a run.sh script that utilizes this code
+# This release.sh is used by deploy.sh, react/run.sh, flask/run.sh
 day=$(date +%d)
 month=$(date +%-m)
 if [ "$day" -ge 0 ] && [ "$day" -le 7 ]; then

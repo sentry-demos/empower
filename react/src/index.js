@@ -4,9 +4,9 @@ import './index.css';
 import "react-loader-spinner/dist/loader/css/react-spinner-loader.css";
 import * as Sentry from '@sentry/react';
 import { Integrations } from '@sentry/tracing';
-import Context from './utils/context';
 import { createBrowserHistory } from 'history';
 import { Router, Switch, Route } from 'react-router-dom';
+import { crasher, UnhandledException } from './utils/errors'
 
 import { Provider } from 'react-redux'
 import { createStore, applyMiddleware, compose } from 'redux'
@@ -59,7 +59,12 @@ Sentry.init({
   tracesSampleRate: 1.0,
   release: RELEASE,
   environment: ENVIRONMENT,
-  beforeSend(event) {
+  beforeSend(event, hint) {
+    // Issue Grouping - for UnhandledExceptions
+    const exception = hint.originalException
+    if (exception instanceof UnhandledException) {
+      event.fingerprint = ['{{ default }}', process.env.REACT_APP_RELEASE ];
+    }
     return event;
   }
 });
@@ -86,22 +91,29 @@ class App extends Component {
       }
     };
 
+    // new PerformanceObserver(entryList => {
+    //   console.log(entryList.getEntries());
+    // }).observe({ type: "largest-contentful-paint", buffered: true });
+
+    let queryParams = new URLSearchParams(history.location.search)
+
     // These also get passed via request headers
     Sentry.configureScope(scope => {
       
       const customerType = ["medium-plan", "large-plan", "small-plan", "enterprise"][Math.floor(Math.random() * 4)]
       scope.setTag("customerType", customerType )
-      
-      let queryParam = history.location.search
-      if (queryParam.includes("se=")) {
-        const se = queryParam.split("se=").pop()
-        console.log("se", se)
-        scope.setTag("se", se)
+
+      if (queryParams.get("se")) {
+        console.log("> se", queryParams.get("se"))
+        scope.setTag("se", queryParams.get("se"))
       }
 
       let email = Math.random().toString(36).substring(2, 6) + "@yahoo.com";
       scope.setUser({ email: email })
     })
+
+    // Crasher will parse the query params
+    crasher()
   }
 
 
@@ -143,6 +155,7 @@ ReactDOM.render(<App />, document.getElementById('root'));
 // See Transaction for everything you get, without any xhr/ajax requests going on.
 // This page doesn't have any, it's pure static content
 function Home() {
+
   const divStyle = {
     backgroundImage: 'url(' + plantsBackground + ')',
   };

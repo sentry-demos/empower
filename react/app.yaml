@@ -1,6 +1,6 @@
   
 env: standard
-service: -<NAME_HERE>-
+service: -<NAME>-
 runtime: nodejs14
 
 handlers:

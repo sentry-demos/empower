@@ -1,2 +1,2 @@
-service: -<NAME_HERE>-
+service: -<NAME>-
 runtime: python38
