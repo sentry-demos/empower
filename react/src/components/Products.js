@@ -30,7 +30,11 @@ class Products extends Component {
       headers: { se, customerType, email }
     })
       .then(response => { return response.text() })
-      .catch((err) => { throw Error(err) })
+      .catch((err) => { 
+        // TODO Sentry.captureException w/ 'error loading products'. withScope OR beforeSend, update title, pass same exception object?
+        // diff error depending on browser
+        throw Error(err) 
+      })
 
     console.log('> Products from backend', JSON.parse(result))
     // Sentry.captureException(new Error("this is an exception"))

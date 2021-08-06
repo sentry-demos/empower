@@ -73,7 +73,9 @@ class Checkout extends Component {
       // Firefox will error into this block
       console.log("> catches error", err)
     })
-    console.log("> ok | status | statusText", response.ok, response.status, response.statusText)
+
+    // TODO 's is undefined'
+    // console.log("> ok | status | statusText", response.ok, response.status, response.statusText)
 
     if (!response.ok) {
       Sentry.captureException(new Error(response.status + " - " + (response.statusText || "Internal Server Error")))
