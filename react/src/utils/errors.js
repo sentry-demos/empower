@@ -1,4 +1,3 @@
-import * as Sentry from '@sentry/react';
 import { createBrowserHistory } from 'history';
 const history = createBrowserHistory();
 

@@ -18,28 +18,47 @@ console.log("BACKEND", BACKEND)
 class Products extends Component {
   static contextType = Context;
 
-  async componentDidMount(){
+  // ERRORS Differently depending on browser...
+  // TODO Sentry.captureException w/ 'error loading products'. withScope OR beforeSend, update title, pass same exception object?
+  async getProducts() {
     let se, customerType, email
     Sentry.withScope(function(scope) {
       [ se, customerType ] = [scope._tags.se, scope._tags.customerType ]
       email = scope._user.email
     });
-
     let result = await fetch(`${BACKEND}/products`, {
       method: "GET",
-      headers: { se, customerType, email }
+      headers: { se, customerType, email, "Content-Type": "application/json" }
     })
-      .then(response => { return response.text() })
       .catch((err) => { 
-        // TODO Sentry.captureException w/ 'error loading products'. withScope OR beforeSend, update title, pass same exception object?
-        // diff error depending on browser
-        throw Error(err) 
+        console.log("x ERROR", err)
+        Sentry.withScope(function(scope) {
+          // could make a '500'
+          scope.setFingerprint(["GET", "/products", String(err.statusCode)]);
+          Sentry.captureException(new Error("app unable to load products"));
+        });
+        return Promise.resolve('unable to load products')
       })
-
-    console.log('> Products from backend', JSON.parse(result))
-    // Sentry.captureException(new Error("this is an exception"))
-    this.props.setProducts(JSON.parse(result))
-    return result
+    if (!result.ok) {
+      Sentry.withScope(function(scope) {
+        scope.setFingerprint(["GET", "/products", result.status]);
+        Sentry.captureException(new Error("app unable to load products"));
+      });
+      return Promise.reject('unable to load products');
+    } else {
+      const jsonValue = await result.json()
+      return Promise.resolve(jsonValue)
+    }
+  }
+  async componentDidMount(){
+    var theproducts
+    try {
+      theproducts = await this.getProducts();
+      this.props.setProducts(theproducts)
+    } catch(err) {
+      console.log("catch err....", err)
+      // "unable to load products" modal...?
+    }
   }
 
   render() {

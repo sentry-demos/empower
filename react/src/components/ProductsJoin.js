@@ -31,8 +31,7 @@ class ProductsJoin extends Component {
       .then(response => { return response.text() })
       .catch((err) => { throw Error(err) })
 
-    console.log('> Products from backend', JSON.parse(result))
-    // Sentry.captureException(new Error("this is an exception"))
+    // console.log('> Products from backend', JSON.parse(result))
     this.props.setProducts(JSON.parse(result))
     return result
   }
