@@ -18,46 +18,43 @@ console.log("BACKEND", BACKEND)
 class Products extends Component {
   static contextType = Context;
 
-  // ERRORS Differently depending on browser...
-  // TODO Sentry.captureException w/ 'error loading products'. withScope OR beforeSend, update title, pass same exception object?
+  // getProducts handles error responses differently, depending on the browser used
   async getProducts() {
     let se, customerType, email
     Sentry.withScope(function(scope) {
       [ se, customerType ] = [scope._tags.se, scope._tags.customerType ]
       email = scope._user.email
     });
+
     let result = await fetch(`${BACKEND}/products`, {
       method: "GET",
       headers: { se, customerType, email, "Content-Type": "application/json" }
     })
       .catch((err) => { 
-        console.log("x ERROR", err)
-        Sentry.withScope(function(scope) {
-          // could make a '500'
-          scope.setFingerprint(["GET", "/products", String(err.statusCode)]);
-          Sentry.captureException(new Error("app unable to load products"));
-        });
-        return Promise.resolve('unable to load products')
+        return { ok: false, status: 500}
       })
+
     if (!result.ok) {
-      Sentry.withScope(function(scope) {
-        scope.setFingerprint(["GET", "/products", result.status]);
-        Sentry.captureException(new Error("app unable to load products"));
+      Sentry.configureScope(function(scope) {
+        Sentry.setContext("err", {
+          status: result.status,
+          statusText: result.statusText
+        })
       });
-      return Promise.reject('unable to load products');
+      return Promise.reject();
     } else {
       const jsonValue = await result.json()
       return Promise.resolve(jsonValue)
     }
   }
+
   async componentDidMount(){
-    var theproducts
+    var products
     try {
-      theproducts = await this.getProducts();
-      this.props.setProducts(theproducts)
+      products = await this.getProducts();
+      this.props.setProducts(products)
     } catch(err) {
-      console.log("catch err....", err)
-      // "unable to load products" modal...?
+      Sentry.captureException(new Error("app unable to load products"));
     }
   }
 
