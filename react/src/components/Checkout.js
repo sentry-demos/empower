@@ -1,11 +1,10 @@
 import { Component } from 'react';
-import { createBrowserHistory } from 'history';
 import Context from '../utils/context';
 import { Link } from 'react-router-dom';
 import './checkout.css';
 import * as Sentry from '@sentry/react';
 import { connect } from 'react-redux'
-import { setProducts, addProduct, removeProduct } from '../actions'
+import { setProducts, addProduct } from '../actions'
 import Loader from "react-loader-spinner";
 
 var BACKEND = ""
@@ -70,12 +69,8 @@ class Checkout extends Component {
       })
     })
     .catch((err) => { 
-      // Firefox will error into this block
-      console.log("> catches error", err)
+      return { ok: false, status: 500 }
     })
-
-    // TODO 's is undefined'
-    // console.log("> ok | status | statusText", response.ok, response.status, response.statusText)
 
     if (!response.ok) {
       Sentry.captureException(new Error(response.status + " - " + (response.statusText || "Internal Server Error")))

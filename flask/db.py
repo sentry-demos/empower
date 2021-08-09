@@ -35,7 +35,8 @@ else:
 
 # N+1 because a sql query for every product n
 def get_products():
-    raise Exception("forced exception")
+    # return "forced exception 2", 500
+    # raise Exception("forced exception")
     results = []
     try:
         with sentry_sdk.start_span(op="get_products", description="db.connect"):
