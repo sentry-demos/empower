@@ -60,10 +60,10 @@ Sentry.init({
   release: RELEASE,
   environment: ENVIRONMENT,
   beforeSend(event, hint) {
-    // Issue Grouping - for UnhandledExceptions
+    // event.exception, filename, tags, breadcrumbs
     const exception = hint.originalException
     if (exception instanceof UnhandledException) {
-      event.fingerprint = ['{{ default }}', process.env.REACT_APP_RELEASE ];
+      event.fingerprint = ['unhandled-exception', process.env.REACT_APP_RELEASE ];
     }
     return event;
   }
