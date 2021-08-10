@@ -37,6 +37,26 @@ class Checkout extends Component {
     });
   }
 
+  async checkout(cart) {
+    let se, customerType, email
+    Sentry.withScope(function(scope) {
+      [ se, customerType ] = [scope._tags.se, scope._tags.customerType ]
+      email = scope._user.email
+    });
+
+    return await fetch(`${BACKEND}/checkout`, {
+      method: "POST",
+      headers: { se, customerType, email, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        cart: cart,
+        form: this.state
+      })
+    })
+    .catch((err) => { 
+      return { ok: false, status: 500 }
+    })
+  }
+
   async handleSubmit(event) {
     event.preventDefault();
 
@@ -48,36 +68,19 @@ class Checkout extends Component {
     // Do this or the trace won't include the backend transaction
     Sentry.configureScope(scope => scope.setSpan(transaction));
 
-    let se, customerType, email
-    Sentry.withScope(function(scope) {
-      [ se, customerType ] = [scope._tags.se, scope._tags.customerType ]
-      email = scope._user.email
-    });
-
-    this.setState({...this.state,loading: true});
     window.scrollTo({
       top: 0, 
       behavior: 'auto'
     });
 
-    let response = await fetch(`${BACKEND}/checkout`, {
-      method: "POST",
-      headers: { se, customerType, email, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        cart: cart,
-        form: this.state
-      })
-    })
-    .catch((err) => { 
-      return { ok: false, status: 500 }
-    })
+    this.setState({...this.state,loading: true});
 
+    let response = await this.checkout(cart)
     if (!response.ok) {
       Sentry.captureException(new Error(response.status + " - " + (response.statusText || "Internal Server Error")))
     }
 
     this.setState({...this.state,loading: false});
-    
     transaction.finish();
 
     if (!response.ok) {
