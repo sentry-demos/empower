@@ -27,6 +27,7 @@ def test_add_to_cart(driver):
                 # Wait for button to be loaded in (no randomizing the sleep, because randomizing the sleep statement does not affect any transaction or span durations. there's no observable benefit)
                 time.sleep(5)
 
+                # https://stackoverflow.com/questions/2244270/get-a-try-statement-to-loop-around-until-correct-value-obtained/2244307
                 add_to_cart_btn = driver.find_element_by_css_selector('.products-list button')
                 for i in range(random.randrange(4) + 1):
                     add_to_cart_btn.click()

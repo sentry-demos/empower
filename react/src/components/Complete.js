@@ -1,4 +1,3 @@
-import Context from '../utils/context';
 import { Link } from 'react-router-dom';
 import './complete.css';
 import { useSelector } from 'react-redux'

@@ -4,8 +4,8 @@ import './complete.css';
 
 class CompleteError extends Component {
   render() {
-    let errorInfo = this.props.history.location.state
-    console.log("> errorInfo", errorInfo)
+    // let errorInfo = this.props.history.location.state
+    // console.log("> errorInfo", errorInfo)
 
     return (
       <div className="checkout-container-complete">

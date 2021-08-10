@@ -18,7 +18,8 @@ console.log("BACKEND", BACKEND)
 class Products extends Component {
   static contextType = Context;
 
-  async componentDidMount(){
+  // getProducts handles error responses differently, depending on the browser used
+  async getProducts() {
     let se, customerType, email
     Sentry.withScope(function(scope) {
       [ se, customerType ] = [scope._tags.se, scope._tags.customerType ]
@@ -27,15 +28,34 @@ class Products extends Component {
 
     let result = await fetch(`${BACKEND}/products`, {
       method: "GET",
-      headers: { se, customerType, email }
+      headers: { se, customerType, email, "Content-Type": "application/json" }
     })
-      .then(response => { return response.text() })
-      .catch((err) => { throw Error(err) })
+      .catch((err) => { 
+        return { ok: false, status: 500}
+      })
 
-    console.log('> Products from backend', JSON.parse(result))
-    // Sentry.captureException(new Error("this is an exception"))
-    this.props.setProducts(JSON.parse(result))
-    return result
+    if (!result.ok) {
+      Sentry.configureScope(function(scope) {
+        Sentry.setContext("err", {
+          status: result.status,
+          statusText: result.statusText
+        })
+      });
+      return Promise.reject();
+    } else {
+      const jsonValue = await result.json()
+      return Promise.resolve(jsonValue)
+    }
+  }
+
+  async componentDidMount(){
+    var products
+    try {
+      products = await this.getProducts();
+      this.props.setProducts(products)
+    } catch(err) {
+      Sentry.captureException(new Error("app unable to load products"));
+    }
   }
 
   render() {

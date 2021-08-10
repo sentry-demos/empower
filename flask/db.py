@@ -132,7 +132,7 @@ def get_inventory(cart):
 
     except Exception as exception:
         print(exception)
-        Sentry.capture_exception(exception)
+        sentry_sdk.capture_exception(exception)
 
     return inventory
 
