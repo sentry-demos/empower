@@ -48,6 +48,10 @@ ps fjx
 kill -9 <PID>
 ```
 
+How to skip pytests
+```
+@pytest.mark.skip("driver")
+```
 # Additional Setup instructions/context
 ### Python2
 

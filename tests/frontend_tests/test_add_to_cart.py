@@ -28,17 +28,17 @@ def test_add_to_cart(driver):
                 # Solution - handle gracefully when the driver clicks a button that's not rendered yet, and then time.sleep(1) and try again
                 # time.sleep(5)
 
-                found = False
+                buttonRendered = False
                 skips=0
-                while found==False:
+                while buttonRendered==False:
                     try:
                         if skips > 10:
-                            sentry_sdk.capture_message("missed button more than 10 skips)
-                            found=True
+                            sentry_sdk.capture_message("missed button more than 10 skips")
+                            buttonRendered=True
                         add_to_cart_btn = driver.find_element_by_css_selector('.products-list button')
                         for i in range(random.randrange(4) + 1):
                             add_to_cart_btn.click()
-                        found=True
+                        buttonRendered=True
                     except Exception as err:
                         skips = skips + 1
                         sentry_sdk.capture_message("missed button handling %s skips gracefully" % (skips))
