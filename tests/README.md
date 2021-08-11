@@ -37,7 +37,7 @@ Pulls up Sentry frontend in various browsers in parallel via selenium scripts.
 Test case will add items to cart and then click checkout
 
 ```
-py.test -s -n 2 frontend_tests
+py.test -s -n 4 frontend_tests
 ```
 
 `-n` is for number of threads
