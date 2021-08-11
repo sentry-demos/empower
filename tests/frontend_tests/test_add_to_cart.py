@@ -8,7 +8,7 @@ import sentry_sdk
 @pytest.mark.usefixtures("driver")
 def test_add_to_cart(driver):
     sentry_sdk.set_tag("pytestName", "test_add_to_cart")
-
+    # TODO ?se=TDA and /?se=TDA...
     with open('endpoints.yaml', 'r') as stream:
         data_loaded = yaml.safe_load(stream)
         endpoints = data_loaded['react_endpoints']
@@ -24,13 +24,26 @@ def test_add_to_cart(driver):
                 endpoint_products = endpoint + "/products"
                 driver.get(endpoint_products)
 
-                # Wait for button to be loaded in (no randomizing the sleep, because randomizing the sleep statement does not affect any transaction or span durations. there's no observable benefit)
-                time.sleep(5)
+                # Optional - use the time.sleep here so button can rinish rendering before the driver tries to click it
+                # Solution - handle gracefully when the driver clicks a button that's not rendered yet, and then time.sleep(1) and try again
+                # time.sleep(5)
 
-                # https://stackoverflow.com/questions/2244270/get-a-try-statement-to-loop-around-until-correct-value-obtained/2244307
-                add_to_cart_btn = driver.find_element_by_css_selector('.products-list button')
-                for i in range(random.randrange(4) + 1):
-                    add_to_cart_btn.click()
+                found = False
+                skips=0
+                while found==False:
+                    try:
+                        if skips > 10:
+                            sentry_sdk.capture_message("missed button more than 10 skips)
+                            found=True
+                        add_to_cart_btn = driver.find_element_by_css_selector('.products-list button')
+                        for i in range(random.randrange(4) + 1):
+                            add_to_cart_btn.click()
+                        found=True
+                    except Exception as err:
+                        skips = skips + 1
+                        sentry_sdk.capture_message("missed button handling %s skips gracefully" % (skips))
+                        time.sleep(1)
+                        pass
 
                 driver.find_element_by_css_selector('.show-desktop #top-right-links a[href="/cart"]').click()
                 time.sleep(random.randrange(2) + 1)
