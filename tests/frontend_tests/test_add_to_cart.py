@@ -14,14 +14,14 @@ def test_add_to_cart(driver):
         endpoints = data_loaded['react_endpoints']
 
     for endpoint in endpoints:
-        sentry_sdk.set_tag("endpoint", endpoint)
+        endpoint_products = endpoint + "/products"
+        sentry_sdk.set_tag("endpoint", endpoint_products)
         missedButtons = 0
 
         for i in range(random.randrange(20)):
 
             # Buttons are not available if products didn't load before selection, so handle this
             try:
-                endpoint_products = endpoint + "/products"
                 driver.get(endpoint_products)
 
                 # Optional - use the time.sleep here so button can rinish rendering before the driver tries to click it
