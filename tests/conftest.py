@@ -9,8 +9,8 @@ import sentry_sdk
 from dotenv import load_dotenv
 load_dotenv()
 DSN = os.getenv("DSN")
-ENV = os.getenv("ENV") or "production"
-print("ENV", ENV)
+ENVIRONMENT = os.getenv("ENVIRONMENT") or "production"
+print("ENV", ENVIRONMENT)
 print("DSN", DSN)
 
 import urllib3
@@ -19,7 +19,7 @@ urllib3.disable_warnings()
 sentry_sdk.init(
     dsn= DSN,
     traces_sample_rate=0,
-    environment=ENV,
+    environment=ENVIRONMENT,
 )
 
 # Message captures for Selenium Sessions appear in order of browser/platform combos in this array.
