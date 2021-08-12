@@ -22,7 +22,8 @@ def test_homepage(driver):
         # Randomize the Failure Rate between 1% and 40%
         n = random.uniform(0.01, .04)
 
-        # This causes the page to periodically crash
+        # This query string is parsed by utils/errors.js wherever the 'crasher' function is used
+        # and causes the page to periodically crash, for Release Health
         endpoint = endpoint + "&crash=%s" % (n)
         
         for i in range(random.randrange(20)):

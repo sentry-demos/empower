@@ -18,7 +18,7 @@ def test_about_employees(driver):
         sentry_sdk.set_tag("endpoint", endpoint_about)
 
         # You can filter by se:tda in Sentry's UI as this will get set as a tag
-        endpoint_about = endpoint_about + "?se=tda
+        endpoint_about = endpoint_about + "?se=tda"
 
         employees = ["Jane Schmidt", "Lily Chan", "Keith Ryan", "Mason Kim", "Emma Garcia", "Noah Miller"]
 
@@ -31,8 +31,8 @@ def test_about_employees(driver):
             
             n = random.randrange(6)
             elementName = employees[n]
-            
-            # employee_btn = driver.find_element_by_name("Jane Schmidt")
+
             employee_btn = driver.find_element_by_name(elementName)
             employee_btn.click()
+            
             time.sleep(random.randrange(2) + 1)
