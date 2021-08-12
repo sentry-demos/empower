@@ -5,7 +5,7 @@ import random
 import sentry_sdk
 
 # This test is for the homepage '/' transaction
-@pytest.mark.usefixtures("driver")
+@pytest.mark.skip("driver")
 def test_homepage(driver):
     sentry_sdk.set_tag("pytestName", "test_homepage")
 

@@ -4,7 +4,7 @@ import yaml
 import random
 import sentry_sdk
 
-@pytest.mark.usefixtures("driver")
+@pytest.mark.skip("driver")
 def test_add_to_cart_join(driver):
     sentry_sdk.set_tag("pytestName", "test_add_to_cart_join")
 

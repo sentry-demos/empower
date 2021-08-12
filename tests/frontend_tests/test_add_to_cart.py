@@ -5,7 +5,7 @@ import random
 import sentry_sdk
 
 # 'driver' is "<selenium.webdriver.remote.webdriver.WebDriver (session="3955e7dab66c4172ad3d4a8808c0a67c")>" if you print it
-@pytest.mark.usefixtures("driver")
+@pytest.mark.skip("driver")
 def test_add_to_cart(driver):
     sentry_sdk.set_tag("pytestName", "test_add_to_cart")
     # TODO ?se=TDA and /?se=TDA...
