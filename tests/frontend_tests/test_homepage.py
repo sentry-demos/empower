@@ -15,12 +15,16 @@ def test_homepage(driver):
 
     for endpoint in endpoints:
         sentry_sdk.set_tag("endpoint", endpoint)
+        
+        # you can filter by se:tda in Sentry's UI
+        endpoint = endpoint + "?se=tda"
 
         # Randomize the Failure Rate between 1% and 40%
         n = random.uniform(0.01, .04)
 
-        # you can filter by se:tda in Sentry's UI
-        endpoint = endpoint + "?se=tda&crash=%s" % (n)
+        # This query string is parsed by utils/errors.js wherever the 'crasher' function is used
+        # and causes the page to periodically crash, for Release Health
+        endpoint = endpoint + "&crash=%s" % (n)
         
         for i in range(random.randrange(20)):
             driver.get(endpoint)

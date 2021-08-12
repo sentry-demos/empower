@@ -13,9 +13,11 @@ def test_add_to_cart_join(driver):
         endpoints = data_loaded['react_endpoints']
 
     for endpoint in endpoints:
-        sentry_sdk.set_tag("endpoint", endpoint)
+        endpoint_products_join = endpoint + "/products-join"
+        sentry_sdk.set_tag("endpoint", endpoint_products_join)
+
+        endpoint_products_join = endpoint_products_join + "?se=tda"
         
         for i in range(random.randrange(20)):
-            endpoint_products_join = endpoint + "/products-join"
             driver.get(endpoint_products_join)
             time.sleep(random.randrange(3) + 3)
