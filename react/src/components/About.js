@@ -48,7 +48,7 @@ class About extends Component {
                 <li key={employee.name}>
                   <Link to={`/employee/${slugify(employee.url)}`}>
                     <img src={employee.img} alt={`${employee.name}`} />
-                    <h5>{employee.name}</h5>
+                    <h5 className="employee-name" name={employee.name}>{employee.name}</h5>
                   </Link>
                 </li>
               );

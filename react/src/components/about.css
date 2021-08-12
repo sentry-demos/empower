@@ -58,3 +58,8 @@ ul.employee-list li img {
   width: 100%;
   border-radius: 50%;
 }
+
+/* for selenium driver to click */
+.employee-name {
+
+}
