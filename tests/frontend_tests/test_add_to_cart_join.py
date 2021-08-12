@@ -4,7 +4,7 @@ import yaml
 import random
 import sentry_sdk
 
-@pytest.mark.skip("driver")
+@pytest.mark.usefixtures("driver")
 def test_add_to_cart_join(driver):
     sentry_sdk.set_tag("pytestName", "test_add_to_cart_join")
 
@@ -15,6 +15,8 @@ def test_add_to_cart_join(driver):
     for endpoint in endpoints:
         endpoint_products_join = endpoint + "/products-join"
         sentry_sdk.set_tag("endpoint", endpoint_products_join)
+
+        endpoint_products_join = endpoint_products_join + "?se=tda"
         
         for i in range(random.randrange(20)):
             driver.get(endpoint_products_join)

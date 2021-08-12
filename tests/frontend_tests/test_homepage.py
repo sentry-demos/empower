@@ -5,7 +5,7 @@ import random
 import sentry_sdk
 
 # This test is for the homepage '/' transaction
-@pytest.mark.skip("driver")
+@pytest.mark.usefixtures("driver")
 def test_homepage(driver):
     sentry_sdk.set_tag("pytestName", "test_homepage")
 
@@ -15,12 +15,15 @@ def test_homepage(driver):
 
     for endpoint in endpoints:
         sentry_sdk.set_tag("endpoint", endpoint)
+        
+        # you can filter by se:tda in Sentry's UI
+        endpoint = endpoint + "?se=tda"
 
         # Randomize the Failure Rate between 1% and 40%
         n = random.uniform(0.01, .04)
 
-        # you can filter by se:tda in Sentry's UI
-        endpoint = endpoint + "?se=tda&crash=%s" % (n)
+        # This causes the page to periodically crash
+        endpoint = endpoint + "&crash=%s" % (n)
         
         for i in range(random.randrange(20)):
             driver.get(endpoint)

@@ -17,8 +17,8 @@ def test_about_employees(driver):
         endpoint_about = endpoint + "/about"
         sentry_sdk.set_tag("endpoint", endpoint_about)
 
-        # you can filter by se:tda in Sentry's UI
-        # endpoint = endpoint + "?se=tda
+        # You can filter by se:tda in Sentry's UI as this will get set as a tag
+        endpoint_about = endpoint_about + "?se=tda
 
         employees = ["Jane Schmidt", "Lily Chan", "Keith Ryan", "Mason Kim", "Emma Garcia", "Noah Miller"]
 

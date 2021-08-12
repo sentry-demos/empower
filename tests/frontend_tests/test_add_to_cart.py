@@ -5,7 +5,7 @@ import random
 import sentry_sdk
 
 # 'driver' is "<selenium.webdriver.remote.webdriver.WebDriver (session="3955e7dab66c4172ad3d4a8808c0a67c")>" if you print it
-@pytest.mark.skip("driver")
+@pytest.mark.usefixtures("driver")
 def test_add_to_cart(driver):
     sentry_sdk.set_tag("pytestName", "test_add_to_cart")
     # TODO ?se=TDA and /?se=TDA...
@@ -16,6 +16,9 @@ def test_add_to_cart(driver):
     for endpoint in endpoints:
         endpoint_products = endpoint + "/products"
         sentry_sdk.set_tag("endpoint", endpoint_products)
+
+        endpoint_products = endpoint_products + "?se=tda"
+        
         missedButtons = 0
 
         for i in range(random.randrange(20)):
