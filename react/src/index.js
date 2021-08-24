@@ -61,9 +61,26 @@ Sentry.init({
   environment: ENVIRONMENT,
   beforeSend(event, hint) {
     const exception = hint.originalException
+    // TODO if se tag + instanceof UnhandledException
     if (exception instanceof UnhandledException) {
       event.fingerprint = ['unhandled-exception', process.env.REACT_APP_RELEASE ];
     }
+
+    // 1
+    let queryParams = new URLSearchParams(history.location.search)
+    if (queryParams.get("se")) {
+      const se = queryParams.get("se")
+      console.log("> se beforeSend", se)
+      event.fingerprint = ['{ default }', se]
+    }
+
+    // 2
+    let se
+    Sentry.withScope(function(scope) {
+      se = scope._tags.se
+      event.fingerprint = ['{ default }', se]
+    });
+
     return event;
   }
 });
@@ -89,10 +106,6 @@ class App extends Component {
         response: []
       }
     };
-
-    // new PerformanceObserver(entryList => {
-    //   console.log(entryList.getEntries());
-    // }).observe({ type: "largest-contentful-paint", buffered: true });
 
     let queryParams = new URLSearchParams(history.location.search)
 

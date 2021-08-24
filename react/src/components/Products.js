@@ -33,7 +33,7 @@ class Products extends Component {
       .catch((err) => { 
         return { ok: false, status: 500}
       })
-
+    // Sentry.captureException(new Error("testing se issue group " + se))
     if (!result.ok) {
       Sentry.configureScope(function(scope) {
         Sentry.setContext("err", {
