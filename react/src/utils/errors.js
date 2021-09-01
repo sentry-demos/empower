@@ -6,7 +6,9 @@ const notAFunctionError = () => {
   const someArray = [{ func: function () {}}];
   someArray[1].func();
 }
-const uriError = () => decodeURIComponent('%');
+const referenceError = () => {
+  throw new ReferenceError('undefinedVariable is not defined')
+};
 const syntaxError = () => eval('foo bar');
 const rangeError = () => {
   throw new RangeError('Parameter must be between 1 and 100');
@@ -17,7 +19,7 @@ const unhandledError = () => {
 
 const randomErrors = [
   notAFunctionError,
-  uriError,
+  referenceError,
   syntaxError,
   rangeError,
   unhandledError
