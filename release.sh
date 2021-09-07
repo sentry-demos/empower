@@ -1,7 +1,6 @@
-# Sets a release according to Calendar Versioning. Month, followed by week of the month.
-# In sentry-demos/tracing, we did not manage this whatsoever
+# This if for Release Health. It sets a release according to Calendar Versioning and gets redeployed every day
+# In sentry-demos/tracing we did not manage and autodeploy this daily, so you were stuck with the same Release for eternity until you redeployed
 # /react and /flask both have a run.sh script that utilizes this code
-# This release.sh is used by deploy.sh, react/run.sh, flask/run.sh
 day=$(date +%d)
 month=$(date +%-m)
 if [ "$day" -ge 0 ] && [ "$day" -le 7 ]; then
