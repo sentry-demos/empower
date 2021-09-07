@@ -16,14 +16,15 @@ Also called the Empower Plant UI/UX. This project was bootstrapped with [Create 
 Permit your IP address in CloudSQL.
 
 **Test**
-1. Create a .env and enter your DSN. See .env.example for an example.
-2. Create a flask/.env and enter your DSN. See .env.example for an example. Fill out all fields so data can be read from the database.
+1. Create a `react/.env` and enter your DSN. See .env.example for an example.
+2. Create a `flask/.env` and enter your DSN. See .env.example for an example. Fill out all fields so data can be read from the database.
 
 **Production** - AppEngine
 1. Enter a value for REACT_APP_BACKEND in .env, as this represents the Flask AppEngine.
 
 ```
 # React
+cd react
 npm install
 
 # Flask
@@ -41,14 +42,23 @@ cd flask
 
 **Test**
 ```
-# React w/ sourcemaps, suspect commits
+# Pick one of two ways to run the React app:
+
+# 1) Run React app w/ sourcemaps, suspect commits
+# Recommended to use this command rather than `npm start`, as
+# run.sh uploads source maps and handles crashes more
+# realistically.
 ./run.sh
 
-# React w/ hot reload
+# 2) Run React app w/ hot reload
+# NOTE: this will cause crashing errors to be tagged
+#   in sentry as handled (`handled: true`)
 npm start
 
+```
 
-# Flask
+```
+# Run the Flask app
 ./run.sh
 ```
 
