@@ -8,19 +8,15 @@ Also called the Empower Plant UI/UX. This project was bootstrapped with [Create 
 
 | sentry    | version
 | ------------- |:-------------:|
-| @sentry/react | ^6.2.5 |
-| @sentry/tracing | ^6.2.5 |
-| sentry_sdk | 1.1.0 |
+| @sentry/react | 6.12.0-beta.2 |
+| @sentry/tracing | 6.12.0-beta.2 |
+| sentry_sdk | 1.3.1 |
 
 ## Setup
-Permit your IP address in CloudSQL.
-
-**Test**
-1. Create a .env and enter your DSN. See .env.example for an example.
-2. Create a flask/.env and enter your DSN. See .env.example for an example. Fill out all fields so data can be read from the database.
-
-**Production** - AppEngine
-1. Enter a value for REACT_APP_BACKEND in .env, as this represents the Flask AppEngine.
+1. Permit your IP address in CloudSQL.
+2. Create a react/.env and enter your DSN. See .env.example for an example.
+3. Create a flask/.env and enter your DSN. See .env.example for an example. Ask a colleague for the values.
+4. The REACT_APP_BACKEND in react/.env represents Flask in AppEngine, this is used when you access the prod React web app.
 
 ```
 # React
@@ -35,11 +31,13 @@ pip install -r requirements.txt
 
 ## Run
 ```
-cd react  
+cd react
+## or
 cd flask
 ```
 
-**Test**
+and
+
 ```
 # React w/ sourcemaps, suspect commits
 ./run.sh
@@ -47,31 +45,46 @@ cd flask
 # React w/ hot reload
 npm start
 
-
 # Flask
+source env/bin/activate
 ./run.sh
 ```
 
-**Prod**
-```
-# React
-npm run build && serve -s build
+Add +2 quantity of a single item to Cart and purchase in order to trigger an Error. Visit all routes defined in src/index.js to produce transactions for them.
 
-# Flask
-./run.sh
-```
 
 ## Deploy
-**Prod**
+This run script deploys React + Flask. See the run script for individual gcloud commands you could use for any of the backends /node /ruby etc.
 ```
-# React
-cd react && npm run build && gcloud app deploy --version=<version>
-
-# Flask, run.sh is not used here, so the environment will default to production...?
-cd flask && gcloud app deploy
+./run.sh
 ```
 
 ## Troubleshooting
+### Upgrading
+```
+## Check if you're on your fork. If so, you should see:
+git remote -v
+origin	git@github.com:<your_handle>/application-monitoring.git (fetch)
+origin	git@github.com:<your_handle>/application-monitoring.git (push)
+upstream	git@github.com:sentry-demos/application-monitoring.git (fetch)
+upstream	git@github.com:sentry-demos/application-monitoring.git (push)
+
+# If you don't have an upstream
+git remote add upstream git@github.com:sentry-demos/application-monitoring.git
+
+# Make sure you're on master
+git checkout master
+
+# get updates from the upstream
+git fetch upstream master
+git merge upstream/master
+
+# update sentry_sdk's and other modules
+cd react && npm install
+cd flask && pip install -r requirements.txt
+
+# Check that your react/.env, flask/.env and deploy.sh still have correct values
+```
 ### Releases
 Q. `--update-env-vars` is not available for `gcloud app deploy`, therefore can't pass a RELEASE upon deploying. Luckily it's already built into the /build which gets uploaded, and sentry-cli generated it, as well as the RELEASE that sentry-cli uses for uploading source maps.
 
@@ -101,14 +114,11 @@ Don't use a sqlalchemy or pg8000 that is higher than sqlalchemy==1.3.15, pg8000=
 | react-router-dom | ^5.2.0 |
 | react-scripts | 4.0.3 |
 
-TODO redux, react-redux, redux-logger.
-
 'default' is a function applied to objects that aren't serializable.  
 use 'default' or else you get "Object of type datetime is not JSON serializable":  
 json.dumps(results, default=str)  
 
 `gcloud app deploy` does not support `--update-env-vars RELEASE=$RELEASE` like `gcloud run deploy` does with Cloud Run
-
 
 https://dev.to/brad_beggs/handling-react-form-submit-with-redirect-async-await-for-the-beyond-beginner-57of
 
