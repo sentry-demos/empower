@@ -20,6 +20,7 @@ Also called the Empower Plant UI/UX. This project was bootstrapped with [Create 
 
 ```
 # React
+cd react
 npm install
 
 # Flask
@@ -32,20 +33,24 @@ pip install -r requirements.txt
 ## Run
 ```
 cd react
-## or
 cd flask
 ```
 
-and
-
 ```
-# React w/ sourcemaps, suspect commits
+# Pick one of two ways to run the React app:
+
+# 1) Run React app w/ sourcemaps, suspect commits
+# Recommended to use this command rather than `npm start`, as
+# run.sh uploads source maps and handles crashes more
+# realistically.
 ./run.sh
 
-# React w/ hot reload
+# 2) Run React app w/ hot reload
+# NOTE: this will cause crashing errors to be tagged
+#   in sentry as handled (`handled: true`)
 npm start
 
-# Flask
+# Run the Flask app
 source env/bin/activate
 ./run.sh
 ```
@@ -54,7 +59,7 @@ Add +2 quantity of a single item to Cart and purchase in order to trigger an Err
 
 
 ## Deploy
-This run script deploys React + Flask. See the run script for individual gcloud commands you could use for any of the backends /node /ruby etc.
+This run script deploys React + Flask. See the run script for individual gcloud commands you can use for any of the backends like /express, /ruby etc.
 ```
 ./run.sh
 ```
@@ -79,9 +84,13 @@ git checkout master
 git fetch upstream master
 git merge upstream/master
 
+# merge those updates into your current branch, if it's behind
+git checkout yourbranch
+git merge master
+
 # update sentry_sdk's and other modules
-cd react && npm install
-cd flask && pip install -r requirements.txt
+cd react && rm -rf node_modules && npm install
+cd flask && source env/bin/activate && pip install -r requirements.txt
 
 # Check that your react/.env, flask/.env and deploy.sh still have correct values
 ```
