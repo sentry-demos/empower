@@ -7,6 +7,7 @@ import { Integrations } from '@sentry/tracing';
 import { createBrowserHistory } from 'history';
 import { Router, Switch, Route } from 'react-router-dom';
 import { crasher, UnhandledException } from './utils/errors'
+import { determineBackendType, determineBackendUrl } from './utils/backendrouter'
 
 import { Provider } from 'react-redux'
 import { createStore, applyMiddleware, compose } from 'redux'
@@ -43,6 +44,8 @@ if (window.location.hostname === "localhost") {
 } else { // App Engine
   ENVIRONMENT = "production"
 }
+
+let BACKEND_URL
 const DSN = process.env.REACT_APP_DSN
 const RELEASE = process.env.REACT_APP_RELEASE
 console.log("ENVIRONMENT", ENVIRONMENT)
@@ -76,7 +79,7 @@ const store = createStore(
 )
 
 class App extends Component {
-  
+
   constructor() {
     super();
     this.state = {
@@ -96,9 +99,13 @@ class App extends Component {
 
     let queryParams = new URLSearchParams(history.location.search)
 
+    // Set desired backend
+    let backendTypeParam = new URLSearchParams(history.location.search).get("backend")
+    const backendType = determineBackendType(backendTypeParam)
+    BACKEND_URL = determineBackendUrl(backendType, ENVIRONMENT)
+
     // These also get passed via request headers
     Sentry.configureScope(scope => {
-      
       const customerType = ["medium-plan", "large-plan", "small-plan", "enterprise"][Math.floor(Math.random() * 4)]
       scope.setTag("customerType", customerType )
 
@@ -107,6 +114,9 @@ class App extends Component {
         scope.setTag("se", queryParams.get("se"))
       }
 
+      console.log("> backendType:", backendType)
+      scope.setTag("backendType", backendType)
+
       let email = Math.random().toString(36).substring(2, 6) + "@yahoo.com";
       scope.setUser({ email: email })
     })
@@ -114,7 +124,6 @@ class App extends Component {
     // Crasher will parse the query params
     crasher()
   }
-
 
   render() {
     return (
@@ -130,14 +139,20 @@ class App extends Component {
                 <Route exact path="/" component={Home} />
                 <Route path="/about" component={About} />
                 <Route path="/cart" component={Cart} />
-                <Route path="/checkout" component={Checkout} />
+                <Route path="/checkout">
+                  <Checkout backend={BACKEND_URL} history={history} />
+                </Route>
                 <Route path="/complete" component={Complete} />
                 <Route path="/error" component={CompleteError} />
                 <Route path="/cra" component={Cra} />
                 <SentryRoute path="/employee/:slug" component={Employee}></SentryRoute>
                 <SentryRoute path="/product/:id" component={Product}></SentryRoute>
-                <Route path="/products" component={Products} />
-                <Route path="/products-join" component={ProductsJoin} />
+                <Route path="/products">
+                  <Products backend={BACKEND_URL} />
+                </Route>
+                <Route path="/products-join">
+                  <ProductsJoin backend={BACKEND_URL} />
+                </Route>
                 <Route component={NotFound} />
               </Switch>
             </div>

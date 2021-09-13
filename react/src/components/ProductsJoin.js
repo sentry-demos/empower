@@ -7,14 +7,6 @@ import { connect } from 'react-redux'
 import { setProducts, addProduct } from '../actions'
 import Loader from "react-loader-spinner";
 
-var BACKEND = ""
-if (window.location.hostname === "localhost") {
-  BACKEND = "http://localhost:8080"
-} else {
-  BACKEND = process.env.REACT_APP_BACKEND
-}
-console.log("BACKEND", BACKEND)
-
 class ProductsJoin extends Component {
   static contextType = Context;
 
@@ -26,7 +18,8 @@ class ProductsJoin extends Component {
       email = scope._user.email
     });
 
-    let result = await fetch(`${BACKEND}/products-join`, {
+    console.log("fetching joined products from backend =>>>>>>>>> " + this.props.backend)
+    let result = await fetch(this.props.backend + "/products-join", {
       method: "GET",
       headers: { se, customerType, email, "Content-Type": "application/json" }
     })

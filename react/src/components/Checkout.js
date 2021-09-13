@@ -7,13 +7,6 @@ import { connect } from 'react-redux'
 import { setProducts, addProduct } from '../actions'
 import Loader from "react-loader-spinner";
 
-var BACKEND = ""
-if (window.location.hostname === "localhost") {
-  BACKEND = "http://localhost:8080"
-} else {
-  BACKEND = process.env.REACT_APP_BACKEND
-}
-
 class Checkout extends Component {
   static contextType = Context;
 
@@ -44,7 +37,8 @@ class Checkout extends Component {
       email = scope._user.email
     });
 
-    return await fetch(`${BACKEND}/checkout`, {
+    console.log("checking out =>>>>>>>>> " + this.props.backend)
+    return await fetch(this.props.backend + "/checkout", {
       method: "POST",
       headers: { se, customerType, email, "Content-Type": "application/json" },
       body: JSON.stringify({
