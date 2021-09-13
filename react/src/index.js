@@ -54,6 +54,9 @@ Sentry.init({
     new Integrations.BrowserTracing({
       tracingOrigins: tracingOrigins,
       routingInstrumentation: Sentry.reactRouterV5Instrumentation(history),
+      _metricOptions: {
+        _reportAllChanges: true,
+      },
     }),
   ],
   tracesSampleRate: 1.0,
