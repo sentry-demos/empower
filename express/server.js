@@ -14,12 +14,48 @@
 
 'use strict';
 
+// Imported Functions
+const DB = require ('./db');
+
 // [START app]
 const express = require('express');
 const app = express();
 
+// Configure ENV
+require('dotenv').config();
+
+// Initialize Sentry
+const Sentry = require('@sentry/node');
+const Tracing = require('@sentry/tracing');
+Sentry.init({
+  dsn: 'https://6de3af6bd0de437694e2b908b1223014@o87286.ingest.sentry.io/5963130',
+  integrations: [
+    new Sentry.Integrations.Http({ tracing: true }),
+    new Tracing.Integrations.Express({ app })
+  ],
+  tracesSampleRate: 1.0
+})
+
+
 app.get('/', (req, res) => {
   res.send('Sentry Node Service says Hello - turn me into a microservice that powers Payments, Shipping, or Customers');
+});
+
+app.get('/products', function(req, res) {
+  try {
+    const transaction = Sentry.startTransaction( { name: '/products.get_products' });
+    const span = transaction.startChild({ op: '/products.get_products', description: 'function' });
+    DB.getProducts().then(
+      retrievedProducts => { 
+        res.send(retrievedProducts);
+        span.finish();
+        transaction.finish();
+      }
+    );
+  } catch (error) {
+    Sentry.captureException(error);
+    throw(error);
+  }
 });
 
 // Listen to the App Engine-specified port, or 8080 otherwise
