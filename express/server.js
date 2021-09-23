@@ -15,7 +15,7 @@
 'use strict';
 
 // Imported Functions
-const DB = require ('./db');
+const DB = require('./db');
 
 // [START app]
 const express = require('express');
@@ -41,17 +41,27 @@ app.get('/', (req, res) => {
   res.send('Sentry Node Service says Hello - turn me into a microservice that powers Payments, Shipping, or Customers');
 });
 
-app.get('/products', function(req, res) {
+app.get('/products', async (req, res) => {
   try {
+    //TODO: probably move spans/transactions into getPRoducts() function
+    // to reduce clutter in this endpoint definition (actually, it appears i did that...)
     const transaction = Sentry.startTransaction( { name: '/products.get_products' });
     const span = transaction.startChild({ op: '/products.get_products', description: 'function' });
-    DB.getProducts().then(
+    const products = await DB.getProducts().then(
       retrievedProducts => { 
-        res.send(retrievedProducts);
         span.finish();
         transaction.finish();
+        return retrievedProducts.rows;
       }
     );
+    console.log("before fetching reviews");
+    // TODO: add spans/transactions for review fetching
+    const productsWithReviews = await DB.getReviews(products).then(
+      retrievedReviews => {
+        console.log("retrieved", retrievedReviews);
+        return res.send(retrievedReviews.rows);
+      }
+    ); //...etc for reviews
   } catch (error) {
     Sentry.captureException(error);
     throw(error);
@@ -65,4 +75,4 @@ app.listen(PORT, () => {
 });
 // [END app]
 
-module.exports = app;
+module.exports = { app, Sentry, Tracing };
