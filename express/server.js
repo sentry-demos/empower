@@ -47,21 +47,10 @@ app.get('/products', async (req, res) => {
     // to reduce clutter in this endpoint definition (actually, it appears i did that...)
     const transaction = Sentry.startTransaction( { name: '/products.get_products' });
     const span = transaction.startChild({ op: '/products.get_products', description: 'function' });
-    const products = await DB.getProducts().then(
-      retrievedProducts => { 
-        span.finish();
-        transaction.finish();
-        return retrievedProducts.rows;
-      }
-    );
-    console.log("before fetching reviews");
+    const products = await DB.getProducts()
     // TODO: add spans/transactions for review fetching
-    const productsWithReviews = await DB.getReviews(products).then(
-      retrievedReviews => {
-        console.log("retrieved", retrievedReviews);
-        return res.send(retrievedReviews.rows);
-      }
-    ); //...etc for reviews
+    const productsWithReviews = await DB.getReviews(products)
+    res.send(productsWithReviews);
   } catch (error) {
     Sentry.captureException(error);
     throw(error);
