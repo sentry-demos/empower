@@ -12,7 +12,9 @@ const getProducts = async function() {
     const products = await knex.raw(`SELECT *, pg_sleep(${sleepTime}) FROM products`).then(
       (listProducts) => {
         return listProducts;
-        // do i need to retrieve reviews in here...? is that stupidly clunky?
+        // currently retrieving reviews in a separate func,
+        // but it could also probably go here. Wonder if that's
+        // part of my issues?
       }
     ).catch((err) => {
       console.log("There was an error", err);
@@ -31,7 +33,6 @@ const getReviews = async function(products) {
   // Retrieve Reviews
   transaction = Sentry.startTransaction({ name: 'get_reviews db query'});
   span = transaction.startChild({ op: 'get_products.reviews', description: 'db.query'});
-  // console.log(products);
   let reviews = [];
   products.forEach(
     (product) => {
@@ -40,18 +41,16 @@ const getReviews = async function(products) {
         ).then(
           (fetchedReview) => {
             console.log("fetched", fetchedReview.rows);
-            // somehow make a dictionary -- checkout this
-            // python struct in more detail - https://github.com/sentry-demos/application-monitoring/blob/master/flask/db.py#L57
-            // what does that struct actually look like...?
-            // const mapping = {
-            //   product: {}
-            // }
             reviews.push(fetchedReview.rows);
             return reviews;
           }
         )
     }
   );
+  // Not understanding async stuff here...
+  // Why is this returning an empty array instead
+  // of waiting for the loop above to fill the reviews
+  // array with DB data?
   return reviews;
 }
 
