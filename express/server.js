@@ -20,6 +20,8 @@ const DB = require('./db');
 // [START app]
 const express = require('express');
 const app = express();
+const cors = require('cors');
+app.use(cors());
 
 // Configure ENV
 require('dotenv').config();
@@ -43,14 +45,26 @@ app.get('/', (req, res) => {
 
 app.get('/products', async (req, res) => {
   try {
-    //TODO: probably move spans/transactions into getPRoducts() function
-    // to reduce clutter in this endpoint definition (actually, it appears i did that...)
-    const transaction = Sentry.startTransaction( { name: '/products.get_products' });
-    const span = transaction.startChild({ op: '/products.get_products', description: 'function' });
-    const products = await DB.getProducts()
-    // TODO: add spans/transactions for review fetching
-    const productsWithReviews = await DB.getReviews(products)
-    res.send(productsWithReviews);
+    let transaction = Sentry.startTransaction( { name: '/products.get_products' });
+    let span = transaction.startChild({ op: '/products.get_products', description: 'function' });
+    const products = await DB.getProducts();
+    span.finish();
+    transaction.finish();
+    res.send(products);
+  } catch (error) {
+    Sentry.captureException(error);
+    throw(error);
+  }
+});
+
+app.get('/products-join', async(req, res) => {
+  try {
+    let transaction = Sentry.startTransaction( { name: '/products.get_products' });
+    let span = transaction.startChild({ op: '/products.get_products', description: 'function' });
+    const products = await DB.getJoinedProducts();
+    span.finish();
+    transaction.finish();
+    res.send(products);
   } catch (error) {
     Sentry.captureException(error);
     throw(error);
