@@ -70,6 +70,39 @@ const getJoinedProducts = async function() {
   return formattedProducts;
 }
 
+const getInventory = async function(cart) {
+  console.log("> getting inventory");
+  const quantities = cart['quantities'];
+  console.log("> quantities", quantities);
+  let productIds = [];
+  for(productId in quantities) {
+    productIds.push(productId)
+  }
+  productIds = formatArray(productIds);
+  console.log("> productIds", productIds);
+  try {
+    let transaction = Sentry.startTransaction({ name: 'get inventory' });
+    let span = transaction.startChild({ op: 'get_inventory', description: 'db.query' });
+    const inventory = await knex.raw(
+      `SELECT * FROM inventory WHERE productId in ${productIds}`
+    )
+    // TODO need to setData on the span
+    return inventory.rows
+  } catch(error) {
+    Sentry.captureException(error);
+    throw err;
+  }
+}
+
+function formatArray(ids) {
+  let numbers = "";
+  for(id of ids) {
+    numbers += (id + ",");
+  }
+  const output = "(" + numbers.substring(0, numbers.length - 1) + ")";
+  return output;
+}
+
 function openDBConnection() {
   const transaction = Sentry.startTransaction({ name: 'open db connection' });
   const span = transaction.startChild({ op: 'getproducts', description: 'db.connect'})
@@ -87,4 +120,4 @@ function openDBConnection() {
   return db;
 }
 
-module.exports = { getProducts, getJoinedProducts }
+module.exports = { getProducts, getJoinedProducts, getInventory }

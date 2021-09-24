@@ -22,6 +22,8 @@ const express = require('express');
 const app = express();
 const cors = require('cors');
 app.use(cors());
+app.use(express.urlencoded({extended: true}));
+app.use(express.json());
 
 // Configure ENV
 require('dotenv').config();
@@ -59,8 +61,8 @@ app.get('/products', async (req, res) => {
 
 app.get('/products-join', async(req, res) => {
   try {
-    let transaction = Sentry.startTransaction( { name: '/products.get_products' });
-    let span = transaction.startChild({ op: '/products.get_products', description: 'function' });
+    let transaction = Sentry.startTransaction({ name: '/products.get_products_join' });
+    let span = transaction.startChild({ op: '/products.get_products_join', description: 'function' });
     const products = await DB.getJoinedProducts();
     span.finish();
     transaction.finish();
@@ -69,6 +71,43 @@ app.get('/products-join', async(req, res) => {
     Sentry.captureException(error);
     throw(error);
   }
+});
+
+app.post('/checkout', async(req, res) => {
+  const order = req.body;
+  const cart = order['cart'];
+  const form = order['form'];
+  let inventory = [];
+  try {
+    // Get Inventory
+    let transaction = Sentry.startTransaction({ name: '/checkout.get_inventory' });
+    let span = transaction.startChild({ op: '/checkout.get_inventory'});
+    inventory = await DB.getInventory(cart);
+    console.log("> /checkout inventory", inventory);
+    span.finish();
+    transaction.finish();
+
+    // Process Order
+    transaction = Sentry.startTransaction({ name: 'process order' });
+    span = transaction.startChild({ op: 'process_order', description: 'function' });
+    let quantities = cart['quantities'];
+    console.log("quantities", quantities);
+    for(const cartItem in quantities) {
+      for(const inventoryItem of inventory) {
+        console.log("> inventoryItem.count", inventoryItem['count']);
+        if(inventoryItem.count < quantities[cartItem]) {
+          throw("Not enough inventory for product");
+        }
+      }
+    }
+    span.finish();
+    transaction.finish();
+    res.send('success');
+  } catch (error) {
+    Sentry.captureException(error);
+    res.status(500).send(error);
+  }
+
 });
 
 // Listen to the App Engine-specified port, or 8080 otherwise
