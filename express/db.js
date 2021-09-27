@@ -1,11 +1,11 @@
 require('dotenv').config();
+const Sentry = require('@sentry/node');
 
-// Knex is the database ORM used in the GCP docs, which
+// Knex is the database query builder used in the GCP docs, which
 // is why we are using it here. See docs:
 // https://cloud.google.com/sql/docs/postgres/connect-app-engine-standard#node.js
 const knex = openDBConnection();
-const Sentry = require('@sentry/node');
-const sleepTime = 0.2
+const sleepTime = 0.2;
 
 const getProducts = async function() {
   let results = [];
@@ -18,6 +18,7 @@ const getProducts = async function() {
         console.log("There was an error", err);
         throw err;
       })
+    Sentry.setTag("totalProducts", products.rows.length);
     span.finish();
     transaction.finish();
 
@@ -52,6 +53,7 @@ const getJoinedProducts = async function() {
         console.log("There was an error", err);
         throw err;
       })
+  Sentry.setTag("totalProducts", products.rows.length);
   span.finish();
   transaction.finish();
 

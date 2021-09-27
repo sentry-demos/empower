@@ -21,12 +21,6 @@ const DB = require('./db');
 const express = require('express');
 const app = express();
 const cors = require('cors');
-app.use(cors());
-app.use(express.urlencoded({extended: true}));
-app.use(express.json());
-
-// Configure ENV
-require('dotenv').config();
 
 // Initialize Sentry
 const Sentry = require('@sentry/node');
@@ -40,15 +34,27 @@ Sentry.init({
   tracesSampleRate: 1.0
 })
 
+// The Sentry request handler must be the first middleware on the app
+app.use(Sentry.Handlers.requestHandler());
+
+app.use(cors());
+app.use(express.urlencoded({extended: true}));
+app.use(express.json());
+
+// Configure ENV
+require('dotenv').config();
 
 app.get('/', (req, res) => {
   res.send('Sentry Node Service says Hello - turn me into a microservice that powers Payments, Shipping, or Customers');
 });
 
 app.get('/products', async (req, res) => {
+  console.log("headers", req.headers);
+  let trace = req.headers['sentry-trace'];
   try {
     let transaction = Sentry.startTransaction( { name: '/products.get_products' });
     let span = transaction.startChild({ op: '/products.get_products', description: 'function' });
+    //DOESNT WORK transaction.continueFromHeaders(trace);
     const products = await DB.getProducts();
     span.finish();
     transaction.finish();
@@ -110,8 +116,10 @@ app.post('/checkout', async(req, res) => {
 
 });
 
-// Listen to the App Engine-specified port, or 8080 otherwise
-const PORT = process.env.PORT || 8080;
+app.use(Sentry.Handlers.errorHandler());
+
+// Listen to the .env-specified port, or 8088 otherwise
+const PORT = process.env.PORT || 8088;
 app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}...`);
 });
