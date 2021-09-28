@@ -21,6 +21,25 @@ const DB = require('./db');
 const express = require('express');
 const app = express();
 const cors = require('cors');
+const sentryEventContext = function(req, res, next) {
+  const se = req.headers.se;
+  if(!['undefined'].includes(se)) {
+    Sentry.setTag("se", se);
+  }
+
+  const customerType = req.headers.customertype;
+  if(!['undefined'].includes(customerType)) {
+    Sentry.setTag("customerType", customerType);
+  }
+
+  const email = req.headers.email;
+  if(!['undefined'].includes(email)) {
+    Sentry.setUser({ 'email': email })
+  }
+
+  // keep executing the router middleware
+  next();
+}
 
 // Initialize Sentry
 const Sentry = require('@sentry/node');
@@ -37,9 +56,14 @@ Sentry.init({
 // The Sentry request handler must be the first middleware on the app
 app.use(Sentry.Handlers.requestHandler());
 
+// TracingHandler creates a trace for every incoming request
+app.use(Sentry.Handlers.tracingHandler());
+
 app.use(cors());
 app.use(express.urlencoded({extended: true}));
 app.use(express.json());
+app.use(sentryEventContext);
+
 
 // Configure ENV
 require('dotenv').config();
@@ -49,12 +73,12 @@ app.get('/', (req, res) => {
 });
 
 app.get('/products', async (req, res) => {
-  console.log("headers", req.headers);
-  let trace = req.headers['sentry-trace'];
   try {
-    let transaction = Sentry.startTransaction( { name: '/products.get_products' });
+    // let transaction = Sentry.startTransaction( { name: '/products.get_products' });
+    let transaction = Sentry.getCurrentHub()
+      .getScope()
+      .getTransaction();
     let span = transaction.startChild({ op: '/products.get_products', description: 'function' });
-    //DOESNT WORK transaction.continueFromHeaders(trace);
     const products = await DB.getProducts();
     span.finish();
     transaction.finish();
@@ -118,7 +142,7 @@ app.post('/checkout', async(req, res) => {
 
 app.use(Sentry.Handlers.errorHandler());
 
-// Listen to the .env-specified port, or 8088 otherwise
+// Listen to the .env-specified, or default port otherwise
 const PORT = process.env.PORT || 8088;
 app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}...`);

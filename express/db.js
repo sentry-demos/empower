@@ -11,29 +11,36 @@ const getProducts = async function() {
   let results = [];
   try {
     // Retrieve Products
-    let transaction = Sentry.startTransaction({ name: 'get products - db query' });
-    let span = transaction.startChild({ op: 'getproducts', description: 'db.query'})
-    const products = await knex.raw(`SELECT *, pg_sleep(${sleepTime}) FROM products`)
+    let transaction = Sentry.getCurrentHub()
+      .getScope()
+      .getTransaction();
+    let span = transaction.startChild({ op: 'getproducts', description: 'db.query'});
+    const productsQuery = `SELECT *, pg_sleep(${sleepTime}) FROM products`;
+    const subspan = span.startChild({op: 'fetch products', description: productsQuery});
+    const products = await knex.raw(productsQuery)
       .catch((err) => {
         console.log("There was an error", err);
         throw err;
       })
     Sentry.setTag("totalProducts", products.rows.length);
+    span.setData("Products", products.rows);
+    subspan.finish();
     span.finish();
-    transaction.finish();
 
     // Retrieve Reviews
-    transaction = Sentry.startTransaction({ name: 'get reviews - db query'});
     span = transaction.startChild({ op: 'getproducts.reviews', description: 'db.query'});
     let formattedProducts = [];
     for(product of products.rows) {
-      const retrievedReviews = await knex.raw(
-        `SELECT *, pg_sleep(0.25) FROM reviews WHERE productId = ${product.id}`
-      );
+      const reviewsQuery = `SELECT *, pg_sleep(0.25) FROM reviews WHERE productId = ${product.id}`;
+      const subspan = span.startChild({op: 'fetch review', description: reviewsQuery});
+      const retrievedReviews = await knex.raw(reviewsQuery);
       let productWithReviews = product;
       productWithReviews['reviews'] = retrievedReviews.rows;
       formattedProducts.push(productWithReviews);
+      subspan.setData("Reviews", retrievedReviews.rows);
+      subspan.finish();
     }
+    span.setData("Products With Reviews", formattedProducts);
     span.finish();
     transaction.finish();
     return formattedProducts;
@@ -54,6 +61,7 @@ const getJoinedProducts = async function() {
         throw err;
       })
   Sentry.setTag("totalProducts", products.rows.length);
+  span.setData("Products", products.rows)
   span.finish();
   transaction.finish();
 
@@ -65,12 +73,12 @@ const getJoinedProducts = async function() {
     const retrievedReviews = await knex.raw(
       "SELECT reviews.id, products.id AS productid, reviews.rating, reviews.customerId, reviews.description, reviews.created FROM reviews INNER JOIN products ON reviews.productId = products.id"
     );
+    span.setData("reviews", retrievedReviews.rows);
     let productWithReviews = product;
     productWithReviews['reviews'] = retrievedReviews.rows;
     formattedProducts.push(productWithReviews);
   }
-  //TODO: do I need span.setData? i.e. https://github.com/sentry-demos/application-monitoring/blob/master/flask/db.py#L101
-  // appears in multiple places in the function
+  span.setData("results", formattedProducts);
   span.finish();
   transaction.finish();
   return formattedProducts;
@@ -92,7 +100,7 @@ const getInventory = async function(cart) {
     const inventory = await knex.raw(
       `SELECT * FROM inventory WHERE productId in ${productIds}`
     )
-    // TODO need to setData on the span
+    span.setData("inventory", inventory.rows);
     return inventory.rows
   } catch(error) {
     Sentry.captureException(error);
