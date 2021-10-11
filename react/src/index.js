@@ -67,8 +67,7 @@ Sentry.init({
     let SE
     Sentry.withScope(function(scope) {
       SE = scope._tags.se
-    });
-    
+    });    
     console.log("> beforeSend se", SE)
 
     if (SE === "tda") {
