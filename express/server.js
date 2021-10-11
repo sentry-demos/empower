@@ -82,7 +82,7 @@ app.get('/products', async (req, res) => {
     const products = await DB.getProducts();
     span.finish();
     transaction.finish();
-    res.send(products);
+    res.status(200).send(products);
   } catch (error) {
     Sentry.captureException(error);
     throw(error);
@@ -96,7 +96,7 @@ app.get('/products-join', async(req, res) => {
     const products = await DB.getJoinedProducts();
     span.finish();
     transaction.finish();
-    res.send(products);
+    res.status(200).send(products);
   } catch (error) {
     Sentry.captureException(error);
     throw(error);
@@ -132,7 +132,7 @@ app.post('/checkout', async(req, res) => {
     }
     span.finish();
     transaction.finish();
-    res.send('success');
+    res.status(200).send('success');
   } catch (error) {
     Sentry.captureException(error);
     res.status(500).send(error);
