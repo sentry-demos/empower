@@ -1,7 +1,9 @@
 import pytest
 from os import environ
 import os
+
 from selenium import webdriver
+from appium import webdriver as appiumdriver
 from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.remote.remote_connection import RemoteConnection
 
@@ -22,79 +24,101 @@ sentry_sdk.init(
     environment=ENVIRONMENT,
 )
 
-# Message captures for Selenium Sessions appear in order of browser/platform combos in this array.
-browsers = [
+emusim_browsers = [
     {
-        "seleniumVersion": '3.4.0',
-        "platform": "Windows 10",
-        "browserName": "chrome",
-        "version": "latest"
+        "deviceName": "iPhone X Simulator",
+        "browserName": "Safari",
+        "deviceOrientation": "portrait",
+        "platformVersion": "13.4",
+        "platformName": "iOS"
     }, {
-        "seleniumVersion": '3.4.0',
-        "platform": "Windows 10",
-        "browserName": "firefox",
-        "version": "latest"
+        "deviceName": "iPhone 11 Simulator",
+        "browserName": "Safari",
+        "deviceOrientation": "portrait",
+        "platformVersion": "13.4",
+        "platformName": "iOS"
     }, {
-        "seleniumVersion": '3.4.0',
-        "platform": "OS X 10.13",
-        "browserName": "safari",
-        "version": "latest-1"
-    }, {
-        "seleniumVersion": '3.4.0',
-        "platform": "OS X 10.11",
-        "browserName": "chrome",
-        "version": "latest",
-        "extendedDebugging": True
+        "deviceName": "Google Pixel 3 XL GoogleAPI Emulator",
+        "browserName": "Chrome",
+        "deviceOrientation": "portrait",
+        "platformVersion": "10.0",
+        "platformName": "Android"
+    },{
+        "deviceName": "Samsung Galaxy S9 WQHD GoogleAPI Emulator",
+        "browserName": "Chrome",
+        "deviceOrientation": "portrait",
+        "platformVersion": "9.0",
+        "platformName": "Android"
     }]
 
-def pytest_generate_tests(metafunc):
-    if 'driver' in metafunc.fixturenames:
-        metafunc.parametrize('browser_config',
-                             browsers,
-                             ids=_generate_param_ids('broswerConfig', browsers),
-                             scope='function')
+
+desktop_browsers = [
+    {
+        "platformName": "Windows 10",
+        "browserName": "MicrosoftEdge",
+        "platformVersion": "latest",
+        "sauce:options": {}
+    }, {
+        "platformName": "Windows 10",
+        "browserName": "firefox",
+        "platformVersion": "latest-1",
+        "sauce:options": {}
+    }, {
+        "platformName": "Windows 10",
+        "browserName": "internet explorer",
+        "platformVersion": "latest",
+        "sauce:options": {}
+    }, {
+        "platformName": "OS X 10.14",
+        "browserName": "safari",
+        "platformVersion": "latest-1",
+        "sauce:options": {}
+    }, {
+        "platformName": "OS X 10.14",
+        "browserName": "chrome",
+        "platformVersion": "latest",
+        "sauce:options": {
+            "extendedDebugging": True
+        }
+    }]
 
 
-def _generate_param_ids(name, values):
-    return [("<%s:%s>" % (name, value)).replace('.', '_') for value in values]
+def pytest_addoption(parser):
+    parser.addoption("--dc", action="store", default='us', help="Set Sauce Labs Data Center (US or EU)")
 
 
-@pytest.yield_fixture(scope='function')
-def driver(request, browser_config):
-    sentry_sdk.set_tag("seleniumPlatform", parsePlatform(request.node.name))
-    sentry_sdk.set_tag("seleniumBrowser", parseBrowserName(request.node.name))
+@pytest.fixture
+def data_center(request):
+    return request.config.getoption('--dc')
 
-    # if the assignment below does not make sense to you please read up on object assignments.
-    # The point is to make a copy and not mess with the original test spec.
-    desired_caps = dict()
-    desired_caps.update(browser_config)
 
-    # Selenium WebDriver Connection
+@pytest.fixture(params=emusim_browsers)
+def mobile_web_driver(request, data_center):
+
     test_name = request.node.name
-    build_tag = environ.get('BUILD_TAG', None)
-    tunnel_id = environ.get('TUNNEL_IDENTIFIER', None)
-    username = environ.get('SAUCE_USERNAME', None)
-    access_key = environ.get('SAUCE_ACCESS_KEY', None)
+    build_tag = environ.get('BUILD_TAG', "Sauce-Best-Practices-Python-Mobile-Web")
 
-    selenium_endpoint = "https://%s:%s@ondemand.saucelabs.com:443/wd/hub" % (username, access_key)
-    desired_caps['build'] = build_tag
-    # we can move this to the config load or not, also messing with this on a test to test basis is possible :)
-    desired_caps['tunnelIdentifier'] = tunnel_id
-    desired_caps['name'] = test_name
+    username = environ['SAUCE_USERNAME']
+    access_key = environ['SAUCE_ACCESS_KEY']
 
-    executor = RemoteConnection(selenium_endpoint, resolve_ip=False)
+    if data_center and data_center.lower() == 'eu':
+        selenium_endpoint = "https://{}:{}@ondemand.eu-central-1.saucelabs.com/wd/hub".format(username, access_key)
+    else:
+        selenium_endpoint = "https://{}:{}@ondemand.us-west-1.saucelabs.com/wd/hub".format(username, access_key)
+
+    caps = dict()
+    caps.update(request.param)
+    caps.update({'build': build_tag})
+    caps.update({'name': test_name})
+
     browser = webdriver.Remote(
-        command_executor=executor,
-        desired_capabilities=desired_caps,
+        command_executor=selenium_endpoint,
+        desired_capabilities=caps,
         keep_alive=True
     )
-    browser.implicitly_wait(10)
-
-    sentry_sdk.set_tag("seleniumSessionId", browser.session_id)
 
     # This is specifically for SauceLabs plugin.
     # In case test fails after selenium session creation having this here will help track it down.
-    # creates one file per test non ideal but xdist is awful
     if browser is not None:
         print("SauceOnDemandSessionID={} job-name={}".format(browser.session_id, test_name))
     else:
@@ -106,19 +130,115 @@ def driver(request, browser_config):
     # report results
     # use the test result to send the pass/fail status to Sauce Labs
     sauce_result = "failed" if request.node.rep_call.failed else "passed"
-    
-    # Handler failure scenario, send to Sentry job-monitor-application-monitoring
-    if sauce_result == "failed":
-        sentry_sdk.capture_message("Sauce Result: %s" % (sauce_result))
-
     browser.execute_script("sauce:job-result={}".format(sauce_result))
     browser.quit()
 
-    # If the test errors on not finding a button, then this should still execute
-    # because it's part of Teardown which always runs
-    sentry_sdk.set_tag("session_id", browser.session_id)
-    sentry_sdk.capture_message("Selenium Session Done")
+@pytest.fixture(params=desktop_browsers)
+def desktop_web_driver(request, data_center):
 
+    test_name = request.node.name
+    build_tag = environ.get('BUILD_TAG', "Sauce-Best-Practices-Python-Desktop-Web")
+
+    username = environ['SAUCE_USERNAME']
+    access_key = environ['SAUCE_ACCESS_KEY']
+
+    if data_center and data_center.lower() == 'eu':
+        selenium_endpoint = "https://{}:{}@ondemand.eu-central-1.saucelabs.com/wd/hub".format(username, access_key)
+    else:
+        selenium_endpoint = "https://{}:{}@ondemand.us-west-1.saucelabs.com/wd/hub".format(username, access_key)
+
+    caps = dict()
+    caps.update(request.param)
+    caps['sauce:options'].update({'build': build_tag})
+    caps['sauce:options'].update({'name': test_name})
+
+    browser = webdriver.Remote(
+        command_executor=selenium_endpoint,
+        desired_capabilities=caps,
+        keep_alive=True
+    )
+
+    browser.implicitly_wait(10)
+
+    sentry_sdk.set_tag("seleniumSessionId", browser.session_id)
+
+    # This is specifically for SauceLabs plugin.
+    # In case test fails after selenium session creation having this here will help track it down.
+    if browser is not None:
+        print("SauceOnDemandSessionID={} job-name={}".format(browser.session_id, test_name))
+    else:
+        raise WebDriverException("Never created!")
+
+    yield browser
+
+    # Teardown starts here
+    # report results
+    # use the test result to send the pass/fail status to Sauce Labs
+    sauce_result = "failed" if request.node.rep_call.failed else "passed"
+    browser.execute_script("sauce:job-result={}".format(sauce_result))
+    browser.quit()
+
+
+@pytest.fixture
+def android_rdc_driver(request, data_center):
+
+    username_cap = environ['SAUCE_USERNAME']
+    access_key_cap = environ['SAUCE_ACCESS_KEY']
+
+    caps = {
+        'username': username_cap,
+        'accessKey': access_key_cap,
+        'deviceName': 'Android GoogleAPI Emulator',
+        'platformVersion': '10.0',
+        'platformName': 'Android',
+        # 'build': 'RDC-Android-Python-Best-Practice',
+        # 'name': request.node.name,
+        'app': "https://github.com/saucelabs/sample-app-mobile/releases/download/2.7.1/Android.SauceLabs.Mobile.Sample.app.2.7.1.apk",
+        'sauce:options': {
+            'appiumVersion': '1.20.2',
+            'build': 'RDC-Android-Python-Best-Practice',
+            'name': request.node.name
+        },
+        'appWaitForLaunch': False
+    }
+
+    if data_center and data_center.lower() == 'eu':
+        sauce_url = 'http://ondemand.eu-central-1.saucelabs.com/wd/hub'
+    else:
+        sauce_url = 'http://ondemand.us-west-1.saucelabs.com/wd/hub'
+
+    driver = appiumdriver.Remote(sauce_url, desired_capabilities=caps)
+    yield driver
+    sauce_result = "failed" if request.node.rep_call.failed else "passed"
+    driver.execute_script("sauce:job-result={}".format(sauce_result))
+    driver.quit()
+
+@pytest.fixture
+def ios_rdc_driver(request, data_center):
+
+    username_cap = environ['SAUCE_USERNAME']
+    access_key_cap = environ['SAUCE_ACCESS_KEY']
+
+    caps = {
+        'username': username_cap,
+        'accessKey': access_key_cap,
+        'deviceName': 'iPhone.*',
+        'platformName': 'iOS',
+        'build': 'RDC-iOS-Python-Best-Practice',
+        'name': request.node.name,
+        'app': 'https://github.com/saucelabs/sample-app-mobile/releases/download/2.7.1/iOS.RealDevice.SauceLabs.Mobile.Sample.app.2.7.1.ipa'
+    }
+
+    if data_center and data_center.lower() == 'eu':
+        sauce_url = "http://ondemand.eu-central-1.saucelabs.com/wd/hub"
+    else:
+        sauce_url = "http://ondemand.us-west-1.saucelabs.com/wd/hub"
+
+    driver = appiumdriver.Remote(sauce_url, desired_capabilities=caps)
+    yield driver
+    sauce_result = "failed" if request.node.rep_call.failed else "passed"
+    driver.execute_script("sauce:job-result={}".format(sauce_result))
+    driver.quit()
 
 @pytest.hookimpl(hookwrapper=True, tryfirst=True)
 def pytest_runtest_makereport(item, call):
@@ -131,20 +251,3 @@ def pytest_runtest_makereport(item, call):
     # be "setup", "call", "teardown"
     setattr(item, "rep_" + rep.when, rep)
 
-def parsePlatform(requestNodeName):
-    platform = ""
-    if "windows" in requestNodeName.lower():
-        platform = "Windows"
-    else:
-        platform = "OSX"
-    return platform
-
-def parseBrowserName(requestNodeName):
-    browserName = ""
-    if "chrome" in requestNodeName.lower():
-        browserName = "chrome"
-    if "firefox" in requestNodeName.lower():
-        browserName = "firefox"
-    if "safari" in requestNodeName.lower():
-        browserName = "safari"
-    return browserName
