@@ -108,6 +108,11 @@ gcloud app browse
 gcloud app services list
 gcloud app logs tail -s application-monitoring-react
 gcloud app logs tail -s application-monitoring-flask
+gcloud --help
+gcloud topic configurations
+gcloud auth
+gcloud auth application-default
+gcloud auth login
 ```
 
 ### Other

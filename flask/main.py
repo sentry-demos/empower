@@ -49,8 +49,6 @@ def checkout():
     order = json.loads(request.data)
     cart = order["cart"]
     form = order["form"]
-    print("> cart", cart)
-    print("> form", form)
 
     inventory = []
     try:
