@@ -63,10 +63,21 @@ Sentry.init({
   release: RELEASE,
   environment: ENVIRONMENT,
   beforeSend(event, hint) {
-    const exception = hint.originalException
-    if (exception instanceof UnhandledException) {
-      event.fingerprint = ['unhandled-exception', process.env.REACT_APP_RELEASE ];
+    // Parse from tags because src/index.js already set it there. Once there are React route changes, it is no longer in the URL bar
+    let SE
+    Sentry.withScope(function(scope) {
+      SE = scope._tags.se
+    });
+    
+    console.log("> beforeSend se", SE)
+
+    if (SE === "tda") {
+      // Release Health
+      event.fingerprint = ['{ default }', SE, process.env.REACT_APP_RELEASE ];
+    } else if (SE) {
+      event.fingerprint = ['{ default }', SE ];
     }
+    
     return event;
   }
 });
@@ -93,10 +104,6 @@ class App extends Component {
       }
     };
 
-    // new PerformanceObserver(entryList => {
-    //   console.log(entryList.getEntries());
-    // }).observe({ type: "largest-contentful-paint", buffered: true });
-
     let queryParams = new URLSearchParams(history.location.search)
 
     // These also get passed via request headers
@@ -106,7 +113,8 @@ class App extends Component {
       scope.setTag("customerType", customerType )
 
       if (queryParams.get("se")) {
-        console.log("> se", queryParams.get("se"))
+        // Route components (navigation changes) will now have 'se' tag on scope
+        console.log("> src/index.js se", queryParams.get("se"))
         scope.setTag("se", queryParams.get("se"))
       }
 
