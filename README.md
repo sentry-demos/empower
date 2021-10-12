@@ -61,8 +61,9 @@ Add +2 quantity of a single item to Cart and purchase in order to trigger an Err
 ## Deploy
 This run script deploys React + Flask. See the run script for individual gcloud commands you can use for any of the backends like /express, /ruby etc.
 ```
-./run.sh
+./deploy.sh
 ```
+and `gcloud auth login` if it asks you to authenticate, or insert YubiKey.
 
 ## Troubleshooting
 ### Upgrading
@@ -107,6 +108,11 @@ gcloud app browse
 gcloud app services list
 gcloud app logs tail -s application-monitoring-react
 gcloud app logs tail -s application-monitoring-flask
+gcloud --help
+gcloud topic configurations
+gcloud auth
+gcloud auth application-default
+gcloud auth login
 ```
 
 ### Other

@@ -49,6 +49,7 @@ const crasher = () => {
   }
 }
 
+// Useful for fingerprinting examples and R&D. You can check `if (exception instanceof UnhandledException)`
 // Based on the official example https://docs.sentry.io/platforms/javascript/usage/sdk-fingerprinting/#group-errors-with-greater-granularity
 class UnhandledException extends Error {
   constructor(message, functionName) {
