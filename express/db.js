@@ -120,13 +120,24 @@ function formatArray(ids) {
 function openDBConnection() {
   const transaction = Sentry.startTransaction({ name: 'open db connection' });
   const span = transaction.startChild({ op: 'getproducts', description: 'db.connect'})
+
+  let host
+  if (process.env.EXPRESS_ENV === 'test') {
+    // The cloud sql instance connection
+    // name doesn't work locally, but the
+    // public IP of the instance does.
+    host = process.env.CLOUD_SQL_PUBLIC_IP
+  } else {
+    host = process.env.CLOUD_SQL_CONNECTION_NAME
+  }
+
   const db = require('knex')({
     client: 'pg',
     connection: {
       user: process.env.USERNAME,
       password: process.env.PASSWORD,
       database: process.env.DATABASE,
-      host: process.env.CLOUD_SQL_CONNECTION_IP
+      host: host
     }
   });
   span.finish();

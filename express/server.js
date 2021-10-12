@@ -64,7 +64,6 @@ app.use(express.urlencoded({extended: true}));
 app.use(express.json());
 app.use(sentryEventContext);
 
-
 // Configure ENV
 require('dotenv').config();
 
@@ -74,7 +73,6 @@ app.get('/', (req, res) => {
 
 app.get('/products', async (req, res) => {
   try {
-    // let transaction = Sentry.startTransaction( { name: '/products.get_products' });
     let transaction = Sentry.getCurrentHub()
       .getScope()
       .getTransaction();
@@ -91,7 +89,9 @@ app.get('/products', async (req, res) => {
 
 app.get('/products-join', async(req, res) => {
   try {
-    let transaction = Sentry.startTransaction({ name: '/products.get_products_join' });
+    let transaction = Sentry.getCurrentHub()
+      .getScope()
+      .getTransaction();
     let span = transaction.startChild({ op: '/products.get_products_join', description: 'function' });
     const products = await DB.getJoinedProducts();
     span.finish();
