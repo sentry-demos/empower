@@ -64,17 +64,17 @@ Sentry.init({
   environment: ENVIRONMENT,
   beforeSend(event, hint) {
     // Parse from tags because src/index.js already set it there. Once there are React route changes, it is no longer in the URL bar
-    let SE
+    let se
     Sentry.withScope(function(scope) {
-      SE = scope._tags.se
+      se = scope._tags.se
     });    
-    console.log("> beforeSend se", SE)
+    console.log("> beforeSend se", se)
 
-    if (SE === "tda") {
+    if (se === "tda") {
       // Release Health
-      event.fingerprint = ['{ default }', SE, process.env.REACT_APP_RELEASE ];
-    } else if (SE) {
-      event.fingerprint = ['{ default }', SE ];
+      event.fingerprint = ['{ default }', se, process.env.REACT_APP_RELEASE ];
+    } else if (se) {
+      event.fingerprint = ['{ default }', se ];
     }
     
     return event;
