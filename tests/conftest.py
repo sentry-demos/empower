@@ -222,11 +222,16 @@ def ios_rdc_driver(request, data_center):
     caps = {
         'username': username_cap,
         'accessKey': access_key_cap,
-        'deviceName': 'iPhone.*',
+        'appium:deviceName': 'iPhone 11 Simulator',
         'platformName': 'iOS',
-        'build': 'RDC-iOS-Python-Best-Practice',
-        'name': request.node.name,
-        'app': 'https://github.com/saucelabs/sample-app-mobile/releases/download/2.7.1/iOS.RealDevice.SauceLabs.Mobile.Sample.app.2.7.1.ipa'
+        'appium:platformVersion': '14.5',
+
+        'sauce:options': {
+            'appiumVersion': '1.21.0',
+            'build': 'RDC-iOS-Python-Best-Practice',
+            'name': request.node.name,
+        },
+        'appium:app': 'https://github.com/saucelabs/sample-app-mobile/releases/download/2.7.1/iOS.Simulator.SauceLabs.Mobile.Sample.app.2.7.1.zip',
     }
 
     if data_center and data_center.lower() == 'eu':
