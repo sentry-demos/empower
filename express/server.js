@@ -41,11 +41,21 @@ const sentryEventContext = function(req, res, next) {
   next();
 }
 
+const dsn = process.env.EXPRESS_APP_DSN;
+const release = process.env.RELEASE;
+const environment = process.env.EXPRESS_ENV || "production";
+
+console.log("> DSN", dsn);
+console.log("> RELEASE", release);
+console.log("> ENVIRONMENT", environment);
+
 // Initialize Sentry
 const Sentry = require('@sentry/node');
 const Tracing = require('@sentry/tracing');
 Sentry.init({
-  dsn: 'https://6de3af6bd0de437694e2b908b1223014@o87286.ingest.sentry.io/5963130',
+  dsn: dsn,
+  environment: environment,
+  release: release,
   integrations: [
     new Sentry.Integrations.Http({ tracing: true }),
     new Tracing.Integrations.Express({ app })
