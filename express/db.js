@@ -51,11 +51,14 @@ const getProducts = async function() {
 }
 
 const getJoinedProducts = async function() {
-  let transaction = Sentry.startTransaction({ name: 'get joined products' });
-  let span = transaction.startChild({ op: 'getjoinedproducts', description: 'db.query' });
+  let transaction = Sentry.getCurrentHub()
+      .getScope()
+      .getTransaction();
 
   // Retrieve Products
-  const products = await knex.raw(`SELECT * FROM products`)
+  const productsQuery = `SELECT * FROM products`
+  let span = transaction.startChild({ op: 'getjoinedproducts', description: productsQuery });
+  const products = await knex.raw(productsQuery)
       .catch((err) => {
         console.log("There was an error", err);
         throw err;
@@ -63,23 +66,27 @@ const getJoinedProducts = async function() {
   Sentry.setTag("totalProducts", products.rows.length);
   span.setData("Products", products.rows)
   span.finish();
-  transaction.finish();
 
   // Retrieve Reviews
-  transaction = Sentry.startTransaction({ name: 'get joined product reviews'});
-  span = transaction.startChild({ op: 'getjoinedproducts.reviews', description: 'db.query' });
+  const reviewsQuery = "SELECT reviews.id, products.id AS productid, reviews.rating, reviews.customerId, reviews.description, reviews.created FROM reviews INNER JOIN products ON reviews.productId = products.id";
+  span = transaction.startChild({ op: 'getjoinedproducts.reviews', description: reviewsQuery });
+  const retrievedReviews = await knex.raw(
+    reviewsQuery
+  );
+  span.setData("reviews", retrievedReviews.rows);
+  span.finish();
+
+  // Format Products/Reviews
+  span = transaction.startChild({ op: 'getjoinedproducts.formatresults', description: 'function' })
   let formattedProducts = [];
   for(product of products.rows) {
-    const retrievedReviews = await knex.raw(
-      "SELECT reviews.id, products.id AS productid, reviews.rating, reviews.customerId, reviews.description, reviews.created FROM reviews INNER JOIN products ON reviews.productId = products.id"
-    );
-    span.setData("reviews", retrievedReviews.rows);
     let productWithReviews = product;
     productWithReviews['reviews'] = retrievedReviews.rows;
     formattedProducts.push(productWithReviews);
   }
   span.setData("results", formattedProducts);
   span.finish();
+
   transaction.finish();
   return formattedProducts;
 }
