@@ -18,7 +18,7 @@ Verify that port http://localhost:8090 is set for springboot in react/src/utils/
 
 ## Run
 1. Run from terminal with 
-'''
+```
 ./mvnw spring-boot:run
-'''
+```
 from the spring-boot directory
