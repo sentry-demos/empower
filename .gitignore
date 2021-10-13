@@ -38,3 +38,6 @@ ruby/Gemfile.lock
 flask/test.py
 react/app.yaml
 flask/app.yaml
+
+spring-boot/src/main/resources/application.properties
+spring-boot/src/main/appengine/app.yaml

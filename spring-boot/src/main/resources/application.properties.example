@@ -1,0 +1,19 @@
+#logging.file.name=log/spring-boot.log
+#server.port=8090
+
+#  https://docs.sentry.io/platforms/java/guides/spring-boot/logging-frameworks/
+sentry.dsn=
+sentry.logging.minimum-event-level=warn
+sentry.logging.minimum-breadcrumb-level=debug
+sentry.exception-resolver-order=-1
+sentry.enable-tracing=true
+sentry.traces-sample-rate=1.0
+# sentry.debug=true
+
+#spring.datasource.driver-class-name=org.postgresql.Driver
+spring.datasource.url=
+spring.datasource.username=
+spring.datasource.password=
+spring.cloud.gcp.sql.instance-connection-name=
+spring.cloud.gcp.sql.database-name=
+spring.cloud.gcp.sql.enabled=false

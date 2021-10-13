@@ -1,0 +1,12 @@
+runtime: java
+env: flex
+service: testspringboot
+env_variables:
+  FRONTEND_ENV: "some example environment variable"
+handlers:
+- url: /.*
+  script: this field is required, but ignored
+beta_settings:
+  cloud_sql_instances: 
+readiness_check:
+  app_start_timeout_sec: 600
