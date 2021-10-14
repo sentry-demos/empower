@@ -26,32 +26,30 @@ sentry_sdk.init(
 
 desktop_browsers = [
     {
-        "platformName": "Windows 10",
-        "browserName": "MicrosoftEdge",
-        "platformVersion": "latest",
-        "sauce:options": {}
-    }, {
-        "platformName": "Windows 10",
-        "browserName": "firefox",
-        "platformVersion": "latest-1",
-        "sauce:options": {}
-    }, {
-        "platformName": "Windows 10",
-        "browserName": "internet explorer",
-        "platformVersion": "latest",
-        "sauce:options": {}
-    }, {
-        "platformName": "OS X 10.14",
-        "browserName": "safari",
-        "platformVersion": "latest-1",
-        "sauce:options": {}
-    }, {
-        "platformName": "OS X 10.14",
+        "seleniumVersion": '3.4.0',
+        "platform": "Windows 10",
         "browserName": "chrome",
-        "platformVersion": "latest",
+        "version": "latest",
+        "sauce:options": {}
+    }, {
+        "seleniumVersion": '3.4.0',
+        "platform": "Windows 10",
+        "browserName": "firefox",
+        "version": "latest",
+        "sauce:options": {}
+    }, {
+        "seleniumVersion": '3.4.0',
+        "platform": "OS X 10.13",
+        "browserName": "safari",
+        "version": "latest-1",
+        "sauce:options": {}
+    }, {
+        "seleniumVersion": '3.4.0',
+        "platform": "OS X 10.11",
+        "browserName": "chrome",
+        "version": "latest",
         "sauce:options": {}
     }]
-
 
 def pytest_addoption(parser):
     parser.addoption("--dc", action="store", default='us', help="Set Sauce Labs Data Center (US or EU)")
@@ -104,9 +102,16 @@ def desktop_web_driver(request, data_center):
     # report results
     # use the test result to send the pass/fail status to Sauce Labs
     sauce_result = "failed" if request.node.rep_call.failed else "passed"
+
+    # Handler failure scenario, send to Sentry job-monitor-application-monitoring
+    if sauce_result == "failed":
+        sentry_sdk.capture_message("Sauce Result: %s" % (sauce_result))
+
     browser.execute_script("sauce:job-result={}".format(sauce_result))
     browser.quit()
 
+    # Handler done scenario, send to Sentry job-monitor-application-monitoring
+    sentry_sdk.capture_message("Selenium Session Done")
 
 @pytest.fixture
 def android_emu_driver(request, data_center):
