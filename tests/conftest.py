@@ -120,7 +120,7 @@ def android_emu_driver(request, data_center):
         'deviceName': 'Android GoogleAPI Emulator',
         'platformVersion': '10.0',
         'platformName': 'Android',
-        'app': "storage:filename=app-release.apk",
+        'app': "https://github.com/sentry-demos/sentry_react_native/releases/download/1.8/app-release.apk",
         'sauce:options': {
             'appiumVersion': '1.20.2',
             'build': 'RDC-Android-Python-Best-Practice',
