@@ -1,4 +1,4 @@
-def test_standard_user(android_emu_driver):
+def test_checkout_android(android_emu_driver):
 
     # android_emu_driver.find_element_by_class("android.widget.TextView").click() # empower plant btn
 
