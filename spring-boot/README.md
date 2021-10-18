@@ -16,7 +16,7 @@ Extension to the Empower Plant UI/UX. This project was originally bootstrapped w
 3. Follow steps for **Local DEV deployment** XOR **Cloud GCP deployment**
 
 ### Local DEV deployment
-Verify that the **DEV** section is not commented and values are set AND GCP section is commented 
+Verify that the **DEV** section is not commented and values are set AND **GCP** section is commented 
 ```
 spring.datasource.url=jdbc:postgresql://<server>:<port>/<database name>
 server.port=8090
