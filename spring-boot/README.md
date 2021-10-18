@@ -16,14 +16,14 @@ Extension to the Empower Plant UI/UX. This project was originally bootstrapped w
 Note: Follow steps for **Local DEV deployment** XOR **Cloud GCP deployment**
 
 ### Local DEV deployment
-Verify that the DEV section is not commented and values are set AND GCP section is commented (i.e. `application.properties` should have no values for `spring.datasource.url` nor `server.port`.) 
+Verify that the DEV section is not commented and values are set AND GCP section is commented 
 ```
 spring.datasource.url=jdbc:postgresql://<server>:<port>/<database name>
 server.port=8090
 spring.cloud.gcp.sql.enabled=false
 ```
 ### Cloud GCP deployment
-Verify that the GCP section is not commented AND DEV section is commented. 
+Verify that the GCP section is not commented AND DEV section is commented (i.e. `application.properties` should have no values for `spring.datasource.url` nor `server.port`).
 ```
 spring.cloud.gcp.sql.enabled=true
 ``` 
