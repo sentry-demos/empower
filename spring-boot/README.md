@@ -11,9 +11,9 @@ Extension to the Empower Plant UI/UX. This project was originally bootstrapped w
   }
 ```
 
-3. Set other `spring-boot/src/main/resources/application.properties` property values
+2. Set other `spring-boot/src/main/resources/application.properties` property values
 
-Note: Follow steps for **Local DEV deployment** XOR **Cloud GCP deployment**
+3. Follow steps for **Local DEV deployment** XOR **Cloud GCP deployment**
 
 ### Local DEV deployment
 Verify that the DEV section is not commented and values are set AND GCP section is commented 
@@ -32,4 +32,4 @@ spring.cloud.gcp.sql.enabled=true
 1. Run from terminal with `./mvnw spring-boot:run` from the spring-boot directory
 
 ## Configuration Files
-All configuration are in `src/main/resources/application.properties` and `src/main/appengine/app.yaml`.
+All configurations are in `src/main/resources/application.properties` and `src/main/appengine/app.yaml`.
