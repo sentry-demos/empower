@@ -20,11 +20,12 @@ import org.slf4j.LoggerFactory;
 public class DatabaseHelper {
 
 	private final Logger logger = LoggerFactory.getLogger(Application.class);
+	//Leverage Item & Review class getters to map DB results into JSONObject/JSONArray
 	
 	@Autowired
 	JdbcTemplate jdbcTemplate;
 	
-	//Leverage Item & Review class getters to map DB results into JSONObject/JSONArray
+	
 	public String mapAllProducts(ISpan span) {
 		logger.info("mapAllProducts");
 

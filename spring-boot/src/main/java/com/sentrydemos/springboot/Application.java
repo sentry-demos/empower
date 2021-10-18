@@ -17,6 +17,9 @@ import org.slf4j.LoggerFactory;
 @SpringBootApplication
 public class Application {
 	
+	@Value("${SPRINGBOOT_LOCAL_ENV}")
+	private String springbootlocalenv;
+	
 	@Value("${sentry.dsn}")
 	private String sentryDSN; //value comes from the application.properties's sentry.dsn (value is also used with Logback)
 	
@@ -34,7 +37,7 @@ public class Application {
 		
 		Sentry.init(options -> {
 			options.setDsn(sentryDSN);
-			String environment = ((System.getenv("SPRINGBOOT_ENV") == null) ? "production" : System.getenv("SPRINGBOOT_ENV"));
+			String environment = ((System.getenv("SPRINGBOOT_ENV") == null ? springbootlocalenv : System.getenv("SPRINGBOOT_ENV")));
 			options.setEnvironment(environment);
 			options.setTracesSampleRate(1.0);
 			options.setRelease(getRelease());

@@ -51,6 +51,7 @@ public class AppController {
 	}
 
 	private void setTags(HttpServletRequest request) {
+		//to print all headers
 		/*
 		 * logger.info("request header names and vals: "); for (Enumeration<?> e =
 		 * request.getHeaderNames(); e.hasMoreElements();) { String nextHeaderName =
@@ -69,10 +70,11 @@ public class AppController {
 		}
 
 	}
-
+	
+	@CrossOrigin
 	@GetMapping("/")
 	public String index() {
-		logger.info("simon");
+		logger.info("returning from / call: Greetings from Spring Boot!");
 		return "Greetings from Spring Boot!";
 
 	}
@@ -121,11 +123,9 @@ public class AppController {
 	@GetMapping("/products-join")
 	public String GetProducts(HttpServletRequest request) {
 		ISpan span = hub.getSpan().startChild("Overhead", "Set tags");
-		//initInventory(); // initialize inventory each time we hit this endpoint
 		setTags(request);
 		span.finish();
 		String allProducts = dbHelper.mapAllProductsJoin(hub.getSpan());
-		
 		return allProducts;
 	}
 

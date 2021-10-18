@@ -16,50 +16,29 @@
 	<properties>
 		<java.version>8</java.version>
 	</properties>
-	<dependencies>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-web</artifactId>
-		</dependency>
 
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-test</artifactId>
-			<scope>test</scope>
-		</dependency>
+	<dependencies>
 		<!-- Sentry Spring Boot SDK -->
 		<dependency>
     		<groupId>io.sentry</groupId>
     		<artifactId>sentry-spring-boot-starter</artifactId>
-    		<version>5.1.2</version>
+    		<version>5.2.2</version>
 		</dependency>
 		<!-- Sentry Logback SDK -->
 		<dependency>
 		    <groupId>io.sentry</groupId>
 		    <artifactId>sentry-logback</artifactId>
-		    <version>5.1.2</version>
-		</dependency>
-		<!-- SQL Server JDBC Driver -->
-		<dependency>
-			<groupId>com.microsoft.sqlserver</groupId>
-			<artifactId>mssql-jdbc</artifactId>
-			<scope>runtime</scope>
+		    <version>5.2.2</version>
 		</dependency>
 		<!-- Capture Sentry Transaction -->
 		<dependency>
 		    <groupId>org.springframework.boot</groupId>
 		    <artifactId>spring-boot-starter-aop</artifactId>
 		</dependency>
-		<!-- https://mvnrepository.com/artifact/org.postgresql/postgresql -->
+		<!-- Required for REST calls -->
 		<dependency>
-			<groupId>org.postgresql</groupId>
-			<artifactId>postgresql</artifactId>
-			<version>42.2.23</version>
-		</dependency>
-		<!-- Spring JDBC -->
-		<dependency>
-		    <groupId>org.springframework.boot</groupId>
-		    <artifactId>spring-boot-starter-jdbc</artifactId>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
 		<!-- https://mvnrepository.com/artifact/org.json/json -->
 		<dependency>
@@ -67,11 +46,29 @@
 			<artifactId>json</artifactId>
 			<version>20210307</version>
 		</dependency>
+		
+		<!-- All below dependencies are for DB connections -->
+		<!-- Spring JDBC jdbcTemplate-->
 		<dependency>
-		    <groupId>com.google.cloud.sql</groupId>
-		    <artifactId>postgres-socket-factory</artifactId>
-		    <version>1.3.3</version>
+		    <groupId>org.springframework.boot</groupId>
+		    <artifactId>spring-boot-starter-jdbc</artifactId>
 		</dependency>
+		
+		<!--  SQL Server JDBC postgresql driver org.postgresql.Driver -->
+		<dependency>
+			<groupId>org.postgresql</groupId>
+			<artifactId>postgresql</artifactId>
+			<version>42.2.23</version>
+		</dependency>
+		
+		<!-- GCLOUD Dependencies -->
+		<!-- Using CloudSqlJdbcInfoProvider bean to initialize DB connection with spring.cloud.gcp.sql.* values from application.properties -->
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-gcp-starter-sql-postgresql</artifactId>
+			<version>1.2.4.RELEASE</version>
+		</dependency>
+		
 	</dependencies>
 	
 	<build>
@@ -92,5 +89,4 @@
 			</plugin>
 		</plugins>
 	</build>
-
 </project>
