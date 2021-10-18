@@ -11,10 +11,12 @@ Extension to the Empower Plant UI/UX. This project was originally bootstrapped w
   }
 ```
 
-3. Set other spring-boot/src/main/resources/application.properties property values
+3. Set other `spring-boot/src/main/resources/application.properties` property values
+
+Note: Follow steps for **Local DEV deployment** XOR **Cloud GCP deployment**
 
 ### Local DEV deployment
-Verify that the DEV section is not commented and values are set AND GCP section is commented. 
+Verify that the DEV section is not commented and values are set AND GCP section is commented (i.e. `application.properties` should have no values for `spring.datasource.url` nor `server.port`.) 
 ```
 spring.datasource.url=jdbc:postgresql://<server>:<port>/<database name>
 server.port=8090
