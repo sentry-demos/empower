@@ -16,20 +16,20 @@ Extension to the Empower Plant UI/UX. This project was originally bootstrapped w
 3. Follow steps for **Local DEV deployment** XOR **Cloud GCP deployment**
 
 ### Local DEV deployment
-Verify that the DEV section is not commented and values are set AND GCP section is commented 
+Verify that the **DEV** section is not commented and values are set AND GCP section is commented 
 ```
 spring.datasource.url=jdbc:postgresql://<server>:<port>/<database name>
 server.port=8090
 spring.cloud.gcp.sql.enabled=false
 ```
 ### Cloud GCP deployment
-Verify that the GCP section is not commented AND DEV section is commented (i.e. `application.properties` should have no values for `spring.datasource.url` nor `server.port`).
+Verify that the **GCP** section is not commented AND **DEV** section is commented (i.e. `application.properties` should have no values for `spring.datasource.url` nor `server.port`).
 ```
 spring.cloud.gcp.sql.enabled=true
 ``` 
 
 ## Run
-1. Run from terminal with `./mvnw spring-boot:run` from the spring-boot directory
+Run from terminal with `./mvnw spring-boot:run` from the spring-boot directory
 
 ## Configuration Files
 All configurations are in `src/main/resources/application.properties` and `src/main/appengine/app.yaml`.
