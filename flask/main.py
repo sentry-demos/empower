@@ -21,6 +21,11 @@ print("> RELEASE", RELEASE)
 print("> ENVIRONMENT", ENVIRONMENT)
 
 def before_send(event, hint):
+    # 2. parse 'se' from tags <-- should be available because already getting from @app.before_request
+    # 3. if se 'tda' then one fingerprint ELSE
+    # 4. if se       then other fingerprint
+    
+    # TODO could check from request headers, or from a queryParam?
     return event
 
 def traces_sampler(sampling_context):
