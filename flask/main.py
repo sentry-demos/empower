@@ -20,12 +20,21 @@ print("> DSN", DSN)
 print("> RELEASE", RELEASE)
 print("> ENVIRONMENT", ENVIRONMENT)
 
+# TODO could check from request headers, or from a queryParam?
 def before_send(event, hint):
-    # 2. parse 'se' from tags <-- should be available because already getting from @app.before_request
-    # 3. if se 'tda' then one fingerprint ELSE
-    # 4. if se       then other fingerprint
     
-    # TODO could check from request headers, or from a queryParam?
+    se = None
+    with sentry_sdk.configure_scope() as scope:
+        print("> scope._tags", scope._tags)
+        se = scope._tags['se']
+    
+    if se == "tda":
+        print("\ntda")
+        event['fingerprint'] = [ '{{ default }}', se, RELEASE ]    
+    if se not in [None, "undefined"]:
+        print("\nse", se")
+        event['fingerprint'] = [ '{{ default }}', se]    
+
     return event
 
 def traces_sampler(sampling_context):
