@@ -5,7 +5,7 @@ const SUPPORTED_BACKEND_TYPES = {
       "production": process.env.FLASK_BACKEND || process.env.REACT_APP_BACKEND
   },
   "express": {
-      "test": "http://localhost:**TBD**",
+      "test": "http://localhost:8088",
       "production": process.env.EXPRESS_BACKEND
   },
   "springboot": {
