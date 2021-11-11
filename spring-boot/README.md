@@ -13,7 +13,7 @@ Extension to the Empower Plant UI/UX. This project was originally bootstrapped w
 
 2. Set other `spring-boot/src/main/resources/application.properties` property values
 
-3. Follow steps for **Local DEV deployment** XOR **Cloud GCP deployment**
+3. Follow steps as described in `application.properties` for **Local DEV deployment** XOR **Cloud GCP deployment**
 
 ### Local DEV deployment
 Verify that the **DEV** section is not commented and values are set AND **GCP** section is commented 

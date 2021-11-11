@@ -3,6 +3,7 @@
 # dependencies
 /node_modules
 react/node_modules
+express/node_modules
 /.pnp
 .pnp.js
 
@@ -38,7 +39,11 @@ ruby/Gemfile.lock
 flask/test.py
 react/app.yaml
 flask/app.yaml
-
+express/app.yaml
 spring-boot/src/main/resources/application.properties
 spring-boot/src/main/appengine/app.yaml
-spring-boot/target/classes/application.properties
+spring-boot/backup
+spring-boot/target
+spring-boot/.classpath
+spring-boot/.project
+spring-boot/.settings
