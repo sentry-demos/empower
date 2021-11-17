@@ -41,6 +41,7 @@ Use an isolated VM since it's constantly occupying +2 threads simultaneously
 ```
 source .virtualenv/bin/activate
 nohup ./script.sh &
+nohup ./script.sh >/dev/null 2>&1 &
 ```
 
 How to stop it
