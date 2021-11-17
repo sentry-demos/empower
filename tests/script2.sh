@@ -1,0 +1,1 @@
+while true; do clear && pytest -s -n deskto_web; done
