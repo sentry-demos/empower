@@ -3,6 +3,7 @@
 # dependencies
 /node_modules
 react/node_modules
+express/node_modules
 /.pnp
 .pnp.js
 
@@ -38,3 +39,4 @@ ruby/Gemfile.lock
 flask/test.py
 react/app.yaml
 flask/app.yaml
+express/app.yaml

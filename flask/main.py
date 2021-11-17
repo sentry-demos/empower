@@ -21,6 +21,17 @@ print("> RELEASE", RELEASE)
 print("> ENVIRONMENT", ENVIRONMENT)
 
 def before_send(event, hint):
+    
+    # 'se' tag was set in app.before_request
+    se = None
+    with sentry_sdk.configure_scope() as scope:
+        se = scope._tags['se']
+    
+    if se == "tda":
+        event['fingerprint'] = [ '{{ default }}', se, RELEASE ]
+    elif se not in [None, "undefined"]:
+        event['fingerprint'] = [ '{{ default }}', se]    
+
     return event
 
 def traces_sampler(sampling_context):

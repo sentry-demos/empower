@@ -16,7 +16,7 @@ Also called the Empower Plant UI/UX. This project was bootstrapped with [Create 
 1. Permit your IP address in CloudSQL.
 2. Create a react/.env and enter your DSN. See .env.example for an example.
 3. Create a flask/.env and enter your DSN. See .env.example for an example. Ask a colleague for the values.
-4. The REACT_APP_BACKEND in react/.env represents Flask in AppEngine, this is used when you access the prod React web app.
+4. The `FLASK_BACKEND` in `react/.env` represents Flask in AppEngine, this is used when you access the prod React web app. Flask is the default backend. If you expect to run other backend types, add values for those in `react/.env` as well (i.e. `EXPRESS_BACKEND`).
 
 ```
 # React

@@ -70,16 +70,16 @@ Sentry.init({
     let se
     Sentry.withScope(function(scope) {
       se = scope._tags.se
-    });    
+    });
     console.log("> beforeSend se", se)
 
     if (se === "tda") {
       // Release Health
-      event.fingerprint = ['{ default }', se, process.env.REACT_APP_RELEASE ];
+      event.fingerprint = ['{{ default }}', se, process.env.REACT_APP_RELEASE ];
     } else if (se) {
-      event.fingerprint = ['{ default }', se ];
+      event.fingerprint = ['{{ default }}', se ];
     }
-    
+
     return event;
   }
 });
