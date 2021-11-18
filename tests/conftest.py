@@ -59,7 +59,6 @@ def pytest_addoption(parser):
 def data_center(request):
     return request.config.getoption('--dc')
 
-
 @pytest.fixture(params=desktop_browsers)
 def desktop_web_driver(request, data_center):
 
@@ -125,7 +124,7 @@ def android_emu_driver(request, data_center):
         'deviceName': 'Android GoogleAPI Emulator',
         'platformVersion': '10.0',
         'platformName': 'Android',
-        'app': "https://github.com/sentry-demos/sentry_react_native/releases/download/1.8/app-release.apk",
+        'app': "https://github.com/sentry-demos/sentry_react_native/releases/download/1.9/app-release.apk",
         'sauce:options': {
             'appiumVersion': '1.20.2',
             'build': 'RDC-Android-Python-Best-Practice',
@@ -149,6 +148,7 @@ def android_emu_driver(request, data_center):
 @pytest.fixture
 def ios_sim_driver(request, data_center):
 
+
     username_cap = environ['SAUCE_USERNAME']
     access_key_cap = environ['SAUCE_ACCESS_KEY']
 
@@ -164,7 +164,7 @@ def ios_sim_driver(request, data_center):
             'build': 'RDC-iOS-Python-Best-Practice',
             'name': request.node.name,
         },
-        'appium:app': 'https://github.com/sentry-demos/sentry_react_native/releases/download/1.8/sentry_react_native.app.zip',
+        'appium:app': 'https://github.com/sentry-demos/sentry_react_native/releases/download/1.9/sentry_react_native.app.zip',
     }
 
     if data_center and data_center.lower() == 'eu':
