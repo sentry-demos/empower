@@ -40,8 +40,8 @@ py.test -s -n 4 desktop_web
 Use an isolated VM since it's constantly occupying +2 threads simultaneously
 ```
 source .virtualenv/bin/activate
-nohup ./script1.sh >/dev/null 2>&1 &
-nohup ./script2.sh >/dev/null 2>&1 &
+nohup ./mobile_native.sh >/dev/null 2>&1 &
+nohup ./desktop_web.sh >/dev/null 2>&1 &
 ```
 
 How to stop it
