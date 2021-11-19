@@ -1,0 +1,1 @@
+while true; do clear && pytest -s -n desktop_web; done
