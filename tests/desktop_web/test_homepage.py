@@ -1,12 +1,10 @@
-import pytest
 import time
 import yaml
 import random
 import sentry_sdk
 
 # This test is for the homepage '/' transaction
-@pytest.mark.usefixtures("driver")
-def test_homepage(driver):
+def test_homepage(desktop_web_driver):
     sentry_sdk.set_tag("pytestName", "test_homepage")
 
     with open('endpoints.yaml', 'r') as stream:
@@ -15,7 +13,7 @@ def test_homepage(driver):
 
     for endpoint in endpoints:
         sentry_sdk.set_tag("endpoint", endpoint)
-        
+
         # you can filter by se:tda in Sentry's UI
         endpoint = endpoint + "?se=tda"
 
@@ -25,7 +23,7 @@ def test_homepage(driver):
         # This query string is parsed by utils/errors.js wherever the 'crasher' function is used
         # and causes the page to periodically crash, for Release Health
         endpoint = endpoint + "&crash=%s" % (n)
-        
+
         for i in range(random.randrange(20)):
-            driver.get(endpoint)
+            desktop_web_driver.get(endpoint)
             time.sleep(random.randrange(3) + 3)
