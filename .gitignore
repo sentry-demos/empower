@@ -47,3 +47,5 @@ spring-boot/target
 spring-boot/.classpath
 spring-boot/.project
 spring-boot/.settings
+spring-boot/*.jar
+spring-boot/bin
