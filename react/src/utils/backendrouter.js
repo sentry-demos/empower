@@ -9,7 +9,7 @@ const SUPPORTED_BACKEND_TYPES = {
       "production": process.env.EXPRESS_BACKEND
   },
   "springboot": {
-      "test": "http://localhost:**TBD**",
+      "test": "http://localhost:8090",
       "production": process.env.SPRINGBOOT_BACKEND
   }
 }
