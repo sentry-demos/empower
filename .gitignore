@@ -40,3 +40,12 @@ flask/test.py
 react/app.yaml
 flask/app.yaml
 express/app.yaml
+spring-boot/src/main/resources/application.properties
+spring-boot/src/main/appengine/app.yaml
+spring-boot/backup
+spring-boot/target
+spring-boot/.classpath
+spring-boot/.project
+spring-boot/.settings
+spring-boot/*.jar
+spring-boot/bin
