@@ -60,7 +60,11 @@ Sentry.init({
     new Sentry.Integrations.Http({ tracing: true }),
     new Tracing.Integrations.Express({ app })
   ],
-  tracesSampleRate: 1.0
+  tracesSampleRate: 1.0,
+  tracesSampler: samplingContext => {
+    console.log("> log from tracesSampler", samplingContext)
+    return 1.0
+  }
 })
 
 // The Sentry request handler must be the first middleware on the app

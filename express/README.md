@@ -4,6 +4,8 @@
 
 Create a local `express/.env` file. Talk to a SE team member to get valid contents for this file. 
 
+Add REACT_APP_EXPRESS_BACKEND=<value> to react/.env. The value is the URL of the App Engine express instance.
+
 There are other `.env` files in the other directories so ensure you get the contents for the Express one.
 
 ```

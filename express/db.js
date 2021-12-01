@@ -17,9 +17,11 @@ const getProducts = async function() {
     let span = transaction.startChild({ op: 'getproducts', description: 'db.query'});
     const productsQuery = `SELECT *, pg_sleep(${sleepTime}) FROM products`;
     const subspan = span.startChild({op: 'fetch products', description: productsQuery});
+    console.log("> productsQuery", productsQuery)
     const products = await knex.raw(productsQuery)
       .catch((err) => {
         console.log("There was an error", err);
+        Sentry.captureException(err)
         throw err;
       })
     Sentry.setTag("totalProducts", products.rows.length);
