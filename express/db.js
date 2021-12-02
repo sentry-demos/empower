@@ -21,7 +21,6 @@ const getProducts = async function() {
     const products = await knex.raw(productsQuery)
       .catch((err) => {
         console.log("There was an error", err);
-        Sentry.captureException(err)
         throw err;
       })
     Sentry.setTag("totalProducts", products.rows.length);

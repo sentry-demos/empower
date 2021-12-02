@@ -62,8 +62,12 @@ Sentry.init({
   ],
   tracesSampleRate: 1.0,
   tracesSampler: samplingContext => {
-    console.log("> log from tracesSampler", samplingContext)
-    return 1.0
+    // sample out transactions for OPTIONS requests
+    if (samplingContext.request.method == 'OPTIONS') {
+      return 0.0
+    }  else {
+
+    }
   }
 })
 
