@@ -14,6 +14,20 @@
 
 'use strict';
 
+const makeRelease = function() {
+  var d = new Date()
+  var month = d.getMonth()
+  var firstWeekday = new Date(d.getFullYear(), month, 1).getDay() - 1;
+  if (firstWeekday < 0) firstWeekday = 6;
+  var offsetDate = d.getDate() + firstWeekday - 1;
+  const week = Math.floor(offsetDate / 7);
+
+  const release = `${month}.${week}`
+  
+  console.log("> RELEASE computed", release)
+  return release
+}
+
 // Imported Functions
 const DB = require('./db');
 
@@ -42,7 +56,7 @@ const sentryEventContext = function(req, res, next) {
 }
 
 const dsn = process.env.EXPRESS_APP_DSN;
-const release = process.env.RELEASE;
+const release = process.env.RELEASE //|| makeRelease();
 const environment = process.env.EXPRESS_ENV || "production";
 
 console.log("> DSN", dsn);
