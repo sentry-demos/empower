@@ -120,11 +120,11 @@ class App extends Component {
 
       if (queryParams.get("se")) {
         // Route components (navigation changes) will now have 'se' tag on scope
-        console.log("> src/index.js se", queryParams.get("se"))
+        console.log("> se", queryParams.get("se"))
         scope.setTag("se", queryParams.get("se"))
       }
 
-      console.log("> backendType:", backendType)
+      console.log(`> backendType: ${backendType} | backendUrl: ${BACKEND_URL}`)
       scope.setTag("backendType", backendType)
 
       let email = Math.random().toString(36).substring(2, 6) + "@yahoo.com";
