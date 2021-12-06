@@ -122,7 +122,7 @@ class App extends Component {
 
       if (queryParams.get("se")) {
         // Route components (navigation changes) will now have 'se' tag on scope
-        console.log("> se", queryParams.get("se"))
+        console.log("> src/index.js se", queryParams.get("se"))
         scope.setTag("se", queryParams.get("se"))
       }
 

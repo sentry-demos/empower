@@ -80,7 +80,7 @@ Sentry.init({
     if (samplingContext.request.method == 'OPTIONS') {
       return 0.0
     }  else {
-
+      return 1.0
     }
   }
 })
@@ -100,12 +100,11 @@ app.use(sentryEventContext);
 require('dotenv').config();
 
 app.get('/', (req, res) => {
-  res.send('SENTRY NODE SERVICE SAYS HELLO - turn me into a microservice that powers Payments, Shipping, or Customers');
+  res.send('Sentry Express Service says Hello - turn me into a microservice that powers Payments, Shipping, or Customers');
 });
 
 app.get('/success', (req, res) => {
-  console.log("> /SUCCESS", process.env.EXPRESS_ENV)
-  res.send(`success is ${process.env.EXPRESS_ENV}`);
+  res.send(`success`);
 });
 
 app.get('/products', async (req, res) => {

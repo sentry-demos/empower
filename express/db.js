@@ -17,7 +17,6 @@ const getProducts = async function() {
     let span = transaction.startChild({ op: 'getproducts', description: 'db.query'});
     const productsQuery = `SELECT *, pg_sleep(${sleepTime}) FROM products`;
     const subspan = span.startChild({op: 'fetch products', description: productsQuery});
-    console.log("> productsQuery", productsQuery)
     const products = await knex.raw(productsQuery)
       .catch((err) => {
         console.log("There was an error", err);
@@ -139,15 +138,6 @@ function openDBConnection() {
     host = '/cloudsql/' + process.env.CLOUD_SQL_CONNECTION_NAME
   }
   console.log("> host ", host)
-  console.log("> DB \n", {
-    client: 'pg',
-    connection: {
-      user: process.env.USERNAME,
-      password: process.env.PASSWORD,
-      database: process.env.DATABASE,
-      host: host
-    }
-  })
   const db = require('knex')({
     client: 'pg',
     connection: {

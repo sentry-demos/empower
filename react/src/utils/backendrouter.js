@@ -29,7 +29,6 @@ const determineBackendType = (desiredBackend) => {
 }
 
 const determineBackendUrl = (backendType, environment) => {
-   console.log("> determineBackendUrl backendType, environment", backendType, environment)
     return SUPPORTED_BACKEND_TYPES[backendType][environment]
 }
 
