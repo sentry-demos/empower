@@ -1,13 +1,13 @@
 runtime: java
 env: flex
-service: application-monitoring-java
+service: <staging-application-monitoring-java>
 env_variables:
   SPRINGBOOT_ENV: "production" 
 handlers:
 - url: /.*
   script: this field is required, but ignored
 beta_settings:
-  cloud_sql_instances: 
+  cloud_sql_instances: <cloud_sql instance name here>
 readiness_check:
   app_start_timeout_sec: 600
 resources:
