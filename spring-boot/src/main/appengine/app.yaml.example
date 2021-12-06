@@ -1,6 +1,6 @@
 runtime: java
 env: flex
-service: <staging-application-monitoring-java>
+service: <staging-springboot>
 env_variables:
   SPRINGBOOT_ENV: "production" 
 handlers:
