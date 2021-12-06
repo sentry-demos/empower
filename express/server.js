@@ -100,7 +100,12 @@ app.use(sentryEventContext);
 require('dotenv').config();
 
 app.get('/', (req, res) => {
-  res.send('Sentry Node Service says Hello - turn me into a microservice that powers Payments, Shipping, or Customers');
+  res.send('SENTRY NODE SERVICE SAYS HELLO - turn me into a microservice that powers Payments, Shipping, or Customers');
+});
+
+app.get('/success', (req, res) => {
+  console.log("> /SUCCESS", process.env.EXPRESS_ENV)
+  res.send(`success is ${process.env.EXPRESS_ENV}`);
 });
 
 app.get('/products', async (req, res) => {
