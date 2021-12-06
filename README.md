@@ -59,7 +59,7 @@ Add +2 quantity of a single item to Cart and purchase in order to trigger an Err
 
 
 ## Deploy
-This run script deploys React + Flask. See the run script for individual gcloud commands you can use for any of the backends like /express, /ruby etc.
+This run script deploys React + Flask. See the run script for individual gcloud commands you can use for any of the backends like /express, /ruby etc. But if you're only deploying React, you need to use the full deploy.sh because it's running javascript build commands and sentry-cli.
 ```
 ./deploy.sh
 ```
