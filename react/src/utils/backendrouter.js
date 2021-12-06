@@ -1,4 +1,5 @@
 const DEFAULT_BACKEND = "flask"
+
 const SUPPORTED_BACKEND_TYPES = {
   "flask": {
       "test": "http://localhost:8080",
@@ -6,11 +7,11 @@ const SUPPORTED_BACKEND_TYPES = {
   },
   "express": {
       "test": "http://localhost:8088",
-      "production": process.env.EXPRESS_BACKEND
+      "production": process.env.REACT_APP_EXPRESS_BACKEND
   },
   "springboot": {
       "test": "http://localhost:8090",
-      "production": process.env.SPRINGBOOT_BACKEND
+      "production": process.env.REACT_APP_SPRINGBOOT_BACKEND
   }
 }
 
@@ -28,6 +29,7 @@ const determineBackendType = (desiredBackend) => {
 }
 
 const determineBackendUrl = (backendType, environment) => {
+   console.log("> determineBackendUrl backendType, environment", backendType, environment)
     return SUPPORTED_BACKEND_TYPES[backendType][environment]
 }
 
