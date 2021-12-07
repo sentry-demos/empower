@@ -14,7 +14,8 @@
 
 'use strict';
 
-const makeRelease = function() {
+// run.sh sets a release tool but that's only used for local development
+const determineRelease = function() {
   var d = new Date()
   var month = d.getMonth()
   var firstWeekday = new Date(d.getFullYear(), month, 1).getDay() - 1;
@@ -56,7 +57,7 @@ const sentryEventContext = function(req, res, next) {
 }
 
 const dsn = process.env.EXPRESS_APP_DSN;
-const release = process.env.RELEASE //|| makeRelease();
+const release = process.env.RELEASE || determineRelease();
 const environment = process.env.EXPRESS_ENV || "production";
 
 console.log("> DSN", dsn);
@@ -76,7 +77,7 @@ Sentry.init({
   ],
   tracesSampleRate: 1.0,
   tracesSampler: samplingContext => {
-    // sample out transactions for OPTIONS requests
+    // sample out transactions for http OPTIONS requests
     if (samplingContext.request.method == 'OPTIONS') {
       return 0.0
     }  else {
