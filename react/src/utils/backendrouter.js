@@ -3,7 +3,7 @@ const DEFAULT_BACKEND = "flask"
 const SUPPORTED_BACKEND_TYPES = {
   "flask": {
       "test": "http://localhost:8080",
-      "production": process.env.FLASK_BACKEND || process.env.REACT_APP_BACKEND
+      "production": process.env.REACT_APP_FLASK_BACKEND || process.env.REACT_APP_BACKEND
   },
   "express": {
       "test": "http://localhost:8088",
