@@ -17,6 +17,7 @@ import io.sentry.ISpan;
 import io.sentry.ITransaction;
 import io.sentry.Sentry;
 import io.sentry.SpanStatus;
+import io.sentry.protocol.User;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -66,6 +67,11 @@ public class AppController {
 			if (header != null && header != "null") {
 				logger.info("Setting " + tag + " Sentry tag as " + header);
 				Sentry.setTag(tag, header);
+				if (tag == "email") {
+					User user = new User();
+					user.setEmail(header);
+					Sentry.setUser(user);
+				}
 			}
 		}
 
