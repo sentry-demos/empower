@@ -135,9 +135,9 @@ function openDBConnection() {
     // public IP of the instance does.
     host = process.env.CLOUD_SQL_PUBLIC_IP
   } else {
-    host = process.env.CLOUD_SQL_CONNECTION_NAME
+    host = '/cloudsql/' + process.env.CLOUD_SQL_CONNECTION_NAME
   }
-
+  console.log("> host ", host)
   const db = require('knex')({
     client: 'pg',
     connection: {

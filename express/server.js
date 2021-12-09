@@ -14,6 +14,21 @@
 
 'use strict';
 
+// run.sh sets a release tool but that's only used for local development
+const determineRelease = function() {
+  var d = new Date()
+  var month = d.getMonth()
+  var firstWeekday = new Date(d.getFullYear(), month, 1).getDay() - 1;
+  if (firstWeekday < 0) firstWeekday = 6;
+  var offsetDate = d.getDate() + firstWeekday - 1;
+  const week = Math.floor(offsetDate / 7);
+
+  const release = `${month}.${week}`
+  
+  console.log("> RELEASE computed", release)
+  return release
+}
+
 // Imported Functions
 const DB = require('./db');
 
@@ -42,7 +57,7 @@ const sentryEventContext = function(req, res, next) {
 }
 
 const dsn = process.env.EXPRESS_APP_DSN;
-const release = process.env.RELEASE;
+const release = process.env.RELEASE || determineRelease();
 const environment = process.env.EXPRESS_ENV || "production";
 
 console.log("> DSN", dsn);
@@ -60,7 +75,15 @@ Sentry.init({
     new Sentry.Integrations.Http({ tracing: true }),
     new Tracing.Integrations.Express({ app })
   ],
-  tracesSampleRate: 1.0
+  tracesSampleRate: 1.0,
+  tracesSampler: samplingContext => {
+    // sample out transactions for http OPTIONS requests
+    if (samplingContext.request.method == 'OPTIONS') {
+      return 0.0
+    }  else {
+      return 1.0
+    }
+  }
 })
 
 // The Sentry request handler must be the first middleware on the app
@@ -78,7 +101,11 @@ app.use(sentryEventContext);
 require('dotenv').config();
 
 app.get('/', (req, res) => {
-  res.send('Sentry Node Service says Hello - turn me into a microservice that powers Payments, Shipping, or Customers');
+  res.send('Sentry Express Service says Hello - turn me into a microservice that powers Payments, Shipping, or Customers');
+});
+
+app.get('/success', (req, res) => {
+  res.send(`success`);
 });
 
 app.get('/products', async (req, res) => {

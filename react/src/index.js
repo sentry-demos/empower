@@ -113,6 +113,8 @@ class App extends Component {
     const backendType = determineBackendType(backendTypeParam)
     BACKEND_URL = determineBackendUrl(backendType, ENVIRONMENT)
 
+    console.log(`> backendType: ${backendType} | backendUrl: ${BACKEND_URL}`)
+
     // These also get passed via request headers
     Sentry.configureScope(scope => {
       const customerType = ["medium-plan", "large-plan", "small-plan", "enterprise"][Math.floor(Math.random() * 4)]
@@ -124,7 +126,6 @@ class App extends Component {
         scope.setTag("se", queryParams.get("se"))
       }
 
-      console.log("> backendType:", backendType)
       scope.setTag("backendType", backendType)
 
       let email = Math.random().toString(36).substring(2, 6) + "@yahoo.com";
