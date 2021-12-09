@@ -9,7 +9,7 @@ Runs automted tests against Sentry demos on GCP, in order to generate errors and
 
 ## Setup
 ```
-python3 -m venv venv
+python3 -m venv env
 source env/bin/activate
 pip install -r requirements.txt
 ```

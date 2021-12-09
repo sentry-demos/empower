@@ -14,8 +14,14 @@ def test_homepage(desktop_web_driver):
     for endpoint in endpoints:
         sentry_sdk.set_tag("endpoint", endpoint)
 
+        # 0 Test this first, that it generally works
+        # 0 Make sure will-express, will-springboot are getting Tx's+Errors, first. via localhost and/or App Engine instances.
+
+        # 1 Refactor using a URL lib
+
         # you can filter by se:tda in Sentry's UI
-        endpoint = endpoint + "?se=tda"
+        # TODO - could manage se, crash, backend QueryStrings via a .env file? config somewhere? conftest.py? Could re-purpose endpoints.yaml as config.yaml and do endpoints = data_loaded['se'], data_loaded['crash'], data_loaded['backends']
+        endpoint = endpoint + "?se=will" # TODO undo this, when done
 
         # Randomize the Failure Rate between 1% and 40%
         n = random.uniform(0.01, .04)
@@ -24,6 +30,9 @@ def test_homepage(desktop_web_driver):
         # and causes the page to periodically crash, for Release Health
         endpoint = endpoint + "&crash=%s" % (n)
 
+        # 2 Add backend queryString, backend=express, backend=springboot
         for i in range(random.randrange(20)):
             desktop_web_driver.get(endpoint)
             time.sleep(random.randrange(3) + 3)
+
+        # 3 Check Discover for tda:will - did Express+Springboot transactions come through?
