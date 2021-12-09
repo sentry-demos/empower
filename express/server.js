@@ -77,8 +77,9 @@ Sentry.init({
   ],
   tracesSampleRate: 1.0,
   tracesSampler: samplingContext => {
-    // sample out transactions for http OPTIONS requests
-    if (samplingContext.request.method == 'OPTIONS') {
+    // sample out transactions from http OPTIONS requests hitting endpoints
+    const request = samplingContext.request
+    if (request && request.method == 'OPTIONS') {
       return 0.0
     }  else {
       return 1.0
@@ -109,6 +110,7 @@ app.get('/success', (req, res) => {
 });
 
 app.get('/products', async (req, res) => {
+  console.log("> /products")
   try {
     let transaction = Sentry.getCurrentHub()
       .getScope()
@@ -163,7 +165,7 @@ app.post('/checkout', async(req, res) => {
       for(const inventoryItem of inventory) {
         console.log("> inventoryItem.count", inventoryItem['count']);
         if(inventoryItem.count < quantities[cartItem]) {
-          throw("Not enough inventory for product");
+          throw new Error("Not enough inventory for product");
         }
       }
     }

@@ -42,3 +42,8 @@ To deploy only the express service.
 
 gcloud app deploy
 gcloud app deploy --quiet
+
+If you get an error about invalid authentication credentials, try running this first:
+```
+gcloud auth login
+```
