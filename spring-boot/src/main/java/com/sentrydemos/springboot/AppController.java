@@ -79,6 +79,13 @@ public class AppController {
 
 	}
 
+	@GetMapping("/success")
+	public String Success() {
+		logger.info("success");
+		return "Success";
+
+	}
+
 	@GetMapping("/handled")
 	public String HandledError() {
 		String someLocalVariable = "stack locals";

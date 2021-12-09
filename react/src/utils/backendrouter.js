@@ -1,16 +1,17 @@
 const DEFAULT_BACKEND = "flask"
+
 const SUPPORTED_BACKEND_TYPES = {
   "flask": {
       "test": "http://localhost:8080",
-      "production": process.env.FLASK_BACKEND || process.env.REACT_APP_BACKEND
+      "production": process.env.REACT_APP_FLASK_BACKEND || process.env.REACT_APP_BACKEND
   },
   "express": {
       "test": "http://localhost:8088",
-      "production": process.env.EXPRESS_BACKEND
+      "production": process.env.REACT_APP_EXPRESS_BACKEND
   },
   "springboot": {
       "test": "http://localhost:8090",
-      "production": process.env.SPRINGBOOT_BACKEND
+      "production": process.env.REACT_APP_SPRINGBOOT_BACKEND
   }
 }
 

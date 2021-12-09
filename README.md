@@ -65,6 +65,13 @@ This run script deploys React + Flask. See the run script for individual gcloud 
 ```
 and `gcloud auth login` if it asks you to authenticate, or insert YubiKey.
 
+#### How to Deploy to Staging
+Update the app engine service name in the following places:  
+react/app.yaml to staging-application-monitoring-javascript  
+react/.env to staging-application-monitoring-javascript  
+flask/.env to staging-application-monitoring-javascript  
+Then run deploy.sh
+
 ## Troubleshooting
 ### Upgrading
 ```
