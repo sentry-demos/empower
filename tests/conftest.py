@@ -12,6 +12,8 @@ from dotenv import load_dotenv
 load_dotenv()
 DSN = os.getenv("DSN")
 ENVIRONMENT = os.getenv("ENVIRONMENT") or "production"
+SAUCELABS_PROTOCOL = "https://"
+
 print("ENV", ENVIRONMENT)
 print("DSN", DSN)
 
@@ -69,9 +71,9 @@ def desktop_web_driver(request, data_center):
     access_key = environ['SAUCE_ACCESS_KEY']
 
     if data_center and data_center.lower() == 'eu':
-        selenium_endpoint = "https://{}:{}@ondemand.eu-central-1.saucelabs.com/wd/hub".format(username, access_key)
+        selenium_endpoint = SAUCELABS_PROTOCOL + "{}:{}@ondemand.eu-central-1.saucelabs.com/wd/hub".format(username, access_key)
     else:
-        selenium_endpoint = "https://{}:{}@ondemand.us-west-1.saucelabs.com/wd/hub".format(username, access_key)
+        selenium_endpoint = SAUCELABS_PROTOCOL + "{}:{}@ondemand.us-west-1.saucelabs.com/wd/hub".format(username, access_key)
 
     caps = dict()
     caps.update(request.param)
@@ -134,9 +136,9 @@ def android_emu_driver(request, data_center):
     }
 
     if data_center and data_center.lower() == 'eu':
-        sauce_url = "https://{}:{}@ondemand.eu-central-1.saucelabs.com/wd/hub".format(username_cap, access_key_cap)
+        sauce_url = SAUCELABS_PROTOCOL + "{}:{}@ondemand.eu-central-1.saucelabs.com/wd/hub".format(username_cap, access_key_cap)
     else:
-        sauce_url = "https://{}:{}@ondemand.us-west-1.saucelabs.com/wd/hub".format(username_cap, access_key_cap)
+        sauce_url = SAUCELABS_PROTOCOL + "{}:{}@ondemand.us-west-1.saucelabs.com/wd/hub".format(username_cap, access_key_cap)
 
     driver = appiumdriver.Remote(sauce_url, desired_capabilities=caps)
     driver.implicitly_wait(20)
@@ -168,9 +170,9 @@ def ios_sim_driver(request, data_center):
     }
 
     if data_center and data_center.lower() == 'eu':
-        sauce_url = "https://{}:{}@ondemand.eu-central-1.saucelabs.com/wd/hub".format(username_cap, access_key_cap)
+        sauce_url = SAUCELABS_PROTOCOL + "{}:{}@ondemand.eu-central-1.saucelabs.com/wd/hub".format(username_cap, access_key_cap)
     else:
-        sauce_url = "https://{}:{}@ondemand.us-west-1.saucelabs.com/wd/hub".format(username_cap, access_key_cap)
+        sauce_url = SAUCELABS_PROTOCOL + "{}:{}@ondemand.us-west-1.saucelabs.com/wd/hub".format(username_cap, access_key_cap)
 
     driver = appiumdriver.Remote(sauce_url, desired_capabilities=caps)
     driver.implicitly_wait(20)
