@@ -85,13 +85,15 @@ public class AppController {
 
 	}
 
+	@CrossOrigin
 	@GetMapping("/success")
 	public String Success() {
 		logger.info("success");
-		return "Success";
+		return "success from springboot";
 
 	}
 
+	
 	@GetMapping("/handled")
 	public String HandledError() {
 		String someLocalVariable = "stack locals";
@@ -105,6 +107,7 @@ public class AppController {
 		return "Success";
 	}
 
+	@CrossOrigin
 	@GetMapping("/unhandled")
 	public String UnhandledError() {
 		throw new RuntimeException("Unhandled Exception!");
@@ -135,7 +138,7 @@ public class AppController {
 	@CrossOrigin
 	@GetMapping("/products-join")
 	public String GetProducts(HttpServletRequest request) {
-		ISpan span = hub.getSpan().startChild("Overhead", "Set tags");
+		ISpan span = hub.getSpan().startChild("Overhead", "Set tags"); // TODO - what is Overhead
 		setTags(request);
 		span.finish();
 		String allProducts = dbHelper.mapAllProductsJoin(hub.getSpan());
