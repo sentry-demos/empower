@@ -106,7 +106,8 @@ app.get('/', (req, res) => {
 });
 
 app.get('/success', (req, res) => {
-  res.send(`success`);
+  console.log("> success")
+  res.send(`success from express`);
 });
 
 app.get('/products', async (req, res) => {
