@@ -14,8 +14,15 @@ def test_add_to_cart_join(desktop_web_driver):
         endpoint_products_join = endpoint + "/products-join"
         sentry_sdk.set_tag("endpoint", endpoint_products_join)
 
-        endpoint_products_join = endpoint_products_join + "?se=tda"
+        # endpoint_products_join = endpoint_products_join + "?se=will"
 
         for i in range(random.randrange(20)):
-            desktop_web_driver.get(endpoint_products_join)
+            # Ensures a different backend endpoint gets picked each time
+            url = ""
+            query_string = { 
+                'se': 'will',
+                'backend': random.sample(['flask','express','springboot'], 1)[0]
+            }
+            url = endpoint_products + '?' + urlencode(query_string)
+            desktop_web_driver.get(url)
             time.sleep(random.randrange(3) + 3)

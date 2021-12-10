@@ -16,13 +16,19 @@ def test_about_employees(desktop_web_driver):
         sentry_sdk.set_tag("endpoint", endpoint_about)
 
         # You can filter by se:tda in Sentry's UI as this will get set as a tag
-        endpoint_about = endpoint_about + "?se=tda"
-
+        # endpoint_about = endpoint_about + "?se=will" # TODO
+        
         employees = ["Jane Schmidt", "Lily Chan", "Keith Ryan", "Mason Kim", "Emma Garcia", "Noah Miller"]
 
         # for i in range(random.randrange(20)):
         for i in range(10):
-            desktop_web_driver.get(endpoint_about)
+            url = ""
+            query_string = { 
+                'se': 'will'
+            }
+            url = endpoint_about + '?' + query_string
+        
+            desktop_web_driver.get(url)
 
             # images are being loaded in /about from Cloud Storage
             time.sleep(random.randrange(2) + 1)
