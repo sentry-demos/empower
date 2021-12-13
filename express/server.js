@@ -149,29 +149,45 @@ app.post('/checkout', async(req, res) => {
   const form = order['form'];
   let inventory = [];
   try {
+    const transaction = Sentry.getCurrentHub()
+    .getScope()
+    .getTransaction();
+    
     // Get Inventory
-    let transaction = Sentry.startTransaction({ name: '/checkout.get_inventory' });
-    let span = transaction.startChild({ op: '/checkout.get_inventory'});
-    inventory = await DB.getInventory(cart);
-    console.log("> /checkout inventory", inventory);
-    span.finish();
-    transaction.finish();
+    if (transaction) {
+      let span = transaction.startChild({
+        op: "function",
+        description: "getInventory",
+      });
+      inventory = await DB.getInventory(cart);
+      console.log("> /checkout inventory", inventory);
+      // Do something
+      span.finish();
+    } else {
+      console.log("> no tx")
+    }
 
     // Process Order
-    transaction = Sentry.startTransaction({ name: 'process order' });
-    span = transaction.startChild({ op: 'process_order', description: 'function' });
-    let quantities = cart['quantities'];
-    console.log("quantities", quantities);
-    for(const cartItem in quantities) {
-      for(const inventoryItem of inventory) {
-        console.log("> inventoryItem.count", inventoryItem['count']);
-        if(inventoryItem.count < quantities[cartItem]) {
-          throw new Error("Not enough inventory for product");
+    if (transaction) {
+      let span = transaction.startChild({
+        op: "function",
+        description: "processOrder",
+      });
+      let quantities = cart['quantities'];
+      console.log("quantities", quantities);
+      for(const cartItem in quantities) {
+        for(const inventoryItem of inventory) {
+          console.log("> inventoryItem.count", inventoryItem['count']);
+          if(inventoryItem.count < quantities[cartItem]) {
+            throw new Error("Not enough inventory for product");
+          }
         }
       }
+      span.finish();
+    } else {
+      console.log("> no tx")
     }
-    span.finish();
-    transaction.finish();
+
     res.status(200).send('success');
   } catch (error) {
     Sentry.captureException(error);
