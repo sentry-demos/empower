@@ -84,7 +84,7 @@ def checkout():
  
 @app.route('/success', methods=['GET'])
 def success():    
-    return "successs from flask"
+    return "success from flask"
 
 @app.route('/products', methods=['GET'])
 def products():    

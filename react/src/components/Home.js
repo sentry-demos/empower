@@ -13,7 +13,6 @@ class Home extends Component {
     static contextType = Context;
   
     async componentDidMount() {
-      console.log("> COMPONENTDIDMOUNT")
       let se, customerType, email
       Sentry.withScope(function(scope) {
         [ se, customerType ] = [scope._tags.se, scope._tags.customerType ]
