@@ -6,7 +6,7 @@ import * as Sentry from '@sentry/react';
 import { Integrations } from '@sentry/tracing';
 import { createBrowserHistory } from 'history';
 import { Router, Switch, Route } from 'react-router-dom';
-import { crasher, UnhandledException } from './utils/errors'
+import { crasher } from './utils/errors'
 import { determineBackendType, determineBackendUrl } from './utils/backendrouter'
 
 import { Provider } from 'react-redux'
@@ -15,7 +15,6 @@ import logger from 'redux-logger'
 import rootReducer from './reducers'
 
 import ScrollToTop from './components/ScrollToTop';
-import Button from './components/ButtonLink';
 import Footer from './components/Footer';
 import Nav from './components/Nav';
 import About from './components/About';
@@ -30,8 +29,6 @@ import NotFound from './components/NotFound';
 import Product from './components/Product';
 import Products from './components/Products';
 import ProductsJoin from './components/ProductsJoin';
-import Context from './utils/context';
-import plantsBackground from './assets/plants-background-img.jpg';
 
 const tracingOrigins = ['localhost', 'empowerplant.io', 'run.app', 'appspot.com', /^\//];
 
@@ -148,7 +145,6 @@ class App extends Component {
 
             <div id="body-container">
               <Switch>
-                {/* <Route exact path="/" component={Home} /> */}
                 <Route exact path="/">
                   <Home backend={BACKEND_URL} />
                 </Route>
