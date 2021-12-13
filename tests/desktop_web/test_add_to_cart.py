@@ -25,7 +25,6 @@ def test_add_to_cart(desktop_web_driver):
                 'backend': random.sample(['flask', 'express','springboot'], 1)[0]
             }
             url = endpoint_products + '?' + urlencode(query_string)
-            # url = endpoint_products + '?' + 'backend=express' + '&' + 'se=will' # TODO - undo
 
             # Buttons are not available if products didn't load before selection, so handle this
             try:

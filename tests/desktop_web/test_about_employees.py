@@ -2,6 +2,7 @@ import time
 import yaml
 import random
 import sentry_sdk
+from urllib.parse import urlencode
 
 # This test is for the homepage '/' transaction
 def test_about_employees(desktop_web_driver):
@@ -26,7 +27,7 @@ def test_about_employees(desktop_web_driver):
             query_string = { 
                 'se': 'will'
             }
-            url = endpoint_about + '?' + query_string
+            url = endpoint_about + '?' + urlencode(query_string)
         
             desktop_web_driver.get(url)
 

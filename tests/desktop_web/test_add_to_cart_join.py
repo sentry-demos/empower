@@ -2,6 +2,7 @@ import time
 import yaml
 import random
 import sentry_sdk
+from urllib.parse import urlencode
 
 def test_add_to_cart_join(desktop_web_driver):
     sentry_sdk.set_tag("pytestName", "test_add_to_cart_join")
@@ -14,8 +15,6 @@ def test_add_to_cart_join(desktop_web_driver):
         endpoint_products_join = endpoint + "/products-join"
         sentry_sdk.set_tag("endpoint", endpoint_products_join)
 
-        # endpoint_products_join = endpoint_products_join + "?se=will"
-
         for i in range(random.randrange(20)):
             # Ensures a different backend endpoint gets picked each time
             url = ""
@@ -24,5 +23,6 @@ def test_add_to_cart_join(desktop_web_driver):
                 'backend': random.sample(['flask','express','springboot'], 1)[0]
             }
             url = endpoint_products + '?' + urlencode(query_string)
+
             desktop_web_driver.get(url)
             time.sleep(random.randrange(3) + 3)

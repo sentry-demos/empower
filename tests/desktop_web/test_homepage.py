@@ -16,23 +16,19 @@ def test_homepage(desktop_web_driver):
     for endpoint in endpoints:
         sentry_sdk.set_tag("endpoint", endpoint)
 
-        # you can filter by se:tda in Sentry's UI
-        # endpoint = endpoint + "?se=will" # TODO undo this, when done
-
-        # Randomize the Failure Rate between 1% and 40%
-        n = random.uniform(0.01, .04)
-
-        # This query string is parsed by utils/errors.js wherever the 'crasher' function is used
-        # and causes the page to periodically crash, for Release Health
-        # endpoint = endpoint + "&crash=%s" % (n)
-
-        query_string = { 'se': 'will','crash': "%s" % (n)}
-        endpoint = endpoint + '?' + urlencode(query_string)
-
         for i in range(random.randrange(20)):
-            # TODO add /success call from Homepage so can put endpoint construction here, as it will take 1 of 3 random backends.
-            # url = ""
-            desktop_web_driver.get(endpoint)
-            time.sleep(random.randrange(3) + 3)
+            # Randomize the Failure Rate between 1% and 40%
+            n = random.uniform(0.01, .04)
 
-        # TODO undo se:tda and put back to se:will
+            # This query string is parsed by utils/errors.js wherever the 'crasher' function is used
+            # and causes the page to periodically crash, for Release Health
+            # endpoint = endpoint + "&crash=%s" % (n)
+            query_string = { 
+                'se': 'will',
+                'backend': random.sample(['flask','express','springboot'], 1)[0],
+                'crash': "%s" % (n)
+            }
+            url = endpoint + '?' + query_string
+
+            desktop_web_driver.get(url)
+            time.sleep(random.randrange(3) + 3)
