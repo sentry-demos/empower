@@ -150,43 +150,35 @@ app.post('/checkout', async(req, res) => {
   let inventory = [];
   try {
     const transaction = Sentry.getCurrentHub()
-    .getScope()
-    .getTransaction();
+      .getScope()
+      .getTransaction();
     
     // Get Inventory
-    if (transaction) {
-      let span = transaction.startChild({
-        op: "function",
-        description: "getInventory",
-      });
-      inventory = await DB.getInventory(cart);
-      console.log("> /checkout inventory", inventory);
-      // Do something
-      span.finish();
-    } else {
-      console.log("> no tx")
-    }
+    let span = transaction.startChild({
+      op: "function",
+      description: "getInventory",
+    });
+    inventory = await DB.getInventory(cart);
+    console.log("> /checkout inventory", inventory);
 
+    span.finish();
+    
     // Process Order
-    if (transaction) {
-      let span = transaction.startChild({
-        op: "function",
-        description: "processOrder",
-      });
-      let quantities = cart['quantities'];
-      console.log("quantities", quantities);
-      for(const cartItem in quantities) {
-        for(const inventoryItem of inventory) {
-          console.log("> inventoryItem.count", inventoryItem['count']);
-          if(inventoryItem.count < quantities[cartItem]) {
-            throw new Error("Not enough inventory for product");
-          }
+    let span2 = transaction.startChild({
+      op: "function",
+      description: "processOrder",
+    });
+    let quantities = cart['quantities'];
+    console.log("quantities", quantities);
+    for(const cartItem in quantities) {
+      for(const inventoryItem of inventory) {
+        console.log("> inventoryItem.count", inventoryItem['count']);
+        if(inventoryItem.count < quantities[cartItem]) {
+          throw new Error("Not enough inventory for product");
         }
       }
-      span.finish();
-    } else {
-      console.log("> no tx")
     }
+    span2.finish();
 
     res.status(200).send('success');
   } catch (error) {

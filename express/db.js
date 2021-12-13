@@ -106,23 +106,21 @@ const getInventory = async function(cart) {
     const transaction = Sentry.getCurrentHub()
       .getScope()
       .getTransaction();
-    if (transaction) {
-      let span = transaction.startChild({
-        op: "getInventory",
-        description: "db.query",
-      });
 
-      const inventory = await knex.raw(
-        `SELECT * FROM inventory WHERE productId in ${productIds}`
-      )
+    let span = transaction.startChild({
+      op: "getInventory",
+      description: "db.query",
+    });
 
-      span.setData("inventory", inventory.rows);
-      span.finish()
-      
-      return inventory.rows
-    } else {
-      console.log("> no tx")
-    }
+    const inventory = await knex.raw(
+      `SELECT * FROM inventory WHERE productId in ${productIds}`
+    )
+
+    span.setData("inventory", inventory.rows);
+    span.finish()
+
+    return inventory.rows
+
   } catch(error) {
     Sentry.captureException(error);
     throw err;
