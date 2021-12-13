@@ -40,8 +40,10 @@ Locally, the Express backend is served on port 8088 when you run `express/run.sh
 ### Cloud GCP Deployment
 To deploy only the express service.
 
+```
 gcloud app deploy
 gcloud app deploy --quiet
+```
 
 If you get an error about invalid authentication credentials, try running this first:
 ```
