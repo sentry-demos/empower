@@ -138,7 +138,7 @@ public class AppController {
 	@CrossOrigin
 	@GetMapping("/products-join")
 	public String GetProducts(HttpServletRequest request) {
-		ISpan span = hub.getSpan().startChild("Overhead", "Set tags"); // TODO - what is Overhead
+		ISpan span = hub.getSpan().startChild("Overhead", "Set tags");
 		setTags(request);
 		span.finish();
 		String allProducts = dbHelper.mapAllProductsJoin(hub.getSpan());
