@@ -24,11 +24,11 @@ def test_homepage(desktop_web_driver):
             # and causes the page to periodically crash, for Release Health
             # endpoint = endpoint + "&crash=%s" % (n)
             query_string = { 
-                'se': 'will',
+                'se': 'tda',
                 'backend': random.sample(['flask','express','springboot'], 1)[0],
                 'crash': "%s" % (n)
             }
-            url = endpoint + '?' + query_string
+            url = endpoint + '?' + urlencode(query_string)
 
             desktop_web_driver.get(url)
             time.sleep(random.randrange(3) + 3)

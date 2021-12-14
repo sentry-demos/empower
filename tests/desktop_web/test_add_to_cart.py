@@ -21,7 +21,7 @@ def test_add_to_cart(desktop_web_driver):
             # Ensures a different backend endpoint gets picked each time
             url = ""
             query_string = { 
-                'se': 'will',
+                'se': 'tda',
                 'backend': random.sample(['flask', 'express','springboot'], 1)[0]
             }
             url = endpoint_products + '?' + urlencode(query_string)

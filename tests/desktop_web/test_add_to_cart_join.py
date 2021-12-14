@@ -19,10 +19,10 @@ def test_add_to_cart_join(desktop_web_driver):
             # Ensures a different backend endpoint gets picked each time
             url = ""
             query_string = { 
-                'se': 'will',
+                'se': 'tda',
                 'backend': random.sample(['flask','express','springboot'], 1)[0]
             }
-            url = endpoint_products + '?' + urlencode(query_string)
+            url = endpoint_products_join + '?' + urlencode(query_string)
 
             desktop_web_driver.get(url)
             time.sleep(random.randrange(3) + 3)
