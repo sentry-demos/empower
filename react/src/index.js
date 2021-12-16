@@ -6,7 +6,7 @@ import * as Sentry from '@sentry/react';
 import { Integrations } from '@sentry/tracing';
 import { createBrowserHistory } from 'history';
 import { Router, Switch, Route } from 'react-router-dom';
-import { crasher, UnhandledException } from './utils/errors'
+import { crasher } from './utils/errors'
 import { determineBackendType, determineBackendUrl } from './utils/backendrouter'
 
 import { Provider } from 'react-redux'
@@ -15,7 +15,6 @@ import logger from 'redux-logger'
 import rootReducer from './reducers'
 
 import ScrollToTop from './components/ScrollToTop';
-import Button from './components/ButtonLink';
 import Footer from './components/Footer';
 import Nav from './components/Nav';
 import About from './components/About';
@@ -25,12 +24,11 @@ import Complete from './components/Complete';
 import CompleteError from './components/CompleteError';
 import Cra from './components/Cra';
 import Employee from './components/Employee';
+import Home from './components/Home';
 import NotFound from './components/NotFound';
 import Product from './components/Product';
 import Products from './components/Products';
 import ProductsJoin from './components/ProductsJoin';
-
-import plantsBackground from './assets/plants-background-img.jpg';
 
 const tracingOrigins = ['localhost', 'empowerplant.io', 'run.app', 'appspot.com', /^\//];
 
@@ -147,7 +145,9 @@ class App extends Component {
 
             <div id="body-container">
               <Switch>
-                <Route exact path="/" component={Home} />
+                <Route exact path="/">
+                  <Home backend={BACKEND_URL} />
+                </Route>
                 <Route path="/about" component={About} />
                 <Route path="/cart" component={Cart} />
                 <Route path="/checkout">
@@ -176,22 +176,3 @@ class App extends Component {
 
 // React-router in use here https://reactrouter.com/web/guides/quick-start
 ReactDOM.render(<App />, document.getElementById('root'));
-
-// See Transaction for everything you get, without any xhr/ajax requests going on.
-// This page doesn't have any, it's pure static content
-function Home() {
-
-  const divStyle = {
-    backgroundImage: 'url(' + plantsBackground + ')',
-  };
-  return (
-    <div className="hero">
-      <div className="hero-bg-img" style={divStyle}></div>
-      <div className="hero-content">
-        <h1>Empower your plants</h1>
-        <p>Keep your houseplants happy.</p>
-        <Button to="/products">Browse products</Button>
-      </div>
-    </div>
-  );
-}

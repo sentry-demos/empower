@@ -17,6 +17,7 @@ import io.sentry.ISpan;
 import io.sentry.ITransaction;
 import io.sentry.Sentry;
 import io.sentry.SpanStatus;
+import io.sentry.protocol.User;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -65,7 +66,13 @@ public class AppController {
 			String header = request.getHeader(tag);
 			if (header != null && header != "null") {
 				logger.info("Setting " + tag + " Sentry tag as " + header);
-				Sentry.setTag(tag, header);
+				if (tag == "email") {
+					User user = new User();
+					user.setEmail(header);
+					Sentry.setUser(user);
+				} else {
+					Sentry.setTag(tag, header);
+				}
 			}
 		}
 
@@ -79,13 +86,15 @@ public class AppController {
 
 	}
 
+	@CrossOrigin
 	@GetMapping("/success")
 	public String Success() {
 		logger.info("success");
-		return "Success";
+		return "success from springboot";
 
 	}
 
+	
 	@GetMapping("/handled")
 	public String HandledError() {
 		String someLocalVariable = "stack locals";
@@ -99,6 +108,7 @@ public class AppController {
 		return "Success";
 	}
 
+	@CrossOrigin
 	@GetMapping("/unhandled")
 	public String UnhandledError() {
 		throw new RuntimeException("Unhandled Exception!");

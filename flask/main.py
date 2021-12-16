@@ -71,7 +71,6 @@ def checkout():
     print("> /checkout inventory", inventory)
 
     with sentry_sdk.start_span(op="process_order", description="function"):
-        wait(operator.ge, 14, .5)
         quantities = cart['quantities']
         for cartItem in quantities:
             for inventoryItem in inventory:
@@ -84,7 +83,7 @@ def checkout():
  
 @app.route('/success', methods=['GET'])
 def success():    
-    return "successs"
+    return "success from flask"
 
 @app.route('/products', methods=['GET'])
 def products():    

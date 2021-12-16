@@ -40,6 +40,11 @@ and to deploy
 mvn clean package appengine:deploy
 ```
 
+If you get invalid authentication credentials, try running first before deploying:
+```
+gcloud auth login
+```
+
 ## Run
 Run from terminal with `./mvnw spring-boot:run` from the spring-boot directory
 
