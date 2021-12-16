@@ -20,6 +20,7 @@ def test_add_to_cart(desktop_web_driver):
         for i in range(random.randrange(20)):
             # Ensures a different backend endpoint gets picked each time
             url = ""
+            # TODO make a query_string builder function for sharing this across tests
             query_string = { 
                 'se': 'tda',
                 'backend': random.sample(['flask', 'express','springboot'], 1)[0]
