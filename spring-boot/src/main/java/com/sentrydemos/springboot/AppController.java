@@ -66,11 +66,12 @@ public class AppController {
 			String header = request.getHeader(tag);
 			if (header != null && header != "null") {
 				logger.info("Setting " + tag + " Sentry tag as " + header);
-				Sentry.setTag(tag, header);
 				if (tag == "email") {
 					User user = new User();
 					user.setEmail(header);
 					Sentry.setUser(user);
+				} else {
+					Sentry.setTag(tag, header);
 				}
 			}
 		}
