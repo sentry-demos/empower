@@ -26,7 +26,7 @@ export SAUCE_ACCESS_KEY=<>
 chmod u+x tests/script.sh
 ```
 
-Make a .env and put DSN in their if you want catch errors for the pytests failing (not the Apps themselves having errors)
+Make a .env and put DSN in there if you want catch errors for the pytests failing (not the Apps themselves having errors)
 
 ## FrontEnd / Selenium (`desktop_web` directory)
 Pulls up Sentry frontend in various browsers in parallel via selenium scripts.

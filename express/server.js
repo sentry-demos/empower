@@ -154,17 +154,17 @@ app.post('/checkout', async(req, res) => {
       .getTransaction();
     
     // Get Inventory
-    let span = transaction.startChild({
+    let spanGetInventory = transaction.startChild({
       op: "function",
       description: "getInventory",
     });
     inventory = await DB.getInventory(cart);
     console.log("> /checkout inventory", inventory);
 
-    span.finish();
+    spanGetInventory.finish();
     
     // Process Order
-    let span2 = transaction.startChild({
+    let spanProcessOrder = transaction.startChild({
       op: "function",
       description: "processOrder",
     });
@@ -178,7 +178,7 @@ app.post('/checkout', async(req, res) => {
         }
       }
     }
-    span2.finish();
+    spanProcessOrder.finish();
 
     res.status(200).send('success');
   } catch (error) {
