@@ -101,14 +101,26 @@ const getInventory = async function(cart) {
   }
   productIds = formatArray(productIds);
   console.log("> productIds", productIds);
+
   try {
-    let transaction = Sentry.startTransaction({ name: 'get inventory' });
-    let span = transaction.startChild({ op: 'get_inventory', description: 'db.query' });
+    const transaction = Sentry.getCurrentHub()
+      .getScope()
+      .getTransaction();
+
+    let span = transaction.startChild({
+      op: "getInventory",
+      description: "db.query",
+    });
+
     const inventory = await knex.raw(
       `SELECT * FROM inventory WHERE productId in ${productIds}`
     )
+
     span.setData("inventory", inventory.rows);
+    span.finish()
+
     return inventory.rows
+
   } catch(error) {
     Sentry.captureException(error);
     throw err;
@@ -125,8 +137,6 @@ function formatArray(ids) {
 }
 
 function openDBConnection() {
-  const transaction = Sentry.startTransaction({ name: 'open db connection' });
-  const span = transaction.startChild({ op: 'getproducts', description: 'db.connect'})
 
   let host
   if (process.env.EXPRESS_ENV === 'test') {
@@ -135,9 +145,9 @@ function openDBConnection() {
     // public IP of the instance does.
     host = process.env.CLOUD_SQL_PUBLIC_IP
   } else {
-    host = process.env.CLOUD_SQL_CONNECTION_NAME
+    host = '/cloudsql/' + process.env.CLOUD_SQL_CONNECTION_NAME
   }
-
+  console.log("> host ", host)
   const db = require('knex')({
     client: 'pg',
     connection: {
@@ -147,8 +157,6 @@ function openDBConnection() {
       host: host
     }
   });
-  span.finish();
-  transaction.finish();
   return db;
 }
 

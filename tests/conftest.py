@@ -1,6 +1,7 @@
 import pytest
 from os import environ
 import os
+import release_version_manager as ReleaseVersion
 
 from selenium import webdriver
 from appium import webdriver as appiumdriver
@@ -10,8 +11,11 @@ from selenium.webdriver.remote.remote_connection import RemoteConnection
 import sentry_sdk
 from dotenv import load_dotenv
 load_dotenv()
+
+SAUCELABS_PROTOCOL = "https://"
 DSN = os.getenv("DSN")
 ENVIRONMENT = os.getenv("ENVIRONMENT") or "production"
+
 print("ENV", ENVIRONMENT)
 print("DSN", DSN)
 
@@ -54,7 +58,6 @@ desktop_browsers = [
 def pytest_addoption(parser):
     parser.addoption("--dc", action="store", default='us', help="Set Sauce Labs Data Center (US or EU)")
 
-
 @pytest.fixture
 def data_center(request):
     return request.config.getoption('--dc')
@@ -69,9 +72,9 @@ def desktop_web_driver(request, data_center):
     access_key = environ['SAUCE_ACCESS_KEY']
 
     if data_center and data_center.lower() == 'eu':
-        selenium_endpoint = "https://{}:{}@ondemand.eu-central-1.saucelabs.com/wd/hub".format(username, access_key)
+        selenium_endpoint = SAUCELABS_PROTOCOL + "{}:{}@ondemand.eu-central-1.saucelabs.com/wd/hub".format(username, access_key)
     else:
-        selenium_endpoint = "https://{}:{}@ondemand.us-west-1.saucelabs.com/wd/hub".format(username, access_key)
+        selenium_endpoint = SAUCELABS_PROTOCOL + "{}:{}@ondemand.us-west-1.saucelabs.com/wd/hub".format(username, access_key)
 
     caps = dict()
     caps.update(request.param)
@@ -117,6 +120,7 @@ def android_emu_driver(request, data_center):
 
     username_cap = environ['SAUCE_USERNAME']
     access_key_cap = environ['SAUCE_ACCESS_KEY']
+    release_version = ReleaseVersion.latest_react_native_github_release()
 
     caps = {
         'username': username_cap,
@@ -124,7 +128,7 @@ def android_emu_driver(request, data_center):
         'deviceName': 'Android GoogleAPI Emulator',
         'platformVersion': '10.0',
         'platformName': 'Android',
-        'app': "https://github.com/sentry-demos/sentry_react_native/releases/download/1.9/app-release.apk",
+        'app': f'https://github.com/sentry-demos/sentry_react_native/releases/download/{release_version}/app-release.apk',
         'sauce:options': {
             'appiumVersion': '1.20.2',
             'build': 'RDC-Android-Python-Best-Practice',
@@ -134,9 +138,9 @@ def android_emu_driver(request, data_center):
     }
 
     if data_center and data_center.lower() == 'eu':
-        sauce_url = "https://{}:{}@ondemand.eu-central-1.saucelabs.com/wd/hub".format(username_cap, access_key_cap)
+        sauce_url = SAUCELABS_PROTOCOL + "{}:{}@ondemand.eu-central-1.saucelabs.com/wd/hub".format(username_cap, access_key_cap)
     else:
-        sauce_url = "https://{}:{}@ondemand.us-west-1.saucelabs.com/wd/hub".format(username_cap, access_key_cap)
+        sauce_url = SAUCELABS_PROTOCOL + "{}:{}@ondemand.us-west-1.saucelabs.com/wd/hub".format(username_cap, access_key_cap)
 
     driver = appiumdriver.Remote(sauce_url, desired_capabilities=caps)
     driver.implicitly_wait(20)
@@ -148,9 +152,10 @@ def android_emu_driver(request, data_center):
 @pytest.fixture
 def ios_sim_driver(request, data_center):
 
-
     username_cap = environ['SAUCE_USERNAME']
     access_key_cap = environ['SAUCE_ACCESS_KEY']
+    release_version = ReleaseVersion.latest_react_native_github_release()
+
 
     caps = {
         'username': username_cap,
@@ -164,13 +169,13 @@ def ios_sim_driver(request, data_center):
             'build': 'RDC-iOS-Python-Best-Practice',
             'name': request.node.name,
         },
-        'appium:app': 'https://github.com/sentry-demos/sentry_react_native/releases/download/1.9/sentry_react_native.app.zip',
+        'appium:app': f'https://github.com/sentry-demos/sentry_react_native/releases/download/{release_version}/sentry_react_native.app.zip',
     }
 
     if data_center and data_center.lower() == 'eu':
-        sauce_url = "https://{}:{}@ondemand.eu-central-1.saucelabs.com/wd/hub".format(username_cap, access_key_cap)
+        sauce_url = SAUCELABS_PROTOCOL + "{}:{}@ondemand.eu-central-1.saucelabs.com/wd/hub".format(username_cap, access_key_cap)
     else:
-        sauce_url = "https://{}:{}@ondemand.us-west-1.saucelabs.com/wd/hub".format(username_cap, access_key_cap)
+        sauce_url = SAUCELABS_PROTOCOL + "{}:{}@ondemand.us-west-1.saucelabs.com/wd/hub".format(username_cap, access_key_cap)
 
     driver = appiumdriver.Remote(sauce_url, desired_capabilities=caps)
     driver.implicitly_wait(20)

@@ -4,6 +4,8 @@
 
 Create a local `express/.env` file. Talk to a SE team member to get valid contents for this file. 
 
+Add REACT_APP_EXPRESS_BACKEND=<value> to react/.env. The value is the URL of the App Engine express instance.
+
 There are other `.env` files in the other directories so ensure you get the contents for the Express one.
 
 ```
@@ -34,3 +36,16 @@ In production, the Express backend is deployed to https://application-monitoring
 You can hit any route locally and add the `?backend=express` query parameter. Let's say your React server is running on port 5000 locally. An example would be: http://localhost:5000/?backend=express.
 
 Locally, the Express backend is served on port 8088 when you run `express/run.sh`.
+
+### Cloud GCP Deployment
+To deploy only the express service.
+
+```
+gcloud app deploy
+gcloud app deploy --quiet
+```
+
+If you get an error about invalid authentication credentials, try running this first:
+```
+gcloud auth login
+```

@@ -14,6 +14,21 @@
 
 'use strict';
 
+// run.sh sets a release tool but that's only used for local development
+const determineRelease = function() {
+  var d = new Date()
+  var month = d.getMonth()
+  var firstWeekday = new Date(d.getFullYear(), month, 1).getDay() - 1;
+  if (firstWeekday < 0) firstWeekday = 6;
+  var offsetDate = d.getDate() + firstWeekday - 1;
+  const week = Math.floor(offsetDate / 7);
+
+  const release = `${month}.${week}`
+  
+  console.log("> RELEASE computed", release)
+  return release
+}
+
 // Imported Functions
 const DB = require('./db');
 
@@ -42,7 +57,7 @@ const sentryEventContext = function(req, res, next) {
 }
 
 const dsn = process.env.EXPRESS_APP_DSN;
-const release = process.env.RELEASE;
+const release = process.env.RELEASE || determineRelease();
 const environment = process.env.EXPRESS_ENV || "production";
 
 console.log("> DSN", dsn);
@@ -60,7 +75,16 @@ Sentry.init({
     new Sentry.Integrations.Http({ tracing: true }),
     new Tracing.Integrations.Express({ app })
   ],
-  tracesSampleRate: 1.0
+  tracesSampleRate: 1.0,
+  tracesSampler: samplingContext => {
+    // sample out transactions from http OPTIONS requests hitting endpoints
+    const request = samplingContext.request
+    if (request && request.method == 'OPTIONS') {
+      return 0.0
+    }  else {
+      return 1.0
+    }
+  }
 })
 
 // The Sentry request handler must be the first middleware on the app
@@ -78,10 +102,16 @@ app.use(sentryEventContext);
 require('dotenv').config();
 
 app.get('/', (req, res) => {
-  res.send('Sentry Node Service says Hello - turn me into a microservice that powers Payments, Shipping, or Customers');
+  res.send('Sentry Express Service says Hello - turn me into a microservice that powers Payments, Shipping, or Customers');
+});
+
+app.get('/success', (req, res) => {
+  console.log("> success")
+  res.send(`success from express`);
 });
 
 app.get('/products', async (req, res) => {
+  console.log("> /products")
   try {
     let transaction = Sentry.getCurrentHub()
       .getScope()
@@ -119,29 +149,37 @@ app.post('/checkout', async(req, res) => {
   const form = order['form'];
   let inventory = [];
   try {
+    const transaction = Sentry.getCurrentHub()
+      .getScope()
+      .getTransaction();
+    
     // Get Inventory
-    let transaction = Sentry.startTransaction({ name: '/checkout.get_inventory' });
-    let span = transaction.startChild({ op: '/checkout.get_inventory'});
+    let spanGetInventory = transaction.startChild({
+      op: "function",
+      description: "getInventory",
+    });
     inventory = await DB.getInventory(cart);
     console.log("> /checkout inventory", inventory);
-    span.finish();
-    transaction.finish();
 
+    spanGetInventory.finish();
+    
     // Process Order
-    transaction = Sentry.startTransaction({ name: 'process order' });
-    span = transaction.startChild({ op: 'process_order', description: 'function' });
+    let spanProcessOrder = transaction.startChild({
+      op: "function",
+      description: "processOrder",
+    });
     let quantities = cart['quantities'];
     console.log("quantities", quantities);
     for(const cartItem in quantities) {
       for(const inventoryItem of inventory) {
         console.log("> inventoryItem.count", inventoryItem['count']);
         if(inventoryItem.count < quantities[cartItem]) {
-          throw("Not enough inventory for product");
+          throw new Error("Not enough inventory for product");
         }
       }
     }
-    span.finish();
-    transaction.finish();
+    spanProcessOrder.finish();
+
     res.status(200).send('success');
   } catch (error) {
     Sentry.captureException(error);
