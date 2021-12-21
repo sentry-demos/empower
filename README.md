@@ -12,8 +12,8 @@ Also called the Empower Plant UI/UX. This project was bootstrapped with [Create 
 | @sentry/tracing | 6.16.1 |
 | sentry_sdk | 1.5.1 |
 | @sentry/node | 6.16.1 |
-| sentry-spring-boot-starter | 5.5.0 |
-| sentry-logback | 5.5.0 |
+| sentry-spring-boot-starter | 5.5.1 |
+| sentry-logback | 5.5.1 |
 
 ## Setup
 1. Permit your IP address in CloudSQL.

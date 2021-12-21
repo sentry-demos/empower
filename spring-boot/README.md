@@ -29,6 +29,9 @@ spring.datasource.url=jdbc:postgresql://<server>:<port>/<database name>
 server.port=8090
 spring.cloud.gcp.sql.enabled=false
 ```
+
+Run from terminal with `./mvnw spring-boot:run` from the spring-boot directory
+
 ### Cloud GCP Deployment
 Verify that the **GCP** section is not commented AND **DEV** section is commented (i.e. `application.properties` should have no values for `spring.datasource.url` nor `server.port`).
 ```
@@ -44,9 +47,6 @@ If you get invalid authentication credentials, try running first before deployin
 ```
 gcloud auth login
 ```
-
-## Run
-Run from terminal with `./mvnw spring-boot:run` from the spring-boot directory
 
 ## Configuration Files
 All configurations are in `src/main/resources/application.properties` and `src/main/appengine/app.yaml`.
