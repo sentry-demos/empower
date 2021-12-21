@@ -94,7 +94,7 @@ public class AppController {
 
 	}
 
-	
+	@CrossOrigin
 	@GetMapping("/handled")
 	public String HandledError() {
 		String someLocalVariable = "stack locals";
@@ -114,6 +114,7 @@ public class AppController {
 		throw new RuntimeException("Unhandled Exception!");
 	}
 
+	@CrossOrigin
 	@GetMapping("/logback")
 	public String Logback() {
 		logger.info("info log");
