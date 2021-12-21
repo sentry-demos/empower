@@ -1,1 +1,1 @@
-while true; do clear && pytest -s -n desktop_web; done
+while true; do clear && pytest -s -n 4 desktop_web; done

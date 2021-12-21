@@ -9,7 +9,7 @@ Runs automted tests against Sentry demos on GCP, in order to generate errors and
 
 ## Setup
 ```
-python3 -m venv venv
+python3 -m venv env
 source env/bin/activate
 pip install -r requirements.txt
 ```
@@ -26,6 +26,8 @@ export SAUCE_ACCESS_KEY=<>
 chmod u+x tests/script.sh
 ```
 
+Make a .env and put DSN in there if you want catch errors for the pytests failing (not the Apps themselves having errors)
+
 ## FrontEnd / Selenium (`desktop_web` directory)
 Pulls up Sentry frontend in various browsers in parallel via selenium scripts.
 Test case will add items to cart and then click checkout
@@ -35,6 +37,11 @@ py.test -s -n 4 desktop_web
 ```
 
 `-n` is for number of threads
+
+How to run one test:
+```
+py.test -s -n 4 desktop_web/test_homepage.py
+```
 
 # To run "continuously" in VM
 Use an isolated VM since it's constantly occupying +2 threads simultaneously

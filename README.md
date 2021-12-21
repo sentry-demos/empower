@@ -8,9 +8,12 @@ Also called the Empower Plant UI/UX. This project was bootstrapped with [Create 
 
 | sentry    | version
 | ------------- |:-------------:|
-| @sentry/react | 6.12.0-beta.2 |
-| @sentry/tracing | 6.12.0-beta.2 |
-| sentry_sdk | 1.3.1 |
+| @sentry/react | 6.16.1 |
+| @sentry/tracing | 6.16.1 |
+| sentry_sdk | 1.5.1 |
+| @sentry/node | 6.16.1 |
+| sentry-spring-boot-starter | 5.5.0 |
+| sentry-logback | 5.5.0 |
 
 ## Setup
 1. Permit your IP address in CloudSQL.
@@ -65,11 +68,14 @@ This run script deploys React + Flask. See the run script for individual gcloud 
 ```
 and `gcloud auth login` if it asks you to authenticate, or insert YubiKey.
 
-#### How to Deploy to Staging
+## Deploy to Staging
 Update the app engine service name in the following places:  
+```
 react/app.yaml to staging-application-monitoring-javascript  
 react/.env to staging-application-monitoring-javascript  
-flask/.env to staging-application-monitoring-javascript  
+flask/app.yaml to staging-application-monitoring-javascript 
+spring-boot/src/main/appengine/app.yaml to staging-springboot
+```
 Then run deploy.sh
 
 ## Troubleshooting

@@ -77,8 +77,9 @@ Sentry.init({
   ],
   tracesSampleRate: 1.0,
   tracesSampler: samplingContext => {
-    // sample out transactions for http OPTIONS requests
-    if (samplingContext.request.method == 'OPTIONS') {
+    // sample out transactions from http OPTIONS requests hitting endpoints
+    const request = samplingContext.request
+    if (request && request.method == 'OPTIONS') {
       return 0.0
     }  else {
       return 1.0
@@ -105,10 +106,12 @@ app.get('/', (req, res) => {
 });
 
 app.get('/success', (req, res) => {
-  res.send(`success`);
+  console.log("> success")
+  res.send(`success from express`);
 });
 
 app.get('/products', async (req, res) => {
+  console.log("> /products")
   try {
     let transaction = Sentry.getCurrentHub()
       .getScope()
@@ -146,29 +149,37 @@ app.post('/checkout', async(req, res) => {
   const form = order['form'];
   let inventory = [];
   try {
+    const transaction = Sentry.getCurrentHub()
+      .getScope()
+      .getTransaction();
+    
     // Get Inventory
-    let transaction = Sentry.startTransaction({ name: '/checkout.get_inventory' });
-    let span = transaction.startChild({ op: '/checkout.get_inventory'});
+    let spanGetInventory = transaction.startChild({
+      op: "function",
+      description: "getInventory",
+    });
     inventory = await DB.getInventory(cart);
     console.log("> /checkout inventory", inventory);
-    span.finish();
-    transaction.finish();
 
+    spanGetInventory.finish();
+    
     // Process Order
-    transaction = Sentry.startTransaction({ name: 'process order' });
-    span = transaction.startChild({ op: 'process_order', description: 'function' });
+    let spanProcessOrder = transaction.startChild({
+      op: "function",
+      description: "processOrder",
+    });
     let quantities = cart['quantities'];
     console.log("quantities", quantities);
     for(const cartItem in quantities) {
       for(const inventoryItem of inventory) {
         console.log("> inventoryItem.count", inventoryItem['count']);
         if(inventoryItem.count < quantities[cartItem]) {
-          throw("Not enough inventory for product");
+          throw new Error("Not enough inventory for product");
         }
       }
     }
-    span.finish();
-    transaction.finish();
+    spanProcessOrder.finish();
+
     res.status(200).send('success');
   } catch (error) {
     Sentry.captureException(error);
