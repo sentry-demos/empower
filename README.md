@@ -74,7 +74,8 @@ Run `gcloud auth login` if it asks you to authenticate, or insert YubiKey.
 Update the app engine service name in the following places:  
 ```
 react/app.yaml to staging-application-monitoring-javascript  
-react/.env to staging-application-monitoring-javascript  
+react/.env to staging-application-monitoring-express, -flask, -springboot.
+  
 flask/app.yaml to staging-application-monitoring-javascript 
 express/app.yaml to staging-application-monitoring-node
 spring-boot/src/main/appengine/app.yaml to staging-springboot
