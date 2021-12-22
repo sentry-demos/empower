@@ -2,7 +2,7 @@
 export LATEST_REACT_NATIVE_GITHUB_RELEASE=$(python3 latest_github_release.py react_native)
 export LATEST_ANDROID_GITHUB_RELEASE=$(python3 latest_github_release.py android)
 
-echo "React Native v$(LATEST_REACT_NATIVE_GITHUB_RELEASE)"
-echo "Android v$(LATEST_ANDROID_GITHUB_RELEASE)"
+echo "React Native Github Release v$LATEST_REACT_NATIVE_GITHUB_RELEASE"
+echo "Android Github Release v$LATEST_ANDROID_GITHUB_RELEASE"
 
 while true; do clear && pytest -s -n 4 .; done
