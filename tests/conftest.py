@@ -154,7 +154,7 @@ def android_emu_driver(request, data_center):
 
     username_cap = environ['SAUCE_USERNAME']
     access_key_cap = environ['SAUCE_ACCESS_KEY']
-    release_version = ReleaseVersion.latest_react_native_github_release()
+    release_version = ReleaseVersion.latest_android_github_release()
 
     caps = {
         'username': username_cap,
@@ -162,7 +162,7 @@ def android_emu_driver(request, data_center):
         'deviceName': 'Android GoogleAPI Emulator',
         'platformVersion': '10.0',
         'platformName': 'Android',
-        'app': 'https://c66d-157-131-77-226.ngrok.io/app-release.apk',
+        'app': f'https://github.com/sentry-demos/android/releases/download/{release_version}/app-release.apk',
         'sauce:options': {
             'appiumVersion': '1.20.2',
             'build': 'RDC-Android-Python-Best-Practice',
