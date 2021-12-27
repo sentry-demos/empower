@@ -41,6 +41,18 @@ public class Application {
 			options.setEnvironment(environment);
 			options.setTracesSampleRate(1.0);
 			options.setRelease(getRelease());
+			
+			options.setTracesSampler(
+				context -> {
+					//context.getTransactionContext().getName() returns String: GET /products
+					if (context.getTransactionContext().getOperation().equals("http.server") &&
+							context.getTransactionContext().getName().startsWith("OPTIONS")) {
+						//Not sampling OPTIONS transactions
+						return 0.0;
+					} else {
+						return 1.0;
+					}
+				});
 		});
 	}
 
