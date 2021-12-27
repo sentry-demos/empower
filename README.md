@@ -62,21 +62,25 @@ Add +2 quantity of a single item to Cart and purchase in order to trigger an Err
 
 
 ## Deploy
-This run script deploys React + Flask. See the run script for individual gcloud commands you can use for any of the backends like /express, /ruby etc.
+This script deploys the flagship apps React + Flask. For deploying a single app to App Engine, check each platform's README for specific instructions.
 ```
 ./deploy.sh
 ```
-and `gcloud auth login` if it asks you to authenticate, or insert YubiKey.
+You can put all 4 apps in deploy.sh for deployment, but that's 4 apps you could be taking down at once, which other people are relying on. With great power, comes great responsibility.  
+
+Run `gcloud auth login` if it asks you to authenticate, or insert YubiKey.  
 
 ## Deploy to Staging
 Update the app engine service name in the following places:  
 ```
 react/app.yaml to staging-application-monitoring-javascript  
-react/.env to staging-application-monitoring-javascript  
+react/.env to staging-application-monitoring-express, -flask, -springboot.
+  
 flask/app.yaml to staging-application-monitoring-javascript 
+express/app.yaml to staging-application-monitoring-node
 spring-boot/src/main/appengine/app.yaml to staging-springboot
 ```
-Then run deploy.sh
+Then run deploy.sh for deploying the flagship app (React to Flask) together, or deploy only the individual apps that you need (check the README for each platform). 
 
 ## Troubleshooting
 ### Upgrading
