@@ -116,7 +116,7 @@ def desktop_web_driver(request, data_center):
     sentry_sdk.capture_message("Selenium Session Done")
 
 @pytest.fixture
-def android_emu_driver(request, data_center):
+def android_react_native_emu_driver(request, data_center):
 
     username_cap = environ['SAUCE_USERNAME']
     access_key_cap = environ['SAUCE_ACCESS_KEY']
@@ -150,7 +150,41 @@ def android_emu_driver(request, data_center):
     driver.quit()
 
 @pytest.fixture
-def ios_sim_driver(request, data_center):
+def android_emu_driver(request, data_center):
+
+    username_cap = environ['SAUCE_USERNAME']
+    access_key_cap = environ['SAUCE_ACCESS_KEY']
+    release_version = ReleaseVersion.latest_android_github_release()
+
+    caps = {
+        'username': username_cap,
+        'accessKey': access_key_cap,
+        'deviceName': 'Android GoogleAPI Emulator',
+        'platformVersion': '10.0',
+        'platformName': 'Android',
+        'app': f'https://github.com/sentry-demos/android/releases/download/{release_version}/app-release.apk',
+        'sauce:options': {
+            'appiumVersion': '1.20.2',
+            'build': 'RDC-Android-Python-Best-Practice',
+            'name': request.node.name
+        },
+        'appWaitForLaunch': False
+    }
+
+    if data_center and data_center.lower() == 'eu':
+        sauce_url = SAUCELABS_PROTOCOL + "{}:{}@ondemand.eu-central-1.saucelabs.com/wd/hub".format(username_cap, access_key_cap)
+    else:
+        sauce_url = SAUCELABS_PROTOCOL + "{}:{}@ondemand.us-west-1.saucelabs.com/wd/hub".format(username_cap, access_key_cap)
+
+    driver = appiumdriver.Remote(sauce_url, desired_capabilities=caps)
+    driver.implicitly_wait(20)
+    yield driver
+    sauce_result = "failed" if request.node.rep_call.failed else "passed"
+    driver.execute_script("sauce:job-result={}".format(sauce_result))
+    driver.quit()
+
+@pytest.fixture
+def ios_react_native_sim_driver(request, data_center):
 
     username_cap = environ['SAUCE_USERNAME']
     access_key_cap = environ['SAUCE_ACCESS_KEY']
