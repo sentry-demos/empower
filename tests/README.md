@@ -4,8 +4,8 @@ Runs automted tests against Sentry demos on GCP, in order to generate errors and
 ## Components / Moving parts
 - `conftest.py` -> Sauce Labs configuration (browsers) for frontend_tests
 - `backend_tests/backend_test.py` -> Hits /handled, /unhandled/, + /checkout backend demo APIs
-- Selectors for button elements in the React Native app can be found in Saucelabs via Sauce Labs Inspector...
-- [SauceLabs Inspector](https://github.com/appium/appium-inspector) download and launch this Desktop program, see img...TODO
+- Selectors for button elements in the React Native app can be found via connecting an Appium Inspector to your Saucelabs instance.
+- [SauceLabs Inspector](https://github.com/appium/appium-inspector) download and launch this Desktop program, get the JSON config from someone.
 
 # Tests
 
