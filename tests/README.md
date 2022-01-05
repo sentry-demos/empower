@@ -4,6 +4,8 @@ Runs automted tests against Sentry demos on GCP, in order to generate errors and
 ## Components / Moving parts
 - `conftest.py` -> Sauce Labs configuration (browsers) for frontend_tests
 - `backend_tests/backend_test.py` -> Hits /handled, /unhandled/, + /checkout backend demo APIs
+- Selectors for button elements in the React Native app can be found in Saucelabs via Sauce Labs Inspector...
+- [SauceLabs Inspector](https://github.com/appium/appium-inspector) download and launch this Desktop program, see img...TODO
 
 # Tests
 
@@ -41,6 +43,7 @@ py.test -s -n 4 desktop_web
 How to run one test:
 ```
 py.test -s -n 4 desktop_web/test_homepage.py
+py.test -s -n 4 mobile_native/android_react_native/test_homescreen_react_native_android.py
 ```
 
 # To run "continuously" in VM
