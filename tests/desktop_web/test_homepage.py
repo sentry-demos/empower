@@ -18,7 +18,7 @@ def test_homepage(desktop_web_driver):
 
         for i in range(random.randrange(20)):
             # Randomize the Failure Rate between 1% and 40%
-            n = random.uniform(0.01, .04)
+            n = random.uniform(0.01, .4)
 
             # This query string is parsed by utils/errors.js wherever the 'crasher' function is used
             # and causes the page to periodically crash, for Release Health
