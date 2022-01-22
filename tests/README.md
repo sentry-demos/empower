@@ -79,3 +79,5 @@ venv/lib/python3.7/site-packages/urllib3/util/retry.py:574: MaxRetryError
 </details>
 
 **Solution:** A workaround is to locally change the `SAUCELABS_PROTOCOL` constant in `conftest.py` from `https` to `http`.
+
+Note that handled errors will not increment the crash counts in Release Health. But the Release Health UI does separate Handled from Unhandled Issues.
