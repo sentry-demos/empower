@@ -44,6 +44,7 @@ How to run one test:
 ```
 py.test -s -n 4 desktop_web/test_homepage.py
 py.test -s -n 4 mobile_native/android_react_native/test_homescreen_react_native_android.py
+py.test -s -n 4 mobile_native/ios_react_native/test_uncaughtthrownerror_react_native_ios.py
 ```
 
 # To run "continuously" in VM
@@ -81,3 +82,5 @@ venv/lib/python3.7/site-packages/urllib3/util/retry.py:574: MaxRetryError
 **Solution:** A workaround is to locally change the `SAUCELABS_PROTOCOL` constant in `conftest.py` from `https` to `http`.
 
 Note that handled errors will not increment the crash counts in Release Health. But the Release Health UI does separate Handled from Unhandled Issues.
+
+https://appium.io/docs/en/commands/device/app/launch-app/
