@@ -62,7 +62,7 @@ Add +2 quantity of a single item to Cart and purchase in order to trigger an Err
 
 
 ## Deploy
-This script deploys the flagship apps React + Flask. For deploying a single app to App Engine, check each platform's README for specific instructions.
+This script deploys the flagship apps React + Flask. For deploying a single app to App Engine, check each platform's README for specific instructions. Make sure all .env's and app.yaml's have correct values before deploying.
 ```
 ./deploy.sh
 ```
