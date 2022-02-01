@@ -2,7 +2,7 @@ RELEASE=`./release.sh`
 echo $RELEASE
 
 SENTRY_ORG=testorg-az
-SENTRY_PROJECT=application-monitoring-javascript
+SENTRY_PROJECT=will-react
 PREFIX=static/js
 
 cd react
