@@ -73,12 +73,18 @@ Run `gcloud auth login` if it asks you to authenticate, or insert YubiKey.
 ## Deploy to Staging
 Update the app engine service name in the following places:  
 ```
+// required
 react/app.yaml to staging-application-monitoring-javascript  
-react/.env to staging-application-monitoring-express, -flask, -springboot.
-  
+react/.env to staging-application-monitoring-express, -flask, -springboot
 flask/app.yaml to staging-application-monitoring-javascript 
 express/app.yaml to staging-application-monitoring-node
 spring-boot/src/main/appengine/app.yaml to staging-springboot
+
+// optional
+react/.env REACT_APP_BACKEND with updated DSN
+flask/.env FLASK_APP_DSN with updated DSN
+springboot/src/main/resources/application.properties with updated DSN
+deploy.sh's SENTRY_PROJECT with updated value
 ```
 Then run deploy.sh for deploying the flagship app (React to Flask) together, or deploy only the individual apps that you need (check the README for each platform). 
 
@@ -130,6 +136,9 @@ gcloud topic configurations
 gcloud auth
 gcloud auth application-default
 gcloud auth login
+gcloud auth list
+gcloud config set account `ACCOUNT`
+gcloud config list, to display current account
 ```
 
 ### Other
