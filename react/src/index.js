@@ -46,6 +46,27 @@ if (window.location.hostname === "localhost") {
 let BACKEND_URL
 const DSN = process.env.REACT_APP_DSN
 const RELEASE = process.env.REACT_APP_RELEASE
+var dateObj = new Date();
+var month = dateObj.getUTCMonth() + 1; //months from 1-12
+var day = dateObj.getUTCDate();
+var week
+if (day <= 7) {
+  week = 1
+} else if (day <= 14) {
+  week = 2
+} else if (day <= 21) {
+  week = 3
+} else if (day <= 28) {
+  week = 4
+} else if (day <= 35) {
+  week = 5
+}
+var year = dateObj.getUTCFullYear();
+year = year.toString().slice(-2)
+
+const newrelease = year + "." + month + "." + week;
+console.log("> newrelease", newrelease)
+
 console.log("ENVIRONMENT", ENVIRONMENT)
 console.log("RELEASE", RELEASE)
 
