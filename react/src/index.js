@@ -46,7 +46,7 @@ if (window.location.hostname === "localhost") {
 
 let BACKEND_URL
 const DSN = process.env.REACT_APP_DSN
-const RELEASE = release() || process.env.REACT_APP_RELEASE
+const RELEASE = release("application.monitoring.javascript") || process.env.REACT_APP_RELEASE
 
 console.log("ENVIRONMENT", ENVIRONMENT)
 console.log("RELEASE", RELEASE)

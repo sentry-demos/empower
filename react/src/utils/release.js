@@ -1,4 +1,4 @@
-const release = () => {
+const release = (packageName) => {
 
     var date = new Date();
     var month = date.getUTCMonth() + 1; //months from 1-12
@@ -19,7 +19,8 @@ const release = () => {
     
     var year = date.getUTCFullYear().toString().slice(-2);
 
-    return year + "." + month + "." + week;
+    // package@version
+    return `${packageName}@${year}.${month}.${week}`
 }
 
 export default release
