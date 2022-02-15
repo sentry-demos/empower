@@ -49,7 +49,7 @@ desktop_browsers = [
         "sauce:options": {}
     }, {
         "seleniumVersion": '3.4.0',
-        "platform": "OS X 10.11",
+        "platform": "OS X 10.13",
         "browserName": "chrome",
         "version": "latest",
         "sauce:options": {}
