@@ -1,4 +1,7 @@
 RELEASE=`./release.sh`
+PACKAGE_NAME=application.monitoring.javascript
+
+RELEASE=$PACKAGE_NAME@$RELEASE
 echo $RELEASE
 
 SENTRY_ORG=testorg-az
