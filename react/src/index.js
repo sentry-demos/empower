@@ -75,7 +75,7 @@ Sentry.init({
 
     if (se === "tda") {
       // Release Health
-      event.fingerprint = ['{{ default }}', se, process.env.REACT_APP_RELEASE ];
+      event.fingerprint = ['{{ default }}', se, RELEASE ];
     } else if (se) {
       event.fingerprint = ['{{ default }}', se ];
     }
