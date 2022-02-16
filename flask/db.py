@@ -34,6 +34,7 @@ else:
     )
 
 # N+1 because a sql query for every product n
+# TODO no loops in try/excepts
 def get_products():
     results = []
     try:
@@ -42,7 +43,7 @@ def get_products():
 
         with sentry_sdk.start_span(op="get_products", description="db.query") as span:
             n = weighter(operator.le, 12)
-
+            # TODO consider try/except here
             products = connection.execute(
                 "SELECT *, pg_sleep(%s) FROM products" % (n)
             ).fetchall()
@@ -65,8 +66,11 @@ def get_products():
         with sentry_sdk.start_span(op="serialization", description="json"):
             result = json.dumps(results, default=str)
         return result
-    except Exception as err:
-        raise(err)
+    except BrokenPipeError as err: #if not brokenPIpe, then will not caught, get re-raised
+        raise DatabaseConnectionError
+    # except Exception as err: # redundant
+        # if isinstance(err, BrokenPipeError):
+        # raise(err)
 
 # 2 sql queries max, then sort in memory
 def get_products_join():
@@ -129,10 +133,10 @@ def get_inventory(cart):
             ).fetchall()
             span.set_data("inventory",inventory)
 
-
     except Exception as exception:
-        print(exception)
-        sentry_sdk.capture_exception(exception)
+        # if (instanceof)
+        # sentry_sdk.capture_exception(exception)
+        raise DatabaseConnectionError
 
     return inventory
 
