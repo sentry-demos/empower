@@ -55,13 +55,6 @@ sentry_sdk.init(
 app = Flask(__name__)
 CORS(app)
 
-
-# TODO CLASS
-# DatabaseConnectionError: get_inventory
-class DatabaseConnectionError (Exception):
-    pass
-
-
 @app.route('/checkout', methods=['POST'])
 def checkout():
     order = json.loads(request.data)
@@ -76,8 +69,8 @@ def checkout():
         print(err)
         sentry_sdk.capture_exception(err)
         # TODO
-        throw DatabaseConnectionError('')
-        return # a response, 200
+        # throw DatabaseConnectionError('')
+        # return # a response, 200
     print("> /checkout inventory", inventory)
 
     with sentry_sdk.start_span(op="process_order", description="function"):

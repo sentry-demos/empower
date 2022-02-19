@@ -15,6 +15,9 @@ PASSWORD = os.getenv("PASSWORD")
 FLASK_ENV = os.environ.get("FLASK_ENV")
 CLOUD_SQL_CONNECTION_NAME = os.environ.get("CLOUD_SQL_CONNECTION_NAME")
 
+class DatabaseConnectionError (Exception):
+    pass
+
 if FLASK_ENV == "test":
     print("> ENVIRONMENT test ")
     db = create_engine('postgresql://' + USERNAME + ':' + PASSWORD + '@' + HOST + ':5432/' + DATABASE)
@@ -77,7 +80,7 @@ def get_products_join():
     results = []
     try:
         with sentry_sdk.start_span(op="get_products_join", description="db.connect"):
-            connection = db.connect()
+            connection = db.connect('causes problem...')
         
         with sentry_sdk.start_span(op="get_products_join", description="db.query") as span:
             products = connection.execute(
@@ -91,24 +94,25 @@ def get_products_join():
                 "SELECT reviews.id, products.id AS productid, reviews.rating, reviews.customerId, reviews.description, reviews.created FROM reviews INNER JOIN products ON reviews.productId = products.id"
             ).fetchall()
             span.set_data("reviews",reviews)
-
-        with sentry_sdk.start_span(op="get_products_join.format_results", description="function") as span:
-            for product in products:
-                result = dict(product)
-                result["reviews"] = []
-
-                for review in reviews:
-                    productId=review[1]
-                    if productId == product["id"]:
-                        result["reviews"].append(dict(review))
-                results.append(result)
-            span.set_data("results", results)
-
-        with sentry_sdk.start_span(op="serialization", description="json"):
-            result = json.dumps(results, default=str)
-        return result
     except Exception as err:
-        raise(err)
+        raise DatabaseConnectionError('get_products_join')
+
+    with sentry_sdk.start_span(op="get_products_join.format_results", description="function") as span:
+        for product in products:
+            result = dict(product)
+            result["reviews"] = []
+
+            for review in reviews:
+                productId=review[1]
+                if productId == product["id"]:
+                    result["reviews"].append(dict(review))
+            results.append(result)
+        span.set_data("results", results)
+
+    with sentry_sdk.start_span(op="serialization", description="json"):
+        result = json.dumps(results, default=str)
+
+    return result
 
 def get_inventory(cart):
     print("> get_inventory")
