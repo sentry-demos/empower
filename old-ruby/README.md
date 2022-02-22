@@ -2,19 +2,17 @@
 
 ## Setup
 
-Create a local `ruby/.env` file. Talk to a SE team member to get valid contents for this file?
+Create a local `ruby/.env` file. Talk to a SE team member to get valid contents for this file. 
 
 Add REACT_APP_RUBY_BACKEND=<value> to react/.env. The value is the URL of the App Engine ruby instance.
 
-There are other `.env` files in the other directories so ensure you get the contents for the ruby one?
-
-You may need ruby 2.7. You may use rbenv to do this but it's not required.
+There are other `.env` files in the other directories so ensure you get the contents for the ruby one.
 
 ```
 // Run the ruby server locally in a test environment
 
 $ cd ruby
-$ bundle install
+$ npm install
 $ ./run.sh
 ```
 

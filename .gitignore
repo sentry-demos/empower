@@ -50,3 +50,27 @@ spring-boot/.settings
 spring-boot/*.jar
 spring-boot/bin
 spring-boot/.mvn/wrapper/maven-wrapper.jar
+
+# Ruby, Rails
+ruby/.bundle
+# Ignore the default SQLite database.
+ruby/db/*.sqlite3
+ruby/db/*.sqlite3-*
+# Ignore all logfiles and tempfiles.
+ruby/log/*
+ruby/tmp/*
+!/log/.keep
+!/tmp/.keep
+# Ignore pidfiles, but keep the directory.
+ruby/tmp/pids/*
+!/tmp/pids/
+!/tmp/pids/.keep
+# Ignore uploaded files in development.
+ruby/storage/*
+!/storage/.keep
+ruby/tmp/storage/*
+!/tmp/storage/
+!/tmp/storage/.keep
+ruby/public/assets
+# Ignore master key for decrypting credentials and more.
+ruby/config/master.key
