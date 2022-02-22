@@ -18,6 +18,9 @@ CLOUD_SQL_CONNECTION_NAME = os.environ.get("CLOUD_SQL_CONNECTION_NAME")
 class DatabaseConnectionError (Exception):
     pass
 
+# error type was 'Error' so using the error message here so it's more specific
+UNPACK_FROM_ERROR="unpack_from requires a buffer of at least 5 bytes for unpacking 5 bytes at offset"
+
 if FLASK_ENV == "test":
     print("> ENVIRONMENT test ")
     db = create_engine('postgresql://' + USERNAME + ':' + PASSWORD + '@' + HOST + ':5432/' + DATABASE)
@@ -71,7 +74,7 @@ def get_products():
     except BrokenPipeError as err:
         raise DatabaseConnectionError('get_products')
     except Exception as err:
-        if "unpack_from requires a buffer of at least 5 bytes for unpacking 5 bytes at offset" in err:
+        if UNPACK_FROM_ERROR in err:
             raise DatabaseConnectionError('get_products')
         else:
             raise(err)
@@ -98,7 +101,7 @@ def get_products_join():
     except BrokenPipeError as err:
         raise DatabaseConnectionError('get_products_join')
     except Exception as err:
-        if "unpack_from requires a buffer of at least 5 bytes for unpacking 5 bytes at offset" in err:
+        if UNPACK_FROM_ERROR in err:
             raise DatabaseConnectionError('get_products')
         else:
             raise(err)
