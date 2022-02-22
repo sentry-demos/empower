@@ -102,7 +102,7 @@ def get_products_join():
         raise DatabaseConnectionError('get_products_join')
     except Exception as err:
         if UNPACK_FROM_ERROR in err:
-            raise DatabaseConnectionError('get_products')
+            raise DatabaseConnectionError('get_products_join')
         else:
             raise(err)
 
