@@ -15,5 +15,11 @@ Rails.application.routes.draw do
   # get 'organization', to: 'api/organization'
   # get 'organization'
   # get 'api'
-  get 'api', to: 'api#organization'
+  get 'api', to: 'api#api'
+
+  get 'connect', to: 'api#connect'
+
+  get 'organization', to: 'api#organization'
+
+  get 'success', to: 'api#success'
 end
