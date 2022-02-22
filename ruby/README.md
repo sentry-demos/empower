@@ -15,8 +15,17 @@ You may need ruby 2.7. You may use rbenv to do this but it's not required.
 
 $ cd ruby
 $ bundle install
-$ ./run.sh
 ```
+
+## Run
+```
+./run.sh
+```
+
+Visit http://localhost:3000/api/organization
+
+Also...bin/rails server -p 3001
+Also...don't care about the web html being served at localhost:3000/
 
 ## Hitting The ruby Backend
 
