@@ -15,6 +15,12 @@ PASSWORD = os.getenv("PASSWORD")
 FLASK_ENV = os.environ.get("FLASK_ENV")
 CLOUD_SQL_CONNECTION_NAME = os.environ.get("CLOUD_SQL_CONNECTION_NAME")
 
+class DatabaseConnectionError (Exception):
+    pass
+
+# error type was 'Error' so using the error message here so it's more specific
+UNPACK_FROM_ERROR="unpack_from requires a buffer of at least 5 bytes for unpacking 5 bytes at offset"
+
 if FLASK_ENV == "test":
     print("> ENVIRONMENT test ")
     db = create_engine('postgresql://' + USERNAME + ':' + PASSWORD + '@' + HOST + ':5432/' + DATABASE)
@@ -65,8 +71,13 @@ def get_products():
         with sentry_sdk.start_span(op="serialization", description="json"):
             result = json.dumps(results, default=str)
         return result
+    except BrokenPipeError as err:
+        raise DatabaseConnectionError('get_products')
     except Exception as err:
-        raise(err)
+        if UNPACK_FROM_ERROR in err:
+            raise DatabaseConnectionError('get_products')
+        else:
+            raise(err)
 
 # 2 sql queries max, then sort in memory
 def get_products_join():
@@ -87,24 +98,30 @@ def get_products_join():
                 "SELECT reviews.id, products.id AS productid, reviews.rating, reviews.customerId, reviews.description, reviews.created FROM reviews INNER JOIN products ON reviews.productId = products.id"
             ).fetchall()
             span.set_data("reviews",reviews)
-
-        with sentry_sdk.start_span(op="get_products_join.format_results", description="function") as span:
-            for product in products:
-                result = dict(product)
-                result["reviews"] = []
-
-                for review in reviews:
-                    productId=review[1]
-                    if productId == product["id"]:
-                        result["reviews"].append(dict(review))
-                results.append(result)
-            span.set_data("results", results)
-
-        with sentry_sdk.start_span(op="serialization", description="json"):
-            result = json.dumps(results, default=str)
-        return result
+    except BrokenPipeError as err:
+        raise DatabaseConnectionError('get_products_join')
     except Exception as err:
-        raise(err)
+        if UNPACK_FROM_ERROR in err:
+            raise DatabaseConnectionError('get_products_join')
+        else:
+            raise(err)
+
+    with sentry_sdk.start_span(op="get_products_join.format_results", description="function") as span:
+        for product in products:
+            result = dict(product)
+            result["reviews"] = []
+
+            for review in reviews:
+                productId=review[1]
+                if productId == product["id"]:
+                    result["reviews"].append(dict(review))
+            results.append(result)
+        span.set_data("results", results)
+
+    with sentry_sdk.start_span(op="serialization", description="json"):
+        result = json.dumps(results, default=str)
+
+    return result
 
 def get_inventory(cart):
     print("> get_inventory")
@@ -128,11 +145,10 @@ def get_inventory(cart):
                 "SELECT * FROM inventory WHERE productId in %s" % (productIds)
             ).fetchall()
             span.set_data("inventory",inventory)
-
-
-    except Exception as exception:
-        print(exception)
-        sentry_sdk.capture_exception(exception)
+    except BrokenPipeError as err:
+        raise DatabaseConnectionError('get_inventory')
+    except Exception as err:
+        raise(err)
 
     return inventory
 
