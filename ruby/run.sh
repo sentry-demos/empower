@@ -1,1 +1,1 @@
-bundle exec rails server
+ruby main.rb
