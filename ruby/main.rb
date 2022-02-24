@@ -9,13 +9,13 @@ set :allow_headers, "content-type,if-modified-since,accept,access-control-reques
 
 Sentry.init do |config|
   config.dsn = 'https://7bb0e18f77744dc69322e84f72e9769e@o87286.ingest.sentry.io/6227418'
-  config.traces_sample_rate = 1
+  config.traces_sample_rate = 1.0
   config.traces_sampler = lambda do |sampling_context|
     # sampling_context[:transaction_context] contains the information about the transaction
     # sampling_context[:parent_sampled] contains the transaction's parent's sample decision
 
     print "\n"
-    print sampling_context
+    print sampling_context # can see a trace_id exists
     print "\n"
     
     # I tried `1.0``
@@ -35,7 +35,7 @@ get "/" do
 end
 
 get "/api" do
-  transaction = Sentry.start_transaction(op: "/api")
+  transaction = Sentry.start_transaction(op: "api")
   
   # not sure if it's required to have a span
   span = transaction.start_child(op: "op_name", description: "description")
