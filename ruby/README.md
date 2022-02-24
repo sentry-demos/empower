@@ -2,43 +2,29 @@
 
 ## Setup
 
-Create a local `ruby/.env` file. Talk to a SE team member to get valid contents for this file. 
+In react/.env add REACT_APP_RUBY_BACKEND=<value> with a URL for the hosted Ruby backend, the App Engine instance.
 
-Add REACT_APP_RUBY_BACKEND=<value> to react/.env. The value is the URL of the App Engine ruby instance.
-
-There are other `.env` files in the other directories so ensure you get the contents for the ruby one.
+Flask, Express, SpringBoot and Mobile may have .env files too where you can specify this same backend URL, so update those as needed.
 
 ```
-// Run the ruby server locally in a test environment
-
-$ cd ruby
-$ gem install sinatra
-$ ./run.sh
+cd ruby
+bundle install
 ```
 
-## Hitting The ruby Backend
-
-From the normal frontend demo url, add a query parameter `?backend=ruby` to any url. This will cause backend requests to be routed to the ruby backend.
-
-To confirm that the correct backend was hit, you will see output in the developer console, i.e.
-
 ```
-fetching products from backend =>>>>>>>>> https://application-monitoring-node-dot-sales-engineering-sf.appspot.com/
+rbenv versions
+ruby --version
+ruby 3.1.1p18 (2022-02-18 revision 53f5fc4236) [x86_64-darwin19]
 ```
 
-### In Production
-You can hit any route in production and add the `?backend=ruby` query parameter. An example would be: https://application-monitoring-react-dot-sales-engineering-sf.appspot.com/?backend=ruby.
-
-In production, the ruby backend is deployed to https://application-monitoring-node-dot-sales-engineering-sf.appspot.com/.
-
-### Running Locally
-
-You can hit any route locally and add the `?backend=ruby` query parameter. Let's say your React server is running on port 5000 locally. An example would be: http://localhost:5000/?backend=ruby.
-
-Locally, the ruby backend is served on port 8088 when you run `ruby/run.sh`.
+### Run
+```
+./run.sh
+```
+The local ruby backend is served on localhost:4567 when you run `ruby/run.sh`.
 
 ### Cloud GCP Deployment
-To deploy only the ruby service.
+To deploy the ruby service.
 
 ```
 gcloud app deploy
