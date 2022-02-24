@@ -11,6 +11,7 @@ end
 # This must be imported after sentry-ruby for transactions to work
 require "sinatra"
 require "sinatra/cors"
+
 set :allow_origin, "*"
 set :allow_methods, "GET,HEAD,POST"
 set :allow_headers, "content-type,if-modified-since,accept,access-control-request-headers,access-control-request-method,origin,sec-fetch-mode,user-agent,customerType,email,Referer,se,sec-ch-ua,sec-ch-ua-mobile,sec-ch-ua-platform,sentry-trace"
@@ -18,25 +19,28 @@ set :allow_headers, "content-type,if-modified-since,accept,access-control-reques
 # This is for Auto Instrumenting the transaction
 use Sentry::Rack::CaptureExceptions
 
+# Parse Request Headers for setting customerType, se, backendType. not working
+# https://github.com/sinatra/sinatra#rack-middleware
+# before do
+#   print "before"
+# end
+
 get "/" do
   "Sentry Ruby Service still says Hello - turn me into a microservice that powers Invoicing, Trucking, or DriverFind"
 end
 
 get "/api" do
-  # transaction.with_child_span(op: "process_items", description: "process order's items") do |span|
-  #   span.set_data(:key, "value")
-  # end
-  "ruby /api OK"
+  "ruby /api"
 end
 
 get "/connect" do
-  "ruby /connect OK"
+  "ruby /connect"
 end
 
 get "/organization" do
-  "ruby /organization OK"
+  "ruby /organization"
 end
 
 get "/success" do
-  "ruby /success OK"
+  "ruby /success"
 end
