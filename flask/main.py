@@ -92,13 +92,15 @@ def products():
     try:
         with sentry_sdk.start_span(op="/products.get_products", description="function"):
             rows = get_products()
-
-        # TODO handle this separately. If it fails, it should not block the Products
-        r = requests.get(RUBY_BACKEND + "/api")
-
     except Exception as err:
         sentry_sdk.capture_exception(err)
         raise(err)
+
+    try:
+        r = requests.get(RUBY_BACKEND + "/api")
+    except Exception as err:
+        sentry_sdk.capture_exception(err)
+        
     return rows
 
 @app.route('/products-join', methods=['GET'])
