@@ -1,18 +1,9 @@
 source "https://rubygems.org"
 
 gem "sinatra"
-gem "sinatra/cors"
-# [END gae_flex_quickstart_dependencies]
+gem "sinatra-cors"
 
-# Sentry
 gem "sentry-ruby"
-# gem "sentry-rails"
-
-# gem "sentry-ruby", "4.9.2"
-# gem "sentry-rails", "4.9.2"
-
-# An error occurred while installing racc (1.6.0), and Bundler cannot continue.
-# Make sure that `gem install racc -v '1.6.0' --source 'https://rubygems.org/'` succeeds before bundling.
 
 group :test do
   gem "rack-test"
