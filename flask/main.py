@@ -1,6 +1,7 @@
 import datetime
 import operator
 import os
+import requests
 import sys
 from flask import Flask, json, request, make_response
 from flask_cors import CORS
@@ -15,6 +16,7 @@ load_dotenv()
 RELEASE = os.environ.get("RELEASE") or release()
 DSN = os.getenv("FLASK_APP_DSN")
 ENVIRONMENT = os.environ.get("FLASK_ENV") or "production"
+RUBY_BACKEND = os.environ.get("RUBY_BACKEND")
 
 print("> DSN", DSN)
 print("> RELEASE", RELEASE)
@@ -91,14 +93,8 @@ def products():
         with sentry_sdk.start_span(op="/products.get_products", description="function"):
             rows = get_products()
 
-        # TODO
-        # /api
-        # /organization
-        # /connect
-        # failure shuold not stop /products?
-        
-        # TODO
-        # interchangeability with backends?
+        # TODO handle this separately. If it fails, it should not block the Products
+        r = requests.get(RUBY_BACKEND + "/api")
 
     except Exception as err:
         sentry_sdk.capture_exception(err)
