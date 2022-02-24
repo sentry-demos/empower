@@ -14,6 +14,41 @@ import Noah from './employees/noah';
 const employees = [Jane, Lily, Keith, Mason, Emma, Noah];
 
 class About extends Component {
+
+  async componentDidMount() {
+    let se, customerType, email
+      Sentry.withScope(function(scope) {
+        [ se, customerType ] = [scope._tags.se, scope._tags.customerType ]
+        email = scope._user.email
+      });
+
+    // Http requests to make in parallel, so the Transaction has more Spans
+    let request1 = fetch(process.env.REACT_APP_RUBY_BACKEND + "/api", {
+      method: "GET",
+      headers: { se, customerType, email, "Content-Type": "application/json" }
+    })
+    let request2 = fetch(process.env.REACT_APP_RUBY_BACKEND + "/organization", {
+      method: "GET",
+      headers: { se, customerType, email, "Content-Type": "application/json" }
+    })
+    let request3 = fetch(process.env.REACT_APP_RUBY_BACKEND + "/connect", {
+      method: "GET",
+      headers: { se, customerType, email, "Content-Type": "application/json" }
+    })
+    
+    
+    let response = await Promise.allSettled([request1, request2, request3])
+
+    // Error Handling
+    response.forEach(r => {
+      if (!r.value.ok) {
+        Sentry.configureScope(function(scope) {
+          Sentry.setContext("response", r)
+        });
+        Sentry.captureException(new Error(r.status + " - " + (response.statusText || "Server Error for API")))
+      }
+    })
+  }
   render() {
     return (
       <div className="about-page">
