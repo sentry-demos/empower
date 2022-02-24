@@ -36,7 +36,6 @@ class About extends Component {
       headers: { se, customerType, email, "Content-Type": "application/json" }
     })
     
-    
     let response = await Promise.allSettled([request1, request2, request3])
 
     // Error Handling

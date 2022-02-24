@@ -18,15 +18,14 @@ class Products extends Component {
       email = scope._user.email
     });
 
-    // We don't mind if these 3 calls error, because it's the Products we care about
-    // TODO parallelize these and keep it modularized, though they're currently fast enough that they appear in parallel
     ['/api', '/connect', '/organization'].forEach((endpoint) => {
-      let result = fetch(this.props.backend + endpoint, {
+      fetch(this.props.backend + endpoint, {
         method: "GET",
         headers: { se, customerType, email, "Content-Type": "application/json" }
       })
         .catch((err) => { 
-          // do nothing because we don't want to block the Products http request and page from loading
+          // If there's an error, it won't stop the Products http request and page from loading
+          Sentry.captureException(err)
         })
     })
 
