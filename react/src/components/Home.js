@@ -20,7 +20,7 @@ class Home extends Component {
       });
       try {       
         // This should be the only http request for home page, for health check purposes
-        await fetch(`http://localhost:4567` + "/success", {
+        await fetch(this.props.backend + "/success", {
           method: "GET",
           headers: { se, customerType, email, "Content-Type": "application/json" }
         })
