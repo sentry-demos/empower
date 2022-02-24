@@ -4,4 +4,4 @@ service: application-monitoring-ruby
 runtime: ruby
 
 env_variables:
-  SECRET_KEY_BASE: 97cf4e88cd9a85e791ca14dd373eaa272df1eb2be5b580b134606f4a61bba86b633663ae2c76ed003643368496ef979298e52efe044a98231e74f98b90de1dd6
+  SECRET_KEY_BASE: <VALUE>

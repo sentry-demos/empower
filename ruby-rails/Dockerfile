@@ -11,7 +11,7 @@
 # ENV RAILS_LOG_TO_STDOUT=true
 
 # ARG MASTER_KEY
-# ENV RAILS_MASTER_KEY=97cf4e88cd9a85e791ca14dd373eaa272df1eb2be5b580b134606f4a61bba86b633663ae2c76ed003643368496ef979298e52efe044a98231e74f98b90de1dd6
+# ENV RAILS_MASTER_KEY=<VALUE>
 
 # # pre-compile Rails assets with master key
 # # RUN bundle exec rake assets:precompile
