@@ -96,6 +96,7 @@ def products():
         # /organization
         # /connect
         # failure shuold not stop /products?
+        
         # TODO
         # interchangeability with backends?
 
@@ -126,6 +127,19 @@ def handled_exception():
 def unhandled_exception():
     obj = {}
     obj['keyDoesntExist']
+
+@app.route('/api', methods=['GET'])
+def api():    
+    return "flask /api"
+
+@app.route('/organization', methods=['GET'])
+def organization():    
+    return "flask /organization"
+
+@app.route('/connect', methods=['GET'])
+def connect():    
+    return "flask /connect"
+
 
 @app.before_request
 def sentry_event_context():
