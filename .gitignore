@@ -76,3 +76,12 @@ ruby/tmp/storage/*
 ruby/public/assets
 # Ignore master key for decrypting credentials and more.
 ruby/config/master.key
+
+
+ruby-rails/log/*
+!/log/.keep
+ruby-rails/tmp
+ruby-rails/.idea/
+ruby-rails/public
+ruby-rails/.bundle/
+ruby-rails/.DS_Store/

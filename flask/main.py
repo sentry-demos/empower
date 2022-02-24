@@ -90,6 +90,15 @@ def products():
     try:
         with sentry_sdk.start_span(op="/products.get_products", description="function"):
             rows = get_products()
+
+        # TODO
+        # /api
+        # /organization
+        # /connect
+        # failure shuold not stop /products?
+        # TODO
+        # interchangeability with backends?
+
     except Exception as err:
         sentry_sdk.capture_exception(err)
         raise(err)

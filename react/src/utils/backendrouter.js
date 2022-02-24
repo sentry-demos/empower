@@ -14,7 +14,7 @@ const SUPPORTED_BACKEND_TYPES = {
       "production": process.env.REACT_APP_SPRINGBOOT_BACKEND
   },
   "ruby": {
-    "test": "http://localhost:3000",
+    "test": "http://localhost:4567", // 4567 is Sinatra, 3000 is rails
     "production": process.env.REACT_APP_RUBY_BACKEND
   }
 }

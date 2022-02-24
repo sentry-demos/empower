@@ -18,11 +18,30 @@ class Home extends Component {
         [ se, customerType ] = [scope._tags.se, scope._tags.customerType ]
         email = scope._user.email
       });
-      try {
-        await fetch(this.props.backend + "/success", {
+      try {       
+        // /success should always be called first 
+        await fetch(`http://localhost:4567` + "/success", {
           method: "GET",
           headers: { se, customerType, email, "Content-Type": "application/json" }
         })
+
+        // TODO - run these in parallel
+        // https://stackoverflow.com/questions/35612428/call-async-await-functions-in-parallel
+        // const finalResult = [await someResult, await anotherResult];
+        // Promise.allSettled([happy('happy', 100), sad('sad', 50)]).then(console.log) // [{ "status":"fulfilled", "value":"happy" }, { "status":"rejected", "reason":"sad" }]
+        await fetch(`http://localhost:4567` + "/api", {
+          method: "GET",
+          headers: { se, customerType, email, "Content-Type": "application/json" }
+        })
+        await fetch(`http://localhost:4567` + "/organization", {
+          method: "GET",
+          headers: { se, customerType, email, "Content-Type": "application/json" }
+        })
+        await fetch(`http://localhost:4567` + "/connect", {
+          method: "GET",
+          headers: { se, customerType, email, "Content-Type": "application/json" }
+        })
+        
       } catch(err) {
         Sentry.captureException(err);
       }

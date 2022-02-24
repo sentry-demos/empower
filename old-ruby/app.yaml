@@ -1,3 +1,0 @@
-service: application-monitoring-ruby
-runtime: ruby27
-entrypoint: bundle exec ruby main.rb
