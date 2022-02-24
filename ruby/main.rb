@@ -1,7 +1,8 @@
 require 'sentry-ruby'
 
+# todo .ENV?
 Sentry.init do |config|
-  config.dsn = 'https://7bb0e18f77744dc69322e84f72e9769e@o87286.ingest.sentry.io/6227418'
+  config.dsn = 'https://7bb0e18f77744dc69322e84f72e9769e@o87286.ingest.sentry.io/6227418' # appmonitoring 'https://21ebb52573ba4e999e4a49277b45daac@o87286.ingest.sentry.io/6231039'
   config.traces_sample_rate = 1.0
   config.traces_sampler = lambda do |sampling_context|
     true # can also return a float between 0.0 and 1.0

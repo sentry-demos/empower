@@ -120,6 +120,7 @@ app.get('/products', async (req, res) => {
     const products = await DB.getProducts();
     span.finish();
     transaction.finish();
+
     res.status(200).send(products);
   } catch (error) {
     Sentry.captureException(error);
@@ -186,6 +187,18 @@ app.post('/checkout', async(req, res) => {
     res.status(500).send(error);
   }
 
+});
+
+app.get('/api', (req, res) => {
+  res.send(`express /api`);
+});
+
+app.get('/connect', (req, res) => {
+  res.send(`express /connect`);
+});
+
+app.get('/organization', (req, res) => {
+  res.send(`express /organization`);
 });
 
 app.use(Sentry.Handlers.errorHandler());

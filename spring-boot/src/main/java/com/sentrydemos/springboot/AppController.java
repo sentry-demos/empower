@@ -115,6 +115,24 @@ public class AppController {
 	}
 
 	@CrossOrigin
+	@GetMapping("/api")
+	public String Api() {
+		return "springboot /api";
+	}
+
+	@CrossOrigin
+	@GetMapping("/connect")
+	public String Connect() {
+		return "springboot /connect";
+	}
+
+	@CrossOrigin
+	@GetMapping("/organization")
+	public String Organization() {
+		return "springboot /organization";
+	}
+
+	@CrossOrigin
 	@GetMapping("/logback")
 	public String Logback() {
 		logger.info("info log");
@@ -134,6 +152,7 @@ public class AppController {
 		span.finish();
 		String allProducts = dbHelper.mapAllProducts(hub.getSpan());
 		
+		// TODO ruby /api
 		return allProducts;
 	}
 
