@@ -1,7 +1,0 @@
-entrypoint: bundle exec rackup --port $PORT
-env: flex
-service: application-monitoring-ruby
-runtime: ruby
-
-env_variables:
-  SECRET_KEY_BASE: <VALUE>
