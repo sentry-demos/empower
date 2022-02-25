@@ -111,6 +111,12 @@ def products_join():
     except Exception as err:
         sentry_sdk.capture_exception(err)
         raise(err)
+
+    try:
+        r = requests.get(RUBY_BACKEND + "/api")
+    except Exception as err:
+        sentry_sdk.capture_exception(err)
+
     return rows
 
 @app.route('/handled', methods=['GET'])

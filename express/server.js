@@ -111,7 +111,6 @@ app.get('/success', (req, res) => {
 });
 
 app.get('/products', async (req, res) => {
-  console.log("> /products")
   try {
     let transaction = Sentry.getCurrentHub()
       .getScope()
