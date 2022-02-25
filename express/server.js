@@ -14,6 +14,7 @@
 
 'use strict';
 const axios = require('axios');
+const https = require('https')
 
 // run.sh sets a release tool but that's only used for local development
 const determineRelease = function() {
@@ -114,15 +115,7 @@ app.get('/success', (req, res) => {
 
 app.get('/products', async (req, res) => {
   try {
-    
-    let transaction = Sentry.getCurrentHub()
-      .getScope()
-      .getTransaction();
-    let span = transaction.startChild({ op: '/products.get_products', description: 'function' });
-    const products = await DB.getProducts();
-    span.finish();
-
-    // I tried setting this in a span and it still made a broken subtrace
+    // This /api call must happen before the DB.products() call or else it's a broken subtrace (if you do it after DB.Products())
     await axios.get(RUBY_BACKEND + "/api")
       .then(response => {
         console.log("> response", response.data)
@@ -132,9 +125,13 @@ app.get('/products', async (req, res) => {
         console.log(error);
         Sentry.captureException(error)
       });
-    
-    // we had this transaction.finish() in place already but I don't think it's needed
-    // transaction.finish();
+
+    let transaction = Sentry.getCurrentHub()
+      .getScope()
+      .getTransaction();
+    let span = transaction.startChild({ op: '/products.get_products', description: 'function' });
+    const products = await DB.getProducts();
+    span.finish();
 
     res.status(200).send(products);
 
@@ -146,16 +143,23 @@ app.get('/products', async (req, res) => {
 
 app.get('/products-join', async(req, res) => {
   try {
+    // This /api call must happen before the DB.products() call or else it's a broken subtrace (if you do it after DB.Products())
+    await axios.get(RUBY_BACKEND + "/api")
+      .then(response => {
+        console.log("> response", response.data)
+        return
+      })
+      .catch(error => {
+        console.log(error);
+        Sentry.captureException(error)
+      });
+
     let transaction = Sentry.getCurrentHub()
       .getScope()
       .getTransaction();
     let span = transaction.startChild({ op: '/products.get_products_join', description: 'function' });
     const products = await DB.getJoinedProducts();
     span.finish();
-    transaction.finish();
-
-    
-
 
     res.status(200).send(products);
   } catch (error) {

@@ -2,6 +2,7 @@
 Extension to the Empower Plant UI/UX. This project was originally bootstrapped with [Create React App](https://github.com/facebook/create-react-app); this Java Spring Boot backend is available with the query param &backend=springboot, [e.g.] (http://localhost:5000/?se=simon&backend=springboot).
 
 ## Setup
+This uses java version 8.
 
 1. Verify that port 8090 is set for springboot in `react/src/utils/backendrouter.js`, 
 ```

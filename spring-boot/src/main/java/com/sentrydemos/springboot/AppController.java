@@ -1,5 +1,5 @@
 package com.sentrydemos.springboot;
-
+import java.io.IOException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.PropertySource;
@@ -9,6 +9,16 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
+
+// import java.net.HttpURLConnection;
+// import java.net.URL;
+// import java.net.InputStream;
+// import java.net.APOD;
+
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -143,18 +153,38 @@ public class AppController {
 
 	}
 
+	OkHttpClient client = new OkHttpClient();
+
 	@CrossOrigin
 	@GetMapping("/products")
 	public String GetProductsDelay(HttpServletRequest request) {
+		logger.info("> try");
+		try {
+			run("https://application-monitoring-ruby-dot-sales-engineering-sf.appspot.com/api");
+		} catch (IOException e) {
+			logger.info("> IOException");
+		}
+		logger.info("> done");
+
 		ISpan span = hub.getSpan().startChild("Overhead", "Set tags");
 		//initInventory(); // initialize inventory each time we hit this endpoint
 		setTags(request);
 		span.finish();
 		String allProducts = dbHelper.mapAllProducts(hub.getSpan());
-		
-		// TODO ruby /api
+
 		return allProducts;
 	}
+
+	String run(String url) throws IOException {
+		Request request = new Request.Builder()
+			.url(url)
+			.build();
+		logger.info("> run");
+		try (Response response = client.newCall(request).execute()) {
+			logger.info("> run return");
+		  return response.body().string();
+		}
+	  }
 
 	@CrossOrigin
 	@GetMapping("/products-join")

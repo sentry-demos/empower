@@ -18,7 +18,6 @@ class ProductsJoin extends Component {
       email = scope._user.email
     });
 
-    console.log("fetching joined products from backend =>>>>>>>>> " + this.props.backend)
     let result = await fetch(this.props.backend + "/products-join", {
       method: "GET",
       headers: { se, customerType, email, "Content-Type": "application/json" }
