@@ -13,6 +13,7 @@
 // limitations under the License.
 
 'use strict';
+const axios = require('axios');
 
 // run.sh sets a release tool but that's only used for local development
 const determineRelease = function() {
@@ -59,6 +60,7 @@ const sentryEventContext = function(req, res, next) {
 const dsn = process.env.EXPRESS_APP_DSN;
 const release = process.env.RELEASE || determineRelease();
 const environment = process.env.EXPRESS_ENV || "production";
+const RUBY_BACKEND = process.env.RUBY_BACKEND;
 
 console.log("> DSN", dsn);
 console.log("> RELEASE", release);
@@ -112,15 +114,30 @@ app.get('/success', (req, res) => {
 
 app.get('/products', async (req, res) => {
   try {
+    
     let transaction = Sentry.getCurrentHub()
       .getScope()
       .getTransaction();
     let span = transaction.startChild({ op: '/products.get_products', description: 'function' });
     const products = await DB.getProducts();
     span.finish();
-    transaction.finish();
+
+    // I tried setting this in a span and it still made a broken subtrace
+    await axios.get(RUBY_BACKEND + "/api")
+      .then(response => {
+        console.log("> response", response.data)
+        return
+      })
+      .catch(error => {
+        console.log(error);
+        Sentry.captureException(error)
+      });
+    
+    // we had this transaction.finish() in place already but I don't think it's needed
+    // transaction.finish();
 
     res.status(200).send(products);
+
   } catch (error) {
     Sentry.captureException(error);
     throw(error);
@@ -136,6 +153,10 @@ app.get('/products-join', async(req, res) => {
     const products = await DB.getJoinedProducts();
     span.finish();
     transaction.finish();
+
+    
+
+
     res.status(200).send(products);
   } catch (error) {
     Sentry.captureException(error);
