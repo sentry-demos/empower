@@ -71,7 +71,6 @@ Sentry.init({
     Sentry.withScope(function(scope) {
       se = scope._tags.se
     });
-    console.log("> beforeSend se", se)
 
     if (se === "tda") {
       // Release Health
@@ -150,7 +149,9 @@ class App extends Component {
                 <Route exact path="/">
                   <Home backend={BACKEND_URL} />
                 </Route>
-                <Route path="/about" component={About} />
+                <Route path="/about">
+                  <About backend={BACKEND_URL} history={history} />
+                </Route>
                 <Route path="/cart" component={Cart} />
                 <Route path="/checkout">
                   <Checkout backend={BACKEND_URL} history={history} />

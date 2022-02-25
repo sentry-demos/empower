@@ -23,7 +23,7 @@ REACT_APP_SPRINGBOOT_BACKEND=<value>
 5. Put your DSN key in application.properties
 
 ### Local DEV deployment
-Verify that the **DEV** section is not commented and values are set AND **GCP** section is commented 
+Verify that the **DEV** section is not commented out in application.properties and values are set. The **GCP** section should be commented out.
 ```
 spring.datasource.url=jdbc:postgresql://<server>:<port>/<database name>
 server.port=8090

@@ -29,7 +29,6 @@ class Products extends Component {
         })
     })
 
-    console.log("fetching products from backend =>>>>>>>>> " + this.props.backend)
     let result = await fetch(this.props.backend + "/products", {
       method: "GET",
       headers: { se, customerType, email, "Content-Type": "application/json" }

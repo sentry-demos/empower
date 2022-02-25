@@ -21,17 +21,17 @@ class About extends Component {
         [ se, customerType ] = [scope._tags.se, scope._tags.customerType ]
         email = scope._user.email
       });
-
+      console.log("> this.props.backend About", this.props.backend)
     // Http requests to make in parallel, so the Transaction has more Spans
-    let request1 = fetch(process.env.REACT_APP_RUBY_BACKEND + "/api", {
+    let request1 = fetch(this.props.backend + "/api", {
       method: "GET",
       headers: { se, customerType, email, "Content-Type": "application/json" }
     })
-    let request2 = fetch(process.env.REACT_APP_RUBY_BACKEND + "/organization", {
+    let request2 = fetch(this.props.backend + "/organization", {
       method: "GET",
       headers: { se, customerType, email, "Content-Type": "application/json" }
     })
-    let request3 = fetch(process.env.REACT_APP_RUBY_BACKEND + "/connect", {
+    let request3 = fetch(this.props.backend + "/connect", {
       method: "GET",
       headers: { se, customerType, email, "Content-Type": "application/json" }
     })
