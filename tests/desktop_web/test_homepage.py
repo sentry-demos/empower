@@ -26,7 +26,7 @@ def test_homepage(desktop_web_driver):
             # TODO make a query_string builder function for sharing this across tests
             query_string = { 
                 'se': 'tda',
-                'backend': random.sample(['flask','express','springboot'], 1)[0],
+                'backend': random.sample(['flask','express','springboot', 'ruby'], 1)[0],
                 'crash': "%s" % (n)
             }
             url = endpoint + '?' + urlencode(query_string)
