@@ -17,11 +17,11 @@ class About extends Component {
 
   async componentDidMount() {
     let se, customerType, email
-      Sentry.withScope(function(scope) {
-        [ se, customerType ] = [scope._tags.se, scope._tags.customerType ]
-        email = scope._user.email
-      });
-      console.log("> this.props.backend About", this.props.backend)
+    Sentry.withScope(function(scope) {
+      [ se, customerType ] = [scope._tags.se, scope._tags.customerType ]
+      email = scope._user.email
+    });
+
     // Http requests to make in parallel, so the Transaction has more Spans
     let request1 = fetch(this.props.backend + "/api", {
       method: "GET",
