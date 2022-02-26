@@ -14,7 +14,6 @@
 
 'use strict';
 const axios = require('axios');
-const https = require('https')
 
 // run.sh sets a release tool but that's only used for local development
 const determineRelease = function() {
