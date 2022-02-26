@@ -21,9 +21,12 @@ def test_add_to_cart_join(desktop_web_driver):
             # TODO make a query_string builder function for sharing this across tests
             query_string = { 
                 'se': 'tda',
+                # 'ruby' /products /checkout endpoints not available yet
                 'backend': random.sample(['flask','express','springboot'], 1)[0]
             }
             url = endpoint_products_join + '?' + urlencode(query_string)
 
             desktop_web_driver.get(url)
             time.sleep(random.randrange(3) + 3)
+        
+        # Checkout button not clicked yet in /products-join

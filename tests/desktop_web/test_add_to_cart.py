@@ -23,6 +23,7 @@ def test_add_to_cart(desktop_web_driver):
             # TODO make a query_string builder function for sharing this across tests
             query_string = { 
                 'se': 'tda',
+                # 'ruby' /products /checkout endpoints not available yet
                 'backend': random.sample(['flask', 'express','springboot'], 1)[0]
             }
             url = endpoint_products + '?' + urlencode(query_string)

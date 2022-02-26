@@ -18,7 +18,17 @@ class Products extends Component {
       email = scope._user.email
     });
 
-    console.log("fetching products from backend =>>>>>>>>> " + this.props.backend)
+    ['/api', '/connect', '/organization'].forEach((endpoint) => {
+      fetch(this.props.backend + endpoint, {
+        method: "GET",
+        headers: { se, customerType, email, "Content-Type": "application/json" }
+      })
+        .catch((err) => { 
+          // If there's an error, it won't stop the Products http request and page from loading
+          Sentry.captureException(err)
+        })
+    })
+
     let result = await fetch(this.props.backend + "/products", {
       method: "GET",
       headers: { se, customerType, email, "Content-Type": "application/json" }

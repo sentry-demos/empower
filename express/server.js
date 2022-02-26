@@ -13,6 +13,7 @@
 // limitations under the License.
 
 'use strict';
+const axios = require('axios');
 
 // run.sh sets a release tool but that's only used for local development
 const determineRelease = function() {
@@ -59,6 +60,7 @@ const sentryEventContext = function(req, res, next) {
 const dsn = process.env.EXPRESS_APP_DSN;
 const release = process.env.RELEASE || determineRelease();
 const environment = process.env.EXPRESS_ENV || "production";
+const RUBY_BACKEND = process.env.RUBY_BACKEND;
 
 console.log("> DSN", dsn);
 console.log("> RELEASE", release);
@@ -111,16 +113,27 @@ app.get('/success', (req, res) => {
 });
 
 app.get('/products', async (req, res) => {
-  console.log("> /products")
   try {
+    // This /api call must happen before the DB.products() call or else it's a broken subtrace (if you do it after DB.Products())
+    await axios.get(RUBY_BACKEND + "/api")
+      .then(response => {
+        console.log("> response", response.data)
+        return
+      })
+      .catch(error => {
+        console.log(error);
+        Sentry.captureException(error)
+      });
+
     let transaction = Sentry.getCurrentHub()
       .getScope()
       .getTransaction();
     let span = transaction.startChild({ op: '/products.get_products', description: 'function' });
     const products = await DB.getProducts();
     span.finish();
-    transaction.finish();
+
     res.status(200).send(products);
+
   } catch (error) {
     Sentry.captureException(error);
     throw(error);
@@ -129,13 +142,24 @@ app.get('/products', async (req, res) => {
 
 app.get('/products-join', async(req, res) => {
   try {
+    // This /api call must happen before the DB.products() call or else it's a broken subtrace (if you do it after DB.Products())
+    await axios.get(RUBY_BACKEND + "/api")
+      .then(response => {
+        console.log("> response", response.data)
+        return
+      })
+      .catch(error => {
+        console.log(error);
+        Sentry.captureException(error)
+      });
+
     let transaction = Sentry.getCurrentHub()
       .getScope()
       .getTransaction();
     let span = transaction.startChild({ op: '/products.get_products_join', description: 'function' });
     const products = await DB.getJoinedProducts();
     span.finish();
-    transaction.finish();
+
     res.status(200).send(products);
   } catch (error) {
     Sentry.captureException(error);
@@ -186,6 +210,18 @@ app.post('/checkout', async(req, res) => {
     res.status(500).send(error);
   }
 
+});
+
+app.get('/api', (req, res) => {
+  res.send(`express /api`);
+});
+
+app.get('/connect', (req, res) => {
+  res.send(`express /connect`);
+});
+
+app.get('/organization', (req, res) => {
+  res.send(`express /organization`);
 });
 
 app.use(Sentry.Handlers.errorHandler());

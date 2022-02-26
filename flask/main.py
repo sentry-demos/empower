@@ -15,6 +15,7 @@ load_dotenv()
 RELEASE = os.environ.get("RELEASE") or release()
 DSN = os.getenv("FLASK_APP_DSN")
 ENVIRONMENT = os.environ.get("FLASK_ENV") or "production"
+RUBY_BACKEND = os.environ.get("RUBY_BACKEND")
 
 print("> DSN", DSN)
 print("> RELEASE", RELEASE)
@@ -93,6 +94,12 @@ def products():
     except Exception as err:
         sentry_sdk.capture_exception(err)
         raise(err)
+
+    try:
+        r = requests.get(RUBY_BACKEND + "/api")
+    except Exception as err:
+        sentry_sdk.capture_exception(err)
+        
     return rows
 
 @app.route('/products-join', methods=['GET'])
@@ -103,6 +110,12 @@ def products_join():
     except Exception as err:
         sentry_sdk.capture_exception(err)
         raise(err)
+
+    try:
+        r = requests.get(RUBY_BACKEND + "/api")
+    except Exception as err:
+        sentry_sdk.capture_exception(err)
+
     return rows
 
 @app.route('/handled', methods=['GET'])
@@ -117,6 +130,19 @@ def handled_exception():
 def unhandled_exception():
     obj = {}
     obj['keyDoesntExist']
+
+@app.route('/api', methods=['GET'])
+def api():    
+    return "flask /api"
+
+@app.route('/organization', methods=['GET'])
+def organization():    
+    return "flask /organization"
+
+@app.route('/connect', methods=['GET'])
+def connect():    
+    return "flask /connect"
+
 
 @app.before_request
 def sentry_event_context():

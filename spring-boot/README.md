@@ -2,6 +2,7 @@
 Extension to the Empower Plant UI/UX. This project was originally bootstrapped with [Create React App](https://github.com/facebook/create-react-app); this Java Spring Boot backend is available with the query param &backend=springboot, [e.g.] (http://localhost:5000/?se=simon&backend=springboot).
 
 ## Setup
+This uses java version 8.
 
 1. Verify that port 8090 is set for springboot in `react/src/utils/backendrouter.js`, 
 ```
@@ -23,7 +24,7 @@ REACT_APP_SPRINGBOOT_BACKEND=<value>
 5. Put your DSN key in application.properties
 
 ### Local DEV deployment
-Verify that the **DEV** section is not commented and values are set AND **GCP** section is commented 
+Verify that the **DEV** section is not commented out in application.properties and values are set. The **GCP** section should be commented out.
 ```
 spring.datasource.url=jdbc:postgresql://<server>:<port>/<database name>
 server.port=8090

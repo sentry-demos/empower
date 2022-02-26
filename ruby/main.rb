@@ -1,22 +1,47 @@
-# Copyright 2015 Google, Inc
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+require 'sentry-ruby'
 
-# [START gae_flex_quickstart]
+Sentry.init do |config|
+  config.dsn = 'https://21ebb52573ba4e999e4a49277b45daac@o87286.ingest.sentry.io/6231039'
+  config.release = "2.3"
+  config.traces_sample_rate = 1.0
+  config.traces_sampler = lambda do |sampling_context|
+    true # can also return a float between 0.0 and 1.0
+  end
+end
+
+# This must be imported after sentry-ruby for transactions to work
 require "sinatra"
+require "sinatra/cors"
 
-# https://github.com/GoogleCloudPlatform/ruby-docs-samples/tree/master/appengine
+set :allow_origin, "*"
+set :allow_methods, "GET,HEAD,POST"
+set :allow_headers, "content-type,if-modified-since,accept,access-control-request-headers,access-control-request-method,origin,sec-fetch-mode,user-agent,customerType,email,Referer,se,sec-ch-ua,sec-ch-ua-mobile,sec-ch-ua-platform,sentry-trace"
+
+# This is for Auto Instrumenting the transaction
+use Sentry::Rack::CaptureExceptions
+
+# Parse Request Headers for setting customerType, se, backendType. not working
+# https://github.com/sinatra/sinatra#rack-middleware
+# before do
+#   print "before"
+# end
+
 get "/" do
   "Sentry Ruby Service says Hello - turn me into a microservice that powers Invoicing, Trucking, or DriverFind"
 end
-# [END gae_flex_quickstart]
+
+get "/api" do
+  "ruby /api"
+end
+
+get "/connect" do
+  "ruby /connect"
+end
+
+get "/organization" do
+  "ruby /organization"
+end
+
+get "/success" do
+  "ruby /success"
+end
