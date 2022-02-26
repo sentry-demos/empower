@@ -1,7 +1,6 @@
 import datetime
 import operator
 import os
-import requests
 import sys
 from flask import Flask, json, request, make_response
 from flask_cors import CORS
