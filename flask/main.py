@@ -1,6 +1,7 @@
 import datetime
 import operator
 import os
+import requests
 import sys
 from flask import Flask, json, request, make_response
 from flask_cors import CORS
@@ -97,6 +98,7 @@ def products():
 
     try:
         r = requests.get(RUBY_BACKEND + "/api")
+        r.raise_for_status() # returns an HTTPError object if an error has occurred during the process
     except Exception as err:
         sentry_sdk.capture_exception(err)
         
@@ -113,6 +115,7 @@ def products_join():
 
     try:
         r = requests.get(RUBY_BACKEND + "/api")
+        r.raise_for_status() # returns an HTTPError object if an error has occurred during the process
     except Exception as err:
         sentry_sdk.capture_exception(err)
 
@@ -140,7 +143,7 @@ def organization():
     return "flask /organization"
 
 @app.route('/connect', methods=['GET'])
-def connect():    
+def connect():
     return "flask /connect"
 
 
