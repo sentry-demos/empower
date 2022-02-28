@@ -76,7 +76,7 @@ Update the app engine service name in the following places:
 // required
 react/app.yaml to staging-application-monitoring-javascript  
 react/.env to staging-application-monitoring-express, -flask, -springboot
-flask/app.yaml to staging-application-monitoring-javascript 
+flask/app.yaml to staging-application-monitoring-flask 
 express/app.yaml to staging-application-monitoring-node
 spring-boot/src/main/appengine/app.yaml to staging-springboot
 
