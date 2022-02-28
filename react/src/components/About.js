@@ -36,11 +36,15 @@ class About extends Component {
       headers: { se, customerType, email, "Content-Type": "application/json" }
     })
     
-    let response = await Promise.allSettled([request1, request2, request3])
+    // Need Safari13 in tests/config.py in order for this modern javascript to work in Safari Browser
+    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/allSettled#browser_compatibility
+    // let response = await Promise.allSettled([request1, request2, request3])
 
+    const response = [await request1, await request2, await request3]
+    
     // Error Handling
     response.forEach(r => {
-      if (!r.value.ok) {
+      if (!r.ok) {
         Sentry.configureScope(function(scope) {
           Sentry.setContext("response", r)
         });
