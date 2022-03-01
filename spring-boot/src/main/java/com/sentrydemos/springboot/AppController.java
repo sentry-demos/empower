@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -30,11 +31,14 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.springframework.web.client.RestTemplate;
+
 @RestController
 public class AppController {
 
 	private final Logger logger = LoggerFactory.getLogger(Application.class);
 	private List<String> headerTags = new ArrayList<>();
+	private RestTemplate restTemplate = new RestTemplate();
 	
 	@Autowired
 	private DatabaseHelper dbHelper = new DatabaseHelper();
@@ -52,7 +56,6 @@ public class AppController {
 	}
 
 	private void setTags(HttpServletRequest request) {
-		//to print all headers
 		/*
 		 * logger.info("request header names and vals: "); for (Enumeration<?> e =
 		 * request.getHeaderNames(); e.hasMoreElements();) { String nextHeaderName =
@@ -88,8 +91,9 @@ public class AppController {
 
 	@CrossOrigin
 	@GetMapping("/success")
-	public String Success() {
+	public String Success(HttpServletRequest request) {
 		logger.info("success");
+		setTags(request);
 		return "success from springboot";
 
 	}
@@ -116,19 +120,27 @@ public class AppController {
 
 	@CrossOrigin
 	@GetMapping("/api")
-	public String Api() {
+	public String Api(HttpServletRequest request) {
+		logger.info("> /api");
+		setTags(request);
+
+		String RUBY_BACKEND = "https://application-monitoring-ruby-dot-sales-engineering-sf.appspot.com";
+		ResponseEntity<String> response = restTemplate.getForEntity(RUBY_BACKEND + "/api", String.class);
+
 		return "springboot /api";
 	}
 
 	@CrossOrigin
 	@GetMapping("/connect")
-	public String Connect() {
+	public String Connect(HttpServletRequest request) {
+		setTags(request);
 		return "springboot /connect";
 	}
 
 	@CrossOrigin
 	@GetMapping("/organization")
-	public String Organization() {
+	public String Organization(HttpServletRequest request) {
+		setTags(request);
 		return "springboot /organization";
 	}
 
@@ -146,12 +158,17 @@ public class AppController {
 	@CrossOrigin
 	@GetMapping("/products")
 	public String GetProductsDelay(HttpServletRequest request) {
+		setTags(request);
+
+		logger.info("> products");
+		String fooResourceUrl = "https://application-monitoring-ruby-dot-sales-engineering-sf.appspot.com";
+		ResponseEntity<String> response = restTemplate.getForEntity(fooResourceUrl + "/api", String.class);
+		// return "/products success";
+
 		ISpan span = hub.getSpan().startChild("Overhead", "Set tags");
-		//initInventory(); // initialize inventory each time we hit this endpoint
 		setTags(request);
 		span.finish();
 		String allProducts = dbHelper.mapAllProducts(hub.getSpan());
-		
 		return allProducts;
 	}
 
