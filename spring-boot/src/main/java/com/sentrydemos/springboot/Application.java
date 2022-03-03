@@ -33,33 +33,6 @@ public class Application {
 		SpringApplication.run(Application.class, args);
 	}
 
-	// sentry properties configured here for Java Spring Boot
-	// https://docs.sentry.io/platforms/java/guides/spring-boot/logging-frameworks/	
-	@Bean
-	public void initSentry() {
-		logger.info("Initializing Sentry...");
-		
-		Sentry.init(options -> {
-			options.setDsn(sentryDSN);
-			String environment = ((System.getenv("SPRINGBOOT_ENV") == null ? springbootlocalenv : System.getenv("SPRINGBOOT_ENV")));
-			options.setEnvironment(environment);
-			options.setTracesSampleRate(1.0);
-			options.setRelease(getRelease());
-			
-			options.setTracesSampler(
-				context -> {
-					//context.getTransactionContext().getName() returns String: GET /products
-					if (context.getTransactionContext().getOperation().equals("http.server") &&
-							context.getTransactionContext().getName().startsWith("OPTIONS")) {
-						//Not sampling OPTIONS transactions
-						return 0.0;
-					} else {
-						return 1.0;
-					}
-				});
-		});
-	}
-
 	@Bean
 	RestTemplate restTemplate(RestTemplateBuilder builder) {
 		return builder.build();
