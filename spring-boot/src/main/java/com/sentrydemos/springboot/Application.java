@@ -43,17 +43,18 @@ public class Application {
 	@Override
 		public Double sample(SamplingContext context) {
 			// logger.info("> testing...."); // works
-			// logger.info("> context is", context); // is blank
-			// logger.info("> context is", "test..."); // is blank
+			// logger.info("> context is", context); // context is blank
+			// logger.info("> context is", "test..."); // "text..." does not appear, it logs blank
 			
 			CustomSamplingContext customSamplingContext = context.getCustomSamplingContext();
 			if (customSamplingContext != null) {
 				HttpServletRequest request = (HttpServletRequest) customSamplingContext.get("request");
 
+				// TODO - fix this. The event does not get captured (it's dropped?) if you add this Context here (is it too big?)
 				// trying to find what on the request indicates it's an OPTIONS request, because we want to filter those out
-				Sentry.configureScope(scope -> {
-					scope.setContexts("> customSamplingContext...", request);
-				});
+				// Sentry.configureScope(scope -> {
+				// 	scope.setContexts("> customSamplingContext...", request);
+				// });
 				
 				// this header only appears on OPTIONS requests, so could filter out OPTIONS this way
 				// but it is not logging a value here, though is visible on the transaction event in Sentry.io
