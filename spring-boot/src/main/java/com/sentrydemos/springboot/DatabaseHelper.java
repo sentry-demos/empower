@@ -29,7 +29,6 @@ public class DatabaseHelper {
 	
 	
 	public String mapAllProducts(ISpan span) {
-		logger.info("mapAllProducts");
 
 		String sql = "SELECT * FROM products";
 		ISpan sqlSpan = span.startChild("db", sql);
@@ -66,7 +65,6 @@ public class DatabaseHelper {
 	}
 
 	public String mapAllProductsJoin(ISpan transaction) {
-		logger.info("mapAllProductsJoin");
 		
 		String sql = "SELECT * FROM products";
 		ISpan sqlSpan = transaction.startChild("db", sql);

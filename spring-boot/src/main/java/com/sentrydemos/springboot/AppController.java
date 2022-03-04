@@ -65,10 +65,8 @@ public class AppController {
 		 */
 
 		for (String tag : headerTags) {
-			logger.info("Checking header for tag: " + tag);
 			String header = request.getHeader(tag);
 			if (header != null && header != "null") {
-				logger.info("Setting " + tag + " Sentry tag as " + header);
 				if (tag == "email") {
 					User user = new User();
 					user.setEmail(header);
@@ -160,10 +158,9 @@ public class AppController {
 	public String GetProductsDelay(HttpServletRequest request) {
 		setTags(request);
 
-		logger.info("> products");
+		logger.info("> products...");
 		String fooResourceUrl = "https://application-monitoring-ruby-dot-sales-engineering-sf.appspot.com";
 		ResponseEntity<String> response = restTemplate.getForEntity(fooResourceUrl + "/api", String.class);
-		// return "/products success";
 
 		ISpan span = hub.getSpan().startChild("Overhead", "Set tags");
 		setTags(request);
