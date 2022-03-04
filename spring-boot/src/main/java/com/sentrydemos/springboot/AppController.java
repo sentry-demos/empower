@@ -156,15 +156,12 @@ public class AppController {
 	@CrossOrigin
 	@GetMapping("/products")
 	public String GetProductsDelay(HttpServletRequest request) {
-		setTags(request);
 
-		logger.info("> products...");
+		logger.info("> products calling ruby");
 		String fooResourceUrl = "https://application-monitoring-ruby-dot-sales-engineering-sf.appspot.com";
 		ResponseEntity<String> response = restTemplate.getForEntity(fooResourceUrl + "/api", String.class);
 
-		ISpan span = hub.getSpan().startChild("Overhead", "Set tags");
-		setTags(request);
-		span.finish();
+		logger.info("> products calling db for products");
 		String allProducts = dbHelper.mapAllProducts(hub.getSpan());
 		return allProducts;
 	}
