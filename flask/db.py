@@ -75,7 +75,6 @@ def get_products():
         raise DatabaseConnectionError('get_products')
     except Exception as err:
         err_string = str(err)
-        print(error_string)
         if UNPACK_FROM_ERROR in err_string:
             raise DatabaseConnectionError('get_products')
         else:
