@@ -156,6 +156,8 @@ public class AppController {
 	@CrossOrigin
 	@GetMapping("/products")
 	public String GetProductsDelay(HttpServletRequest request) {
+		setTags(request);
+		
 		// UPDATE 03/09/22 commenting this ruby call out only because I have to merge the PR. Currently the ruby transaction this creates, becomes orphaned. It is not part of the trace with the Javascript<>Springboot /products endpoint Tracing here
 		// logger.info("> products calling ruby");
 		// String fooResourceUrl = "https://application-monitoring-ruby-dot-sales-engineering-sf.appspot.com";
