@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -30,11 +31,14 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.springframework.web.client.RestTemplate;
+
 @RestController
 public class AppController {
 
 	private final Logger logger = LoggerFactory.getLogger(Application.class);
 	private List<String> headerTags = new ArrayList<>();
+	private RestTemplate restTemplate = new RestTemplate();
 	
 	@Autowired
 	private DatabaseHelper dbHelper = new DatabaseHelper();
@@ -52,7 +56,6 @@ public class AppController {
 	}
 
 	private void setTags(HttpServletRequest request) {
-		//to print all headers
 		/*
 		 * logger.info("request header names and vals: "); for (Enumeration<?> e =
 		 * request.getHeaderNames(); e.hasMoreElements();) { String nextHeaderName =
@@ -62,10 +65,8 @@ public class AppController {
 		 */
 
 		for (String tag : headerTags) {
-			logger.info("Checking header for tag: " + tag);
 			String header = request.getHeader(tag);
 			if (header != null && header != "null") {
-				logger.info("Setting " + tag + " Sentry tag as " + header);
 				if (tag == "email") {
 					User user = new User();
 					user.setEmail(header);
@@ -88,8 +89,9 @@ public class AppController {
 
 	@CrossOrigin
 	@GetMapping("/success")
-	public String Success() {
+	public String Success(HttpServletRequest request) {
 		logger.info("success");
+		setTags(request);
 		return "success from springboot";
 
 	}
@@ -116,19 +118,27 @@ public class AppController {
 
 	@CrossOrigin
 	@GetMapping("/api")
-	public String Api() {
+	public String Api(HttpServletRequest request) {
+		logger.info("> /api");
+		setTags(request);
+
+		String RUBY_BACKEND = "https://application-monitoring-ruby-dot-sales-engineering-sf.appspot.com";
+		ResponseEntity<String> response = restTemplate.getForEntity(RUBY_BACKEND + "/api", String.class);
+
 		return "springboot /api";
 	}
 
 	@CrossOrigin
 	@GetMapping("/connect")
-	public String Connect() {
+	public String Connect(HttpServletRequest request) {
+		setTags(request);
 		return "springboot /connect";
 	}
 
 	@CrossOrigin
 	@GetMapping("/organization")
-	public String Organization() {
+	public String Organization(HttpServletRequest request) {
+		setTags(request);
 		return "springboot /organization";
 	}
 
@@ -146,12 +156,15 @@ public class AppController {
 	@CrossOrigin
 	@GetMapping("/products")
 	public String GetProductsDelay(HttpServletRequest request) {
-		ISpan span = hub.getSpan().startChild("Overhead", "Set tags");
-		//initInventory(); // initialize inventory each time we hit this endpoint
 		setTags(request);
-		span.finish();
-		String allProducts = dbHelper.mapAllProducts(hub.getSpan());
 		
+		// UPDATE 03/09/22 commenting this ruby call out only because I have to merge the PR. Currently the ruby transaction this creates, becomes orphaned. It is not part of the trace with the Javascript<>Springboot /products endpoint Tracing here
+		// logger.info("> products calling ruby");
+		// String fooResourceUrl = "https://application-monitoring-ruby-dot-sales-engineering-sf.appspot.com";
+		// ResponseEntity<String> response = restTemplate.getForEntity(fooResourceUrl + "/api", String.class);
+
+		logger.info("> products calling db for products");
+		String allProducts = dbHelper.mapAllProducts(hub.getSpan());
 		return allProducts;
 	}
 

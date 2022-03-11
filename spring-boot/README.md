@@ -2,7 +2,7 @@
 Extension to the Empower Plant UI/UX. This project was originally bootstrapped with [Create React App](https://github.com/facebook/create-react-app); this Java Spring Boot backend is available with the query param &backend=springboot, [e.g.] (http://localhost:5000/?se=simon&backend=springboot).
 
 ## Setup
-This uses java version 8.
+This uses java version 8 and SpringBoot version 2.5.4 [spring-boot-starter-parent?](https://mvnrepository.com/artifact/org.springframework.boot)
 
 1. Verify that port 8090 is set for springboot in `react/src/utils/backendrouter.js`, 
 ```
@@ -23,7 +23,7 @@ REACT_APP_SPRINGBOOT_BACKEND=<value>
 
 5. Put your DSN key in application.properties
 
-### Local DEV deployment
+### Run
 Verify that the **DEV** section is not commented out in application.properties and values are set. The **GCP** section should be commented out.
 ```
 spring.datasource.url=jdbc:postgresql://<server>:<port>/<database name>
@@ -31,7 +31,7 @@ server.port=8090
 spring.cloud.gcp.sql.enabled=false
 ```
 
-Run from terminal with `./mvnw spring-boot:run` from the spring-boot directory
+Run `./run.sh`
 
 ### Cloud GCP Deployment
 Verify that the **GCP** section is not commented AND **DEV** section is commented (i.e. `application.properties` should have no values for `spring.datasource.url` nor `server.port`).

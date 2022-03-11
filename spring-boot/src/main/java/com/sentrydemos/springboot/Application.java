@@ -5,9 +5,19 @@ import java.sql.Date;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Bean;
 
+import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.web.client.RestTemplate;
+
 import io.sentry.Sentry;
+
+import io.sentry.SentryOptions.TracesSamplerCallback;
+import io.sentry.SamplingContext;
+import io.sentry.CustomSamplingContext;
+import org.springframework.stereotype.Component;
+import javax.servlet.http.HttpServletRequest;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,52 +26,42 @@ import org.slf4j.LoggerFactory;
 
 @SpringBootApplication
 public class Application {
-	
-	@Value("${SPRINGBOOT_LOCAL_ENV}")
-	private String springbootlocalenv;
-	
-	@Value("${sentry.dsn}")
-	private String sentryDSN; //value comes from the application.properties's sentry.dsn (value is also used with Logback)
-	
+
 	private static final Logger logger = LoggerFactory.getLogger(Application.class);
 	
 	public static void main(String[] args) {
 		SpringApplication.run(Application.class, args);
 	}
 
-	// sentry properties configured here for Java Spring Boot
-	// https://docs.sentry.io/platforms/java/guides/spring-boot/logging-frameworks/	
 	@Bean
-	public void initSentry() {
-		logger.info("Initializing Sentry...");
-		
-		Sentry.init(options -> {
-			options.setDsn(sentryDSN);
-			String environment = ((System.getenv("SPRINGBOOT_ENV") == null ? springbootlocalenv : System.getenv("SPRINGBOOT_ENV")));
-			options.setEnvironment(environment);
-			options.setTracesSampleRate(1.0);
-			options.setRelease(getRelease());
-			
-			options.setTracesSampler(
-				context -> {
-					//context.getTransactionContext().getName() returns String: GET /products
-					if (context.getTransactionContext().getOperation().equals("http.server") &&
-							context.getTransactionContext().getName().startsWith("OPTIONS")) {
-						//Not sampling OPTIONS transactions
-						return 0.0;
-					} else {
-						return 1.0;
-					}
-				});
-		});
+	RestTemplate restTemplate(RestTemplateBuilder builder) {
+		return builder.build();
 	}
 
-	@SuppressWarnings("deprecation")
-	private String getRelease() {
-		Date today = new Date(System.currentTimeMillis());
+	@Component
+	class CustomTracesSamplerCallback implements TracesSamplerCallback {
+	@Override
+		public Double sample(SamplingContext context) {
 
-		logger.info("release: " + today.getMonth() + "." + ((today.getDay() - 1)/7+1));
-		return today.getMonth() + "." + (today.getDay() - 1/7+1);
+			CustomSamplingContext customSamplingContext = context.getCustomSamplingContext();
+			if (customSamplingContext != null) {
+				HttpServletRequest request = (HttpServletRequest) customSamplingContext.get("request");
+				return 1.0;
+			} else {
+				return 1.0;
+			}
+		}
 	}
-	
 }
+
+// Sentry.init...
+// context -> {
+// 	//context.getTransactionContext().getName() returns String: GET /products
+// 	if (context.getTransactionContext().getOperation().equals("http.server") &&
+// 		context.getTransactionContext().getName().startsWith("OPTIONS")) {
+// 	  //Not sampling OPTIONS transactions
+// 	  return 0.0;
+// 	} else {
+// 	  return 1.0;
+// 	}
+//   });

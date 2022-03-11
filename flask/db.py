@@ -74,7 +74,8 @@ def get_products():
     except BrokenPipeError as err:
         raise DatabaseConnectionError('get_products')
     except Exception as err:
-        if UNPACK_FROM_ERROR in err:
+        err_string = str(err)
+        if UNPACK_FROM_ERROR in err_string:
             raise DatabaseConnectionError('get_products')
         else:
             raise(err)
@@ -101,7 +102,8 @@ def get_products_join():
     except BrokenPipeError as err:
         raise DatabaseConnectionError('get_products_join')
     except Exception as err:
-        if UNPACK_FROM_ERROR in err:
+        err_string = str(err)
+        if UNPACK_FROM_ERROR in err_string:
             raise DatabaseConnectionError('get_products_join')
         else:
             raise(err)
@@ -148,7 +150,11 @@ def get_inventory(cart):
     except BrokenPipeError as err:
         raise DatabaseConnectionError('get_inventory')
     except Exception as err:
-        raise(err)
+        err_string = str(err)
+        if UNPACK_FROM_ERROR in err_string:
+            raise DatabaseConnectionError('get_inventory')
+        else:
+            raise(err)
 
     return inventory
 

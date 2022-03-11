@@ -22,8 +22,6 @@ sentry.exception-resolver-order=-1
 sentry.enable-tracing=true
 sentry.traces-sample-rate=1.0
 
-SPRINGBOOT_LOCAL_ENV=test
-
 spring.datasource.driver-class-name=org.postgresql.Driver
 spring.datasource.username=
 spring.datasource.password=
