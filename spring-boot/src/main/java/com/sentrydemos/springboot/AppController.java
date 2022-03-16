@@ -38,7 +38,11 @@ public class AppController {
 
 	private final Logger logger = LoggerFactory.getLogger(Application.class);
 	private List<String> headerTags = new ArrayList<>();
-	private RestTemplate restTemplate = new RestTemplate();
+	private final RestTemplate restTemplate;
+
+	public AppController(RestTemplate restTemplate) {
+		this.restTemplate = restTemplate;
+	}
 	
 	@Autowired
 	private DatabaseHelper dbHelper = new DatabaseHelper();
@@ -156,14 +160,13 @@ public class AppController {
 	@CrossOrigin
 	@GetMapping("/products")
 	public String GetProductsDelay(HttpServletRequest request) {
+		ISpan span = hub.getSpan().startChild("Overhead", "Set tags");
 		setTags(request);
-		
-		// UPDATE 03/09/22 commenting this ruby call out only because I have to merge the PR. Currently the ruby transaction this creates, becomes orphaned. It is not part of the trace with the Javascript<>Springboot /products endpoint Tracing here
-		// logger.info("> products calling ruby");
-		// String fooResourceUrl = "https://application-monitoring-ruby-dot-sales-engineering-sf.appspot.com";
-		// ResponseEntity<String> response = restTemplate.getForEntity(fooResourceUrl + "/api", String.class);
+		span.finish();
 
-		logger.info("> products calling db for products");
+		String fooResourceUrl = "https://application-monitoring-ruby-dot-sales-engineering-sf.appspot.com";
+		ResponseEntity<String> response = restTemplate.getForEntity(fooResourceUrl + "/api", String.class);
+
 		String allProducts = dbHelper.mapAllProducts(hub.getSpan());
 		return allProducts;
 	}
@@ -174,6 +177,11 @@ public class AppController {
 		ISpan span = hub.getSpan().startChild("Overhead", "Set tags");
 		setTags(request);
 		span.finish();
+
+		String fooResourceUrl = "https://application-monitoring-ruby-dot-sales-engineering-sf.appspot.com";
+		ResponseEntity<String> response = restTemplate.getForEntity(fooResourceUrl + "/api", String.class);
+
+		
 		String allProducts = dbHelper.mapAllProductsJoin(hub.getSpan());
 		return allProducts;
 	}
