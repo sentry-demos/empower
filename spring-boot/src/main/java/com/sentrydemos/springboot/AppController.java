@@ -38,13 +38,11 @@ public class AppController {
 
 	private final Logger logger = LoggerFactory.getLogger(Application.class);
 	private List<String> headerTags = new ArrayList<>();
-	// private RestTemplate restTemplate = new RestTemplate();
 	private final RestTemplate restTemplate;
 
 	public AppController(RestTemplate restTemplate) {
 		this.restTemplate = restTemplate;
-		// this.webClient = webClient;
-	  }
+	}
 	
 	@Autowired
 	private DatabaseHelper dbHelper = new DatabaseHelper();
@@ -165,7 +163,7 @@ public class AppController {
 		ISpan span = hub.getSpan().startChild("Overhead", "Set tags");
 		setTags(request);
 		span.finish();
-		
+
 		String fooResourceUrl = "https://application-monitoring-ruby-dot-sales-engineering-sf.appspot.com";
 		ResponseEntity<String> response = restTemplate.getForEntity(fooResourceUrl + "/api", String.class);
 
