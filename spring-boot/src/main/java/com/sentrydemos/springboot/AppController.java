@@ -162,13 +162,13 @@ public class AppController {
 	@CrossOrigin
 	@GetMapping("/products")
 	public String GetProductsDelay(HttpServletRequest request) {
+		ISpan span = hub.getSpan().startChild("Overhead", "Set tags");
 		setTags(request);
+		span.finish();
 		
-		logger.info("> products calling ruby");
 		String fooResourceUrl = "https://application-monitoring-ruby-dot-sales-engineering-sf.appspot.com";
 		ResponseEntity<String> response = restTemplate.getForEntity(fooResourceUrl + "/api", String.class);
 
-		logger.info("> products calling db for products");
 		String allProducts = dbHelper.mapAllProducts(hub.getSpan());
 		return allProducts;
 	}
@@ -179,6 +179,11 @@ public class AppController {
 		ISpan span = hub.getSpan().startChild("Overhead", "Set tags");
 		setTags(request);
 		span.finish();
+
+		String fooResourceUrl = "https://application-monitoring-ruby-dot-sales-engineering-sf.appspot.com";
+		ResponseEntity<String> response = restTemplate.getForEntity(fooResourceUrl + "/api", String.class);
+
+		
 		String allProducts = dbHelper.mapAllProductsJoin(hub.getSpan());
 		return allProducts;
 	}
