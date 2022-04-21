@@ -60,6 +60,13 @@ Sentry.init({
       _metricOptions: {
         _reportAllChanges: true,
       },
+      // How to parameterize transactions if not using the <SentryRoute> component
+      // beforeNavigate: context => {
+      //   return {
+      //     ...context,
+      //     name: window.location.pathname.replace(/\/employee.*/,'/employee/:id')
+      //   };
+      // },
     }),
   ],
   tracesSampleRate: 1.0,
