@@ -89,6 +89,8 @@ deploy.sh's SENTRY_PROJECT with updated value
 Then run deploy.sh for deploying the flagship app (React to Flask) together, or deploy only the individual apps that you need (check the README for each platform). 
 
 ## Troubleshooting
+Did you remember to permit / whitelist your IP address as an 'Authorized Network' in CloudSQL?
+
 ### Upgrading
 ```
 ## Check if you're on your fork. If so, you should see:
