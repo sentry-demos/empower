@@ -61,7 +61,7 @@ source env/bin/activate
 Add +2 quantity of a single item to Cart and purchase in order to trigger an Error. Visit all routes defined in src/index.js to produce transactions for them.
 
 
-## Deploy
+## Deploy to Prod
 This script deploys the flagship apps React + Flask. For deploying a single app to App Engine, check each platform's README for specific instructions. Make sure all .env's and app.yaml's have correct values before deploying.
 ```
 ./deploy.sh
@@ -88,10 +88,7 @@ deploy.sh's SENTRY_PROJECT with updated value
 ```
 Then run deploy.sh for deploying the flagship app (React to Flask) together, or deploy only the individual apps that you need (check the README for each platform). 
 
-## Troubleshooting
-Did you remember to permit / whitelist your IP address as an 'Authorized Network' in CloudSQL?
-
-### Upgrading
+## Updating The Apps
 ```
 ## Check if you're on your fork. If so, you should see:
 git remote -v
@@ -120,12 +117,11 @@ cd flask && source env/bin/activate && pip install -r requirements.txt
 
 # Check that your react/.env, flask/.env and deploy.sh still have correct values
 ```
-### Releases
-Q. `--update-env-vars` is not available for `gcloud app deploy`, therefore can't pass a RELEASE upon deploying. Luckily it's already built into the /build which gets uploaded, and sentry-cli generated it, as well as the RELEASE that sentry-cli uses for uploading source maps.
 
-A. So, creating the dynamic Release inside of main.py. Hard-coding it into .env wouldn't help, as it needs to be dynamic. This release may not match what sentry-cli is generating for release (due to clock skew), but we're not uploading source maps for python. Worst case, the Python release is slightly different than the React release, but this shouldn't matter, because two separate apps (repo) typically have unique app version numbers anyways (you version them separately).
+## Troubleshooting
+See [troubleshooting](./troubleshooting.md)
 
-### Gcloud commands
+## Gcloud
 ```
 gcloud app versions list
 gcloud app deploy
@@ -142,9 +138,9 @@ gcloud auth list
 gcloud config set account `ACCOUNT`
 gcloud config list, to display current account
 ```
+`gcloud app deploy` does not support `--update-env-vars RELEASE=$RELEASE` like `gcloud run deploy` does with Cloud Run
 
-### Other
-Don't use a sqlalchemy or pg8000 that is higher than sqlalchemy==1.3.15, pg8000==1.12.5, or else database won't work.
+## Versions
 
 | non-sentry    | version
 | ------------- |:-------------:|
@@ -157,22 +153,3 @@ Don't use a sqlalchemy or pg8000 that is higher than sqlalchemy==1.3.15, pg8000=
 | react-router-dom | ^5.2.0 |
 | react-scripts | 4.0.3 |
 
-'default' is a function applied to objects that aren't serializable.  
-use 'default' or else you get "Object of type datetime is not JSON serializable":  
-json.dumps(results, default=str)  
-
-`gcloud app deploy` does not support `--update-env-vars RELEASE=$RELEASE` like `gcloud run deploy` does with Cloud Run
-
-https://dev.to/brad_beggs/handling-react-form-submit-with-redirect-async-await-for-the-beyond-beginner-57of
-
-https://www.pluralsight.com/guides/how-to-transition-to-another-route-on-successful-async-redux-action
-
-https://reactjs.org/docs/forms.html
-
-State Hooks vs Effect Hooks vs Context
-https://reactjs.org/docs/hooks-state.html
-
-Context
-https://reactjs.org/docs/hooks-effect.html
-
-https://docs.sentry.io/platforms/python/guides/flask/configuration/filtering/#using-sampling-to-filter-transaction-events
