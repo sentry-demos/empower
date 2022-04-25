@@ -58,7 +58,7 @@ source env/bin/activate
 ./run.sh
 ```
 
-Add +2 quantity of a single item to Cart and purchase in order to trigger an Error. Visit all routes defined in src/index.js to produce transactions for them.
+Add +2 quantity of a single item to Cart and purchase in order to trigger an Error. Visit the routes defined in src/index.js to produce transactions.
 
 
 ## Deploy to Prod
