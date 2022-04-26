@@ -13,8 +13,8 @@ class Employee extends Component {
 
   async componentDidMount() {
     const { match } = this.props;
-    if (match.params.slug) {
-      const data = await import(`./employees/${match.params.slug}`);
+    if (match.params.id) {
+      const data = await import(`./employees/${match.params.id}`);
       this.setState({ employee: data.default });
     }
   }

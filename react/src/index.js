@@ -53,6 +53,9 @@ console.log("RELEASE", RELEASE)
 
 Sentry.init({
   dsn: DSN,
+  release: RELEASE,
+  environment: ENVIRONMENT,
+  tracesSampleRate: 1.0,
   integrations: [
     new Integrations.BrowserTracing({
       tracingOrigins: tracingOrigins,
@@ -60,11 +63,14 @@ Sentry.init({
       _metricOptions: {
         _reportAllChanges: true,
       },
+      beforeNavigate: context => {
+        return {
+          ...context,
+          name: window.location.pathname.replace(/\/employee.*/,'/employee/:id')
+        };
+      },
     }),
   ],
-  tracesSampleRate: 1.0,
-  release: RELEASE,
-  environment: ENVIRONMENT,
   beforeSend(event, hint) {
     // Parse from tags because src/index.js already set it there. Once there are React route changes, it is no longer in the URL bar
     let se
@@ -159,7 +165,9 @@ class App extends Component {
                 <Route path="/complete" component={Complete} />
                 <Route path="/error" component={CompleteError} />
                 <Route path="/cra" component={Cra} />
-                <SentryRoute path="/employee/:slug" component={Employee}></SentryRoute>
+                {/* Parameterization of the Employee Pages is done by beforeNavigate  */}
+                <Route path="/employee/:id" component={Employee} />
+                {/* Parameterizes the Product Page transactions */}
                 <SentryRoute path="/product/:id" component={Product}></SentryRoute>
                 <Route path="/products">
                   <Products backend={BACKEND_URL} />
