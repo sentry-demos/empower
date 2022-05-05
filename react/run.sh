@@ -1,6 +1,7 @@
 # Builds and serves the js bundle, uploads sourcemaps and does suspect commits
-
-RELEASE=`../release.sh`
+PACKAGE="application.monitoring.javascript"
+VERSION=`../release.sh`
+RELEASE=$PACKAGE@$VERSION
 echo $RELEASE
 
 SENTRY_ORG=testorg-az
