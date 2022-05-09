@@ -1,6 +1,6 @@
 # Builds and serves the js bundle, uploads sourcemaps and does suspect commits
 
-PACKAGE="application.monitoring.javascript"
+PACKAGE=application.monitoring.javascript
 VERSION=`../release.sh`
 RELEASE=$PACKAGE@$VERSION
 echo $RELEASE
