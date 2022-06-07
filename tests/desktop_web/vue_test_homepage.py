@@ -5,8 +5,8 @@ import sentry_sdk
 from urllib.parse import urlencode
 from collections import OrderedDict
 
-# This test is for the homepage '/' transaction
-def vue_test_homepage(desktop_web_driver):
+# TODO - why won't pytest find this and run it when I name it 'vue_test_homepage'?
+def test_homepage(desktop_web_driver):
     sentry_sdk.set_tag("pytestName", "vue_test_homepage")
 
     endpoint = "https://application-monitoring-vue-dot-sales-engineering-sf.appspot.com/"
@@ -15,16 +15,15 @@ def vue_test_homepage(desktop_web_driver):
 
     missedButtons = 0
 
-    # TODO CHANGE back to range(random.randrange(20)) when done testing
-    for i in range(5):
-        # TODO 
+    for i in range(random.randrange(20)):
+        # TODO in application-monitoring/vue repo
         # querystring support for 'se' and 'backend' tags
         
-        # TODO
-        # No randomization of failures, because Vue app is not setup to do this right now.
+        # TODO in application-monitoring/vue repo
+        # Add randomization of failures of Vue app, so can pass it as param in queryString and via TDA here
 
-        # TODO
-        # "/products" not needed right now, because Home page in Vue app loads the products
+        # TODO in application-monitoring/vue repo
+        # Add "/products", so Home Page can be treated separately. Right now, Home page loads the /produdcts
 
         # Buttons are not available if products didn't load before selection, so handle this
         try:
