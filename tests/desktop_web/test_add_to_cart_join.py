@@ -3,7 +3,7 @@ import yaml
 import random
 import sentry_sdk
 from urllib.parse import urlencode
-
+@pytest.mark.skip(reason="testing vue only right now...")
 def test_add_to_cart_join(desktop_web_driver):
     sentry_sdk.set_tag("pytestName", "test_add_to_cart_join")
 
