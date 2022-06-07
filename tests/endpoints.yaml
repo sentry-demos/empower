@@ -2,3 +2,6 @@
 
 react_endpoints:
  - https://application-monitoring-react-dot-sales-engineering-sf.appspot.com
+
+vue_endpoints:
+ - https://application-monitoring-vue-dot-sales-engineering-sf.appspot.com

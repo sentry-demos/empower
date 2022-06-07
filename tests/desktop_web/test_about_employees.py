@@ -4,7 +4,6 @@ import random
 import sentry_sdk
 from urllib.parse import urlencode
 
-@pytest.mark.skip(reason="testing vue only right now...")
 def test_about_employees(desktop_web_driver):
     sentry_sdk.set_tag("pytestName", "about_employees")
 

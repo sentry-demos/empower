@@ -8,20 +8,26 @@ from collections import OrderedDict
 def test_about_employees(desktop_web_driver):
     sentry_sdk.set_tag("pytestName", "vue_test_about_employees")
 
-    endpoint = "https://application-monitoring-vue-dot-sales-engineering-sf.appspot.com/about"
+    with open('endpoints.yaml', 'r') as stream:
+        data_loaded = yaml.safe_load(stream)
+        endpoints = data_loaded['vue_endpoints']
 
-    sentry_sdk.set_tag("endpoint", endpoint)
+    for endpoint in endpoints:
 
-    for i in range(random.randrange(20)):
-        # TODO in application-monitoring/vue repo
-        # should be able to click each employee and it navigates to an /:employee page
-        # this demonstrates parameterized transactions in Vue
+        endpoint = endpoint + "/about"
 
-        try:
-            desktop_web_driver.get(endpoint)
+        sentry_sdk.set_tag("endpoint", endpoint)
 
-        except Exception as err:
-            if err:
-                sentry_sdk.capture_exception(err)
+        for i in range(random.randrange(20)):
+            # TODO in application-monitoring/vue repo
+            # should be able to click each employee and it navigates to an /:employee page
+            # this demonstrates parameterized transactions in Vue
 
-        time.sleep(random.randrange(2) + 1)
+            try:
+                desktop_web_driver.get(endpoint)
+
+            except Exception as err:
+                if err:
+                    sentry_sdk.capture_exception(err)
+
+            time.sleep(random.randrange(2) + 1)

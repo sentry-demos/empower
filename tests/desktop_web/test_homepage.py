@@ -6,7 +6,6 @@ from urllib.parse import urlencode
 from collections import OrderedDict
 
 # This test is for the homepage '/' transaction
-@pytest.mark.skip(reason="testing vue only right now...")
 def test_homepage(desktop_web_driver):
     sentry_sdk.set_tag("pytestName", "test_homepage")
 
