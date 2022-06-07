@@ -22,7 +22,7 @@ print("DSN", DSN)
 
 import urllib3
 urllib3.disable_warnings()
-
+# Initialize sentry sdk
 sentry_sdk.init(
     dsn= DSN,
     traces_sample_rate=0,
