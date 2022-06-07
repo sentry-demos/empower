@@ -1,4 +1,3 @@
-# Temp comment
 import pytest
 from os import environ
 import os
