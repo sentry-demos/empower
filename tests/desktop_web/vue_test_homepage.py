@@ -5,7 +5,7 @@ import sentry_sdk
 from urllib.parse import urlencode
 from collections import OrderedDict
 
-# TODO - why won't pytest find this and run it when I name it 'vue_test_homepage'?
+# Note: Not sure why won't pytest find this and run it when I name it 'vue_test_homepage'
 def test_homepage(desktop_web_driver):
     sentry_sdk.set_tag("pytestName", "vue_test_homepage")
 
@@ -28,10 +28,6 @@ def test_homepage(desktop_web_driver):
         # Buttons are not available if products didn't load before selection, so handle this
         try:
             desktop_web_driver.get(endpoint)
-
-            # Optional - use the time.sleep here so button can rinish rendering before the desktop_web_driver tries to click it
-            # Solution - handle gracefully when the desktop_web_driver clicks a button that's not rendered yet, and then time.sleep(1) and try again
-            # time.sleep(5)
 
             buttonRendered = False
             skips=0

@@ -6,7 +6,7 @@ from urllib.parse import urlencode
 from collections import OrderedDict
 
 def test_about_employees(desktop_web_driver):
-    sentry_sdk.set_tag("pytestName", "vue_test_about")
+    sentry_sdk.set_tag("pytestName", "vue_test_about_employees")
 
     endpoint = "https://application-monitoring-vue-dot-sales-engineering-sf.appspot.com/about"
 
