@@ -84,3 +84,5 @@ venv/lib/python3.7/site-packages/urllib3/util/retry.py:574: MaxRetryError
 Note that handled errors will not increment the crash counts in Release Health. But the Release Health UI does separate Handled from Unhandled Issues.
 
 https://appium.io/docs/en/commands/device/app/launch-app/
+
+Test names must begin with a prefix of `test_` or else they won't run.
