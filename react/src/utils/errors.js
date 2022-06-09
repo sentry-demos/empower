@@ -30,6 +30,7 @@ const throwRandomError = () => {
   randomErrors[randomNum]()
 }
 
+// if n is 0.2 then this will return false 20% of the time
 var probability = function(n) {
   return !!n && Math.random() <= n;
 };
