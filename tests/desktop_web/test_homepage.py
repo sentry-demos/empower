@@ -35,7 +35,7 @@ def test_homepage(desktop_web_driver):
         sentry_sdk.set_tag("endpoint", endpoint)
 
         for i in range(random.randrange(20)):
-            # Randomize the Failure Rate between 1% and 40%. Returns values like 0.02, 0.14, 0.37
+            # Randomize the Failure Rate between 1% and 20% or 40%, depending what week it is. Returns values like 0.02, 0.14, 0.37
             n = random.uniform(0.01, upper_bound)
 
             # This query string is parsed by utils/errors.js wherever the 'crasher' function is used
