@@ -1,0 +1,14 @@
+  
+env: standard
+service: staging-application-monitoring-vue
+runtime: nodejs14
+
+handlers:
+  - url: /static
+    static_dir: dist/assets
+  - url: /(.*\.(json|ico|js|png|css|svg|jpg))$
+    static_files: dist/\1
+    upload: dist/.*\.(json|ico|js|png|css|svg|jpg)$
+  - url: .*
+    static_files: dist/index.html
+    upload: dist/index.html
