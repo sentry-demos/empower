@@ -41,3 +41,21 @@ Context
 https://reactjs.org/docs/hooks-effect.html
 
 https://docs.sentry.io/platforms/python/guides/flask/configuration/filtering/#using-sampling-to-filter-transaction-events
+
+## Git
+If `git pull` is hanging or `sudo git pull` is giving you
+```
+Warning: Permanently added the ECDSA host key for IP address '140.82.114.3' to the list of known hosts.
+git@github.com: Permission denied (publickey).
+fatal: Could not read from remote repository.
+
+Please make sure you have the correct access rights
+and the repository exists.
+```
+Then create a new SSH key and upload it to github.
+
+Step1
+https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent
+
+Step2
+https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account
