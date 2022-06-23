@@ -84,7 +84,7 @@ class ProductsTree extends Component {
             })
 
             return (
-              <ProductsTreeItem product1={product}></ProductsTreeItem>
+              <ProductsTreeItem key={product.id} product={product} stars={stars}></ProductsTreeItem>
             );
           })}
         </ul>
