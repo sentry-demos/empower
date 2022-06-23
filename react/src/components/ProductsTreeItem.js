@@ -11,9 +11,33 @@ class ProductsTreeItem extends Component {
   static contextType = Context;
 
   render() {
+    console.log("TreeItem props", this.props.product1)
     // const { products } = this.props;
 
     return <div>HI</div>
+
+    // return (
+    //     <li key={product.id}>
+    //         <div>
+    //         <Link to={itemLink}>
+    //             <img src={product.img} alt="product" />
+    //             <div>
+    //             <h2>{product.title}</h2>
+    //             <p className="product-description">
+    //                 {product.description}
+    //             </p>
+    //             </div>
+    //         </Link>
+    //         <button
+    //             onClick={() => this.props.addProduct(product)}
+    //         >
+    //             Add to cart — ${product.price}.00
+    //         </button>
+    //         <p>{stars} ({product.reviews.length})</p>
+    //         </div>
+    //     </li>
+    // )
+
     // return products.length > 0 ? (
     //   <div>
     //     <ul className="products-list">
@@ -47,28 +71,6 @@ class ProductsTreeItem extends Component {
     // )
   }
 }
-
-/*
-<li key={product.id}>
-                <div>
-                  <Link to={itemLink}>
-                    <img src={product.img} alt="product" />
-                    <div>
-                      <h2>{product.title}</h2>
-                      <p className="product-description">
-                        {product.description}
-                      </p>
-                    </div>
-                  </Link>
-                  <button
-                    onClick={() => this.props.addProduct(product)}
-                  >
-                    Add to cart — ${product.price}.00
-                  </button>
-                  <p>{stars} ({product.reviews.length})</p>
-                </div>
-              </li>
-*/
 
 
 const mapStateToProps = (state, ownProps) => {
