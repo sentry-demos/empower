@@ -4,11 +4,25 @@ import { Link } from 'react-router-dom';
 import './products.css';
 import * as Sentry from '@sentry/react';
 import { connect } from 'react-redux'
-import { setProducts, addProduct } from '../actions'
+import { setProducts, addProduct, setFlag } from '../actions'
 import Loader from "react-loader-spinner";
 
 class ProductsTreeItem extends Component {
   static contextType = Context;
+
+  // SO see component.update appears
+  async componentDidMount(){
+    // var products
+    // try {
+    //   products = await this.getProducts();
+    //   this.props.setProducts(products)
+    // } catch(err) {
+    //   Sentry.captureException(new Error("app unable to load productsTree: " + err));
+    // }
+    console.log("TreeItem componentDidMount() flag", this.props.flag)
+    this.props.setFlag(!this.props.flag)
+    // return
+  }
 
   render() {
 
@@ -44,12 +58,13 @@ class ProductsTreeItem extends Component {
 const mapStateToProps = (state, ownProps) => {
     return {
       cart: state.cart,
-      products: state.products
+      products: state.products,
+      flag: state.flag
     }
   }
   
 export default connect(
     mapStateToProps,
-    { setProducts, addProduct }
+    { setProducts, addProduct, setFlag }
 )(Sentry.withProfiler(ProductsTreeItem, { name: "ProductsTreeItem"}))
   

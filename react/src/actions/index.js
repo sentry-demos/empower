@@ -2,7 +2,8 @@ import {
     ADD_PRODUCT,
     REMOVE_PRODUCT,
     RESET_CART,
-    SET_PRODUCTS 
+    SET_PRODUCTS,
+    SET_FLAG 
   } from './types'
   
   export const addProduct = product => ({
@@ -25,5 +26,11 @@ import {
     type: REMOVE_PRODUCT,
     payload: {
       product
+    }
+  })
+  export const setFlag = flag => ({
+    type: SET_FLAG,
+    payload: {
+      flag: flag
     }
   })

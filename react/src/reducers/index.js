@@ -5,13 +5,16 @@ const initialState = {
         quantities: {},
         total: 0
     },
-    products: []
+    products: [],
+    flag: false
 }
 
   const newState = (cart, products) => {
+    const flag = true
     return {
       cart,
-      products
+      products,
+      flag
     }
   }
   
@@ -54,6 +57,10 @@ const initialState = {
   
         case "SET_PRODUCTS":
           return Object.assign({}, newState(state.cart, payload.products))        
+
+        case "SET_FLAG":
+          console.log("action SET_FLAG", payload.flag)
+          return Object.assign({}, newState(state.cart, state.products, payload.flag))       
         
         default:
           return state;

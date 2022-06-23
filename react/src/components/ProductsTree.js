@@ -29,8 +29,8 @@ class ProductsTree extends Component {
           Sentry.captureException(err)
         })
     })
-
-    let result = await fetch(this.props.backend + "/products", {
+    // TODO Products or ProductsJoin
+    let result = await fetch(this.props.backend + "/products-join", {
       method: "GET",
       headers: { se, customerType, email, "Content-Type": "application/json" }
     })
