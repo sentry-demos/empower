@@ -5,6 +5,7 @@ import './products.css';
 import * as Sentry from '@sentry/react';
 import { connect } from 'react-redux'
 import { setProducts, addProduct } from '../actions'
+import ProductsTreeItem from './ProductsTreeItem';
 import Loader from "react-loader-spinner";
 
 class ProductsTree extends Component {
@@ -83,25 +84,7 @@ class ProductsTree extends Component {
             })
 
             return (
-              <li key={product.id}>
-                <div>
-                  <Link to={itemLink}>
-                    <img src={product.img} alt="product" />
-                    <div>
-                      <h2>{product.title}</h2>
-                      <p className="product-description">
-                        {product.description}
-                      </p>
-                    </div>
-                  </Link>
-                  <button
-                    onClick={() => this.props.addProduct(product)}
-                  >
-                    Add to cart — ${product.price}.00
-                  </button>
-                  <p>{stars} ({product.reviews.length})</p>
-                </div>
-              </li>
+              <ProductsTreeItem></ProductsTreeItem>
             );
           })}
         </ul>
