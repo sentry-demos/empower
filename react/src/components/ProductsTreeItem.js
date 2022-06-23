@@ -10,18 +10,11 @@ import Loader from "react-loader-spinner";
 class ProductsTreeItem extends Component {
   static contextType = Context;
 
-  // SO see component.update appears
+  // Using componentDidMount to try and make the ui.react.update Span appear in the transaction
   async componentDidMount(){
-    // var products
-    // try {
-    //   products = await this.getProducts();
-    //   this.props.setProducts(products)
-    // } catch(err) {
-    //   Sentry.captureException(new Error("app unable to load productsTree: " + err));
-    // }
+
     console.log("TreeItem componentDidMount() flag", this.props.flag)
     this.props.setFlag(!this.props.flag)
-    // return
   }
 
   render() {
