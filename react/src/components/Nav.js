@@ -12,6 +12,10 @@ import EPlogo from '../assets/empowerplant-logo.svg';
 class Nav extends Component {
   static contextType = Context;
 
+  async shouldComponentUpdate() {
+    console.log("> Nav shouldComponentUpdate")
+  }
+
   render() {
     const { cart } = this.props;
 

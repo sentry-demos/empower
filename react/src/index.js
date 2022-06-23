@@ -30,6 +30,7 @@ import NotFound from './components/NotFound';
 import Product from './components/Product';
 import Products from './components/Products';
 import ProductsJoin from './components/ProductsJoin';
+import ProductsTree from './components/ProductsTree';
 
 const tracingOrigins = ['localhost', 'empowerplant.io', 'run.app', 'appspot.com', /^\//];
 
@@ -174,6 +175,9 @@ class App extends Component {
                 </Route>
                 <Route path="/products-join">
                   <ProductsJoin backend={BACKEND_URL} />
+                </Route>
+                <Route path="/products-tree">
+                  <ProductsTree backend={BACKEND_URL} />
                 </Route>
                 <Route component={NotFound} />
               </Switch>

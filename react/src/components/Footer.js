@@ -3,6 +3,10 @@ import { Link } from 'react-router-dom';
 import './footer.css';
 
 class Footer extends Component {
+  async shouldComponentUpdate() {
+    console.log("> Footer shouldComponentUpdate")
+  }
+
   render() {
     return (
       <footer id="footer">

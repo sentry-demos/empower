@@ -7,7 +7,7 @@ import { connect } from 'react-redux'
 import { setProducts, addProduct } from '../actions'
 import Loader from "react-loader-spinner";
 
-class Products extends Component {
+class ProductsTree extends Component {
   static contextType = Context;
 
   // getProducts handles error responses differently, depending on the browser used
@@ -52,7 +52,7 @@ class Products extends Component {
   }
 
   async shouldComponentUpdate() {
-    console.log("> Products shouldComponentUpdate")
+    console.log("> ProductsTree shouldComponentUpdate")
   }
 
   async componentDidMount(){
@@ -61,7 +61,7 @@ class Products extends Component {
       products = await this.getProducts();
       this.props.setProducts(products)
     } catch(err) {
-      Sentry.captureException(new Error("app unable to load products: " + err));
+      Sentry.captureException(new Error("app unable to load productsTree: " + err));
     }
   }
 
@@ -129,4 +129,4 @@ const mapStateToProps = (state, ownProps) => {
 export default connect(
   mapStateToProps,
   { setProducts, addProduct }
-)(Sentry.withProfiler(Products, { name: "Products"}))
+)(Sentry.withProfiler(ProductsTree, { name: "ProductsTree"}))
