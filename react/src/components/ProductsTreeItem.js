@@ -27,7 +27,7 @@ class ProductsTreeItem extends Component {
         <li key={product.id}>
             <div>
             <Link to={itemLink}>
-                <img src={product.img} alt="product" />
+                <img src={`https://storage.googleapis.com/application-monitoring/IMG_20220623_182103_HDR.jpg`} alt="product" />
                 <div>
                 <h2>{product.title}</h2>
                 <p className="product-description">
