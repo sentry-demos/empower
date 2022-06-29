@@ -190,7 +190,6 @@ def ios_react_native_sim_driver(request, data_center):
     access_key_cap = environ['SAUCE_ACCESS_KEY']
     release_version = ReleaseVersion.latest_react_native_github_release()
 
-
     caps = {
         'username': username_cap,
         'accessKey': access_key_cap,
@@ -224,7 +223,6 @@ def ios_sim_driver(request, data_center):
     username_cap = environ['SAUCE_USERNAME']
     access_key_cap = environ['SAUCE_ACCESS_KEY']
     release_version = ReleaseVersion.latest_ios_github_release()
-
 
     caps = {
         'username': username_cap,
