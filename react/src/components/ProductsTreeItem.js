@@ -13,7 +13,7 @@ class ProductsTreeItem extends Component {
   // Using componentDidMount to try and make the ui.react.update Span appear in the transaction
   async componentDidMount(){
 
-    console.log("TreeItem componentDidMount() flag", this.props.flag)
+    console.log("PRODUCTSTREEITEM componentDidMount() flag", this.props.flag)
     this.props.setFlag(!this.props.flag)
   }
 
