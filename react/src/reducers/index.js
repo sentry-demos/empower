@@ -10,7 +10,6 @@ const initialState = {
 }
 
   const newState = (cart, products, flag) => {
-    // const flag = true
     return {
       cart,
       products,
