@@ -58,8 +58,8 @@ const initialState = {
           return Object.assign({}, newState(state.cart, payload.products))        
 
         case "SET_FLAG":
-          console.log("REDUCER action SET_FLAG", payload.flag)
-          return Object.assign({}, newState(state.cart, state.products, payload.flag))       
+          // Toggles the state of the flag, which changes props in ProductCard.js and gives us the ui.react.update span
+          return Object.assign({}, newState(state.cart, state.products, !state.flag))       
         
         default:
           return state;

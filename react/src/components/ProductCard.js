@@ -11,7 +11,7 @@ class ProductCard extends Component {
 
   // componentDidMount updates props so that the ui.react.update Span will appear in the transaction
   async componentDidMount(){
-    this.props.setFlag(!this.props.flag)
+    this.props.setFlag()
   }
 
   render() {
@@ -24,7 +24,7 @@ class ProductCard extends Component {
         <li key={product.id}>
             <div>
             <Link to={itemLink}>
-                <img src={`https://storage.googleapis.com/application-monitoring/IMG_20220623_182103_HDR.jpg`} alt="product" />
+                <img src={product.img} alt="product" />
                 <div>
                 <h2>{product.title}</h2>
                 <p className="product-description">

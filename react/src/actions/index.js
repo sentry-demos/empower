@@ -28,9 +28,7 @@ import {
       product
     }
   })
-  export const setFlag = flag => ({
+  export const setFlag = () => ({
     type: SET_FLAG,
-    payload: {
-      flag
-    }
+    payload: {}
   })
