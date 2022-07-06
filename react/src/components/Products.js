@@ -6,6 +6,7 @@ import * as Sentry from '@sentry/react';
 import { connect } from 'react-redux'
 import { setProducts, addProduct } from '../actions'
 import Loader from "react-loader-spinner";
+import ProductCard from './ProductCard'
 
 class Products extends Component {
   static contextType = Context;
@@ -83,25 +84,7 @@ class Products extends Component {
             })
 
             return (
-              <li key={product.id}>
-                <div>
-                  <Link to={itemLink}>
-                    <img src={product.img} alt="product" />
-                    <div>
-                      <h2>{product.title}</h2>
-                      <p className="product-description">
-                        {product.description}
-                      </p>
-                    </div>
-                  </Link>
-                  <button
-                    onClick={() => this.props.addProduct(product)}
-                  >
-                    Add to cart — ${product.price}.00
-                  </button>
-                  <p>{stars} ({product.reviews.length})</p>
-                </div>
-              </li>
+              <ProductCard key={product.id} product={product} stars={stars}></ProductCard>
             );
           })}
         </ul>
