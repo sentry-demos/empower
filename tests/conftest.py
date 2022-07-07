@@ -190,7 +190,6 @@ def ios_react_native_sim_driver(request, data_center):
     access_key_cap = environ['SAUCE_ACCESS_KEY']
     release_version = ReleaseVersion.latest_react_native_github_release()
 
-
     caps = {
         'username': username_cap,
         'accessKey': access_key_cap,
@@ -217,6 +216,41 @@ def ios_react_native_sim_driver(request, data_center):
     sauce_result = "failed" if request.node.rep_call.failed else "passed"
     driver.execute_script("sauce:job-result={}".format(sauce_result))
     driver.quit()
+
+@pytest.fixture
+def ios_sim_driver(request, data_center):
+
+    username_cap = environ['SAUCE_USERNAME']
+    access_key_cap = environ['SAUCE_ACCESS_KEY']
+    release_version = ReleaseVersion.latest_ios_github_release()
+
+    caps = {
+        'username': username_cap,
+        'accessKey': access_key_cap,
+        'appium:deviceName': 'iPhone 11 Simulator',
+        'platformName': 'iOS',
+        'appium:platformVersion': '14.5',
+
+        'sauce:options': {
+            'appiumVersion': '1.21.0',
+            'build': 'RDC-iOS-Mobile-Native',
+            'name': request.node.name,
+        },
+        'appium:app': f'https://github.com/sentry-demos/ios/releases/download/{release_version}/EmpowerPlant_release.zip',
+    }
+
+    if data_center and data_center.lower() == 'eu':
+        sauce_url = SAUCELABS_PROTOCOL + "{}:{}@ondemand.eu-central-1.saucelabs.com/wd/hub".format(username_cap, access_key_cap)
+    else:
+        sauce_url = SAUCELABS_PROTOCOL + "{}:{}@ondemand.us-west-1.saucelabs.com/wd/hub".format(username_cap, access_key_cap)
+
+    driver = appiumdriver.Remote(sauce_url, desired_capabilities=caps)
+    driver.implicitly_wait(20)
+    yield driver
+    sauce_result = "failed" if request.node.rep_call.failed else "passed"
+    driver.execute_script("sauce:job-result={}".format(sauce_result))
+    driver.quit()
+
 
 @pytest.hookimpl(hookwrapper=True, tryfirst=True)
 def pytest_runtest_makereport(item, call):
