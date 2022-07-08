@@ -5,13 +5,15 @@ const initialState = {
         quantities: {},
         total: 0
     },
-    products: []
+    products: [],
+    flag: false
 }
 
-  const newState = (cart, products) => {
+  const newState = (cart, products, flag) => {
     return {
       cart,
-      products
+      products,
+      flag
     }
   }
   
@@ -54,6 +56,10 @@ const initialState = {
   
         case "SET_PRODUCTS":
           return Object.assign({}, newState(state.cart, payload.products))        
+
+        case "SET_FLAG":
+          // Toggles the state of the flag, which changes props in ProductCard.js and gives us the ui.react.update span
+          return Object.assign({}, newState(state.cart, state.products, !state.flag))       
         
         default:
           return state;

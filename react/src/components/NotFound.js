@@ -3,6 +3,10 @@ import './complete.css';
 import { Link } from 'react-router-dom';
 
 class NotFound extends Component {
+  async shouldComponentUpdate() {
+    console.log("> NotFound shouldComponentUpdate")
+  }
+
   render() {
     return (
       <div className="checkout-container-complete">
