@@ -30,6 +30,7 @@ import NotFound from './components/NotFound';
 import Product from './components/Product';
 import Products from './components/Products';
 import ProductsJoin from './components/ProductsJoin';
+import { CaptureConsole as CaptureConsoleIntegration } from "@sentry/integrations";
 
 const tracingOrigins = ['localhost', 'empowerplant.io', 'run.app', 'appspot.com', /^\//];
 
@@ -70,6 +71,13 @@ Sentry.init({
         };
       },
     }),
+    new CaptureConsoleIntegration(
+      {
+        // array of methods that should be captured
+        // defaults to ['log', 'info', 'warn', 'error', 'debug', 'assert']
+        levels: ['log', 'info', 'warn', 'error', 'debug', 'assert'],
+      }
+    )
   ],
   beforeSend(event, hint) {
     // Parse from tags because src/index.js already set it there. Once there are React route changes, it is no longer in the URL bar
@@ -133,7 +141,14 @@ class App extends Component {
 
       scope.setTag("backendType", backendType)
 
-      let email = Math.random().toString(36).substring(2, 6) + "@yahoo.com";
+      // making fewer emails so issues and users are not the same numbers in the UI. 
+      let array = ["a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z"]
+
+      let a = array[Math.floor(Math.random()*array.length)];
+      let b = array[Math.floor(Math.random()*array.length)];
+      let c = array[Math.floor(Math.random()*array.length)];
+
+      let email = a+b+c+"@gmail.com";
       scope.setUser({ email: email })
     })
 
