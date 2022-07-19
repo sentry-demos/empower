@@ -6,26 +6,18 @@ import * as Sentry from '@sentry/react';
 import { connect } from 'react-redux'
 import { setProducts, addProduct } from '../actions'
 import Loader from "react-loader-spinner";
+import sleep from "./index"
 
 class ProductsJoin extends Component {
   static contextType = Context;
 
   constructor() {
     super();
-    console.log("1111111 constructor ProductsJoin")
+    // is non-blocking
     // setTimeout(() => {console.log(">>> over")}, 4000)
-    function sleep(milliseconds) {
-      var start = new Date().getTime();
-      for (var i = 0; i < 1e7; i++) {
-        if ((new Date().getTime() - start) > milliseconds){
-          
-          break;
-        }
-      }
-      console.log("done!!!")
-    }
+
+    console.log("1111111 constructor ProductsJoin")
     
-    //using sleep()
     sleep(4000); //sleep for 2 seconds
     console.log("222222 constructor ProductsJoin")
   }
