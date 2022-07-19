@@ -10,6 +10,26 @@ import Loader from "react-loader-spinner";
 class ProductsJoin extends Component {
   static contextType = Context;
 
+  constructor() {
+    super();
+    console.log("1111111 constructor ProductsJoin")
+    // setTimeout(() => {console.log(">>> over")}, 4000)
+    function sleep(milliseconds) {
+      var start = new Date().getTime();
+      for (var i = 0; i < 1e7; i++) {
+        if ((new Date().getTime() - start) > milliseconds){
+          
+          break;
+        }
+      }
+      console.log("done!!!")
+    }
+    
+    //using sleep()
+    sleep(4000); //sleep for 2 seconds
+    console.log("222222 constructor ProductsJoin")
+  }
+
   // getProductsJoin handles error responses differently, depending on the browser used
   async getProductsJoin() {
     let se, customerType, email

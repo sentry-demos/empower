@@ -10,6 +10,11 @@ import Loader from "react-loader-spinner";
 class Products extends Component {
   static contextType = Context;
 
+  constructor() {
+    super();
+    console.log(">>> constructor Products")
+  }
+
   // getProducts handles error responses differently, depending on the browser used
   async getProducts() {
     let se, customerType, email
