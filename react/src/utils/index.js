@@ -5,5 +5,5 @@ function sleep(milliseconds) {
         break;
       }
     }
-    console.log(">>>> constructor delay done!!!")
+    console.log("222222 I log second")
   }

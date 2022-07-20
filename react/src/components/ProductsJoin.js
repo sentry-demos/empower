@@ -13,13 +13,12 @@ class ProductsJoin extends Component {
 
   constructor() {
     super();
-    // is non-blocking
+    // this setTimeout is non-blocking so don't use it
     // setTimeout(() => {console.log(">>> over")}, 4000)
 
-    console.log("1111111 constructor ProductsJoin")
-    
-    sleep(4000); //sleep for 2 seconds
-    console.log("222222 constructor ProductsJoin")
+    console.log("1111111 I log first")
+    sleep(4000);
+    console.log("333333 I log third")
   }
 
   // getProductsJoin handles error responses differently, depending on the browser used
