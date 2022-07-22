@@ -141,7 +141,7 @@ class App extends Component {
 
       scope.setTag("backendType", backendType)
 
-      // making fewer emails so issues and users are not the same numbers in the UI. 
+      // making fewer emails so event and user counts for an Issue are not the same
       let array = ["a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z"]
 
       let a = array[Math.floor(Math.random()*array.length)];
