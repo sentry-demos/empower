@@ -12,8 +12,6 @@ end
 # This must be imported after sentry-ruby for transactions to work
 require "sinatra"
 require "sinatra/cors"
-require "google-cloud-datastore"
-require "sinatra/activerecord"
 
 set :allow_origin, "*"
 set :allow_methods, "GET,HEAD,POST"
@@ -31,10 +29,6 @@ use Sentry::Rack::CaptureExceptions
 get "/" do
   "Sentry Ruby Service says Hello - turn me into a microservice that powers Invoicing, Trucking, or DriverFind"
 end
-
-# get"/products" do
-#   products = 
-# end
 
 get "/api" do
   "ruby /api"

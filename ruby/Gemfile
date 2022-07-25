@@ -5,8 +5,6 @@ gem "sinatra-cors"
 
 gem "sentry-ruby"
 
-gem "google-cloud-datastore"
-gem "sinatra-activerecord"
 gem "dotenv"
 
 group :test do
