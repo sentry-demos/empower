@@ -1,7 +1,7 @@
 require 'sentry-ruby'
 
 Sentry.init do |config|
-  config.dsn = 'https://3b71d039de0d45338fed6172c641b379@o87286.ingest.sentry.io/6522741'
+  config.dsn = 'https://21ebb52573ba4e999e4a49277b45daac@o87286.ingest.sentry.io/6231039'
   config.release = "2.3"
   config.traces_sample_rate = 1.0
   config.traces_sampler = lambda do |sampling_context|

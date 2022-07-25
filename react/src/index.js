@@ -71,13 +71,6 @@ Sentry.init({
         };
       },
     }),
-    new CaptureConsoleIntegration(
-      {
-        // array of methods that should be captured
-        // defaults to ['log', 'info', 'warn', 'error', 'debug', 'assert']
-        levels: ['log', 'info', 'warn', 'error', 'debug', 'assert'],
-      }
-    )
   ],
   beforeSend(event, hint) {
     // Parse from tags because src/index.js already set it there. Once there are React route changes, it is no longer in the URL bar
