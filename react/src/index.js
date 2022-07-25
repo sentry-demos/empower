@@ -30,7 +30,6 @@ import NotFound from './components/NotFound';
 import Product from './components/Product';
 import Products from './components/Products';
 import ProductsJoin from './components/ProductsJoin';
-import { CaptureConsole as CaptureConsoleIntegration } from "@sentry/integrations";
 
 const tracingOrigins = ['localhost', 'empowerplant.io', 'run.app', 'appspot.com', /^\//];
 
