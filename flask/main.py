@@ -105,7 +105,7 @@ def products():
     return rows
 
 @app.route('/products-join', methods=['GET'])
-def products_join():  
+def products_join():
     try:
         with sentry_sdk.start_span(op="/products-join.get_products_join", description="function"):
             rows = get_products_join()
