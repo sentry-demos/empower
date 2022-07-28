@@ -88,7 +88,7 @@ def success():
     return "success from flask"
 
 @app.route('/products', methods=['GET'])
-def products():    
+def products():   
     try:
         with sentry_sdk.start_span(op="/products.get_products", description="function"):
             rows = get_products()
@@ -97,7 +97,12 @@ def products():
         raise(err)
 
     try:
-        r = requests.get(RUBY_BACKEND + "/api", headers=request.headers)
+        headers = {
+            "se" : None if request.headers.get('Se') == 'undefined' else request.headers.get('Se'),
+            "customerType" : None if request.headers.get('Customertype') == 'undefined' else request.headers.get('Customertype'),
+            "email" : None if request.headers.get('Email') == 'undefined' else request.headers.get('Email')
+        }
+        r = requests.get(RUBY_BACKEND + "/api", headers=headers)
         r.raise_for_status() # returns an HTTPError object if an error has occurred during the process
     except Exception as err:
         sentry_sdk.capture_exception(err)
@@ -114,7 +119,12 @@ def products_join():
         raise(err)
 
     try:
-        r = requests.get(RUBY_BACKEND + "/api", headers=request.headers)
+        headers = {
+            "se" : None if request.headers.get('Se') == 'undefined' else request.headers.get('Se'),
+            "customerType" : None if request.headers.get('Customertype') == 'undefined' else request.headers.get('Customertype'),
+            "email" : None if request.headers.get('Email') == 'undefined' else request.headers.get('Email')
+        }
+        r = requests.get(RUBY_BACKEND + "/api", headers=headers)
         r.raise_for_status() # returns an HTTPError object if an error has occurred during the process
     except Exception as err:
         sentry_sdk.capture_exception(err)
