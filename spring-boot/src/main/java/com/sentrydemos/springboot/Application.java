@@ -47,11 +47,13 @@ public class Application {
 
 		HttpServletRequest request = (HttpServletRequest) customSamplingContext.get("request");
 
-			if (customSamplingContext != null && request.getMethod().equals("OPTIONS")) {
-				return 0.0; 
+			if (customSamplingContext != null) {
+				if (request.getMethod().equals("OPTIONS"))
+					return 0.0;
 			} else {
 				return 1.0;
 			}
+			return 1.0;
 			}
 		}
 }
