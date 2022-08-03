@@ -37,22 +37,26 @@ const DB = require('./db');
 const express = require('express');
 const app = express();
 const cors = require('cors');
+var headers = {}
 const sentryEventContext = function(req, res, next) {
   const se = req.headers.se;
   if(!['undefined'].includes(se)) {
     Sentry.setTag("se", se);
+    headers["se"]=se
   }
 
   const customerType = req.headers.customertype;
   if(!['undefined'].includes(customerType)) {
     Sentry.setTag("customerType", customerType);
+    headers["customerType"]=customerType
   }
 
   const email = req.headers.email;
   if(!['undefined'].includes(email)) {
     Sentry.setUser({ 'email': email })
+    headers["user"]=email
   }
-
+  
   // keep executing the router middleware
   next();
 }
@@ -115,7 +119,7 @@ app.get('/success', (req, res) => {
 app.get('/products', async (req, res) => {
   try {
     // This /api call must happen before the DB.products() call or else it's a broken subtrace (if you do it after DB.Products())
-    await axios.get(RUBY_BACKEND + "/api")
+    await axios.get(RUBY_BACKEND + "/api", {headers: headers} )
       .then(response => {
         console.log("> response", response.data)
         return
@@ -143,7 +147,7 @@ app.get('/products', async (req, res) => {
 app.get('/products-join', async(req, res) => {
   try {
     // This /api call must happen before the DB.products() call or else it's a broken subtrace (if you do it after DB.Products())
-    await axios.get(RUBY_BACKEND + "/api")
+    await axios.get(RUBY_BACKEND + "/api", {headers: headers} )
       .then(response => {
         console.log("> response", response.data)
         return
