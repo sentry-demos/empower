@@ -45,16 +45,15 @@ public class Application {
 
 			CustomSamplingContext customSamplingContext = context.getCustomSamplingContext();
 
-		HttpServletRequest request = (HttpServletRequest) customSamplingContext.get("request");
+			HttpServletRequest request = (HttpServletRequest) customSamplingContext.get("request");
 
 			if (customSamplingContext != null) {
-				if (request.getMethod().equals("OPTIONS"))
+				if (request.getMethod().equals("OPTIONS")) {
 					return 0.0;
-			} else {
-				return 1.0;
+				}
 			}
 			return 1.0;
-			}
 		}
+	}
 }
 
