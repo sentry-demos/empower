@@ -33,7 +33,7 @@ before do
 
   email = request.env["HTTP_EMAIL"]
   if !email.nil?
-    Sentry.set_tags("email": email)
+    Sentry.set_user(email: email)
   end
 end
 
