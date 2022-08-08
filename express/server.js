@@ -54,7 +54,7 @@ const sentryEventContext = function(req, res, next) {
   const email = req.headers.email;
   if(!['undefined'].includes(email)) {
     Sentry.setUser({ 'email': email })
-    headers["user"]=email
+    headers["email"]=email
   }
   
   // keep executing the router middleware
