@@ -22,7 +22,8 @@ def release():
 
 # https://www.postgresql.org/docs/9.0/functions-datetime.html
 # 'n' seconds input for pg_sleep, but actual sleep time ends up being much longer
-times = [0.05, 0.25, 0.5, .75, 1.0, 1.25]
+# times = [0.05, 0.25, 0.5, .75, 1.0, 1.25]
+times = [0.025, 0.125, 0.25, 0.375, 0.5, 0.625]
 # TODO 
 '''
 1. run current delays 5 times
