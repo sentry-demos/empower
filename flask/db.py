@@ -48,7 +48,7 @@ def get_products():
 
         with sentry_sdk.start_span(op="get_products", description="db.query") as span:
             n = weighter(operator.le, 12)
-
+            sentry_sdk.set_tag("delay", n)
             products = connection.execute(
                 "SELECT *, pg_sleep(%s) FROM products" % (n)
             ).fetchall()
