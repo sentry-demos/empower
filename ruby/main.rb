@@ -12,7 +12,7 @@ Sentry.init do |config|
     # prints env, and you can see "REQUEST_METHOD"=>"GET" on it
     # puts env
 
-    request_method = env[:REQUEST_METHOD]
+    request_method = env["REQUEST_METHOD"]
 
     # prints blank, "", nothing
     puts request_method 
