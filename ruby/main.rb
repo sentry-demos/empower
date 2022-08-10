@@ -5,21 +5,15 @@ Sentry.init do |config|
   config.release = "22.8.2"
   config.traces_sample_rate = 1.0
   config.traces_sampler = lambda do |sampling_context|
-    puts ">>>>>>>>>>>"
 
-    env = sampling_context[:env]
-
-    # prints env, and you can see "REQUEST_METHOD"=>"GET" on it
-    # puts env
-
-    request_method = env["REQUEST_METHOD"]
-
-    # prints blank, "", nothing
-    puts request_method 
+    request_method = sampling_context[:env]["REQUEST_METHOD"]
+    puts request_method
+    if request_method == "OPTIONS"
+      return 0.0
+    end
 
     transaction_context = sampling_context[:transaction_context]
     transaction_name = transaction_context[:name]
-
     if transaction_name == "/favicon.ico"
       return 0.0
     end
