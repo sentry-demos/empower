@@ -5,8 +5,17 @@ Sentry.init do |config|
   config.release = "22.8.2"
   config.traces_sample_rate = 1.0
   config.traces_sampler = lambda do |sampling_context|
-    
-    puts sampling_context
+    puts ">>>>>>>>>>>"
+
+    env = sampling_context[:env]
+
+    # prints env, and you can see "REQUEST_METHOD"=>"GET" on it
+    # puts env
+
+    request_method = env[:REQUEST_METHOD]
+
+    # prints blank, "", nothing
+    puts request_method 
 
     transaction_context = sampling_context[:transaction_context]
     transaction_name = transaction_context[:name]
