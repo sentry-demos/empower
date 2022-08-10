@@ -7,7 +7,6 @@ Sentry.init do |config|
   config.traces_sampler = lambda do |sampling_context|
 
     request_method = sampling_context[:env]["REQUEST_METHOD"]
-    puts request_method
     if request_method == "OPTIONS"
       return 0.0
     end
