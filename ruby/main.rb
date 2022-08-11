@@ -2,10 +2,22 @@ require 'sentry-ruby'
 
 Sentry.init do |config|
   config.dsn = 'https://21ebb52573ba4e999e4a49277b45daac@o87286.ingest.sentry.io/6231039'
-  config.release = "2.3"
+  config.release = "22.8.2"
   config.traces_sample_rate = 1.0
   config.traces_sampler = lambda do |sampling_context|
-    true # can also return a float between 0.0 and 1.0
+
+    request_method = sampling_context[:env]["REQUEST_METHOD"]
+    if request_method == "OPTIONS"
+      return 0.0
+    end
+
+    transaction_context = sampling_context[:transaction_context]
+    transaction_name = transaction_context[:name]
+    if transaction_name == "/favicon.ico"
+      return 0.0
+    end
+    
+    true
   end
 end
 
