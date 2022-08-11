@@ -54,7 +54,7 @@ console.log("RELEASE", RELEASE)
 Sentry.init({
   dsn: DSN,
   release: RELEASE,
-  environment: ENVIRONMENT,
+  environment: "staging",
   tracesSampleRate: 1.0,
   integrations: [
     new Integrations.BrowserTracing({

@@ -75,7 +75,7 @@ const Sentry = require('@sentry/node');
 const Tracing = require('@sentry/tracing');
 Sentry.init({
   dsn: dsn,
-  environment: environment,
+  environment: 'staging',
   release: release,
   integrations: [
     new Sentry.Integrations.Http({ tracing: true }),
