@@ -48,7 +48,7 @@ def traces_sampler(sampling_context):
 sentry_sdk.init(
     dsn=DSN,
     release=RELEASE,
-    environment="staging"",
+    environment="staging",
     integrations=[FlaskIntegration(), SqlalchemyIntegration()],
     traces_sample_rate=1.0,
     before_send=before_send,
