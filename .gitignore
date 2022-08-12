@@ -35,7 +35,7 @@ flask/.virtualenv
 flask/envtest
 node/node_modules
 node/package-lock.json
-ruby/Gemfile.lock
+
 flask/test.py
 react/app.yaml
 flask/app.yaml
