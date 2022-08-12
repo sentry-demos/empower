@@ -6,13 +6,14 @@ import * as Sentry from '@sentry/react';
 import { connect } from 'react-redux'
 import { setProducts, addProduct } from '../actions'
 import Loader from "react-loader-spinner";
+import { sleep } from "../utils/index"
 
 class Products extends Component {
   static contextType = Context;
 
   constructor() {
     super();
-    console.log(">>> constructor Products")
+    sleep(1000); // I log second
   }
 
   // getProducts handles error responses differently, depending on the browser used

@@ -6,20 +6,14 @@ import * as Sentry from '@sentry/react';
 import { connect } from 'react-redux'
 import { setProducts, addProduct } from '../actions'
 import Loader from "react-loader-spinner";
-// import sleep from "../index"
+// import { sleep } from "../utils/index"
 
 class ProductsJoin extends Component {
   static contextType = Context;
 
   // constructor() {
     // super();
-    // this setTimeout is non-blocking so don't use it
-    // setTimeout(() => {console.log(">>> over")}, 4000)
-
-    // TODO - put this back and to Products.js as well
-    // console.log("1111111 I log first")
-    // sleep(4000);
-    // console.log("333333 I log third")
+    // sleep(1000); // I log second
   // }
 
   // getProductsJoin handles error responses differently, depending on the browser used
