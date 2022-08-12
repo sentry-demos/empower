@@ -27,8 +27,8 @@ require "sinatra"
 require "sinatra/cors"
 
 set :allow_origin, "*"
-set :allow_methods, "GET,HEAD,POST"
-set :allow_headers, "content-type,if-modified-since,accept,access-control-request-headers,access-control-request-method,origin,sec-fetch-mode,user-agent,customerType,email,Referer,se,sec-ch-ua,sec-ch-ua-mobile,sec-ch-ua-platform,sentry-trace"
+set :allow_methods, "GET,HEAD,POST,OPTIONS"
+set :allow_headers, "baggage,content-type,if-modified-since,accept,access-control-request-headers,access-control-request-method,origin,sec-fetch-mode,user-agent,customerType,email,Referer,se,sec-ch-ua,sec-ch-ua-mobile,sec-ch-ua-platform,sentry-trace"
 
 # This is for Auto Instrumenting the transaction
 use Sentry::Rack::CaptureExceptions
