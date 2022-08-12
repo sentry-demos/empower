@@ -4,7 +4,9 @@ import random
 import sentry_sdk
 from urllib.parse import urlencode
 from collections import OrderedDict
+import pytest
 
+@pytest.mark.skip(reason="testing react")
 def test_about_employees(desktop_web_driver):
     sentry_sdk.set_tag("pytestName", "vue_test_about_employees")
 
