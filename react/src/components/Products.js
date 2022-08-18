@@ -13,7 +13,7 @@ class Products extends Component {
 
   constructor() {
     super();
-    sleep(1000); // I log second
+    sleep(1000);
   }
 
   // getProducts handles error responses differently, depending on the browser used

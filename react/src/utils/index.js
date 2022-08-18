@@ -6,5 +6,4 @@ export function sleep(milliseconds) {
         break;
       }
     }
-    console.log("222222 I log second")
 }

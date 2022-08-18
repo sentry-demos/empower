@@ -48,8 +48,6 @@ def get_products():
 
         with sentry_sdk.start_span(op="get_products", description="db.query") as span:
             n = weighter(operator.le, 12)
-            print("> delay n", n)
-            sentry_sdk.set_tag("delay", str(n))
             products = connection.execute(
                 "SELECT *, pg_sleep(%s) FROM products" % (n)
             ).fetchall()
@@ -58,7 +56,6 @@ def get_products():
         
         with sentry_sdk.start_span(op="get_products.reviews", description="db.query") as span:
             for product in products:
-                # TODO OG 0.25, consider setting this according to weight distribution as well? 0.125 tried
                 reviews = connection.execute(
                     "SELECT *, pg_sleep(0.0625) FROM reviews WHERE productId = {}".format(product.id)
                 ).fetchall()

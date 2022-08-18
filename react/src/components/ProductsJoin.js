@@ -6,15 +6,9 @@ import * as Sentry from '@sentry/react';
 import { connect } from 'react-redux'
 import { setProducts, addProduct } from '../actions'
 import Loader from "react-loader-spinner";
-// import { sleep } from "../utils/index"
 
 class ProductsJoin extends Component {
   static contextType = Context;
-
-  // constructor() {
-    // super();
-    // sleep(1000); // I log second
-  // }
 
   // getProductsJoin handles error responses differently, depending on the browser used
   async getProductsJoin() {
