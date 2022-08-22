@@ -4,7 +4,8 @@ import os
 GITHUB_REPOS = {
     # platform: <github repo name>
     'react_native': 'sentry_react_native',
-    'android': 'android'
+    'android': 'android',
+    'ios': 'ios'
 }
 
 # Setting the release version in an environment variable
@@ -34,6 +35,9 @@ def latest_react_native_github_release():
 
 def latest_android_github_release():
     return latest_github_release('android')
+
+def latest_ios_github_release():
+    return latest_github_release('ios')
 
 def determine_latest_release_version(platform):
     repo_name = GITHUB_REPOS[platform]

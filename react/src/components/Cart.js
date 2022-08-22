@@ -9,6 +9,11 @@ import { setProducts, addProduct, removeProduct } from '../actions'
 
 class Cart extends Component {
   static contextType = Context;
+
+  async shouldComponentUpdate() {
+    console.log("> Cart shouldComponentUpdate")
+  }
+
   render() {
     const { cart } = this.props;
 

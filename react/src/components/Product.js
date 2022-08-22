@@ -20,6 +20,10 @@ class Product extends Component {
     };
   }
 
+  async shouldComponentUpdate() {
+    console.log("> Product shouldComponentUpdate")
+  }
+
   async componentDidMount() {
     const { match } = this.props;
     if (match.params.id) {

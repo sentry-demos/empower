@@ -19,6 +19,10 @@ class Checkout extends Component {
     };
   }
 
+  async shouldComponentUpdate() {
+    console.log("> Checkout shouldComponentUpdate")
+  }
+
   handleInputChange(event) {
     const target = event.target;
     const value = target.type === 'checkbox' ? target.checked : target.value;
@@ -55,8 +59,6 @@ class Checkout extends Component {
     event.preventDefault();
 
     const {cart} = this.props;
-    console.log('Form Submitted - state', this.state);
-    console.log('Form Submitted - Cart', cart);
 
     const transaction = Sentry.startTransaction({ name: "Submit Checkout Form" });
     // Do this or the trace won't include the backend transaction
