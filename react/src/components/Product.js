@@ -52,8 +52,7 @@ class Product extends Component {
   
   render() {
     const { product } = this.state;
-    const { cart } = this.context;
-
+    console.log("> PRODUCT this", this)
     let averageRating
     if (product) {
       averageRating = (product.reviews.reduce((a,b) => a + (b["rating"] || 0),0) / 3).toFixed(1)

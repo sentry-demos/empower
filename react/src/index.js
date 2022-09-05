@@ -5,7 +5,7 @@ import "react-loader-spinner/dist/loader/css/react-spinner-loader.css";
 import * as Sentry from '@sentry/react';
 import { Integrations } from '@sentry/tracing';
 import { createBrowserHistory } from 'history';
-import { Router, Switch, Route } from 'react-router-dom';
+import { Router, Switch, Route, matchPath } from 'react-router-dom';
 import { crasher } from './utils/errors'
 import { determineBackendType, determineBackendUrl } from './utils/backendrouter'
 import release from './utils/release'
@@ -50,6 +50,20 @@ const RELEASE = release("application.monitoring.javascript") || process.env.REAC
 console.log("ENVIRONMENT", ENVIRONMENT)
 console.log("RELEASE", RELEASE)
 
+// Make sure the order of the routes is correct. The longest url under the same parent should be placed first and in decreasing order.
+// const routes = [
+//   { path: '/products-join'},
+//   { path: '/employee/:id'},
+//   { path: '/checkout'},
+//   { path: '/complete'},
+//   { path: '/products'},
+//   { path: '/about'}, 
+//   { path: '/error'},
+//   { path: '/cart'},
+//   { path: '/cra'},
+//   { path: '/' }
+// ];
+
 Sentry.init({
   dsn: DSN,
   release: RELEASE,
@@ -58,7 +72,7 @@ Sentry.init({
   integrations: [
     new Integrations.BrowserTracing({
       tracingOrigins: tracingOrigins,
-      routingInstrumentation: Sentry.reactRouterV5Instrumentation(history),
+      routingInstrumentation: Sentry.reactRouterV5Instrumentation(history, matchPath),
       _metricOptions: {
         _reportAllChanges: true,
       },
@@ -174,7 +188,9 @@ class App extends Component {
                 {/* Parameterization of the Employee Pages is done by beforeNavigate  */}
                 <Route path="/employee/:id" component={Employee} />
                 {/* Parameterizes the Product Page transactions */}
-                <SentryRoute path="/product/:id" component={Product}></SentryRoute>
+                <SentryRoute path="/product/:id" render={routeProps => (
+                    <Product {...routeProps} backend="myvalue" />
+                )}></SentryRoute>
                 <Route path="/products">
                   <Products backend={BACKEND_URL} />
                 </Route>
