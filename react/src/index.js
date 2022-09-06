@@ -51,18 +51,21 @@ console.log("ENVIRONMENT", ENVIRONMENT)
 console.log("RELEASE", RELEASE)
 
 // Make sure the order of the routes is correct. The longest url under the same parent should be placed first and in decreasing order.
-// const routes = [
-//   { path: '/products-join'},
-//   { path: '/employee/:id'},
-//   { path: '/checkout'},
-//   { path: '/complete'},
-//   { path: '/products'},
-//   { path: '/about'}, 
-//   { path: '/error'},
-//   { path: '/cart'},
-//   { path: '/cra'},
-//   { path: '/' }
-// ];
+// '/product/:id is the only one that uses  <SentryRoute>, and the 4 commented out below :)
+const routes = [
+  // { path: '/products-join'},
+  { path: '/employee/:id'},
+  // { path: '/checkout'},
+  // { path: '/complete'},
+  // { path: '/products'},
+  // { path: '/about'}, 
+  // { path: '/error'},
+  // { path: '/cart'},
+  // { path: '/cra'},
+  // { path: '/' }
+];
+// 1. turn them all into <SentryRoute>
+// 2. the one that needs BACKEND_URL passed in, use the render technique
 
 Sentry.init({
   dsn: DSN,
@@ -172,32 +175,29 @@ class App extends Component {
 
             <div id="body-container">
               <Switch>
-                <Route exact path="/">
-                  <Home backend={BACKEND_URL} />
-                </Route>
-                <Route path="/about">
-                  <About backend={BACKEND_URL} history={history} />
-                </Route>
-                <Route path="/cart" component={Cart} />
-                <Route path="/checkout">
-                  <Checkout backend={BACKEND_URL} history={history} />
-                </Route>
-                <Route path="/complete" component={Complete} />
-                <Route path="/error" component={CompleteError} />
-                <Route path="/cra" component={Cra} />
+                <SentryRoute exact path="/" render={routeProps => (
+                    <Home {...routeProps} backend={BACKEND_URL}/>
+                )}></SentryRoute>
+                <SentryRoute path="/about" render={routeProps => (
+                    <About {...routeProps} backend={BACKEND_URL} history={history} />
+                )}></SentryRoute>
+                <SentryRoute path="/cart" component={Cart}></SentryRoute>
+                <SentryRoute path="/checkout" render={routeProps => (
+                    <Checkout {...routeProps} backend={BACKEND_URL} history={history} />
+                )}></SentryRoute>
+                <SentryRoute path="/complete" component={Complete}></SentryRoute>
+                <SentryRoute path="/error" component={CompleteError}></SentryRoute>
+                <SentryRoute path="/cra" component={Cra}></SentryRoute>
                 {/* Parameterization of the Employee Pages is done by beforeNavigate  */}
                 <Route path="/employee/:id" component={Employee} />
-                {/* Parameterizes the Product Page transactions */}
-                <SentryRoute path="/product/:id" render={routeProps => (
-                    <Product {...routeProps} backend="myvalue" />
+                <SentryRoute path="/product/:id" component={Product}></SentryRoute>
+                <SentryRoute path="/products" render={routeProps => (
+                    <Products {...routeProps} backend={BACKEND_URL}/>
                 )}></SentryRoute>
-                <Route path="/products">
-                  <Products backend={BACKEND_URL} />
-                </Route>
-                <Route path="/products-join">
-                  <ProductsJoin backend={BACKEND_URL} />
-                </Route>
-                <Route component={NotFound} />
+                <SentryRoute path="/products-join" render={routeProps => (
+                    <ProductsJoin {...routeProps} backend={BACKEND_URL}/>
+                )}></SentryRoute>
+                <SentryRoute component={NotFound}></SentryRoute>
               </Switch>
             </div>
             <Footer />

@@ -12,7 +12,7 @@ class Employee extends Component {
   }
 
   async shouldComponentUpdate() {
-    console.log("> Employee shouldComponentUpdate")
+    // console.log("> Employee shouldComponentUpdate")
   }
 
   async componentDidMount() {

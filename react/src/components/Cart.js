@@ -11,7 +11,7 @@ class Cart extends Component {
   static contextType = Context;
 
   async shouldComponentUpdate() {
-    console.log("> Cart shouldComponentUpdate")
+    // console.log("> Cart shouldComponentUpdate")
   }
 
   render() {

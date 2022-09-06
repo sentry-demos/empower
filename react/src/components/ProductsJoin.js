@@ -42,7 +42,7 @@ class ProductsJoin extends Component {
   }
 
   async shouldComponentUpdate() {
-    console.log("> ProductsJoin shouldComponentUpdate")
+    // console.log("> ProductsJoin shouldComponentUpdate")
   }
 
   async componentDidMount(){

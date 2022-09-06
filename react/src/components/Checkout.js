@@ -20,7 +20,7 @@ class Checkout extends Component {
   }
 
   async shouldComponentUpdate() {
-    console.log("> Checkout shouldComponentUpdate")
+    // console.log("> Checkout shouldComponentUpdate")
   }
 
   handleInputChange(event) {

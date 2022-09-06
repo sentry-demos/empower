@@ -59,7 +59,7 @@ class Products extends Component {
   }
 
   async shouldComponentUpdate() {
-    console.log("> Products shouldComponentUpdate")
+    // console.log("> Products shouldComponentUpdate")
   }
 
   async componentDidMount(){

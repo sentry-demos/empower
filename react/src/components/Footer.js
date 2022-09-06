@@ -4,7 +4,7 @@ import './footer.css';
 
 class Footer extends Component {
   async shouldComponentUpdate() {
-    console.log("> Footer shouldComponentUpdate")
+    // console.log("> Footer shouldComponentUpdate")
   }
 
   render() {
