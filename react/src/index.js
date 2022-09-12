@@ -5,7 +5,17 @@ import "react-loader-spinner/dist/loader/css/react-spinner-loader.css";
 import * as Sentry from '@sentry/react';
 import { Integrations } from '@sentry/tracing';
 import { createBrowserHistory } from 'history';
-import { Router, Switch, Route, matchPatch } from 'react-router-dom';
+// import { Router, Switch, Route, matchPatch } from 'react-router-dom'; // OLD...
+import {
+  Routes,
+  Route,
+  BrowserRouter,
+  useLocation,
+  useNavigationType,
+  createRoutesFromChildren,
+  matchRoutes,
+  Switch // TODO may not be needed?
+} from "react-router-dom";
 import { crasher } from './utils/errors'
 import { determineBackendType, determineBackendUrl } from './utils/backendrouter'
 import release from './utils/release'
@@ -34,7 +44,7 @@ import ProductsJoin from './components/ProductsJoin';
 const tracingOrigins = ['localhost', 'empowerplant.io', 'run.app', 'appspot.com', /^\//];
 
 const history = createBrowserHistory();
-const SentryRoute = Sentry.withSentryRouting(Route);
+// const SentryRoute = Sentry.withSentryRouting(Route);
 
 let ENVIRONMENT
 console.log("window.location", window.location)
@@ -59,7 +69,14 @@ Sentry.init({
   integrations: [
     new Integrations.BrowserTracing({
       tracingOrigins: tracingOrigins,
-      routingInstrumentation: Sentry.reactRouterV5Instrumentation(history),
+      // routingInstrumentation: Sentry.reactRouterV5Instrumentation(history),
+      routingInstrumentation: Sentry.reactRouterV6Instrumentation(
+        React.useEffect,
+        useLocation,
+        useNavigationType,
+        createRoutesFromChildren,
+        matchRoutes,
+      ),
       beforeNavigate: context => {
         return {
           ...context
@@ -85,6 +102,9 @@ Sentry.init({
     return event;
   }
 });
+
+// TODO is this best placement?
+const SentryRoutes = Sentry.withSentryReactRouterV6Routing(Routes)
 
 const sentryReduxEnhancer = Sentry.createReduxEnhancer({});
 
@@ -150,40 +170,40 @@ class App extends Component {
         <Provider
           store={store}
         >
-          <Router history={history}>
+          <BrowserRouter history={history}>
             <ScrollToTop />
             <Nav />
 
             <div id="body-container">
-              <Switch>
-                <Route exact path="/">
-                  <Home backend={BACKEND_URL} />
-                </Route>
-                <Route path="/about">
-                  <About backend={BACKEND_URL} history={history} />
-                </Route>
-                <Route path="/cart" component={Cart} />
-                <Route path="/checkout">
-                  <Checkout backend={BACKEND_URL} history={history} />
-                </Route>
-                <Route path="/complete" component={Complete} />
-                <Route path="/error" component={CompleteError} />
-                <Route path="/cra" component={Cra} />
-                {/* Parameterization of the Employee Pages is done by beforeNavigate  */}
-                <Route path="/employee/:id" component={Employee} />
-                {/* Parameterizes the Product Page transactions */}
-                <SentryRoute path="/product/:id" component={Product}></SentryRoute>
-                <Route path="/products">
-                  <Products backend={BACKEND_URL} />
-                </Route>
-                <Route path="/products-join">
-                  <ProductsJoin backend={BACKEND_URL} />
-                </Route>
-                <Route component={NotFound} />
-              </Switch>
+                <SentryRoutes>
+                  <Route exact path="/">
+                    <Home backend={BACKEND_URL} />
+                  </Route>
+                  <Route path="/about">
+                    <About backend={BACKEND_URL} history={history} />
+                  </Route>
+                  <Route path="/cart" component={Cart} />
+                  <Route path="/checkout">
+                    <Checkout backend={BACKEND_URL} history={history} />
+                  </Route>
+                  <Route path="/complete" component={Complete} />
+                  <Route path="/error" component={CompleteError} />
+                  <Route path="/cra" component={Cra} />
+                  {/* Parameterization of the Employee Pages is done by beforeNavigate  */}
+                  <Route path="/employee/:id" component={Employee} />
+                  {/* Parameterizes the Product Page transactions */}
+                  <Route path="/product/:id" component={Product}></Route>
+                  <Route path="/products">
+                    <Products backend={BACKEND_URL} />
+                  </Route>
+                  <Route path="/products-join">
+                    <ProductsJoin backend={BACKEND_URL} />
+                  </Route>
+                  <Route component={NotFound} />
+                </SentryRoutes>
             </div>
             <Footer />
-          </Router>
+          </BrowserRouter>
         </Provider>
     );
   }
