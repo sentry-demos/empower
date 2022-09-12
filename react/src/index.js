@@ -5,7 +5,7 @@ import "react-loader-spinner/dist/loader/css/react-spinner-loader.css";
 import * as Sentry from '@sentry/react';
 import { Integrations } from '@sentry/tracing';
 import { createBrowserHistory } from 'history';
-import { Router, Switch, Route } from 'react-router-dom';
+import { Router, Switch, Route, matchPatch } from 'react-router-dom';
 import { crasher } from './utils/errors'
 import { determineBackendType, determineBackendUrl } from './utils/backendrouter'
 import release from './utils/release'
@@ -60,13 +60,10 @@ Sentry.init({
     new Integrations.BrowserTracing({
       tracingOrigins: tracingOrigins,
       routingInstrumentation: Sentry.reactRouterV5Instrumentation(history),
-      _metricOptions: {
-        _reportAllChanges: true,
-      },
       beforeNavigate: context => {
         return {
-          ...context,
-          name: window.location.pathname.replace(/\/employee.*/,'/employee/:id')
+          ...context
+          // name: window.location.pathname.replace(/\/employee.*/,'/employee/:id')
         };
       },
     }),
