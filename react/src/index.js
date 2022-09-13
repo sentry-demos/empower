@@ -1,21 +1,11 @@
-import React, { Component } from 'react';
+import React, { Component, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
 import "react-loader-spinner/dist/loader/css/react-spinner-loader.css";
 import * as Sentry from '@sentry/react';
 import { Integrations } from '@sentry/tracing';
 import { createBrowserHistory } from 'history';
-// import { Router, Switch, Route, matchPatch } from 'react-router-dom'; // OLD...
-import {
-  Routes,
-  Route,
-  BrowserRouter,
-  useLocation,
-  useNavigationType,
-  createRoutesFromChildren,
-  matchRoutes,
-  Switch // TODO may not be needed?
-} from "react-router-dom";
+import { Routes, Route, BrowserRouter, useLocation, useNavigationType, createRoutesFromChildren, matchRoutes } from "react-router-dom";
 import { crasher } from './utils/errors'
 import { determineBackendType, determineBackendUrl } from './utils/backendrouter'
 import release from './utils/release'
@@ -44,7 +34,6 @@ import ProductsJoin from './components/ProductsJoin';
 const tracingOrigins = ['localhost', 'empowerplant.io', 'run.app', 'appspot.com', /^\//];
 
 const history = createBrowserHistory();
-// const SentryRoute = Sentry.withSentryRouting(Route);
 
 let ENVIRONMENT
 if (window.location.hostname === "localhost") {
@@ -69,7 +58,7 @@ Sentry.init({
     new Integrations.BrowserTracing({
       tracingOrigins: tracingOrigins,
       routingInstrumentation: Sentry.reactRouterV6Instrumentation(
-        React.useEffect,
+        useEffect,
         useLocation,
         useNavigationType,
         createRoutesFromChildren,
