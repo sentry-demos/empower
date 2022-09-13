@@ -42,6 +42,11 @@ function Product(props) {
     fetchProduct()
   }, [product]);
 
+  let averageRating
+  if (product) {
+    averageRating = (product.reviews.reduce((a,b) => a + (b["rating"] || 0),0) / 3).toFixed(1)
+  }
+
   return product ? (
     <div className="product-layout">
       <div>
@@ -57,7 +62,7 @@ function Product(props) {
         >
           Add to cart — ${product.price}.00
         </button>
-        <p>Star Rating</p>
+        <p>{averageRating} Rating</p>
       </div>
     </div>
   ) : (
