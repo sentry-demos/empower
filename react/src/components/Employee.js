@@ -38,4 +38,5 @@ function Employee() {
   );
 }
 
-export default Employee
+export default Sentry.withProfiler(Employee, { name: "Employee"})
+// export default Employee
