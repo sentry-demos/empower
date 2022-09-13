@@ -47,7 +47,6 @@ const history = createBrowserHistory();
 // const SentryRoute = Sentry.withSentryRouting(Route);
 
 let ENVIRONMENT
-console.log("window.location", window.location)
 if (window.location.hostname === "localhost") {
   ENVIRONMENT = "test"
 } else { // App Engine
