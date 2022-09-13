@@ -11,7 +11,7 @@ import { connect } from 'react-redux'
 import { addProduct } from '../actions'
 
 
-function Product() {
+function Product(props) {
   const [product, setProduct] = useState();
   const { id } = useParams();
 
@@ -53,7 +53,7 @@ function Product() {
         <p>{product.descriptionFull}</p>
         <button
           className="add-cart-btn"
-          onClick={() => this.props.addProduct(product)}
+          onClick={() => props.addProduct(product)}
         >
           Add to cart — ${product.price}.00
         </button>
