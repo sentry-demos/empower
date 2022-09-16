@@ -1,134 +1,238 @@
 <script>
 import ProductSummary from "../components/ProductSummary.vue";
 import * as Sentry from "@sentry/vue";
-import {useCounterStore} from '../stores/counter'
+import { useCounterStore } from "../stores/cart";
 
 export default {
   name: "app",
   components: {
-    ProductSummary
+    ProductSummary,
   },
-  data: function() {
-    return { 
+  data: function () {
+    return {
       products: [],
       loading: true,
       disabledStatus: false,
-      checkoutCartPrice: 0
+      checkoutCartPrice: 0,
+      checkoutCart: [],
+      SE: "",
     };
   },
 
   methods: {
-    checkout: function() {
-      this.disabledStatus = true
+    checkout: function () {
+      this.disabledStatus = true;
+      let internalTagSE = this.SE;
+      console.log("checkout", this.SE);
       const transaction = Sentry.startTransaction({ name: "checkout-cart" });
       // Do this or the trace won't include the backend transaction
-      Sentry.getCurrentHub().configureScope(scope => scope.setSpan(transaction));
+      Sentry.getCurrentHub().configureScope((scope) => {
+        // setting se query parameter as a tag
+        scope.setTag("SE", internalTagSE);
 
+        // setting email address of user
+        // making fewer emails so event and user counts for an Issue are not the same
+        let array = [
+          "a",
+          "b",
+          "c",
+          "d",
+          "e",
+          "f",
+          "g",
+          "h",
+          "i",
+          "j",
+          "k",
+          "l",
+          "m",
+          "n",
+          "o",
+          "p",
+          "q",
+          "r",
+          "s",
+          "t",
+          "u",
+          "v",
+          "w",
+          "x",
+          "y",
+          "z",
+        ];
+
+        let a = array[Math.floor(Math.random() * array.length)];
+        let b = array[Math.floor(Math.random() * array.length)];
+        let c = array[Math.floor(Math.random() * array.length)];
+
+        let email = a + b + c + "@gmail.com";
+        scope.setUser({ email: email });
+
+        // setting customerType as tag
+        const customerType = [
+          "medium-plan",
+          "large-plan",
+          "small-plan",
+          "enterprise",
+        ][Math.floor(Math.random() * 4)];
+        scope.setTag("customerType", customerType);
+        scope.setSpan(transaction);
+      });
       console.log("checkout...");
-      console.log(transaction)
+      console.log(transaction);
       const traceAndSpanID = transaction.traceId + "-" + transaction.spanId;
 
-      var raw = "{\"cart\":{\"items\":[{\"id\":4,\"title\":\"Botana Voice\",\"description\":\"Lets plants speak for themselves.\",\"descriptionfull\":\"Now we don't want him to get lonely, so we'll give him a little friend. Let your imagination just wonder around when you're doing these things. Let your imagination be your guide. Nature is so fantastic, enjoy it. Let it make you happy.\",\"price\":175,\"img\":\"https://storage.googleapis.com/application-monitoring/plant-to-text.jpg\",\"imgcropped\":\"https://storage.googleapis.com/application-monitoring/plant-to-text-cropped.jpg\",\"pg_sleep\":\"\",\"reviews\":[{\"id\":4,\"productid\":4,\"rating\":4,\"customerid\":null,\"description\":null,\"created\":\"2021-06-04 00:12:33.553939\",\"pg_sleep\":\"\"},{\"id\":5,\"productid\":4,\"rating\":3,\"customerid\":null,\"description\":null,\"created\":\"2021-06-04 00:12:45.558259\",\"pg_sleep\":\"\"},{\"id\":6,\"productid\":4,\"rating\":2,\"customerid\":null,\"description\":null,\"created\":\"2021-06-04 00:12:50.510322\",\"pg_sleep\":\"\"},{\"id\":13,\"productid\":4,\"rating\":3,\"customerid\":null,\"description\":null,\"created\":\"2021-07-01 00:12:43.312186\",\"pg_sleep\":\"\"},{\"id\":14,\"productid\":4,\"rating\":3,\"customerid\":null,\"description\":null,\"created\":\"2021-07-01 00:12:54.719873\",\"pg_sleep\":\"\"},{\"id\":15,\"productid\":4,\"rating\":3,\"customerid\":null,\"description\":null,\"created\":\"2021-07-01 00:12:57.760686\",\"pg_sleep\":\"\"},{\"id\":16,\"productid\":4,\"rating\":3,\"customerid\":null,\"description\":null,\"created\":\"2021-07-01 00:13:00.140407\",\"pg_sleep\":\"\"},{\"id\":17,\"productid\":4,\"rating\":3,\"customerid\":null,\"description\":null,\"created\":\"2021-07-01 00:13:00.971730\",\"pg_sleep\":\"\"},{\"id\":18,\"productid\":4,\"rating\":3,\"customerid\":null,\"description\":null,\"created\":\"2021-07-01 00:13:01.665798\",\"pg_sleep\":\"\"},{\"id\":19,\"productid\":4,\"rating\":3,\"customerid\":null,\"description\":null,\"created\":\"2021-07-01 00:13:02.278934\",\"pg_sleep\":\"\"}]}],\"quantities\":{\"4\":2},\"total\":350},\"form\":{\"loading\":false}}";
-      
+      var raw =
+        '{"cart":{"items":[{"id":4,"title":"Botana Voice","description":"Lets plants speak for themselves.","descriptionfull":"Now we don\'t want him to get lonely, so we\'ll give him a little friend. Let your imagination just wonder around when you\'re doing these things. Let your imagination be your guide. Nature is so fantastic, enjoy it. Let it make you happy.","price":175,"img":"https://storage.googleapis.com/application-monitoring/plant-to-text.jpg","imgcropped":"https://storage.googleapis.com/application-monitoring/plant-to-text-cropped.jpg","pg_sleep":"","reviews":[{"id":4,"productid":4,"rating":4,"customerid":null,"description":null,"created":"2021-06-04 00:12:33.553939","pg_sleep":""},{"id":5,"productid":4,"rating":3,"customerid":null,"description":null,"created":"2021-06-04 00:12:45.558259","pg_sleep":""},{"id":6,"productid":4,"rating":2,"customerid":null,"description":null,"created":"2021-06-04 00:12:50.510322","pg_sleep":""},{"id":13,"productid":4,"rating":3,"customerid":null,"description":null,"created":"2021-07-01 00:12:43.312186","pg_sleep":""},{"id":14,"productid":4,"rating":3,"customerid":null,"description":null,"created":"2021-07-01 00:12:54.719873","pg_sleep":""},{"id":15,"productid":4,"rating":3,"customerid":null,"description":null,"created":"2021-07-01 00:12:57.760686","pg_sleep":""},{"id":16,"productid":4,"rating":3,"customerid":null,"description":null,"created":"2021-07-01 00:13:00.140407","pg_sleep":""},{"id":17,"productid":4,"rating":3,"customerid":null,"description":null,"created":"2021-07-01 00:13:00.971730","pg_sleep":""},{"id":18,"productid":4,"rating":3,"customerid":null,"description":null,"created":"2021-07-01 00:13:01.665798","pg_sleep":""},{"id":19,"productid":4,"rating":3,"customerid":null,"description":null,"created":"2021-07-01 00:13:02.278934","pg_sleep":""}]}],"quantities":{"4":2},"total":350},"form":{"loading":false}}';
+
+      // let raw = {
+      //   cart: {
+      //     items: this.checkoutCart,
+      //   },
+      // };
+
+      console.log(raw);
+
       var requestOptions = {
-        method: 'POST',
-        headers: {"Content-Type": "text/plain", "sentry-trace": traceAndSpanID},
+        method: "POST",
+        headers: {
+          "Content-Type": "text/plain",
+          "sentry-trace": traceAndSpanID,
+        },
         body: raw,
-        redirect: 'follow'
+        redirect: "follow",
       };
 
-      fetch("https://application-monitoring-flask-dot-sales-engineering-sf.appspot.com/checkout", requestOptions)
-        .then(function(response) {
-          if (!response.ok) {
-            const err = new Error(response.status + " -- " + (response.statusText || "Internal Server Error"));
-            Sentry.captureException(err);
-            console.error(err);
-          }
-          console.log("transaction.finish");
-          transaction.finish(); 
-          // introduces an unhandled error
-          transactionComplete = true;
-        });   
+      fetch(
+        "https://application-monitoring-flask-dot-sales-engineering-sf.appspot.com/checkout",
+        requestOptions
+      ).then(function (response) {
+        if (!response.ok) {
+          const err = new Error(
+            response.status +
+              " -- " +
+              (response.statusText || "Internal Server Error")
+          );
+          Sentry.captureException(err);
+          console.error(err);
+        }
+        console.log("transaction.finish");
+        transaction.finish();
+        // introduces an unhandled error
+        transactionComplete = true;
+      });
 
-        // The delay has been added to complete the transaction
-        setTimeout(() => {
-          this.$router.push('/error');
-        }, 1000)
+      // The delay has been added to complete the transaction
+      setTimeout(() => {
+        Sentry.configureScope(function (scope) {
+          scope.setTag("SE", internalTagSE);
+        });
+        this.$router.push("/error");
+      }, 1000);
     },
 
-    addToCartPrice: function() {
-      const store = useCounterStore()
+    addToCartPrice: function () {
+      const store = useCounterStore();
       this.checkoutCartPrice = store.counter;
-      // console.log('price', this.checkoutCartPrice)
-      // console.log(store.counter)
-    }
+      this.checkoutCart = store.cart;
+      console.log("price", this.checkoutCartPrice);
+      console.log("this is cart bruhh", this.checkoutCart);
+      // console.log("this is store bruhhh", store);
+    },
   },
 
   mounted() {
     try {
-    // Do this or the trace won't include the backend transaction
-    const transaction = Sentry.getCurrentHub().getScope().getTransaction();
-    let span = {};
-    if (transaction) {
-      span = transaction.startChild({
-        op: "http_request",
-        description: "load_products",
-    })}
-    console.log('transaction', transaction)
-    console.log('traceid', transaction.traceId)
-    console.log('spanID', transaction.spanId)
-    const traceAndSpanID = transaction.traceId + "-" + transaction.spanId;
+      // Do this or the trace won't include the backend transaction
+      const transaction = Sentry.getCurrentHub().getScope().getTransaction();
+      let span = {};
+      if (transaction) {
+        span = transaction.startChild({
+          op: "http_request",
+          description: "load_products",
+        });
+      }
+      console.log("transaction", transaction);
+      console.log("traceid", transaction.traceId);
+      console.log("spanID", transaction.spanId);
+      const traceAndSpanID = transaction.traceId + "-" + transaction.spanId;
 
-    console.log("getProducts...");
+      console.log("getProducts...");
       var requestOptions = {
-        method: 'GET',
-        headers: {"Content-Type": "application/json", "sentry-trace": traceAndSpanID},
-        redirect: 'follow'
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "sentry-trace": traceAndSpanID,
+        },
+        redirect: "follow",
       };
 
-      fetch("https://application-monitoring-flask-dot-sales-engineering-sf.appspot.com/products", requestOptions)
-        .then(response => response.text())
-        .then(result => {
-          this.products = JSON.parse(result); 
+      fetch(
+        "https://application-monitoring-flask-dot-sales-engineering-sf.appspot.com/products",
+        requestOptions
+      )
+        .then((response) => response.text())
+        .then((result) => {
+          this.products = JSON.parse(result);
           this.loading = false;
           span.finish();
           transaction.finish();
           // Generating Undefined error
           transactionComplete = true;
-          })
-        .catch(error => {
-          console.log('error', error);
+        })
+        .catch((error) => {
+          console.log("error", error);
         });
-      console.log(span)
-    
+      console.log(span);
     } catch (ex) {
       console.log(ex);
-    } 
+    }
     // finally {
     // span.finish();
     // transaction.finish();
     // }
-  },
-}
 
+    if ("se" in this.$route.query) {
+      this.SE = this.$route.query.se;
+      console.log(this.SE);
+    } else {
+      this.SE = "tda";
+      console.log(this.SE);
+    }
+  },
+};
 </script>
 
 <template>
-  <div class="loading-container">
-    <div v-if="loading" class="lds-ellipsis"><div></div><div></div><div></div><div></div></div>
-  </div>
-  <div class="home">
-    <!-- <button @click="store.increment()">Increment</button>
-    <h3>Count: {{store.counter}}</h3> -->
-    <div id="app">
-      <div id="product-list">
-        <div :onClick="addToCartPrice">
-          <!-- <ProductSummary :products="products" :onClick="addToCartPrice"/> -->
-          <ProductSummary :products="products"/>
-        </div>
+  <div>
+    <div class="loading-container">
+      <div v-if="loading" class="lds-ellipsis">
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
       </div>
-      <div class="button-container">
-        <button v-if="!loading" class="checkout-button" :onClick="checkout" :disabled='disabledStatus'>Checkout your cart ($ {{checkoutCartPrice}})</button>
+    </div>
+    <div class="home">
+      <!-- <button @click="store.increment()">Increment</button>
+    <h3>Count: {{store.counter}}</h3> -->
+      <div id="app">
+        <div id="product-list">
+          <div :onClick="addToCartPrice">
+            <!-- <ProductSummary :products="products" :onClick="addToCartPrice"/> -->
+            <ProductSummary :products="products" />
+          </div>
+        </div>
+        <div class="button-container">
+          <button
+            v-if="!loading"
+            class="checkout-button"
+            :onClick="checkout"
+            :disabled="disabledStatus"
+          >
+            Checkout your cart ($ {{ checkoutCartPrice }})
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -142,10 +246,10 @@ export default {
     align-items: center;
   }
   .lds-ellipsis {
-  display: inline-block;
-  position: relative;
-  width: 80px;
-  height: 80px;
+    display: inline-block;
+    position: relative;
+    width: 80px;
+    height: 80px;
   }
   .lds-ellipsis div {
     position: absolute;
@@ -207,15 +311,15 @@ export default {
     display: flex;
     justify-content: center;
     align-items: center;
-}
+  }
 
   .checkout-button {
-    font-family: 'Poppins', sans-serif;
+    font-family: "Poppins", sans-serif;
   }
 
   .checkout-button,
   a.btn,
-  input[type='submit'] {
+  input[type="submit"] {
     -webkit-appearance: none;
     background-color: #dddc4e;
     color: #002626;
@@ -230,14 +334,14 @@ export default {
 
   .checkout-button:hover,
   a.btn:hover,
-  input[type='submit']:hover {
+  input[type="submit"]:hover {
     cursor: pointer;
     background-color: #f6cfb2;
     color: #002626;
   }
   .checkout-button:active,
   a.btn:active,
-  input[type='submit']:active {
+  input[type="submit"]:active {
     background-color: grey;
   }
 }
