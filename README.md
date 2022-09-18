@@ -81,7 +81,7 @@ express/app.yaml to staging-application-monitoring-node
 spring-boot/src/main/appengine/app.yaml to staging-springboot
 
 // optional
-react/.env REACT_APP_BACKEND with updated URL
+react/.env REACT_APP_FLASK_BACKEND with updated URL
 flask/.env FLASK_APP_DSN with updated DSN
 springboot/src/main/resources/application.properties with updated DSN
 deploy.sh's SENTRY_PROJECT with updated value

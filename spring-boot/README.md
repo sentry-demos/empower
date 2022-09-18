@@ -4,15 +4,7 @@ Extension to the Empower Plant UI/UX. This project was originally bootstrapped w
 ## Setup
 This uses java version 8 and SpringBoot version 2.5.4 [spring-boot-starter-parent?](https://mvnrepository.com/artifact/org.springframework.boot)
 
-1. Verify that port 8090 is set for springboot in `react/src/utils/backendrouter.js`, 
-```
-  "springboot": {
-      "test": "http://localhost:8090",
-      "production": process.env.SPRINGBOOT_BACKEND
-  }
-```
-
-2. Set react/.env with
+2. Set env-config/*.env with
 ```
 REACT_APP_SPRINGBOOT_BACKEND=<value>
 ```
