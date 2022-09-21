@@ -67,7 +67,7 @@ Sentry.init({
       beforeNavigate: context => {
         return {
           ...context
-          // How to parameterize a transaction if you're not using a Routing library
+          // How to parameterize a transaction if not using a Routing library
           // name: window.location.pathname.replace(/\/employee.*/,'/employee/:id')
         };
       },
@@ -156,27 +156,24 @@ class App extends Component {
 
   render() {
     return (
-        <Provider
-          store={store}
-        >
+        <Provider store={store}>
           <BrowserRouter history={history}>
             <ScrollToTop />
             <Nav />
-
             <div id="body-container">
                 <SentryRoutes>
                   <Route path="/" element={<Home backend={BACKEND_URL} />} ></Route>
                   <Route path="/about" element={<About backend={BACKEND_URL} history={history} />}></Route>
                   <Route path="/cart" element={<Cart/>}/>
                   <Route path="/checkout" element={<Checkout backend={BACKEND_URL} history={history} />}></Route>
-                  <Route path="/complete" component={<Complete/>} />
+                  <Route path="/complete" element={<Complete/>} />
                   <Route path="/error" element={<CompleteError/>} />
                   <Route path="/cra" element={<Cra/>} />
                   <Route path="/employee/:id" element={<Employee/>}></Route>
                   <Route path="/product/:id" element={<Product/>}></Route>
                   <Route path="/products" element={<Products backend={BACKEND_URL} />}></Route>
                   <Route path="/products-join" element={<ProductsJoin backend={BACKEND_URL} />}></Route>
-                  <Route element={NotFound} />
+                  <Route path="*" element={<NotFound/>} />
                 </SentryRoutes>
             </div>
             <Footer />
