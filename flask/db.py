@@ -4,6 +4,7 @@ import os
 import sentry_sdk
 import sqlalchemy
 from sqlalchemy import create_engine
+from sqlalchemy.sql import text
 from utils import weighter
 from dotenv import load_dotenv
 load_dotenv()
@@ -56,9 +57,9 @@ def get_products():
         
         with sentry_sdk.start_span(op="get_products.reviews", description="db.query") as span:
             for product in products:
-                reviews = connection.execute(
-                    "SELECT *, pg_sleep(0.0625) FROM reviews WHERE productId = {}".format(product.id)
-                ).fetchall()
+                query = text("SELECT *, pg_sleep(0.0625) FROM reviews WHERE productId = :x")
+                reviews = connection.execute(query, x=product.id).fetchall()
+
                 result = dict(product)
                 result["reviews"] = []
 
