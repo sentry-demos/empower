@@ -1,12 +1,12 @@
-import React, { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import './checkout.css';
 import * as Sentry from '@sentry/react';
 import { connect } from 'react-redux'
-import { setProducts, addProduct } from '../actions'
 import Loader from "react-loader-spinner";
 
 function Checkout(props) {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({ 
     email: '',
@@ -20,20 +20,7 @@ function Checkout(props) {
     zipCode: ''
   });
 
-  const fetchLoading = () => {
-    // console.log("> fetcthThing()")
-    // let data
-    // setLoading(false);
-  };
-
-  // useEffect is for Data fetching, setting up a subscription, and manually changing the DOM in React components are all examples of side effects. 
-  useEffect(() => {
-    // console.log("> useEffect()")
-    fetchLoading()
-  }, [loading]);
-
   async function checkout(cart) {
-    console.log("> checkout() props", props)
     let se, customerType, email
     Sentry.withScope(function(scope) {
       [ se, customerType ] = [scope._tags.se, scope._tags.customerType ]
@@ -74,21 +61,20 @@ function Checkout(props) {
       behavior: 'auto'
     });
 
-    setLoading(true) // this.setState({...this.state,loading: true});
+    setLoading(true)
 
     let response = await checkout(cart)
     if (!response.ok) {
       Sentry.captureException(new Error(response.status + " - " + (response.statusText || "Internal Server Error")))
     }
 
-    setLoading(false) // this.setState({...this.state,loading: false});
+    setLoading(false)
     transaction.finish();
 
-    // TODO re-routing...
     if (!response.ok) {
-      this.props.history.push('/error', {"error": "errorInfo"})
+      navigate('/error')
     } else {
-      this.props.history.push('/complete', {"complete": "completeOrderInfo"})
+      navigate('/complete')
     }
   }
 
@@ -220,5 +206,5 @@ const mapStateToProps = (state, ownProps) => {
 
 export default connect(
   mapStateToProps,
-  { setProducts, addProduct }
+  {}
 )(Sentry.withProfiler(Checkout, { name: "Checkout"}))
