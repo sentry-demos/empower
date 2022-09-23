@@ -63,11 +63,11 @@ https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a
 ```
 ssh-keygen -t ed25519 -C "your_email@example.com"
 eval "$(ssh-agent -s)"
-ssh-add -K ~/.ssh/id_ed25519
+ssh-add ~/.ssh/id_ed25519
 
 cat ~/.ssh/id_ed25519.pub
 copy it
-Github > User Settings > SSH and GPG Keys > New SSH Key > paste
+Github > User Icon > Settings > SSH and GPG Keys > New SSH Key > paste
 ```
 
 But don't follow the step about editing the `~/.ssh/config` file.
