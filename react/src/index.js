@@ -8,7 +8,6 @@ import { createBrowserHistory } from 'history';
 import { Router, Switch, Route } from 'react-router-dom';
 import { crasher } from './utils/errors'
 import { determineBackendType, determineBackendUrl } from './utils/backendrouter'
-import release from './utils/release'
 
 import { Provider } from 'react-redux'
 import { createStore, applyMiddleware, compose } from 'redux'
@@ -45,7 +44,7 @@ if (window.location.hostname === "localhost") {
 
 let BACKEND_URL
 const DSN = process.env.REACT_APP_DSN
-const RELEASE = release("application.monitoring.javascript") || process.env.REACT_APP_RELEASE
+const RELEASE = process.env.REACT_APP_RELEASE
 
 console.log("ENVIRONMENT", ENVIRONMENT)
 console.log("RELEASE", RELEASE)
