@@ -1,42 +1,45 @@
 <template>
-      <div>
-        <ul className="products-list">
-          <li v-for="product in products" :key=product.id>
-            <div>
-                <img :src="product.img" :alt="'product'" />
-                <div>
-                  <h2>{{product.title}}</h2>
-                  <p :className="'product-description'">
-                    {{product.description}}
-                  </p>
-                </div>
-              <!-- <button @click="onClick()"> -->
-              <button @click="addToCartPrice(product.price)">
-                Add to cart — {{product.price}}.00
-              </button>
-            </div>
-          </li>
-        </ul>
-      </div>
+  <div>
+    <ul className="products-list">
+      <li v-for="product in products" :key="product.id">
+        <div>
+          <img :src="product.img" :alt="'product'" />
+          <div>
+            <h2>{{ product.title }}</h2>
+            <p :className="'product-description'">
+              {{ product.description }}
+            </p>
+          </div>
+          <!-- <button @click="onClick()"> -->
+          <!-- <button @click="addToCartPrice(product.price)">
+          Add to cart — {{ product.price }}.00
+          </button> -->
+          <button @click="addToCartPrice(product)">
+            Add to cart — {{ product.price }}.00
+          </button>
+        </div>
+      </li>
+    </ul>
+  </div>
 </template>
 
 <script>
-import {useCounterStore} from '../stores/counter'
+import { useCounterStore } from "../stores/cart";
 
-  export default { 
-    // props: ['products']
-    props: {
-      products: Array,
-      onClick: Function
-      },
-    methods: {
-      addToCartPrice: function(price) {
-        const store = useCounterStore()
-        store.increment(price)
-        console.log(store.counter)
-    }
-    }
-  };
+export default {
+  // props: ['products']
+  props: {
+    products: Array,
+    onClick: Function,
+  },
+  methods: {
+    addToCartPrice: function (product) {
+      const store = useCounterStore();
+      store.updateCart(product);
+      store.updatePrice(product.price);
+    },
+  },
+};
 </script>
 
 <style scoped>
@@ -78,12 +81,12 @@ import {useCounterStore} from '../stores/counter'
 }
 
 button {
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
 }
 
 button,
 a.btn,
-input[type='submit'] {
+input[type="submit"] {
   -webkit-appearance: none;
   display: inline-block;
   background-color: #002626;
@@ -99,15 +102,14 @@ input[type='submit'] {
 
 button:hover,
 a.btn:hover,
-input[type='submit']:hover {
+input[type="submit"]:hover {
   cursor: pointer;
   background-color: #dddc4e;
   color: #002626;
 }
 button:active,
 a.btn:active,
-input[type='submit']:active {
+input[type="submit"]:active {
   background-color: #f6cfb2;
 }
-
 </style>
