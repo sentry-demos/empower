@@ -60,6 +60,16 @@ https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generati
 Step2
 https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account
 
+```
+ssh-keygen -t ed25519 -C "your_email@example.com"
+eval "$(ssh-agent -s)"
+ssh-add ~/.ssh/id_ed25519
+
+cat ~/.ssh/id_ed25519.pub
+copy it
+Github > User Icon > Settings > SSH and GPG Keys > New SSH Key > paste
+```
+
 But don't follow the step about editing the `~/.ssh/config` file.
 
 `ssh-add -K ~/.ssh/id_ed25519` may need to be run as `ssh-add ~/.ssh/id_ed25519`

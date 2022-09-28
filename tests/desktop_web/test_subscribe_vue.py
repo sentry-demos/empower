@@ -4,6 +4,7 @@ import random
 import sentry_sdk
 from urllib.parse import urlencode
 from collections import OrderedDict
+import pytest
 
 def test_subscribe(desktop_web_driver):
     sentry_sdk.set_tag("pytestName", "vue_test_subscribe")
