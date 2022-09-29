@@ -52,8 +52,16 @@ def get_products():
             products = connection.execute(
                 "SELECT *, pg_sleep(%s) FROM products" % (n)
             ).fetchall()
+            print("> totalProducts %s" % len(products))
             span.set_tag("totalProducts",len(products))
             span.set_data("products",products)
+
+        '''
+        1. add products row SQL 1. gshell, select all, find directions, add 1, select all again, then step 2
+        2. run it, see if reviews[] is blank in response to frontend
+        3. add reviews for that new product
+        4. run it, see if reviews[] are there in response to frontend
+        '''
         
         with sentry_sdk.start_span(op="get_products.reviews", description="db.query") as span:
             for product in products:
