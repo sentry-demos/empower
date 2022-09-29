@@ -61,6 +61,8 @@ def get_products():
         2. run it, see if reviews[] is blank in response to frontend
         3. add reviews for that new product
         4. run it, see if reviews[] are there in response to frontend
+
+        UPDATE: insert exact same data, duplicates.
         '''
         
         with sentry_sdk.start_span(op="get_products.reviews", description="db.query") as span:
