@@ -12,7 +12,11 @@ function ProductCard (props) {
 
   return (
     <li key={product.id}>
-        <div onClick={() => navigate(itemLink, { state: product })}>
+        <div onClick={(event) => { 
+          if (event.target.id !== "addToCart") {
+            navigate(itemLink, { state: product })
+          }} 
+        }>
             <img src={product.img} alt="product" />
             <div>
             <h2>{product.title}</h2>
@@ -20,9 +24,7 @@ function ProductCard (props) {
                 {product.description}
             </p>
             </div>
-        <button
-            onClick={() => this.props.addProduct(product)}
-        >
+        <button id="addToCart" onClick={() => props.addProduct(product) }>
             Add to cart — ${product.price}.00
         </button>
         <p>{stars} ({product.reviews.length})</p>
