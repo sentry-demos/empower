@@ -71,6 +71,8 @@ def checkout():
     except Exception as err:
         raise(err)
 
+    print("> /checkout inventory", inventory)
+
     with sentry_sdk.start_span(op="process_order", description="function"):
         quantities = cart['quantities']
         for cartItem in quantities:
