@@ -12,7 +12,8 @@ function Product(props) {
   const location = useLocation();
 
   useEffect(() => {
-    setProduct(location.state)
+    const product = location.state
+    setProduct(product)
   }, [product]);
 
   let averageRating

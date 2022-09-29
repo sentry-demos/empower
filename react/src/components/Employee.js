@@ -7,14 +7,14 @@ function Employee() {
   const [employee, setEmployee] = useState();
   const { id } = useParams();
 
-  const fetchData = async () => {
-    const promise = await import(`./employees/${id}`);
-    setEmployee(promise.default);
-  };
-
   useEffect(() => {
+    const fetchData = async () => {
+      const promise = await import(`./employees/${id}`);
+      setEmployee(promise.default);
+    };
+    
     fetchData()
-  }, [employee]);
+  }, [employee, id]);
 
   return employee ? (
     <div className="employee-page">
