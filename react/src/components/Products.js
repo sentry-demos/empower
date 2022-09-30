@@ -66,7 +66,8 @@ class Products extends Component {
     var products
     try {
       products = await this.getProducts();
-      this.props.setProducts(products)
+      // take first 4 products because that's all we have img/title/description for
+      this.props.setProducts(products.slice(0,4))
     } catch(err) {
       Sentry.captureException(new Error("app unable to load products: " + err));
     }
