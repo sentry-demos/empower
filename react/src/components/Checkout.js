@@ -74,7 +74,7 @@ class Checkout extends Component {
     let response = await this.checkout(cart)
 
     try{
-      
+
       this.setState({...this.state,loading: false});
       if (response.ok) 
       {
@@ -83,7 +83,7 @@ class Checkout extends Component {
 
       } else {
 
-        throw  new Error("Unexpected response from server.")
+        throw new Error(response.status + " - " + (response.statusText || "Internal Server Error"))
 
       }
 
