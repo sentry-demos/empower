@@ -63,3 +63,9 @@ https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a
 But don't follow the step about editing the `~/.ssh/config` file.
 
 `ssh-add -K ~/.ssh/id_ed25519` may need to be run as `ssh-add ~/.ssh/id_ed25519`
+
+```
+ssh-keygen -t ed25519 -C "<your_email>@<example>.com"
+eval "$(ssh-agent -s)"
+git pull
+```
