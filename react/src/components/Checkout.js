@@ -94,25 +94,8 @@ class Checkout extends Component {
 
     }
 
-    // if (!response.ok) {
-    //   // Sentry.captureException(new Error(response.status + " - " + (response.statusText || "Internal Server Error")))
-    //   // console.log("error")
-    //   try{
-    //     throw new Error("Bad response from server")
-    //   }
-    //   catch (ex ) {
-    //     console.log("Internal Server Error here")
-    //   }
-    // }
-
-    // this.setState({...this.state,loading: false});
     transaction.finish();
-
-    // if (!response.ok) {
-    //   this.props.history.push('/error', {"error": "errorInfo"})
-    // } else {
-    //   this.props.history.push('/complete', {"complete": "completeOrderInfo"})
-    // }
+    
   }
 
   render() {
