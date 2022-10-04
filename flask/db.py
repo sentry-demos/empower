@@ -56,9 +56,7 @@ def get_products():
         
         with sentry_sdk.start_span(op="get_products.reviews", description="db.query") as span:
             for product in products:
-                # query = text("SELECT *, pg_sleep(0.0625) FROM reviews WHERE productId = :x")
-                
-                query = text("SELECT * FROM reviews WHERE productId = :x")
+                query = text("SELECT *, pg_sleep(0.0625) FROM reviews WHERE productId = :x")
                 reviews = connection.execute(query, x=product.id).fetchall()
 
                 result = dict(product)
