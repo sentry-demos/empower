@@ -1,4 +1,5 @@
 <template>
+<div>
 <div class="loading-container">
 <div v-if="loading" class="lds-ellipsis"><div></div><div></div><div></div><div></div></div>
 </div>
@@ -53,6 +54,7 @@
           </ul>
         </div>
       </div>
+</div>
 </template>
 
 <script>

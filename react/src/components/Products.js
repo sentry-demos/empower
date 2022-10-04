@@ -6,10 +6,16 @@ import * as Sentry from '@sentry/react';
 import { connect } from 'react-redux'
 import { setProducts, addProduct } from '../actions'
 import Loader from "react-loader-spinner";
+import { sleep } from "../utils/index"
 import ProductCard from './ProductCard'
 
 class Products extends Component {
   static contextType = Context;
+
+  constructor() {
+    super();
+    sleep(1000);
+  }
 
   // getProducts handles error responses differently, depending on the browser used
   async getProducts() {
@@ -60,7 +66,8 @@ class Products extends Component {
     var products
     try {
       products = await this.getProducts();
-      this.props.setProducts(products)
+      // take first 4 products because that's all we have img/title/description for
+      this.props.setProducts(products.slice(0,4))
     } catch(err) {
       Sentry.captureException(new Error("app unable to load products: " + err));
     }

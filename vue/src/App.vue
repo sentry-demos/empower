@@ -3,6 +3,7 @@ import { RouterLink, RouterView } from "vue-router";
 </script>
 
 <template>
+<div>
   <header>
     <img
       alt="Vue logo"
@@ -28,6 +29,7 @@ import { RouterLink, RouterView } from "vue-router";
       </nav>
     </div>
   <RouterView />
+</div>
 </template>
 
 <style>

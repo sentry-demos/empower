@@ -35,3 +35,9 @@ If you get an error about invalid authentication credentials, try running this f
 ```
 gcloud auth login
 ```
+
+
+## Upgrade Pathway
+update version in Gemfile.lock  
+bundle update sentry-ruby  
+bundle update sentry-ruby-core  
