@@ -23,4 +23,4 @@ sentry-cli deploys -o $SENTRY_ORG new -p $SENTRY_PROJECT -r $RELEASE -e $ENVIRON
 # This deploys React - The release was set in the static prod build
 gcloud app deploy --quiet
 
-cd ../flask && gcloud app deploy --quiet
+# cd ../flask && gcloud app deploy --quiet
