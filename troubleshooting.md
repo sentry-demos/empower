@@ -22,6 +22,8 @@ Q. `--update-env-vars` is not available for `gcloud app deploy`, therefore can't
 A. So, creating the dynamic Release inside of main.py. Hard-coding it into .env wouldn't help, as it needs to be dynamic. This release may not match what sentry-cli is generating for release (due to clock skew), but we're not uploading source maps for python. Worst case, the Python release is slightly different than the React release, but this shouldn't matter, because two separate apps (repo) typically have unique app version numbers anyways (you version them separately).
 
 ## Python
+If you're running `pip install requirements.txt` and getting errors about psycopg-2, numpy, blinker, you made need to install those individually via `pip install <module>` first. You may need an updated version of those modules if you're on Python 3.9 or higher as the versions in the current requirements.txt were first tested on Python 3.8 or lower. Macbooks issued after August2022 tend to be on Python 3.9 and higher. We are not using `pyenv` or a tool for controlling the version of Python that we're running right now, similar to `nvm` for node.
+
 'default' is a function applied to objects that aren't serializable.  
 use 'default' or else you get "Object of type datetime is not JSON serializable":  
 json.dumps(results, default=str)  
