@@ -1,0 +1,52 @@
+name: Deploy to Google App Engine upon commit to master branch and on schedule at midnight UTC
+run-name: Deployment triggered by ${{ github.event_name }} / ${{ github.actor }}
+
+on:
+  push:
+    branches:
+      - 'master'
+      - 'new-deploy'
+  schedule:
+    - cron:  '0 0 * * *' # every day at midnight UTC 
+    # see https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#schedule
+    
+jobs:
+  Explore-GitHub-Actions:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Triggered by ${{ github.event_name }} event."
+      - run: echo "Branch: ${{ github.ref }}"
+      
+      - name: Check out repository code
+        uses: actions/checkout@v3
+        
+      #- name: Install Node
+      #  uses: actions/setup-node@v3
+      #  with:
+      #    node-version: '16'
+          
+      #- name: Setup Sentry CLI
+      #  uses: mathieu-bour/setup-sentry-cli@1.2.0
+      #  with:
+      #    version: latest # optional if 'latest'
+      #    token: ${{ SECRETS.SENTRY_AUTH_TOKEN }} # from GitHub secrets
+      
+      - name: Test sentry-cli command works
+        run: 'sentry-cli info'
+          
+      - name: 'Authenticate Google Cloud'
+        uses: 'google-github-actions/auth@v0'
+        with:
+          workload_identity_provider: 'projects/390982047935/locations/global/workloadIdentityPools/default-pool/providers/github-actions-provider'
+          service_account: 'cicd-service-account@sales-engineering-sf.iam.gserviceaccount.com'
+
+      - name: 'Set up Google Cloud SDK'
+        uses: 'google-github-actions/setup-gcloud@v0'
+
+      - name: 'Test gcloud command works'
+        run: 'gcloud info'
+        
+      #- name: Deploy to staging
+      #  run: ./deploy.sh --env=staging
+          
+      - run: echo "Job status is ${{ job.status }}."
