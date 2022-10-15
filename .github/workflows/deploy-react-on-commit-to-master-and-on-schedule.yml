@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: echo "Triggered by ${{ github.event_name }} event."
-      - run: echo "Branch: ${{ github.ref }}"
+      - run: echo 'Branch: '"${{ github.ref }}"
       
       - name: Check out repository code
         uses: actions/checkout@v3
@@ -31,8 +31,8 @@ jobs:
       #    version: latest # optional if 'latest'
       #    token: ${{ SECRETS.SENTRY_AUTH_TOKEN }} # from GitHub secrets
       
-      - name: Test sentry-cli command works
-        run: 'sentry-cli info'
+      #- name: Test sentry-cli command works
+      #  run: 'sentry-cli info'
           
       - name: 'Authenticate Google Cloud'
         uses: 'google-github-actions/auth@v0'
