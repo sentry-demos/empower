@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: echo "Triggered by ${{ github.event_name }} event."
-      - run: echo 'Branch: '"${{ github.ref }}"
+      - run: echo "Branch is ${{ github.ref }}"
       
       - name: Check out repository code
         uses: actions/checkout@v3
