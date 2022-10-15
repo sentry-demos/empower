@@ -7,15 +7,15 @@ from flask import Flask, json, request, make_response
 from flask_cors import CORS
 from dotenv import load_dotenv
 from db import get_products, get_products_join, get_inventory
-from utils import release, parseHeaders
+from utils import parseHeaders
 import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
 from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 load_dotenv()
 
-RELEASE = os.environ.get("RELEASE") or release()
+RELEASE = os.environ.get("RELEASE")
 DSN = os.getenv("FLASK_APP_DSN")
-ENVIRONMENT = os.environ.get("FLASK_ENV") or "production"
+ENVIRONMENT = os.environ.get("FLASK_ENV")
 RUBY_BACKEND = os.environ.get("RUBY_BACKEND")
 RUBY_CUSTOM_HEADERS = ['se', 'customerType', 'email']
 

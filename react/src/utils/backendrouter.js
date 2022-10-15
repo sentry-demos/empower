@@ -1,22 +1,10 @@
 const DEFAULT_BACKEND = "flask"
 
 const SUPPORTED_BACKEND_TYPES = {
-  "flask": {
-      "test": "http://localhost:8080",
-      "production": process.env.REACT_APP_FLASK_BACKEND || process.env.REACT_APP_BACKEND
-  },
-  "express": {
-      "test": "http://localhost:8088",
-      "production": process.env.REACT_APP_EXPRESS_BACKEND
-  },
-  "springboot": {
-      "test": "http://localhost:8090",
-      "production": process.env.REACT_APP_SPRINGBOOT_BACKEND
-  },
-  "ruby": {
-    "test": "http://localhost:4567", // 4567 is Sinatra, 3000 is Rails
-    "production": process.env.REACT_APP_RUBY_BACKEND
-  }
+  "flask": process.env.REACT_APP_FLASK_BACKEND,
+  "express": process.env.REACT_APP_EXPRESS_BACKEND,
+  "springboot": process.env.REACT_APP_SPRINGBOOT_BACKEND,
+  "ruby": process.env.REACT_APP_RUBY_BACKEND
 }
 
 const determineBackendType = (desiredBackend) => {
@@ -32,8 +20,8 @@ const determineBackendType = (desiredBackend) => {
     return DEFAULT_BACKEND
 }
 
-const determineBackendUrl = (backendType, environment) => {
-    return SUPPORTED_BACKEND_TYPES[backendType][environment]
+const determineBackendUrl = (backendType) => {
+    return SUPPORTED_BACKEND_TYPES[backendType]
 }
 
 export { determineBackendType, determineBackendUrl }
