@@ -6,6 +6,7 @@ on:
     branches:
       - 'master'
       - 'new-deploy'
+      - 'actions-1'
   schedule:
     - cron:  '0 0 * * *' # every day at midnight UTC 
     # see https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#schedule
