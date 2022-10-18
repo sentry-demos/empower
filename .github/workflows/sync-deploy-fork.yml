@@ -1,5 +1,5 @@
-name: Sync sentry-demos/application-monitoring-deploy with latest changes in this repo
-run-name: Sync deploy fork triggered by ${{ github.event_name }} / ${{ github.actor }}
+name: Sync *-deploy fork with latest changes in this repo
+run-name: Sync *-deploy fork triggered by ${{ github.event_name }} / ${{ github.actor }}
 
 on:
   push:
