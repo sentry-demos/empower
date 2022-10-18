@@ -28,7 +28,7 @@ jobs:
         run: git remote add -f upstream https://github.com/sentry-demos/application-monitoring
           
       - name: Merge in latest changes
-        run: git rebase upstream/master
+        run: git rebase upstream/master || git diff --diff-filter=U --relative
       
       - name: Push (force)
         run: git push -f
