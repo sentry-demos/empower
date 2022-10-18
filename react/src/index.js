@@ -35,16 +35,10 @@ const tracingOrigins = ['localhost', 'empowerplant.io', 'run.app', 'appspot.com'
 const history = createBrowserHistory();
 const SentryRoute = Sentry.withSentryRouting(Route);
 
-let ENVIRONMENT
-if (window.location.hostname === "localhost") {
-  ENVIRONMENT = "test"
-} else { // App Engine
-  ENVIRONMENT = "production"
-}
-
 let BACKEND_URL
 const DSN = process.env.REACT_APP_DSN
 const RELEASE = process.env.REACT_APP_RELEASE
+const ENVIRONMENT = process.env.REACT_APP_ENVIRONMENT
 
 console.log("ENVIRONMENT", ENVIRONMENT)
 console.log("RELEASE", RELEASE)
@@ -114,7 +108,7 @@ class App extends Component {
     // Set desired backend
     let backendTypeParam = new URLSearchParams(history.location.search).get("backend")
     const backendType = determineBackendType(backendTypeParam)
-    BACKEND_URL = determineBackendUrl(backendType, ENVIRONMENT)
+    BACKEND_URL = determineBackendUrl(backendType)
 
     console.log(`> backendType: ${backendType} | backendUrl: ${BACKEND_URL}`)
 

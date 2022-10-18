@@ -1,2 +1,0 @@
-service: application-monitoring-node
-runtime: nodejs14

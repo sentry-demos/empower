@@ -8,10 +8,10 @@ works with node v16.15.1
 
 you may need to `npm install -g serve`
 
-Note: This project sets the release details automatically using a combination of PACKAGE and releases (automatically computed)
-Create a .env and enter following fields. See .env.example for an example:
-1. VITE_APP_DSN
-2. VITE_APP_PACKAGE
+Create a env-config/*.env and enter following fields. See env-config/example.env for an example:
+```
+VITE_APP_DSN
+```
 
 Edit the following fields within the run.sh file:
 1. PACKAGE

@@ -1,6 +1,6 @@
   
 env: standard
-service: staging-application-monitoring-vue
+service: <SERVICE> 
 runtime: nodejs14
 
 handlers:

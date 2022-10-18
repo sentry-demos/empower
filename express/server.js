@@ -15,21 +15,6 @@
 'use strict';
 const axios = require('axios');
 
-// run.sh sets a release tool but that's only used for local development
-const determineRelease = function() {
-  var d = new Date()
-  var month = d.getMonth()
-  var firstWeekday = new Date(d.getFullYear(), month, 1).getDay() - 1;
-  if (firstWeekday < 0) firstWeekday = 6;
-  var offsetDate = d.getDate() + firstWeekday - 1;
-  const week = Math.floor(offsetDate / 7);
-
-  const release = `${month}.${week}`
-  
-  console.log("> RELEASE computed", release)
-  return release
-}
-
 // Imported Functions
 const DB = require('./db');
 
@@ -62,8 +47,8 @@ const sentryEventContext = function(req, res, next) {
 }
 
 const dsn = process.env.EXPRESS_APP_DSN;
-const release = process.env.RELEASE || determineRelease();
-const environment = process.env.EXPRESS_ENV || "production";
+const release = process.env.RELEASE;
+const environment = process.env.EXPRESS_ENV;
 const RUBY_BACKEND = process.env.RUBY_BACKEND;
 
 console.log("> DSN", dsn);
@@ -230,8 +215,7 @@ app.get('/organization', (req, res) => {
 
 app.use(Sentry.Handlers.errorHandler());
 
-// Listen to the .env-specified, or default port otherwise
-const PORT = process.env.PORT || 8088;
+const PORT = process.env.EXPRESS_PORT;
 app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}...`);
 });
