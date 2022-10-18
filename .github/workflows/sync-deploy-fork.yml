@@ -1,0 +1,34 @@
+name: Sync sentry-demos/application-monitoring-deploy with latest changes in this repo
+run-name: Sync deploy fork triggered by ${{ github.event_name }} / ${{ github.actor }}
+
+on:
+  push:
+    branches:
+      - 'master'
+    
+jobs:
+  default-job:
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+    runs-on: ubuntu-latest
+    
+    steps:
+      - run: echo "Triggered by ${{ github.event_name }} event."
+      - run: echo "Branch is ${{ github.ref }}"
+      
+      - name: Check out `application-monitoring-deploy`
+        uses: actions/checkout@v3
+        with:
+          repository: sentry-demos/application-monitoring-deploy
+      
+      - name: Add and fetch *this* repo (`sentry-demos/application-monitoring`)
+        run: git remote add -f upstream https://github.com/sentry-demos/application-monitoring
+          
+      - name: Merge in latest changes
+        run: git rebase upstream/master
+      
+      - name: Push (force)
+        run: git push -f
+      
+      - run: echo "Job status is ${{ job.status }}."
