@@ -4,13 +4,6 @@ from pytz import timezone
 import time
 from random import choices
 
-def release():
-    d=datetime.today()
-    week=str((d.day-1)//7+1)
-    date_given = datetime.today().date()
-    month = str(date_given.month)
-    return month + "." + week
-
 # https://www.postgresql.org/docs/9.0/functions-datetime.html
 # 'n' seconds input for pg_sleep, but actual sleep time ends up being much longer
 times = [0.0125, 0.0625, 0.125, 0.1875, 0.25, 0.3125]

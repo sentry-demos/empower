@@ -3,7 +3,7 @@ import operator
 import os
 import sentry_sdk
 import sqlalchemy
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from utils import weighter
 from dotenv import load_dotenv
 load_dotenv()
@@ -46,26 +46,21 @@ def get_products():
         with sentry_sdk.start_span(op="get_products", description="db.connect"):
             connection = db.connect()
 
-        with sentry_sdk.start_span(op="get_products", description="db.query") as span:
-            n = weighter(operator.le, 12)
-            products = connection.execute(
-                "SELECT *, pg_sleep(%s) FROM products" % (n)
-            ).fetchall()
-            span.set_tag("totalProducts",len(products))
-            span.set_data("products",products)
+        n = weighter(operator.le, 12)
+        products = connection.execute(
+            "SELECT *, pg_sleep(%s) FROM products" % (n)
+        ).fetchall()
         
-        with sentry_sdk.start_span(op="get_products.reviews", description="db.query") as span:
-            for product in products:
-                reviews = connection.execute(
-                    "SELECT *, pg_sleep(0.0625) FROM reviews WHERE productId = {}".format(product.id)
-                ).fetchall()
-                result = dict(product)
-                result["reviews"] = []
+        for product in products:
+            query = text("SELECT *, pg_sleep(0.0625) FROM reviews WHERE productId = :x")
+            reviews = connection.execute(query, x=product.id).fetchall()
 
-                for review in reviews:
-                    result["reviews"].append(dict(review))
-                results.append(result)
-            span.set_data("reviews", results)
+            result = dict(product)
+            result["reviews"] = []
+
+            for review in reviews:
+                result["reviews"].append(dict(review))
+            results.append(result)
 
         with sentry_sdk.start_span(op="serialization", description="json"):
             result = json.dumps(results, default=str)
