@@ -180,6 +180,11 @@ for proj in $projects; do # bash only
     rm -rf build
     npm install
   fi
+  if [[ ! -z $CI ]]; then
+    # a clean repository will be be checked out every time in a CI pipeline
+    npm install
+  fi
+  unset CI # prevents build failing on warnings when run in GitHub Actions
   export RELEASE="$release"
   ./build.sh "$release"
 
