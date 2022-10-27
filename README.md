@@ -17,32 +17,30 @@ Also called the Empower Plant UI/UX. This project was bootstrapped with [Create 
 
 ## Setup
 1. Permit your IP address in CloudSQL.
-2. Create a `env-config/local.env` and enter your DSNs and project names. See `example.env` for an example. Ask a colleague for the values.
-4. The `REACT_APP_FLASK_BACKEND` in `react/.env` represents Flask in AppEngine, this is used when you access the prod React web app. Flask is the default backend. If you expect to run other backend types, add values for those in `env-config/*.env` as well (i.e. `REACT_APP_EXPRESS_BACKEND`).
+2. Copy `env-config/local.env` from the private fork, [application-monitoring-deploy](https://github.com/sentry-demos/application-monitoring-deploy/tree/master/env-config), or, if you don't have access to it, follow `env-config/example.env`.
+4. The `REACT_APP_FLASK_BACKEND` in `env-config/*.env` points to the backend instance deployed to AppEngine, the same one used by the cloud-hosted React web app. Flask is the default backend. If you expect to run other backend types, add values for those in `env-config/*.env` as well (i.e. `REACT_APP_EXPRESS_BACKEND`).
 
-```
-# React
-cd react
-npm install
-```
+`deploy.sh` takes a list of projects as arguments and will attempt to install dependencies, build and run or deploy them as long as each supplies a working `build.sh` and `run.sh` scripts. (Right now only React, Flask and Vue have been confirmed to work). For projects that don't
+work feel free to read their README and submit a PR that makes it work. 
 
-NOTE: `build.sh` and `run.sh` files in each project are not meant to be run direclty, use top-level `deploy.sh` instead.
-
-`deploy.sh` takes a list of projects as arguments and will attempt to run or deploy them as long as each supplies a working `build.sh` and `run.sh` scripts. (Right now only React, Flask and Vue have been confirmed to work). For projects that don't
-work feel free to read their README and submit a PR that makes it work.
+NOTE: `build.sh` and `run.sh` files in each project are not meant to be run direclty, use top-level `deploy.sh` instead because it sets all required environment variables.
 
 If you run locally and only deploy `react` it will automatically point to `staging` backends, however if you include a backend
 projects in the command `react` will magically point to it instead of staging (still requires `&be=<backend>` url param).
 
-`deploy.sh` takes another argument `--env=<env>`, which can be either `local`, `staging` or `production`. Each value corresponds to a file in `env-config` directory. `local` is a special value, most significantly it will run all webservers
-locally instead of deploying to Google App Engine.
+`deploy.sh` takes another argument `--env=<env>`, which can be either `local`, `staging` or `production`. Each value corresponds to a file in `env-config` directory. `local` is a special value, most significantly it will run all webservers locally instead of deploying to Google App Engine.
 
 `deploy.sh` does everything including validating that all required values are set in the `env-config/*.env`, that each project's
 DSN and project name point to the same project, and that you are not accidentally deploying to production, etc.
 
-See the comment at the top of `deploy.sh` file for more info.
+For more info See the [comment at the top of `deploy.sh` file](https://github.com/sentry-demos/application-monitoring/blob/master/deploy.sh#L3-L47).
 
 ## Run
+
+Pick one of two ways to run the React app:
+
+### 1) Run React app w/ sourcemaps, suspect commits
+Recommended to use this command rather than `npm start`, as deploy.sh uploads source maps and handles crashes more realistically.
 ```
 ./deploy.sh --env=local react flask
 ```
@@ -51,21 +49,14 @@ or
 ./deploy.sh react --env=local
 ```
 
+### ~~2) Run React app w/ hot reload~~ (not supported right now)
+NOTE: this will cause crashing errors to be tagged in sentry as handled (`handled: true`)
 ```
-# Pick one of two ways to run the React app:
-
-# 1) Run React app w/ sourcemaps, suspect commits
-# Recommended to use this command rather than `npm start`, as
-# run.sh uploads source maps and handles crashes more
-# realistically.
-```
-./deploy.sh react --env=local
-```
-
-# 2) Run React app w/ hot reload
-# NOTE: this will cause crashing errors to be tagged
-#   in sentry as handled (`handled: true`)
 npm start
+Running React app w/ hot reload is not supported right now
+```
+
+## Trigger an error
 
 Add +2 quantity of a single item to Cart and purchase in order to trigger an Error. Visit the routes defined in src/index.js to produce transactions.
 
