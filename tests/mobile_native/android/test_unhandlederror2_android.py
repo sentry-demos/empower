@@ -1,4 +1,4 @@
-# Clicks the Handled Error button that says RTE and Strip PII
+# Clicks the Unhandled Error button - NegativeArraySizeException - the button says RTE and Strip PII
 def test_unhandlederror2_android(android_emu_driver):
     # navigate to list app
     android_emu_driver.find_element_by_accessibility_id('More').click()
