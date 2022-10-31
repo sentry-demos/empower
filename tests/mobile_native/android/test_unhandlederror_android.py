@@ -2,10 +2,7 @@ import sentry_sdk
 
 # Clicks the Unhandled Error button that says ArithmeticException
 def test_unhandlederror_android(android_emu_driver):
-    sentry_sdk.capture_message("running test_unhandlederror_android")
-
     sentry_sdk.set_tag("pytestName", "test_unhandlederror_android")
-    # TODO target | device | platform or parse it out of pytestName
 
     try:
         # navigate to list app
@@ -29,10 +26,6 @@ def test_unhandlederror_android(android_emu_driver):
         )
         
         android_emu_driver.launch_app()
-
-        sentry_sdk.capture_message("launched app")
     
     except Exception as err:
-        sentry_sdk.capture_message("exception handling")
-        if err:
-            sentry_sdk.capture_exception(err)
+        sentry_sdk.capture_exception(err)
