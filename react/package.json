@@ -3,11 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@sentry/react": "7.10.0",
-    "@sentry/tracing": "7.10.0",
+    "@sentry/react": "7.17.3",
+    "@sentry/tracing": "7.17.3",
     "@testing-library/jest-dom": "^5.11.4",
     "@testing-library/react": "^11.1.0",
     "@testing-library/user-event": "^12.1.10",
+    "history": "^5.3.0",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "react-loader-spinner": "^4.0.0",
@@ -19,8 +20,8 @@
     "web-vitals": "^1.0.1"
   },
   "scripts": {
-    "start": "REACT_APP_RELEASE=`../release.sh` REACT_APP_ENVIRONMENT=test react-scripts start",
-    "build": "REACT_APP_RELEASE=`../release.sh` REACT_APP_ENVIRONMENT=production react-scripts build",
+    "start": "validate_env.sh && react-scripts start",
+    "build": "validate_env.sh && react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },

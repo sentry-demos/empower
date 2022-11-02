@@ -23,8 +23,8 @@ react/build
 .env.production.local
 .env
 **/.env
-env
-**/env
+venv
+**/venv
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -76,3 +76,8 @@ ruby/tmp/storage/*
 ruby/public/assets
 # Ignore master key for decrypting credentials and more.
 ruby/config/master.key
+
+env-config/*
+!env-config/example.env
+
+tests/env

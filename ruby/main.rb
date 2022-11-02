@@ -3,7 +3,6 @@ require 'sentry-ruby'
 Sentry.init do |config|
   config.dsn = 'https://21ebb52573ba4e999e4a49277b45daac@o87286.ingest.sentry.io/6231039'
   config.release = "22.8.2"
-  config.environment = "production"
   config.traces_sample_rate = 1.0
   config.traces_sampler = lambda do |sampling_context|
 
@@ -27,8 +26,8 @@ require "sinatra"
 require "sinatra/cors"
 
 set :allow_origin, "*"
-set :allow_methods, "GET,HEAD,POST,OPTIONS"
-set :allow_headers, "baggage,content-type,if-modified-since,accept,access-control-request-headers,access-control-request-method,origin,sec-fetch-mode,user-agent,customerType,email,Referer,se,sec-ch-ua,sec-ch-ua-mobile,sec-ch-ua-platform,sentry-trace"
+set :allow_methods, "GET,HEAD,POST"
+set :allow_headers, "content-type,if-modified-since,accept,access-control-request-headers,access-control-request-method,origin,sec-fetch-mode,user-agent,customerType,email,Referer,se,sec-ch-ua,sec-ch-ua-mobile,sec-ch-ua-platform,sentry-trace"
 
 # This is for Auto Instrumenting the transaction
 use Sentry::Rack::CaptureExceptions

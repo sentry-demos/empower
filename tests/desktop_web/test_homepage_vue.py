@@ -4,8 +4,8 @@ import random
 import sentry_sdk
 from urllib.parse import urlencode
 from collections import OrderedDict
-import pytest
 
+# Note: Not sure why won't pytest find this and run it when I name it 'vue_test_homepage'
 def test_homepage(desktop_web_driver):
     sentry_sdk.set_tag("pytestName", "vue_test_homepage")
 

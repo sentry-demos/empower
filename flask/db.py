@@ -3,8 +3,7 @@ import operator
 import os
 import sentry_sdk
 import sqlalchemy
-from sqlalchemy import create_engine
-from sqlalchemy.sql import text
+from sqlalchemy import create_engine, text
 from utils import weighter
 from dotenv import load_dotenv
 load_dotenv()
@@ -47,36 +46,21 @@ def get_products():
         with sentry_sdk.start_span(op="get_products", description="db.connect"):
             connection = db.connect()
 
-        with sentry_sdk.start_span(op="get_products", description="db.query") as span:
             n = weighter(operator.le, 12)
             products = connection.execute(
                 "SELECT *, pg_sleep(%s) FROM products" % (n)
             ).fetchall()
-            print("> totalProducts %s" % len(products))
-            span.set_tag("totalProducts",len(products))
-            span.set_data("products",products)
-
-        '''
-        1. add products row SQL 1. gshell, select all, find directions, add 1, select all again, then step 2
-        2. run it, see if reviews[] is blank in response to frontend
-        3. add reviews for that new product
-        4. run it, see if reviews[] are there in response to frontend
-
-        UPDATE: insert exact same data, duplicates.
-        '''
         
-        with sentry_sdk.start_span(op="get_products.reviews", description="db.query") as span:
-            for product in products:
-                query = text("SELECT *, pg_sleep(0.0625) FROM reviews WHERE productId = :x")
-                reviews = connection.execute(query, x=product.id).fetchall()
+        for product in products:
+            query = text("SELECT *, pg_sleep(0.0625) FROM reviews WHERE productId = :x")
+            reviews = connection.execute(query, x=product.id).fetchall()
 
-                result = dict(product)
-                result["reviews"] = []
+            result = dict(product)
+            result["reviews"] = []
 
-                for review in reviews:
-                    result["reviews"].append(dict(review))
-                results.append(result)
-            span.set_data("reviews", results)
+            for review in reviews:
+                result["reviews"].append(dict(review))
+            results.append(result)
 
         with sentry_sdk.start_span(op="serialization", description="json"):
             result = json.dumps(results, default=str)
