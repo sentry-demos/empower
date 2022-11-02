@@ -35,7 +35,7 @@ class Checkout extends Component {
     });
   }
 
-  async checkout(cart) {
+  checkout(cart) {
     let se, customerType, email;
     Sentry.withScope(function (scope) {
       [se, customerType] = [scope._tags.se, scope._tags.customerType];
@@ -43,7 +43,7 @@ class Checkout extends Component {
     });
 
     console.log('checking out =>>>>>>>>> ' + this.props.backend);
-    return await post(
+    return post(
       this.props.backend + '/checkout',
       { cart, form: this.state },
       { headers: { se, customerType, email } }
