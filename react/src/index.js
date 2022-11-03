@@ -64,11 +64,14 @@ Sentry.init({
         matchRoutes,
       ),
       beforeNavigate: context => {
-        console.log("> context", context)
-        /*
-        IF transaction source is url?
-        THEN manually set it to something else
-        */
+        const { name, op } = context
+
+        const { source } = context.metadata
+
+        if (source === "url" && (name === "/" || name === "/checkout")) {
+          context.metadata.source = "route"
+        }
+
         return {
           ...context
           // How to parameterize a transaction if not using a Routing library
