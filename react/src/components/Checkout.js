@@ -73,7 +73,7 @@ class Checkout extends Component {
 
     let response = await this.checkout(cart)
     if (!response.ok) {
-      Sentry.captureException(new Error(response.status + " - " + (response.statusText || "Internal Server Error")))
+      Sentry.captureException(new Error(response.status + " - " + (response.statusText || "Internal Server Error") + ""))
     }
 
     this.setState({...this.state,loading: false});
