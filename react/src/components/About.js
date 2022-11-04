@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import slugify from '../utils/slugify';
 import * as Sentry from '@sentry/react';
 import './about.css';
+import { isOddReleaseWeek, sleep } from "../utils/time"
 
 import Jane from './employees/jane';
 import Lily from './employees/lily';
@@ -26,6 +27,10 @@ class About extends Component {
       email = scope._user.email
     });
 
+    if (!isOddReleaseWeek()) {
+      await sleep(Math.random(25) + 100);
+    }
+
     // Http requests to make in parallel, so the Transaction has more Spans
     let request1 = fetch(this.props.backend + "/api", {
       method: "GET",
@@ -45,7 +50,7 @@ class About extends Component {
     // let response = await Promise.allSettled([request1, request2, request3])
 
     const response = [await request1, await request2, await request3]
-    
+
     // Error Handling
     response.forEach(r => {
       if (!r.ok) {
