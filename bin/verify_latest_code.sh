@@ -18,4 +18,5 @@ fi
 
 git fetch $remote >/dev/null
 
-git diff --stat $remote/$UPSTREAM_BRANCH
+git diff --stat $remote/$UPSTREAM_BRANCH -- ':!.github/workflows/auto-deploy.yml' ':!env-config/*.env'
+git diff --stat $remote/$UPSTREAM_BRANCH:env-config/production.env env-config/production.env
