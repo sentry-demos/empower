@@ -49,11 +49,11 @@ or
 ./deploy.sh react --env=local
 ```
 
-### ~~2) Run React app w/ hot reload~~ (not supported right now)
+### 2) Run React app w/ hot reload
 NOTE: this will cause crashing errors to be tagged in sentry as handled (`handled: true`)
 ```
-npm start
-Running React app w/ hot reload is not supported right now
+cd react
+../env.sh local npm start
 ```
 
 ## Trigger an error
