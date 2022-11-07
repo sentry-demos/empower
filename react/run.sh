@@ -1,7 +1,14 @@
 #!/bin/bash
 
+if [ "$PORT" == "" ]; then
+  # https://create-react-app.dev/docs/advanced-configuration/
+  react_port=3000
+else
+  react_port="$PORT"
+fi
+
 function cleanup {
-  stop.sh node 3000 
+  stop.sh node $react_port
 }
 trap cleanup EXIT
 
