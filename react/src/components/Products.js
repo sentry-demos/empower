@@ -14,6 +14,7 @@ class Products extends Component {
 
   constructor() {
     super();
+    busy_sleep(1000);
   }
 
   // getProducts handles error responses differently, depending on the browser used
@@ -23,8 +24,6 @@ class Products extends Component {
       [ se, customerType ] = [scope._tags.se, scope._tags.customerType ]
       email = scope._user.email
     });
-
-    await sleep(1000);
 
     ['/api', '/connect', '/organization'].forEach((endpoint) => {
       fetch(this.props.backend + endpoint, {

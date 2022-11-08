@@ -3,6 +3,16 @@ export async function sleep(milliseconds) {
   await new Promise(resolve => setTimeout(resolve, milliseconds))
 }
 
+// setTimeout is non-blocking so don't use it
+export function busy_sleep(milliseconds) {
+  var start = new Date().getTime();
+  for (var i = 0; i < 1e7; i++) {
+    if ((new Date().getTime() - start) > milliseconds){      
+      break;
+    }
+  }
+}
+
 // Consistent with "weeks" as defined in release.sh for calendar version so that
 // in Trends improved/regressed change time matches release.
 export function isOddReleaseWeek() {
