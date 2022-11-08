@@ -1,7 +1,5 @@
 #!/bin/bash
 
-RELEASE=`release.sh`
-
 if [ ! -d ./venv ]; then 
     python3 -m venv ./venv
 fi
@@ -16,4 +14,4 @@ function cleanup {
 }
 trap cleanup EXIT
 
-RELEASE=$RELEASE python3 main.py
+python3 main.py

@@ -1,12 +1,13 @@
 import { Component } from 'react';
 import Context from '../utils/context';
-import { Link } from 'react-router-dom';
+//import { Link } from 'react-router-dom';
 import './products.css';
 import * as Sentry from '@sentry/react';
 import { connect } from 'react-redux'
 import { setProducts, addProduct } from '../actions'
 import Loader from "react-loader-spinner";
 import ProductCard from './ProductCard'
+import {isOddReleaseWeek, sleep } from "../utils/time"
 
 class ProductsJoin extends Component {
   static contextType = Context;
@@ -18,6 +19,10 @@ class ProductsJoin extends Component {
       [ se, customerType ] = [scope._tags.se, scope._tags.customerType ]
       email = scope._user.email
     });
+
+    if (isOddReleaseWeek()) {
+      await sleep(Math.random(40) + 150);
+    }
 
     let result = await fetch(this.props.backend + "/products-join", {
       method: "GET",
@@ -61,7 +66,7 @@ class ProductsJoin extends Component {
       <div>
         <ul className="products-list">
           {products.map((product) => {
-            const itemLink = '/product/' + product.id;
+            //const itemLink = '/product/' + product.id;
             const averageRating = (product.reviews.reduce((a,b) => a + (b["rating"] || 0),0) / product.reviews.length).toFixed(1)
 
             let stars = [1,2,3,4,5].map((index) => {

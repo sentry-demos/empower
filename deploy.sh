@@ -16,10 +16,10 @@
 # All variables in *.env are passed into each projects runtime environment. 
 # Some variables, however, are special and are additionally used during the build:
 # 
-#   SENTRY_ORG is passed to ./build_and_upload_sourcemaps.sh and used to specify which Sentry
+#   SENTRY_ORG is passed to ./bin/sentry-release.sh and used to specify which Sentry
 #   org to create release in.
 #
-#   <PROJECT>_SENTRY_PROJECT is passed to ./build_and_upload_sourcemaps.sh and used to specify 
+#   <PROJECT>_SENTRY_PROJECT is passed to ./bin/sentry-release.sh and used to specify 
 #   which Sentry project to create release in. 
 # 
 #   <PROJECT>_RELEASE_PACKAGE_NAME is used to create a new Sentry release (prepended to calendar
@@ -61,7 +61,7 @@ for arg in "$@"; do
     env=$(echo $arg | cut -d '=' -f 2)
     echo "env = $env"
   else 
-    projects="$projects $arg"
+    projects+="$arg "
   fi
 done
 
@@ -73,30 +73,9 @@ if [[ "$env" == "" || "$projects" == "" ]]; then
   exit 1
 fi
 
-# Validate using latest code if --env=production
-if [ -t 0 ] ; then
-  # shell is interactive
-  if [ "$env" == "production" ]; then
-    echo "Verifying that the code in the current git working tree, branch and fork is identical
-         to the default branch of upstream repository (sentry-demos/application-monitoring)..."
-    diff="$(verify_latest_code.sh)"
-    if [ "$diff" != "" ]; then
-      echo "You are about to do a deployment to production, but current code is different from HEAD at
-       sentry-demos/application-monitoring-deploy:"
-      MAX_DIFF_LINES="3"
-      difflines="$(echo "$diff" | wc -l)"
-      diff="$(echo -n "$diff" | head -$MAX_DIFF_LINES)"
-      echo "$diff"
-      if [ "$difflines" -gt "$MAX_DIFF_LINES" ]; then
-        echo " ... ($((difflines - $MAX_DIFF_LINES)) more lines)"
-      fi
-      phrase="yes, deploy to production"
-      read -p "Type '$phrase' to continue... " choice
-      if [ "$choice" != "$phrase" ]; then
-          echo "Exiting without performing command."
-          exit 1
-      fi
-    fi
+if [ "$env" == "production" ]; then
+  if [ -t 0 ] ; then # shell is interactive
+    verify_latest_code.sh
   fi
 fi
 
@@ -127,104 +106,48 @@ trap cleanup EXIT
 run_sh_pids=""
 
 for proj in $projects; do # bash only
-  # Validate configuration files
-  if [ ! -d $top/$proj ]; then
-    echo "[ERROR] Project '$proj' does not exist"
-    exit 1
-  fi
-  if [ ! -f "$top/env-config/$env.env" ]; then
-    echo "[ERROR] Missing file ./env-config/$env.env"
-    exit 1
-  elif [ -f "$top/$proj/app.yaml" ]; then 
-    echo "[ERROR] project '$proj' contains app.yaml file that is no longer used. Please delete this file,
-    it is no longer be needed and has been replaced by app.yaml.template."
-    exit 1
-  elif [ -f "$top/$proj/.env" ]; then
-    echo "[ERROR] project '$proj' contains .env file that is no longer used. Please delete this file,
-    it is no longer needed and has been replaced by ./env-config/*.env. Note that this error
-    might also happen if deploy.sh failed to clean up the .env file it has generated dynamically during
-    an earlier run."
-    # we make sure not to delete any pre-existing .env files during cleanup, see 'generated_envs'
-    exit 1
-  elif [ ! -f "$top/$proj/app.yaml.template" ]; then
-    echo "[ERROR] Missing ./$proj/app.yaml.template with '<SERVICE>' placeholder in place of actual service name."
-    exit 1
-  fi
 
-  # Export environment variables from ./env-config/<env>.env
-  # Some projects still rely on .env so we generate it dynamicaly later down the road
-  while read line || [[ -n $line ]]; do # won't skip last line if missing line break
-    if [[ ! $line = \#* && $line = *[![:space:]]* ]]; then # ignore comments and empty lines
-      export "$line"
-    fi
-  done < $top/env-config/$env.env
+  echo "|||"
+  echo "||| $0: $proj"
+  echo "|||"
 
+  validate_project.sh $top/$proj 
+  
+  cd $top/$proj
+
+  # React bakes in (exported) env variables from calling shell as well as contents of .env
+  # at build time into the static build output. As a result it doesn't need .env at runtime.
+  # See: https://github.com/facebook/create-react-app/blob/main/packages/react-scripts/config/env.js
+  # and https://create-react-app.dev/docs/adding-custom-environment-variables/
+  #
+  # Express and Flask on the other hand need .env deployed and present at runtime. 
+  #
+  # We generate a temporary .env dynamically from env-config/*.env then remove upon exit
+  generated_envs+="$(../env.sh $env) "
+  
+  # We do this because 1) we need RELEASE that's generated in env.sh 2) we need *_APP_*_BACKEND
+  # 3) some projects may require env variables instead of .env (not the case for react, flask & express)
+  # TODO: support spring-boot which seems to use .properties files
+  export $(grep -v '^#' .env | xargs) 
+    
   if [[ "$env" == "local" && "$fe_projects" = *"$proj "* ]]; then 
-    # Point to local backend http://host:port instead of cloud endpoints for all built BE projects
+    # Point to local backend http://host:port instead of cloud endpoints for all _built_ BE projects
     # If no backend projects specified in CLI args, keep using cloud (production or staging) BE endpoints.
     for be_proj in $be_projects; do
       backend_var=$(var_name.sh %s_APP_%s_BACKEND $proj $be_proj)
       . get_proj_var.sh "%s_APP_%s_BACKEND_LOCAL" $proj $be_proj # sets $app_backend_local
+      echo "" >> .env # in case no newline
+      echo "$backend_var=$app_backend_local" >> .env # append instead of search-replace should be OK
       export "$backend_var=$app_backend_local"
     done 
   fi
-  
-  cd $top/$proj
 
-  # *** BUILD ***
-  . get_proj_var.sh "%s_RELEASE_PACKAGE_NAME" $proj
-  release="${release_package_name}@"`release.sh`
-  echo $release
-  # Existing behavior in react build. TODO: is this necessary?
-  if [ "$env" == "local" ]; then
-    rm -rf build
-    npm install
-  fi
-  if [[ ! -z $CI ]]; then
-    # a clean repository will be be checked out every time in a CI pipeline
-    npm install
-  fi
-  unset CI # prevents build failing on warnings when run in GitHub Actions
-  export RELEASE="$release"
-  ./build.sh "$release"
+  unset CI # prevents build failing in GitHub Actions
+  ./build.sh
 
-  # *** CREATE RELEASE AND UPLOAD SOURCEMAPS ***
-  if [[ "$fe_projects" = *"$proj "* ]]; then # current project is frontend
-    # We don't create releases for backend projects because it's not part of demo flow and sourcemaps are not
-    # necessary either. 
-    if [ "$SENTRY_ORG" == "" ]; then
-      echo "$0 [ERROR] SENTRY_ORG must be defined in ./env-config/$env.env."
-      exit 1
-    fi
-    # sets $sentry_project var to the value of e.g. REACT_SENTRY_PROJECT from env-config/<env>.env
-    . get_proj_var.sh "%s_SENTRY_PROJECT" $proj
-    . get_proj_var.sh "%s_SOURCEMAPS_URL_PREFIX" $proj
-    . get_proj_var.sh "%s_SOURCEMAPS_DIR" $proj
-    . get_proj_var.sh "%s_APP_DSN" $proj
-
-    # Verify that <PROJ>_SENTRY_PROJECT and <PROJ>_APP_DSN point to the same project
-    if [ "$SENTRY_AUTH_TOKEN" == "" ]; then
-      echo "$0 [ERROR] SENTRY_AUTH_TOKEN must be defined. See https://docs.sentry.io/product/cli/configuration/
-            In GitHub Actions environment this means that corresponding secret is not set."
-      exit 1
-    fi
-    api_response=$(curl https://sentry.io/api/0/projects/$SENTRY_ORG/$sentry_project/ \
-      -H 'Authorization: Bearer '"$SENTRY_AUTH_TOKEN" 2>/dev/null)
-    project_id_from_slug=$(echo "$api_response" | grep -Eo '"id":"(.*?)"' | head -1 | cut -d '"' -f 4)
-    if [ "$project_id_from_slug" == "" ]; then
-      echo "$0 [ERROR] Unable to get project id using Sentry API. Wrong auth token? Response:"
-      echo "$api_response"
-      exit 1
-    fi
-    project_id_from_dsn=$(echo $app_dsn | cut -d / -f 4)
-    if [ "$project_id_from_slug" != "$project_id_from_dsn" ]; then
-      message=$(var_name.sh "%s_SENTRY_PROJECT and %s_APP_DSN point to different projects." $proj $proj)
-      echo "$0 [ERROR] $message"
-      exit 1
-    fi
-
-    # Create release and upload sourcemaps to Sentry
-    sentry-release.sh "$SENTRY_ORG" "$sentry_project" "$env" "$release" "$sourcemaps_url_prefix" "$sourcemaps_dir"
+  if [[ "$fe_projects" = *"$proj "* ]]; then # project is frontend
+    sentry-release.sh $env $RELEASE
+    # NOTE: Sentry may create releases from events even without this step
   fi
 
   # *** DEPLOY OR RUN ***
@@ -233,23 +156,23 @@ for proj in $projects; do # bash only
     pid="$!"
     run_sh_pids+="$pid " # for later cleanup
 
-    sleep 5
-    if ! ps -p $pid > /dev/null
-    then
-      echo "$0 [ERROR]: $proj/run.sh exited early, must be a crash."
-      exit 1
+    if [[ "$projects" != *"$proj " ]]; then # not last one
+      sleep 1 
+      echo "$0: Waiting a few seconds before building next project to make sure this server process doesn't crash..."
+      sleep 4 
+      if ! ps -p $pid > /dev/null
+      then
+        echo "$0 [ERROR]: $proj/run.sh exited early, must be a crash."
+        exit 1
+      fi
     fi
   else
-    # At least some projects rely on .env file (flask, express) and don't seem to pick up 
-    # values from env variables
-    # We generate a temporary .env dynamically from env-config/*.env then remove upon exit
-    cp $top/env-config/$env.env $top/$proj/.env
-    generated_envs+="$top/$proj/.env "
 
-    # Get service variable name, <PROJECT>_APP_ENGINE_SERVICE
+    # Replace <SERVICE> in app.yaml.template with <PROJECT>_APP_ENGINE_SERVICE
     . get_proj_var.sh "%s_APP_ENGINE_SERVICE" $proj
-    sed -e 's/<SERVICE>/'$app_engine_service'/g' $top/$proj/app.yaml.template > $top/$proj/.app.yaml
-    gcloud app deploy --quiet $top/$proj/.app.yaml
+    sed -e 's/<SERVICE>/'$app_engine_service'/g' app.yaml.template > .app.yaml
+    
+    gcloud app deploy --quiet .app.yaml
   fi
 done
 
