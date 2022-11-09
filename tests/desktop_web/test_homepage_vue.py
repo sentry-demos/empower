@@ -6,8 +6,8 @@ from urllib.parse import urlencode
 from collections import OrderedDict
 
 # Note: Not sure why won't pytest find this and run it when I name it 'vue_test_homepage'
-def test_homepage(desktop_web_driver):
-    sentry_sdk.set_tag("pytestName", "vue_test_homepage")
+def test_homepage_vue(desktop_web_driver):
+    sentry_sdk.set_tag("pytestName", "test_homepage_vue")
 
     with open('endpoints.yaml', 'r') as stream:
         data_loaded = yaml.safe_load(stream)
