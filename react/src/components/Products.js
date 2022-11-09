@@ -6,7 +6,7 @@ import * as Sentry from '@sentry/react';
 import { connect } from 'react-redux'
 import { setProducts, addProduct } from '../actions'
 import Loader from "react-loader-spinner";
-import { sleep } from "../utils/time"
+import { busy_sleep } from "../utils/time"
 import ProductCard from './ProductCard'
 
 class Products extends Component {
@@ -14,6 +14,8 @@ class Products extends Component {
 
   constructor() {
     super();
+    // makes the ui.react.mount span widen to 1500ms
+    busy_sleep(1500)
   }
 
   // getProducts handles error responses differently, depending on the browser used
@@ -23,8 +25,6 @@ class Products extends Component {
       [ se, customerType ] = [scope._tags.se, scope._tags.customerType ]
       email = scope._user.email
     });
-
-    await sleep(1000);
 
     ['/api', '/connect', '/organization'].forEach((endpoint) => {
       fetch(this.props.backend + endpoint, {
