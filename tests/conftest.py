@@ -16,8 +16,8 @@ SAUCELABS_PROTOCOL = "https://"
 DSN = os.getenv("DSN")
 ENVIRONMENT = os.getenv("ENVIRONMENT") or "production"
 
-# print("ENV", ENVIRONMENT)
-# print("DSN", DSN)
+print("ENV", ENVIRONMENT)
+print("DSN", DSN)
 
 import urllib3
 urllib3.disable_warnings()
@@ -25,7 +25,7 @@ urllib3.disable_warnings()
 sentry_sdk.init(
     dsn="https://9802de20229e4afdaa0d60796cbb44d7@o87286.ingest.sentry.io/5390094",
     traces_sample_rate=0,
-    environment="dev",
+    environment=ENVIRONMENT,
 )
 
 desktop_browsers = [
@@ -55,8 +55,6 @@ desktop_browsers = [
         "sauce:options": {}
     }]
 
-# sentry_sdk.capture_message("testing")
-
 def pytest_addoption(parser):
     parser.addoption("--dc", action="store", default='us', help="Set Sauce Labs Data Center (US or EU)")
 
@@ -72,7 +70,7 @@ def desktop_web_driver(request, data_center):
 
     username = environ['SAUCE_USERNAME']
     access_key = environ['SAUCE_ACCESS_KEY']
-    print("\nXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
+
     if data_center and data_center.lower() == 'eu':
         selenium_endpoint = SAUCELABS_PROTOCOL + "{}:{}@ondemand.eu-central-1.saucelabs.com/wd/hub".format(username, access_key)
     else:
@@ -82,7 +80,7 @@ def desktop_web_driver(request, data_center):
     caps.update(request.param)
     caps['sauce:options'].update({'build': build_tag})
     caps['sauce:options'].update({'name': test_name})
-    print("\nXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
+
     browser = webdriver.Remote(
         command_executor=selenium_endpoint,
         desired_capabilities=caps,
@@ -92,14 +90,14 @@ def desktop_web_driver(request, data_center):
     browser.implicitly_wait(10)
 
     sentry_sdk.set_tag("seleniumSessionId", browser.session_id)
-    print("\nXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
+
     # This is specifically for SauceLabs plugin.
     # In case test fails after selenium session creation having this here will help track it down.
     if browser is not None:
         print("SauceOnDemandSessionID={} job-name={}".format(browser.session_id, test_name))
     else:
         raise WebDriverException("Never created!")
-    print("\nXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
+
     yield browser
 
     # Teardown starts here
@@ -110,10 +108,10 @@ def desktop_web_driver(request, data_center):
     # Handler failure scenario, send to Sentry job-monitor-application-monitoring
     if sauce_result == "failed":
         sentry_sdk.capture_message("Sauce Result: %s" % (sauce_result))
-    print("\nXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
+
     browser.execute_script("sauce:job-result={}".format(sauce_result))
     browser.quit()
-    print("\nXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
+
     # Handler done scenario, send to Sentry job-monitor-application-monitoring
     sentry_sdk.capture_message("Selenium Session Done")
 
