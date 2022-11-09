@@ -6,7 +6,6 @@ import * as Sentry from '@sentry/react';
 import { Integrations } from '@sentry/tracing';
 import { createBrowserHistory } from 'history';
 import { Router, Switch, Route } from 'react-router-dom';
-import { crasher } from './utils/errors'
 import { determineBackendType, determineBackendUrl } from './utils/backendrouter'
 
 import { Provider } from 'react-redux'
@@ -135,9 +134,6 @@ class App extends Component {
       let email = a+b+c+"@gmail.com";
       scope.setUser({ email: email })
     })
-
-    // Crasher will parse the query params
-    crasher()
   }
 
   render() {
