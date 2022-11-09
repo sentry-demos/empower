@@ -154,8 +154,8 @@ def android_react_native_emu_driver(request, data_center):
 @pytest.fixture
 def android_emu_driver(request, data_center):
 
-    username = environ['SAUCE_USERNAME']
-    access_key = environ['SAUCE_ACCESS_KEY']
+    username_cap = environ['SAUCE_USERNAME']
+    access_key_cap = environ['SAUCE_ACCESS_KEY']
     release_version = ReleaseVersion.latest_android_github_release()
 
     caps = {
