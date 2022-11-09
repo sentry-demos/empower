@@ -65,6 +65,8 @@ def data_center(request):
 @pytest.fixture(params=desktop_browsers)
 def desktop_web_driver(request, data_center):
 
+    sentry_sdk.set_tag("pytestPlatform", "desktop_web")
+
     test_name = request.node.name
     build_tag = environ.get('BUILD_TAG', "Application-Monitoring-TDA")
 
@@ -112,11 +114,13 @@ def desktop_web_driver(request, data_center):
     browser.execute_script("sauce:job-result={}".format(sauce_result))
     browser.quit()
 
-    # Handler done scenario, send to Sentry job-monitor-application-monitoring
+    # desktop_web tests finished, send to Sentry job-monitor-application-monitoring, look for tags pytestName, pytestPlatform, seleniumSessionId
     sentry_sdk.capture_message("Selenium Session Done")
 
 @pytest.fixture
 def android_react_native_emu_driver(request, data_center):
+
+    sentry_sdk.set_tag("pytestPlatform", "android_react_native")
 
     username_cap = environ['SAUCE_USERNAME']
     access_key_cap = environ['SAUCE_ACCESS_KEY']
@@ -149,8 +153,13 @@ def android_react_native_emu_driver(request, data_center):
     driver.execute_script("sauce:job-result={}".format(sauce_result))
     driver.quit()
 
+    # android_react_native tests finished, send to Sentry job-monitor-application-monitoring, look for tags pytestName, pytestPlatform, seleniumSessionId
+    sentry_sdk.capture_message("Selenium Session Done")
+
 @pytest.fixture
 def android_emu_driver(request, data_center):
+
+    sentry_sdk.set_tag("pytestPlatform", "android")
 
     username_cap = environ['SAUCE_USERNAME']
     access_key_cap = environ['SAUCE_ACCESS_KEY']
@@ -183,8 +192,13 @@ def android_emu_driver(request, data_center):
     driver.execute_script("sauce:job-result={}".format(sauce_result))
     driver.quit()
 
+    # android tests finished, send to Sentry job-monitor-application-monitoring, look for tags pytestName, pytestPlatform, seleniumSessionId
+    sentry_sdk.capture_message("Selenium Session Done")
+
 @pytest.fixture
 def ios_react_native_sim_driver(request, data_center):
+
+    sentry_sdk.set_tag("pytestPlatform", "ios_react_native")
 
     username_cap = environ['SAUCE_USERNAME']
     access_key_cap = environ['SAUCE_ACCESS_KEY']
@@ -217,8 +231,13 @@ def ios_react_native_sim_driver(request, data_center):
     driver.execute_script("sauce:job-result={}".format(sauce_result))
     driver.quit()
 
+    # ios_react_native tests finished, send to Sentry job-monitor-application-monitoring, look for tags pytestName, pytestPlatform, seleniumSessionId
+    sentry_sdk.capture_message("Selenium Session Done")
+
 @pytest.fixture
 def ios_sim_driver(request, data_center):
+
+    sentry_sdk.set_tag("pytestPlatform", "ios")
 
     username_cap = environ['SAUCE_USERNAME']
     access_key_cap = environ['SAUCE_ACCESS_KEY']
@@ -250,6 +269,9 @@ def ios_sim_driver(request, data_center):
     sauce_result = "failed" if request.node.rep_call.failed else "passed"
     driver.execute_script("sauce:job-result={}".format(sauce_result))
     driver.quit()
+
+    # ios tests finished, send to Sentry job-monitor-application-monitoring, look for tags pytestName, pytestPlatform, seleniumSessionId
+    sentry_sdk.capture_message("Selenium Session Done")
 
 
 @pytest.hookimpl(hookwrapper=True, tryfirst=True)
