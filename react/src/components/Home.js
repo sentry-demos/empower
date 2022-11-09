@@ -3,7 +3,6 @@ import Context from '../utils/context';
 import * as Sentry from '@sentry/react';
 import plantsBackground from '../assets/plants-background-img.jpg';
 import Button from './ButtonLink';
-import { crasher } from '../utils/errors';
 
 const divStyle = {
     backgroundImage: 'url(' + plantsBackground + ')',
@@ -18,11 +17,6 @@ class Home extends Component {
     }
   
     async componentDidMount() {
-      // Crasher will parse the query params
-      // setTimeout to make sure it's not executed in pageload stacktrace that results in source map
-      // processing failures
-      setTimeout(crasher, 1); 
-
       let se, customerType, email
       Sentry.withScope(function(scope) {
         [ se, customerType ] = [scope._tags.se, scope._tags.customerType ]
