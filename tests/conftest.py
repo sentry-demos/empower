@@ -12,7 +12,7 @@ import sentry_sdk
 from dotenv import load_dotenv
 load_dotenv()
 
-SAUCELABS_PROTOCOL = "http://"
+SAUCELABS_PROTOCOL = "https://"
 DSN = os.getenv("DSN")
 ENVIRONMENT = os.getenv("ENVIRONMENT") or "production"
 
@@ -154,8 +154,8 @@ def android_react_native_emu_driver(request, data_center):
 @pytest.fixture
 def android_emu_driver(request, data_center):
 
-    username_cap = 'sentry-se'
-    access_key_cap = 'e8e07a9f-613f-4d40-b17d-40163098cadb'
+    username = environ['SAUCE_USERNAME']
+    access_key = environ['SAUCE_ACCESS_KEY']
     release_version = ReleaseVersion.latest_android_github_release()
 
     caps = {
@@ -164,7 +164,7 @@ def android_emu_driver(request, data_center):
         'deviceName': 'Android GoogleAPI Emulator',
         'platformVersion': '10.0',
         'platformName': 'Android',
-        'app': f'https://cb05-2607-9880-10c8-72-1484-c603-9388-3439.ngrok.io/app-debug.apk',
+        'app': f'https://github.com/sentry-demos/android/releases/download/{release_version}/app-release.apk',
         'sauce:options': {
             'appiumVersion': '1.20.2',
             'build': 'RDC-Android-Python-Best-Practice',
@@ -197,7 +197,7 @@ def ios_react_native_sim_driver(request, data_center):
         'accessKey': access_key_cap,
         'appium:deviceName': 'iPhone 11 Simulator',
         'platformName': 'iOS',
-        'appium:platformVersion': '15.4',
+        'appium:platformVersion': '14.5',
 
         'sauce:options': {
             'appiumVersion': '1.21.0',
@@ -243,12 +243,6 @@ def ios_sim_driver(request, data_center):
 
         'appium:app': f'/Users/sergiolombana/Documents/saucelabs/EmpowerPlant.app',
     }
-
-    print('NODE NAME')
-    print(request.node.name)
-
-    print('RELEASE')
-    print(release_version)
 
     if data_center and data_center.lower() == 'eu':
         sauce_url = SAUCELABS_PROTOCOL + "{}:{}@ondemand.eu-central-1.saucelabs.com/wd/hub".format(username_cap, access_key_cap)
