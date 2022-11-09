@@ -221,8 +221,9 @@ def ios_react_native_sim_driver(request, data_center):
 
 @pytest.fixture
 def ios_sim_driver(request, data_center):
-    username_cap = 'sentry-se'
-    access_key_cap = 'e8e07a9f-613f-4d40-b17d-40163098cadb'
+
+    username_cap = environ['SAUCE_USERNAME']
+    access_key_cap = environ['SAUCE_ACCESS_KEY']
     release_version = ReleaseVersion.latest_ios_github_release()
 
     caps = {
@@ -230,12 +231,9 @@ def ios_sim_driver(request, data_center):
         'accessKey': access_key_cap,
         'appium:deviceName': 'iPhone 11 Simulator',
         'platformName': 'iOS',
-        'appium:platformVersion': '14.5',
-        #'udid':'77623AAD-F7EF-4E33-8D57-DABDC8541DE6',
-        #"wdaStartupRetries": "4",
-        #"iosInstallPause": "8000",
-        #"wdaStartupRetryInterval": "20000",
-        "appium:usePrebuiltWDA": "true",
+        'appium:platformVersion': '16.1',
+        'udid':'157FB6DB-B28A-4BC1-8181-1524B31CE022',
+        "appium:usePrebuiltWDA": "false",
 
         'sauce:options': {
             'appiumVersion': '1.21.0',
@@ -243,7 +241,7 @@ def ios_sim_driver(request, data_center):
             'name': request.node.name,
         },
 
-        'appium:app': f'https://2776-2607-9880-10c8-72-8004-f784-267e-6230.ngrok.io/EmpowerPlant_0.0.2.app',
+        'appium:app': f'/Users/sergiolombana/Documents/saucelabs/EmpowerPlant.app',
     }
 
     print('NODE NAME')
@@ -257,7 +255,7 @@ def ios_sim_driver(request, data_center):
     else:
         sauce_url = SAUCELABS_PROTOCOL + "{}:{}@ondemand.us-west-1.saucelabs.com/wd/hub".format(username_cap, access_key_cap)
 
-    driver = appiumdriver.Remote(sauce_url, desired_capabilities=caps)
+    driver = appiumdriver.Remote('http://0.0.0.0:4723/wd/hub', desired_capabilities=caps)
     driver.implicitly_wait(20)
     yield driver
 
