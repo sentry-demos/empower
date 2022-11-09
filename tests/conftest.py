@@ -23,7 +23,7 @@ import urllib3
 urllib3.disable_warnings()
 
 sentry_sdk.init(
-    dsn= DSN,
+    dsn="https://9802de20229e4afdaa0d60796cbb44d7@o87286.ingest.sentry.io/5390094",
     traces_sample_rate=0,
     environment=ENVIRONMENT,
 )
