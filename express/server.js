@@ -25,19 +25,20 @@ const cors = require('cors');
 var headers = {}
 const sentryEventContext = function(req, res, next) {
   const se = req.headers.se;
-  if(!['undefined'].includes(se)) {
+
+  if(se !== undefined) {
     Sentry.setTag("se", se);
     headers["se"]=se
   }
 
   const customerType = req.headers.customertype;
-  if(!['undefined'].includes(customerType)) {
+  if(customerType !== undefined) {
     Sentry.setTag("customerType", customerType);
     headers["customerType"]=customerType
   }
 
   const email = req.headers.email;
-  if(!['undefined'].includes(email)) {
+  if(email !== undefined) {
     Sentry.setUser({ 'email': email })
     headers["email"]=email
   }
@@ -118,6 +119,7 @@ app.get('/products', async (req, res) => {
       .getScope()
       .getTransaction();
     let span = transaction.startChild({ op: '/products.get_products', description: 'function' });
+
     const products = await DB.getProducts();
     span.finish();
 

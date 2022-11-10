@@ -50,7 +50,7 @@ def get_products():
         products = connection.execute(
             "SELECT *, pg_sleep(%s) FROM products" % (n)
         ).fetchall()
-        
+
         for product in products:
             query = text("SELECT *, pg_sleep(0.0625) FROM reviews WHERE productId = :x")
             reviews = connection.execute(query, x=product.id).fetchall()
