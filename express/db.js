@@ -1,5 +1,6 @@
 require('dotenv').config();
 const Sentry = require('@sentry/node');
+// const { Console } = require('@sentry/node/dist/integrations');
 
 // Knex is the database query builder used in the GCP docs, which
 // is why we are using it here. See docs:
@@ -17,6 +18,7 @@ const getProducts = async function() {
     let span = transaction.startChild({ op: 'getproducts', description: 'db.query'});
     const productsQuery = `SELECT *, pg_sleep(${sleepTime}) FROM products`;
     const subspan = span.startChild({op: 'fetch products', description: productsQuery});
+
     const products = await knex.raw(productsQuery)
       .catch((err) => {
         console.log("There was an error", err);
@@ -43,6 +45,7 @@ const getProducts = async function() {
     span.setData("Products With Reviews", formattedProducts);
     span.finish();
     transaction.finish();
+
     return formattedProducts;
   } catch(error) {
     Sentry.captureException(error);
@@ -140,14 +143,11 @@ function openDBConnection() {
 
   let host
   if (process.env.EXPRESS_ENV === 'test') {
-    // The cloud sql instance connection
-    // name doesn't work locally, but the
-    // public IP of the instance does.
-    host = process.env.CLOUD_SQL_PUBLIC_IP
+    host = process.env.HOST
   } else {
     host = '/cloudsql/' + process.env.CLOUD_SQL_CONNECTION_NAME
   }
-  console.log("> host ", host)
+
   const db = require('knex')({
     client: 'pg',
     connection: {
