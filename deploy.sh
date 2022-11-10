@@ -94,7 +94,9 @@ projects="$be_projects $fe_projects"
 function cleanup { 
   for pid in $run_sh_pids; do
     # each run.sh has it's own cleanup function
-    kill $pid 2>/dev/null
+    if ps -p $pid > /dev/null; then
+      kill $pid 2>/dev/null
+    fi
   done 
   rm -f $top/*/.app.yaml
   if [ "$generated_envs" != "" ]; then
@@ -104,6 +106,7 @@ function cleanup {
 trap cleanup EXIT
 
 run_sh_pids=""
+generated_envs=""
 
 for proj in $projects; do # bash only
 
