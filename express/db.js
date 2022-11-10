@@ -1,6 +1,5 @@
 require('dotenv').config();
 const Sentry = require('@sentry/node');
-// const { Console } = require('@sentry/node/dist/integrations');
 
 // Knex is the database query builder used in the GCP docs, which
 // is why we are using it here. See docs:
