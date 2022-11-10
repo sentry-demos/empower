@@ -142,6 +142,9 @@ function openDBConnection() {
 
   let host
   if (process.env.EXPRESS_ENV === 'test') {
+    // The cloud sql instance connection
+    // name doesn't work locally, but the
+    // public IP of the instance does.
     host = process.env.HOST
   } else {
     host = '/cloudsql/' + process.env.CLOUD_SQL_CONNECTION_NAME
