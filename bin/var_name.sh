@@ -14,13 +14,13 @@ set -e
 env_var_format="$1"
 substs="${@:2}"
 if [[ $# < 2 ]]; then
-    echo "$0: [error] missing arguments"
-    echo "Usage: ./var_name.sh ENV_VAR_FORMAT SUBST ..."
+    >&2 echo "$0: [error] missing arguments"
+    >&2 echo "Usage: ./var_name.sh ENV_VAR_FORMAT SUBST ..."
 fi
 if [[ ! $env_var_format = *%s* ]]; then
     # TODO: validate number of placeholders matches number of command arguments - 1
-    echo "$0: [error] ENV_VAR_FORMAT must contain at least 1 printf-style substitution placeholder '%s'."
-    echo "Usage example: ./var_name.sh %s_SENTRY_PROJECT react"
+    >&2 echo "$0: [error] ENV_VAR_FORMAT must contain at least 1 printf-style substitution placeholder '%s'."
+    >&2 echo "Usage example: ./var_name.sh %s_SENTRY_PROJECT react"
 fi
 
 substs_upper_no_dashes=$(echo ${substs//-/} | tr '[:lower:]' '[:upper:]')

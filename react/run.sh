@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# This is not a standalone script. It is called from ../deploy.sh that
+# sets up the right environemnt variables and files for it.
+
 if [ "$PORT" == "" ]; then
   # https://create-react-app.dev/docs/advanced-configuration/
   react_port=3000
