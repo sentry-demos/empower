@@ -67,7 +67,6 @@ def test_add_to_cart(desktop_web_driver):
             except Exception as err:
                 missedButtons = missedButtons + 1
                 sentry_sdk.set_tag("missedButtons", missedButtons)
-                sentry_sdk.set_tag("seleniumSessionId", desktop_web_driver.session_id)
 
                 if err:
                     sentry_sdk.capture_exception(err)
