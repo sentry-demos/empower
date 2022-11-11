@@ -1,0 +1,16 @@
+#Create local log
+#logging.file.name=log/spring-boot.log
+
+#https://docs.sentry.io/platforms/java/guides/spring-boot/logging-frameworks/
+
+sentry.logging.minimum-event-level=warn
+sentry.logging.minimum-breadcrumb-level=debug
+sentry.exception-resolver-order=-1
+sentry.enable-tracing=true
+sentry.traces-sample-rate=1.0
+
+spring.datasource.driver-class-name=org.postgresql.Driver
+#So app starts despite "table already exists" errors.
+spring.datasource.continue-on-error=true
+#Enforces database initialization
+spring.datasource.initialization-mode=always
