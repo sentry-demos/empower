@@ -64,6 +64,8 @@ if [ "$proj" == "react" ]; then
     echo "REACT_APP_RELEASE=$RELEASE" >> .env
 fi
 
+validate_dotenv.sh
+
 if [ "$2" == "" ]; then 
     # Called from deploy.sh
     #
