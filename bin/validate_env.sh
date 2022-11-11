@@ -13,7 +13,7 @@ if [ ! -f validate_env.list ]; then
   exit 1
 fi
 
-while read var || [[ -n $var ]]; do # won't skip last line if missing line break
+for var in $(grep -v '^#' validate_env.list | xargs); do
   if [[ $var = \#* || $var = *[[:space:]]* ]]; then # ignore comments and empty lines
     continue
   fi
@@ -30,7 +30,7 @@ while read var || [[ -n $var ]]; do # won't skip last line if missing line break
             "You must add it to your env-config/*.env file." 
     exit 1
   fi
-done < validate_env.list
+done 
   
 proj=$(basename $(pwd))
 . get_proj_var.sh "%s_APP_DSN" $proj
