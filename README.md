@@ -49,11 +49,25 @@ or
 ./deploy.sh react --env=local
 ```
 
-### ~~2) Run React app w/ hot reload~~ (not supported right now)
+### 2) Run React app w/ hot reload
 NOTE: this will cause crashing errors to be tagged in sentry as handled (`handled: true`)
 ```
-npm start
-Running React app w/ hot reload is not supported right now
+cd react
+../env.sh local npm start
+```
+
+The React app will default to Flask as its backend
+```
+// points to Flask
+localhost:5000
+
+// points to Express, Springboot, Flask
+localhost:5000?backend=express
+localhost:5000/products?backend=express
+localhost:5000/products?se=yourname&backend=express
+
+// throw an exception on any route via 'crash'
+localhost:5000?crash=true
 ```
 
 ## Trigger an error

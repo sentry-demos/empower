@@ -8,7 +8,7 @@ import productThree from './products/3';
 import productFour from './products/4';
 
 import { connect } from 'react-redux'
-import { setProducts, addProduct } from '../actions'
+import { /*setProducts,*/ addProduct } from '../actions'
 
 class Product extends Component {
   static contextType = Context;
@@ -52,7 +52,7 @@ class Product extends Component {
   
   render() {
     const { product } = this.state;
-    const { cart } = this.context;
+    //const { cart } = this.context;
 
     let averageRating
     if (product) {

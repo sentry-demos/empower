@@ -1,21 +1,24 @@
 #!/bin/bash
 
-# Outputs diff --stat between the current working tree and master branch of
-# sentry-demos/application-monitoring
+set -e
 
-UPSTREAM_BRANCH="master"
-UPSTREAM_URL="git@github.com:sentry-demos/application-monitoring-deploy.git"
-ALT_UPSTREAM_URL="https://github.com/sentry-demos/application-monitoring-deploy.git"
+diff="$(source_diff_upstream.sh)"
 
-remote=$(git remote -v | grep $UPSTREAM_URL | head -1 | cut -f 1)
-if [ "$remote" == "" ]; then
-  remote=$(git remote -v | grep $ALT_UPSTREAM_URL | head -1 | cut -f 1)
+if [ "$diff" != "" ]; then
+    echo "You are about to do a deployment to production, but current code is different from HEAD at
+    sentry-demos/application-monitoring AND/OR your production.env is different from production.env in 
+    sentry-demos/application-monitoring-deploy:"
+    MAX_DIFF_LINES="7"
+    difflines="$(echo "$diff" | wc -l)"
+    diff="$(echo -n "$diff" | head -$MAX_DIFF_LINES)"
+    echo "$diff"
+    if [ "$difflines" -gt "$MAX_DIFF_LINES" ]; then
+        echo " ... ($((difflines - $MAX_DIFF_LINES)) more lines)"
+    fi
+    phrase="yes, deploy to production"
+    read -p "Type '$phrase' to continue... " choice
+    if [ "$choice" != "$phrase" ]; then
+        echo "Exiting without performing command."
+        exit 1
+    fi
 fi
-if [ "$remote" == "" ]; then
-  remote="deploy"
-  git remote add $remote $UPSTREAM_URL >/dev/null
-fi
-
-git fetch $remote >/dev/null
-
-git diff --stat $remote/$UPSTREAM_BRANCH

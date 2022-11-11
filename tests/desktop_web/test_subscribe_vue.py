@@ -5,8 +5,8 @@ import sentry_sdk
 from urllib.parse import urlencode
 from collections import OrderedDict
 
-def test_subscribe(desktop_web_driver):
-    sentry_sdk.set_tag("pytestName", "vue_test_subscribe")
+def test_subscribe_vue(desktop_web_driver):
+    sentry_sdk.set_tag("pytestName", "test_subscribe_vue")
 
     with open('endpoints.yaml', 'r') as stream:
         data_loaded = yaml.safe_load(stream)

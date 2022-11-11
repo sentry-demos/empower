@@ -1,6 +1,7 @@
 #!/bin/bash
 
-RELEASE=`release.sh`
+# This is not a standalone script. It is called from ../deploy.sh that
+# sets up the right environemnt variables and files for it.
 
 if [ ! -d ./venv ]; then 
     python3 -m venv ./venv
@@ -16,4 +17,4 @@ function cleanup {
 }
 trap cleanup EXIT
 
-RELEASE=$RELEASE python3 main.py
+python3 main.py
