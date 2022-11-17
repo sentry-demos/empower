@@ -22,7 +22,7 @@ import Cart from './components/Cart';
 import Checkout from './components/Checkout';
 import Complete from './components/Complete';
 import CompleteError from './components/CompleteError';
-import Cra from './components/Cra';
+import Organization from './components/Organization';
 import Employee from './components/Employee';
 import Home from './components/Home';
 import NotFound from './components/NotFound';
@@ -163,7 +163,7 @@ class App extends Component {
                 </Route>
                 <Route path="/complete" component={Complete} />
                 <Route path="/error" component={CompleteError} />
-                <Route path="/cra" component={Cra} />
+                <Route path="/organization" component={Organization} />
                 {/* Parameterization of the Employee Pages is done by beforeNavigate  */}
                 <Route path="/employee/:id" component={Employee} />
                 {/* Parameterizes the Product Page transactions */}
