@@ -136,7 +136,7 @@ class App extends Component {
       scope.setUser({ email: email })
     })
 
-    // Crasher will parse the query params
+    // Crasher parses query params sent by /tests for triggering crashes for Release Health
     crasher()
   }
 
