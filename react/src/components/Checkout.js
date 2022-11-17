@@ -73,28 +73,28 @@ class Checkout extends Component {
 
     let response = await this.checkout(cart)
 
-    try{
-
+    // try{
+      
       this.setState({...this.state,loading: false});
+      transaction.finish(Date.now()+5000);
       if (response.ok) 
       {
 
         this.props.history.push('/complete', {"complete": "completeOrderInfo"})
 
       } else {
-
+        this.props.history.push('/error', {"error": "errorInfo"})
         throw new Error(response.status + " - " + (response.statusText || "Internal Server Error"))
 
       }
 
-    } catch (ex) {
+    // } catch (ex) {
 
-      console.log ("Bad Response from Server.")
-      this.props.history.push('/error', {"error": "errorInfo"})
+    //   console.log ("Bad Response from Server.")
+    //   this.props.history.push('/error', {"error": "errorInfo"})
 
-    }
+    // }
 
-    transaction.finish();
     
   }
 
