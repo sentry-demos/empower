@@ -5,7 +5,7 @@ import sentry_sdk
 from urllib.parse import urlencode
 
 def test_about_employees(desktop_web_driver):
-    sentry_sdk.set_tag("pytestName", "about_employees")
+    sentry_sdk.set_tag("pytestName", "test_about_employees")
 
     with open('endpoints.yaml', 'r') as stream:
         data_loaded = yaml.safe_load(stream)

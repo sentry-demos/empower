@@ -94,9 +94,12 @@ projects="$be_projects $fe_projects"
 function cleanup { 
   for pid in $run_sh_pids; do
     # each run.sh has it's own cleanup function
-    kill $pid 2>/dev/null
+    if ps -p $pid > /dev/null; then
+      kill $pid 2>/dev/null
+    fi
   done 
   rm -f $top/*/.app.yaml
+  rm -f spring-boot/src/main/appengine/app.yaml
   if [ "$generated_envs" != "" ]; then
     rm -f $generated_envs # bash only (passed as separate args) 
   fi
@@ -104,6 +107,7 @@ function cleanup {
 trap cleanup EXIT
 
 run_sh_pids=""
+generated_envs=""
 
 for proj in $projects; do # bash only
 
@@ -170,9 +174,20 @@ for proj in $projects; do # bash only
 
     # Replace <SERVICE> in app.yaml.template with <PROJECT>_APP_ENGINE_SERVICE
     . get_proj_var.sh "%s_APP_ENGINE_SERVICE" $proj
-    sed -e 's/<SERVICE>/'$app_engine_service'/g' app.yaml.template > .app.yaml
     
-    gcloud app deploy --quiet .app.yaml
+    if [ "$proj" == "spring-boot" ]; then
+      ypath="./src/main/appengine/"
+      sed -e 's/<SERVICE>/'$app_engine_service'/g' $ypath/app.yaml.template > $ypath/app.yaml
+      # This sets SPRINGBOOT_ENV
+      # TODO: Un-hardcode. Q: what non-production values does it take?
+      sed -i '' 's/<ENV>/"production"/g' $ypath/app.yaml
+      sed -i '' 's/<CLOUD SQL INSTANCE NAME>/"'"$CLOUD_SQL_CONNECTION_NAME"'"/g' $ypath/app.yaml
+      mvn clean package appengine:deploy
+    else
+      # all other projects
+      sed -e 's/<SERVICE>/'$app_engine_service'/g' app.yaml.template > .app.yaml
+      gcloud app deploy --quiet .app.yaml
+    fi
   fi
 done
 

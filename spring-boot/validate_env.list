@@ -1,0 +1,14 @@
+SPRINGBOOT_APP_DSN
+HOST
+DATABASE
+USERNAME
+PASSWORD
+CLOUD_SQL_CONNECTION_NAME
+
+# right now it appears that this is either baked in somewhere 
+# or picked up from SENTRY_RELEASE env variable set in Google App Engine
+# although it's not in env_variables in app.yaml.template... ?
+#RELEASE
+
+# hardcode in app:
+#RUBY_BACKEND

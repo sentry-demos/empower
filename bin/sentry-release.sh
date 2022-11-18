@@ -7,6 +7,8 @@ USAGE="Usage: ./sentry-release.sh ENV RELEASE"
 
 set -e # exit immediately if any command exits with a non-zero status
 
+echo "$0: Creating release and uploading source maps with sentry-cli..."
+
 # Parse and validate command-line arguments
 env="$1"
 release="$2"

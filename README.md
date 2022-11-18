@@ -56,6 +56,20 @@ cd react
 ../env.sh local npm start
 ```
 
+The React app will default to Flask as its backend
+```
+// points to Flask
+localhost:5000
+
+// points to Express, Springboot, Flask
+localhost:5000?backend=express
+localhost:5000/products?backend=express
+localhost:5000/products?se=yourname&backend=express
+
+// throw an exception on any route via 'crash'
+localhost:5000?crash=true
+```
+
 ## Trigger an error
 
 Add +2 quantity of a single item to Cart and purchase in order to trigger an Error. Visit the routes defined in src/index.js to produce transactions.

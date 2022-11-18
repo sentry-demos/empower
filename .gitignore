@@ -80,4 +80,5 @@ ruby/config/master.key
 env-config/*
 !env-config/example.env
 
+**/local.env
 tests/env

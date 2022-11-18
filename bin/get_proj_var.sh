@@ -25,7 +25,7 @@ _env_var_format="$1"
 
 _env_var_name=$($_top/var_name.sh $@)
 if [ "${!_env_var_name}" == "" ]; then
-    echo "$0: [error] ${_env_var_name} must be defined in ./env-config/*.env"
+    >&2 echo "$0: [error] ${_env_var_name} must be defined in ./env-config/*.env"
     exit 1
 fi
 # --> magic <--

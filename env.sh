@@ -23,11 +23,11 @@ env=$1
 proj=$(basename $(pwd))
 
 if [ ! -f "../env-config/$env.env" ]; then
-  echo "[ERROR] Missing file env-config/$env.env or invalid environment '$env'."
+  >&2 echo "[ERROR] Missing file env-config/$env.env or invalid environment '$env'."
   exit 1
 fi
 if [ -f ".env" ]; then
-    echo "[ERROR] project '$proj' contains legacy .env file that is no longer used. Please delete this file,
+    >&2 echo "[ERROR] project '$proj' contains legacy .env file that is no longer used. Please delete this file,
     it is no longer needed and has been replaced by ./env-config/*.env. Note that this error
     might also happen if deploy.sh or env.sh failed to clean up the .env file it has generated dynamically 
     during an earlier run."
@@ -63,6 +63,8 @@ fi
 if [ "$proj" == "react" ]; then
     echo "REACT_APP_RELEASE=$RELEASE" >> .env
 fi
+
+validate_dotenv.sh
 
 if [ "$2" == "" ]; then 
     # Called from deploy.sh

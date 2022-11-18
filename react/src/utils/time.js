@@ -14,3 +14,12 @@ function getReleaseWeek(release) {
   var pastYears =  (year - 22) * 59 - Math.floor((year - 21) / 4);
   return  pastYears + (month - 1) * 5 + (month > 2 && year % 4 != 0 ? -1 : 0) + week;
 }
+
+export function busy_sleep(milliseconds) {
+  var start = new Date().getTime();
+  for (var i = 0; i < 1e7; i++) {
+    if ((new Date().getTime() - start) > milliseconds){      
+      break;
+    }
+  }
+}
