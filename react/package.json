@@ -4,6 +4,7 @@
   "private": true,
   "dependencies": {
     "@sentry/react": "6.16.1",
+    "@sentry/replay": "^0.6.13",
     "@sentry/tracing": "6.16.1",
     "@testing-library/jest-dom": "^5.11.4",
     "@testing-library/react": "^11.1.0",

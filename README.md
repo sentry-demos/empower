@@ -1,7 +1,8 @@
 # Application Monitoring
 Also called the Empower Plant UI/UX. This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app). Features the following...
 - Error Monitoring...Performance Monitoring...Release Health...
-- BrowserTracing (Performance)  
+- BrowserTracing (Performance)
+- Session Replay  
 - Sentry.Profiler (class components)  
 - Sentry.withSentryRouting(Route); (react-router)  
 - FlaskIntegration, SqlAlchemyIntegration
@@ -10,6 +11,7 @@ Also called the Empower Plant UI/UX. This project was bootstrapped with [Create 
 | ------------- |:-------------:|
 | @sentry/react | 6.16.1 |
 | @sentry/tracing | 6.16.1 |
+| @sentry/replay | 0.6.13 |
 | sentry_sdk | 1.5.1 |
 | @sentry/node | 6.16.1 |
 | sentry-spring-boot-starter | 5.5.1 |

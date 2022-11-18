@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom';
 import './index.css';
 import "react-loader-spinner/dist/loader/css/react-spinner-loader.css";
 import * as Sentry from '@sentry/react';
+import { Replay } from '@sentry/replay';
 import { Integrations } from '@sentry/tracing';
 import { createBrowserHistory } from 'history';
 import { Router, Switch, Route } from 'react-router-dom';
@@ -62,6 +63,11 @@ Sentry.init({
         };
       },
     }),
+    new Replay({
+      // This sets the sample rate to be 100%.
+      // You may want this to be a lower rate in production.
+      sessionSampleRate: 1.0,
+    })
   ],
   beforeSend(event, hint) {
     // Parse from tags because src/index.js already set it there. Once there are React route changes, it is no longer in the URL bar
