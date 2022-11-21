@@ -22,7 +22,7 @@ import Cart from './components/Cart';
 import Checkout from './components/Checkout';
 import Complete from './components/Complete';
 import CompleteError from './components/CompleteError';
-import Cra from './components/Cra';
+import Organization from './components/Organization';
 import Employee from './components/Employee';
 import Home from './components/Home';
 import NotFound from './components/NotFound';
@@ -157,7 +157,7 @@ class App extends Component {
       scope.setUser({ email: email })
     })
 
-    // Crasher will parse the query params
+    // Crasher parses query params sent by /tests for triggering crashes for Release Health
     crasher()
   }
 
