@@ -2,6 +2,7 @@ import { Component } from 'react';
 import logo from '../assets/logo.svg';
 import './Organization.css';
 import * as Sentry from '@sentry/react';
+
 class Organization extends Component {
   render() {
     return (
