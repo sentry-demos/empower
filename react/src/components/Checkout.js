@@ -65,7 +65,7 @@ function Checkout(props) {
 
     let response = await checkout(cart)
     if (!response.ok) {
-      Sentry.captureException(new Error(response.status + " - " + (response.statusText || "Internal Server Error") + ""))
+      Sentry.captureException(new Error(response.status + " - " + (response.statusText || "Internal Server Error")))
     }
 
     setLoading(false)
