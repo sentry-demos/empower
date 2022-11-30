@@ -1,8 +1,9 @@
 import { Component } from 'react';
 import logo from '../assets/logo.svg';
-import './Cra.css';
+import './Organization.css';
 import * as Sentry from '@sentry/react';
-class Cra extends Component {
+
+class Organization extends Component {
   render() {
     return (
       <div className="App">
@@ -26,4 +27,4 @@ class Cra extends Component {
   }
 }
 
-export default Sentry.withProfiler(Cra, { name: "Cra"})
+export default Sentry.withProfiler(Organization, { name: "Organization"})

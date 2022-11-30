@@ -11,10 +11,6 @@ const divStyle = {
 
 class Home extends Component {
     static contextType = Context;
-
-    async shouldComponentUpdate() {
-      console.log("> Home shouldComponentUpdate")
-    }
   
     async componentDidMount() {
       let se, customerType, email

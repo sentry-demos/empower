@@ -16,10 +16,6 @@ const employees = [Jane, Lily, Keith, Mason, Emma, Noah];
 
 class About extends Component {
 
-  async shouldComponentUpdate() {
-    console.log("> About shouldComponentUpdate")
-  }
-
   async componentDidMount() {
     let se, customerType, email
     Sentry.withScope(function(scope) {
