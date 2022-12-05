@@ -53,6 +53,7 @@ Sentry.init({
   release: RELEASE,
   environment: ENVIRONMENT,
   tracesSampleRate: 1.0,
+  debug: true,
   integrations: [
     new Integrations.BrowserTracing({
       tracingOrigins: tracingOrigins,
