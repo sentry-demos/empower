@@ -14,7 +14,7 @@ class Products extends Component {
   constructor() {
     super();
     // makes the ui.react.mount span widen to 1500ms
-    busy_sleep(1500)
+    // busy_sleep(1500)
   }
 
   // getProducts handles error responses differently, depending on the browser used
