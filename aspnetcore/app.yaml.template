@@ -1,0 +1,5 @@
+service: <SERVICE>
+env: flex
+runtime: aspnetcore
+beta_settings:
+  cloud_sql_instances: <CLOUD SQL INSTANCE NAME>=tcp:5432

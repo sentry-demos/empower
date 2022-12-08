@@ -83,7 +83,7 @@ fi
 be_projects=""
 fe_projects=""
 for proj in $projects; do
-  if [[ $proj =~ ^(flask|express|ruby|spring-boot)$ ]]; then
+  if [[ $proj =~ ^(flask|express|ruby|spring-boot|aspnetcore)$ ]]; then
     be_projects+="$proj "
   else
     fe_projects+="$proj "
@@ -92,6 +92,7 @@ done
 projects="$be_projects $fe_projects"
 
 function cleanup { 
+  set -x
   for pid in $run_sh_pids; do
     # each run.sh has it's own cleanup function
     if ps -p $pid > /dev/null; then
@@ -99,7 +100,9 @@ function cleanup {
     fi
   done 
   rm -f $top/*/.app.yaml
-  rm -f spring-boot/src/main/appengine/app.yaml
+  rm -f $top/spring-boot/src/main/appengine/app.yaml
+  rm -f $top/aspnetcore/bin/Release/netcoreapp3.1/publish/.app.yaml
+  rm -f $top/aspnetcore/appsettings.json
   if [ "$generated_envs" != "" ]; then
     rm -f $generated_envs # bash only (passed as separate args) 
   fi
@@ -146,6 +149,11 @@ for proj in $projects; do # bash only
     done 
   fi
 
+  CLOUD_SQL_AUTH_PROXY=172.17.0.1
+  if [[ "$env" != "local" && "$proj" == "aspnetcore" ]]; then
+      export HOST="$CLOUD_SQL_AUTH_PROXY"
+  fi
+
   unset CI # prevents build failing in GitHub Actions
   ./build.sh
 
@@ -183,6 +191,13 @@ for proj in $projects; do # bash only
       sed -i '' 's/<ENV>/"production"/g' $ypath/app.yaml
       sed -i '' 's/<CLOUD SQL INSTANCE NAME>/"'"$CLOUD_SQL_CONNECTION_NAME"'"/g' $ypath/app.yaml
       mvn clean package appengine:deploy
+    elif [ "$proj" == "aspnetcore" ]; then
+      ypath=bin/Release/netcoreapp3.1/publish
+      sed -e 's/<SERVICE>/'$app_engine_service'/g' app.yaml.template > $ypath/.app.yaml
+      sed -i '' 's/<CLOUD SQL INSTANCE NAME>/'"$CLOUD_SQL_CONNECTION_NAME"'/g' $ypath/.app.yaml
+      cd $ypath 
+      gcloud app deploy --version v1 --quiet .app.yaml
+      cd - 
     else
       # all other projects
       sed -e 's/<SERVICE>/'$app_engine_service'/g' app.yaml.template > .app.yaml

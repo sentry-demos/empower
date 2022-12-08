@@ -4,6 +4,7 @@ const SUPPORTED_BACKEND_TYPES = {
   "flask": process.env.REACT_APP_FLASK_BACKEND,
   "express": process.env.REACT_APP_EXPRESS_BACKEND,
   "springboot": process.env.REACT_APP_SPRINGBOOT_BACKEND,
+  "aspnetcore": process.env.REACT_APP_ASPNETCORE_BACKEND,
   "ruby": process.env.REACT_APP_RUBY_BACKEND
 }
 
