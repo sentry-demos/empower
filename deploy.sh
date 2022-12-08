@@ -92,6 +92,7 @@ done
 projects="$be_projects $fe_projects"
 
 function cleanup { 
+  set -x
   for pid in $run_sh_pids; do
     # each run.sh has it's own cleanup function
     if ps -p $pid > /dev/null; then
