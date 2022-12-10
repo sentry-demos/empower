@@ -3,3 +3,9 @@ env: flex
 runtime: aspnetcore
 beta_settings:
   cloud_sql_instances: <CLOUD SQL INSTANCE NAME>=tcp:5432
+manual_scaling:
+    instances: 1
+resources:
+  cpu: 1
+  memory_gb: 1.3
+  disk_size_gb: 10
