@@ -116,6 +116,12 @@ for proj in $projects; do # bash only
   echo "|||"
 
   validate_project.sh $top/$proj 
+    
+  if [[ $env == "staging" && ($proj == "spring-boot" || $proj == "aspnetcore") ]]; then
+    echo "$0 [ERROR]: 'staging' env not supported for Spring Boot and ASP .NET Core projects since they
+      require App Engine flexible environment that doesn't scale down and runs up the cost as a result."
+    exit 1
+  fi
   
   cd $top/$proj
 
