@@ -1,6 +1,5 @@
 import { Component } from 'react';
 import Context from '../utils/context';
-//import { Link } from 'react-router-dom';
 import './products.css';
 import * as Sentry from '@sentry/react';
 import { connect } from 'react-redux'
@@ -15,7 +14,7 @@ class Products extends Component {
   constructor() {
     super();
     // makes the ui.react.mount span widen to 1500ms
-    busy_sleep(1500)
+    // busy_sleep(1500)
   }
 
   // getProducts handles error responses differently, depending on the browser used
@@ -59,10 +58,6 @@ class Products extends Component {
     }
   }
 
-  async shouldComponentUpdate() {
-    console.log("> Products shouldComponentUpdate")
-  }
-
   async componentDidMount(){
     var products
     try {
@@ -80,7 +75,6 @@ class Products extends Component {
       <div>
         <ul className="products-list">
           {products.map((product) => {
-            //const itemLink = '/product/' + product.id;
             const averageRating = (product.reviews.reduce((a,b) => a + (b["rating"] || 0),0) / product.reviews.length).toFixed(1)
 
             let stars = [1,2,3,4,5].map((index) => {

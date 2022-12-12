@@ -15,6 +15,7 @@ function getReleaseWeek(release) {
   return  pastYears + (month - 1) * 5 + (month > 2 && year % 4 != 0 ? -1 : 0) + week;
 }
 
+// is blocking, unlike setTimeout
 export function busy_sleep(milliseconds) {
   var start = new Date().getTime();
   for (var i = 0; i < 1e7; i++) {
