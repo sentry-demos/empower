@@ -27,8 +27,13 @@ const sentryEventContext = function(req, res, next) {
   const se = req.headers.se;
 
   if(se !== undefined) {
-    Sentry.setTag("se", se);
-    headers["se"]=se
+    if(se == "undefined"){
+      Sentry.setTag("se", "tda");
+      headers["se"]=se
+    }else{
+      Sentry.setTag("se", se);
+      headers["se"]=se
+    }
   }
 
   const customerType = req.headers.customertype;
