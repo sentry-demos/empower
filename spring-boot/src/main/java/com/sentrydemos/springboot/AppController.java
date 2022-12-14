@@ -81,6 +81,8 @@ public class AppController {
 					User user = new User();
 					user.setEmail(header);
 					Sentry.setUser(user);
+				} else if(tag == "se" && header.equals("undefined")) {
+					Sentry.setTag(tag, "TDA");
 				} else {
 					Sentry.setTag(tag, header);
 				}
