@@ -131,8 +131,9 @@ for proj in $projects; do # bash only
   
   # We do this because 1) we need RELEASE that's generated in env.sh 2) we need *_APP_*_BACKEND
   # 3) some projects may require env variables instead of .env (not the case for react, flask & express)
+  # TODO: double check above comment is still correct, we do this 3 times (once here and twice in env.sh)
   # TODO: support spring-boot which seems to use .properties files
-  export $(grep -v '^#' .env | xargs) 
+  export $(grep -v '^#' .env | sed 's/ #.*//' | xargs) 
     
   if [[ "$env" == "local" && "$fe_projects" = *"$proj "* ]]; then 
     # Point to local backend http://host:port instead of cloud endpoints for all _built_ BE projects
