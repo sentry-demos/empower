@@ -51,7 +51,8 @@ trap cleanup EXIT # if fails while running this script or while running command
 echo "" >> .env # in case no newline
 # source .env will not work because of '$' symbols in values (PASSWORD)
 unset RELEASE # so we don't accidentally pick up RELEASE from another project (deploy.sh)
-export $(grep -v '^#' .env | xargs) # just for *_RELEASE_PACKAGE_NAME and RELEASE
+# Ignore both comment lines and inline comments
+export $(grep -v '^#' .env | sed 's/ #.*//' | xargs) # just for *_RELEASE_PACKAGE_NAME and RELEASE
 if [ "$RELEASE" == "" ]; then
     . get_proj_var.sh "%s_RELEASE_PACKAGE_NAME" $proj
     release="${release_package_name}@"`release.sh`
@@ -78,7 +79,8 @@ if [ "$2" == "" ]; then
 else
     # Standalone mode
 
-    export $(grep -v '^#' .env | xargs) # in case project doesn't use dotenv
+    # do it over again in case we added something new to it?
+    export $(grep -v '^#' .env | sed 's/ #.*//' | xargs) # in case project doesn't use dotenv
 
     if [ "$proj" == "react" ]; then
         # avoids error npm start tries to bind to every available network interface
