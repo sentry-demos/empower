@@ -8,7 +8,7 @@
 # Example:
 # . get_proj_var %s_APP_%s_BACKEND react spring-boot
 # 
-# Defines an "output" variable named 'app_backend' and
+# Defines an "output" variable named 'app_backend' (i.e. printf string with '%s' and extra underscored removed) and
 # sets its value to the value of REACT_APP_SPRINGBOOT_BACKEND that is _already_ set in the current shell
 # (presumably from env-config/*.env)
 #

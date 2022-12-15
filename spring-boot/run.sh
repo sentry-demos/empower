@@ -5,11 +5,11 @@ set -e
 properties="./src/main/resources/application.properties"
 
 echo "spring.datasource.url=jdbc:postgresql://$HOST:5432/$DATABASE" >> $properties
-echo "server.port=8090" >> $properties
+echo "server.port=$LOCAL_PORT" >> $properties
 echo "spring.cloud.gcp.sql.enabled=false" >> $properties
 
 function cleanup {
-  stop.sh java 8090
+  stop.sh java $LOCAL_PORT 
 }
 trap cleanup EXIT
 
