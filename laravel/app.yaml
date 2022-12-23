@@ -1,0 +1,7 @@
+env: standard
+service: application-monitoring-laravel
+runtime: php81
+env_variables:
+  APP_STORAGE: "/tmp"
+  IS_APP_ENGINE: true
+
