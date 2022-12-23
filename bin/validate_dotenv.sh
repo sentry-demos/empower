@@ -14,7 +14,7 @@
 set -e # exit immediately if any command exits with a non-zero status
   
 if [ ! -f .env ]; then
-    echo "$0: ERROR: .env does not exist in current directory: $(pwd). It should have been
+    >&2 echo "$0: ERROR: .env does not exist in current directory: $(pwd). It should have been
     created by 'parent' script."
     exit 1
 fi
