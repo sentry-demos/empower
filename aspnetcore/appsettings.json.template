@@ -1,0 +1,14 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft": "Warning",
+      "Microsoft.Hosting.Lifetime": "Information"
+    }
+  },
+  "AllowedHosts": "*",
+  "ConnectionStrings": {
+    "DefaultConnection":"Server=<HOST>; port=5432; user id = <USERNAME>; password = <PASSWORD>; database=<DATABASE>; pooling = true"
+  },
+  "SentryDSN": "<SENTRY_DSN>"
+}

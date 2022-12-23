@@ -82,3 +82,7 @@ env-config/*
 
 **/local.env
 tests/env
+
+# .NET
+aspnetcore/bin
+aspnetcore/obj
