@@ -20,15 +20,15 @@
 	<dependencies>
 		<!-- Sentry Spring Boot SDK -->
 		<dependency>
-    		<groupId>io.sentry</groupId>
-    		<artifactId>sentry-spring-boot-starter</artifactId>
-    		<version>5.6.1</version>
+			<groupId>io.sentry</groupId>
+			<artifactId>sentry-spring-boot-starter</artifactId>
+			<version>6.6.0</version>
 		</dependency>
 		<!-- Sentry Logback SDK -->
 		<dependency>
 		    <groupId>io.sentry</groupId>
 		    <artifactId>sentry-logback</artifactId>
-		    <version>5.6.1</version>
+		    <version>6.6.0</version>
 		</dependency>
 		<!-- Capture Sentry Transaction -->
 		<dependency>
@@ -44,7 +44,7 @@
 		<dependency>
 			<groupId>org.json</groupId>
 			<artifactId>json</artifactId>
-			<version>20210307</version>
+			<version>20220924</version>
 		</dependency>
 		
 		<!-- All below dependencies are for DB connections -->
@@ -58,7 +58,7 @@
 		<dependency>
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
-			<version>42.2.23</version>
+			<version>42.5.0</version>
 		</dependency>
 		
 		<!-- GCLOUD Dependencies -->
@@ -66,7 +66,7 @@
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-gcp-starter-sql-postgresql</artifactId>
-			<version>1.2.4.RELEASE</version>
+			<version>1.2.8.RELEASE</version>
 		</dependency>
 				
 	</dependencies>

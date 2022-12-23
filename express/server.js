@@ -217,7 +217,7 @@ app.get('/organization', (req, res) => {
 
 app.use(Sentry.Handlers.errorHandler());
 
-const PORT = process.env.EXPRESS_PORT;
+const PORT = process.env.PORT;
 app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}...`);
 });

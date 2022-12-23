@@ -13,10 +13,11 @@ from sentry_sdk.integrations.flask import FlaskIntegration
 from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 load_dotenv()
 
-RELEASE = os.environ.get("RELEASE")
-DSN = os.getenv("FLASK_APP_DSN")
-ENVIRONMENT = os.environ.get("FLASK_ENV")
-RUBY_BACKEND = os.environ.get("RUBY_BACKEND")
+PORT = os.environ["PORT"]
+RELEASE = os.environ["RELEASE"]
+DSN = os.environ["FLASK_APP_DSN"]
+ENVIRONMENT = os.environ["FLASK_ENV"]
+RUBY_BACKEND = os.environ["RUBY_BACKEND"]
 RUBY_CUSTOM_HEADERS = ['se', 'customerType', 'email']
 
 print("> DSN", DSN)
@@ -170,4 +171,4 @@ if __name__ == '__main__':
         raise SystemExit("Failed to start: need python3")
     # This is used when running locally only. When deploying to Google App
     # Engine, a webserver process such as Gunicorn will serve the app.
-    app.run(host='127.0.0.1', port=8080, debug=False)
+    app.run(host='127.0.0.1', port=PORT, debug=False)

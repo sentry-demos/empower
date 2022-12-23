@@ -133,18 +133,20 @@ for proj in $projects; do # bash only
   
   # We do this because 1) we need RELEASE that's generated in env.sh 2) we need *_APP_*_BACKEND
   # 3) some projects may require env variables instead of .env (not the case for react, flask & express)
+  # TODO: double check above comment is still correct, we do this 3 times (once here and twice in env.sh)
   # TODO: support spring-boot which seems to use .properties files
-  export $(grep -v '^#' .env | xargs) 
+  export $(grep -v '^#' .env | sed 's/ #.*//' | xargs) 
     
   if [[ "$env" == "local" && "$fe_projects" = *"$proj "* ]]; then 
     # Point to local backend http://host:port instead of cloud endpoints for all _built_ BE projects
     # If no backend projects specified in CLI args, keep using cloud (production or staging) BE endpoints.
     for be_proj in $be_projects; do
       backend_var=$(var_name.sh %s_APP_%s_BACKEND $proj $be_proj)
-      . get_proj_var.sh "%s_APP_%s_BACKEND_LOCAL" $proj $be_proj # sets $app_backend_local
+      . get_proj_var.sh "%s_LOCAL_PORT" $be_proj # sets $local_port
       echo "" >> .env # in case no newline
-      echo "$backend_var=$app_backend_local" >> .env # append instead of search-replace should be OK
-      export "$backend_var=$app_backend_local"
+      backend_local="http://localhost:$local_port"
+      echo "$backend_var=$backend_local" >> .env # append instead of search-replace should be OK
+      export "$backend_var=$backend_local"
     done 
   fi
 
@@ -163,6 +165,12 @@ for proj in $projects; do # bash only
 
   # *** DEPLOY OR RUN ***
   if [ "$env" == "local" ]; then
+
+    if [[ "$be_projects" = *"$proj "* ]]; then
+      . get_proj_var.sh "%s_LOCAL_PORT" $proj # sets $local_port
+      export LOCAL_PORT="$local_port"
+    fi
+
     ./run.sh &
     pid="$!"
     run_sh_pids+="$pid " # for later cleanup

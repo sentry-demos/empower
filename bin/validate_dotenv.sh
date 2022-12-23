@@ -19,5 +19,5 @@ if [ ! -f .env ]; then
     exit 1
 fi
 
-env -i PATH="$PATH" SENTRY_AUTH_TOKEN="$SENTRY_AUTH_TOKEN" /bin/bash -c 'export $(grep -v ^# .env | xargs); validate_env.sh'
+env -i PATH="$PATH" SENTRY_AUTH_TOKEN="$SENTRY_AUTH_TOKEN" /bin/bash -c 'export $(grep -v ^# .env | sed "s/ #.*//" | xargs); validate_env.sh'
  
