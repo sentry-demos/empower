@@ -5,6 +5,7 @@ const SUPPORTED_BACKEND_TYPES = {
   "express": process.env.REACT_APP_EXPRESS_BACKEND,
   "springboot": process.env.REACT_APP_SPRINGBOOT_BACKEND,
   "aspnetcore": process.env.REACT_APP_ASPNETCORE_BACKEND,
+  "laravel": process.env.REACT_APP_LARAVEL_BACKEND,
   "ruby": process.env.REACT_APP_RUBY_BACKEND
 }
 

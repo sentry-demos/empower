@@ -1,6 +1,7 @@
 <?php
 
 include 'inventory.php';
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use App\Exceptions\Handler;
 use Illuminate\Http\Request;
@@ -20,6 +21,17 @@ use Sentry\State\Scope;
 |
 */
 //Auth::routes();
+
+Route::get('/products', ['as' => 'products', function () {
+
+    // for ORM migth be able to use `php artisan make:model <table>` from existing DB
+    // https://medium.com/@mohansharma201.ms/laravel-working-with-an-existing-database-d9eba86aa941
+    // OR https://github.com/digitaldreams/laracrud
+    // Basic DB operations: https://laravel.com/docs/8.x/database#running-a-select-query
+
+    $products = DB::select('select * from products');
+    return $products;
+}]);
 
 Route::get('/handled', ['as' => 'handled', function (Request $request) {
     try {

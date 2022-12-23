@@ -151,8 +151,15 @@ for proj in $projects; do # bash only
   fi
 
   CLOUD_SQL_AUTH_PROXY=172.17.0.1
-  if [[ "$env" != "local" && "$proj" == "aspnetcore" ]]; then
+  if [ "$env" != "local" ]; then 
+    if [ "$proj" == "aspnetcore" ]; then
+      # https://cloud.google.com/sql/docs/postgres/connect-app-engine-flexible
       export HOST="$CLOUD_SQL_AUTH_PROXY"
+    elif [ "$proj" == "laravel" ]; then
+      # https://cloud.google.com/sql/docs/postgres/connect-app-engine-standard#php
+      export HOST="pgsql:dbname=$DATABASE;host=/cloudsql/$CLOUD_SQL_CONNECTION_NAME/"
+      #unset PORT
+    fi
   fi
 
   unset CI # prevents build failing in GitHub Actions
