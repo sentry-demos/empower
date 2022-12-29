@@ -26,8 +26,9 @@ for var in $(grep -v '^#' validate_env.list | xargs); do
   value="${!var}" # won't work in zsh, only bash
 
   if [ "$value" == "" ]; then
-    >&2 echo "$0: [ERROR] required env variable $var not defined or has empty value." \
-            "You must add it to your env-config/*.env file." 
+    >&2 echo "$0: [ERROR] required env variable $var not defined or has empty value.
+      You must add it to your env-config/*.env file. Correct values can be obtained from
+      https://github.com/sentry-demos/application-monitoring-deploy/tree/master/env-config" 
     exit 1
   fi
 done 

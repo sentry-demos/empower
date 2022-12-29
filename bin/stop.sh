@@ -18,7 +18,7 @@ server_pid=""
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
     server_pid="$(netstat -lnp | grep $server_port | head -1 | awk '{ print $7 }' | cut -d '/' -f 1)"
 elif [[ "$OSTYPE" == "darwin"* ]]; then
-    server_pid="$(netstat -anv | grep $server_port | grep LISTEN | cut -w -f 9)"
+    server_pid="$(netstat -anv | grep $server_port | grep LISTEN | head -1 | cut -w -f 9)"
 fi
 
 if [ "$server_pid" != "" ]; then 

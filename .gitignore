@@ -81,10 +81,15 @@ env-config/*
 !env-config/example.env
 
 **/local.env
-tests/env/laravel/node_modules
 
+tests/env
+
+# .NET
+aspnetcore/bin
+aspnetcore/obj
+
+tests/env/laravel/node_modules
 /laravel/public/hot
 /laravel/public/storage
 /laravel/storage/*.key
 /laravel/vendor
-
