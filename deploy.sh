@@ -83,7 +83,7 @@ fi
 be_projects=""
 fe_projects=""
 for proj in $projects; do
-  if [[ $proj =~ ^(flask|express|ruby|spring-boot|aspnetcore)$ ]]; then
+  if [[ $proj =~ ^(flask|express|ruby|spring-boot|aspnetcore|laravel)$ ]]; then
     be_projects+="$proj "
   else
     fe_projects+="$proj "

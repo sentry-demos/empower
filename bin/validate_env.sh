@@ -9,7 +9,7 @@
 set -e # exit immediately if any command exits with a non-zero status
 
 if [ ! -f validate_env.list ]; then
-  echo "$0: ERROR: validate_env.list file does not exist in current directory: $(pwd)"
+  >&2 echo "$0: ERROR: validate_env.list file does not exist in current directory: $(pwd)"
   exit 1
 fi
 
