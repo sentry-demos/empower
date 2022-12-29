@@ -81,6 +81,7 @@ env-config/*
 !env-config/example.env
 
 **/local.env
+
 tests/env
 
 # .NET
@@ -92,4 +93,3 @@ aspnetcore/obj
 /laravel/public/storage
 /laravel/storage/*.key
 /laravel/vendor
-
