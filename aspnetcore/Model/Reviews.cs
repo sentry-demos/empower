@@ -7,7 +7,7 @@ using System.Collections.Generic;
 
 namespace aspnetcore.Model
 {
-    public partial class Reviews
+    public partial class Review
     {
         public int Id { get; set; }
         public int Productid { get; set; }
@@ -15,5 +15,6 @@ namespace aspnetcore.Model
         public int? Customerid { get; set; }
         public string Description { get; set; }
         public DateTime? Created { get; set; }
+        public Product Product { get; set; }
     }
 }

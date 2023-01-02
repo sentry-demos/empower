@@ -20,8 +20,8 @@ namespace aspnetcore.Model
         }
 
         public virtual DbSet<Inventory> Inventory { get; set; }
-        public virtual DbSet<Products> Products { get; set; }
-        public virtual DbSet<Reviews> Reviews { get; set; }
+        public virtual DbSet<Product> Products { get; set; }
+        public virtual DbSet<Review> Reviews { get; set; }
         public virtual DbSet<Tools> Tools { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -51,7 +51,7 @@ namespace aspnetcore.Model
                     .HasColumnType("character varying");
             });
 
-            modelBuilder.Entity<Products>(entity =>
+            modelBuilder.Entity<Product>(entity =>
             {
                 entity.ToTable("products");
 
@@ -85,7 +85,7 @@ namespace aspnetcore.Model
                     .HasMaxLength(255);
             });
 
-            modelBuilder.Entity<Reviews>(entity =>
+            modelBuilder.Entity<Review>(entity =>
             {
                 entity.ToTable("reviews");
 

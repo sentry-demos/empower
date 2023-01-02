@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using aspnetcore.Model;
@@ -30,7 +31,7 @@ namespace aspnetcore.Controllers
         public ActionResult Get()
         {
             string dsn = Configuration["SentryDSN"];
-            return Ok(_context.Products.ToList());
+            return Ok(_context.Products.Include(e => e.Reviews).ToList());
         }
     }
 }
