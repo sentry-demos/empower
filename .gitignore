@@ -41,6 +41,7 @@ react/app.yaml
 flask/app.yaml
 express/app.yaml
 ruby/app.yaml
+ruby-on-rails/app.yaml
 
 spring-boot/src/main/resources/application.properties
 spring-boot/src/main/appengine/app.yaml
