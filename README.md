@@ -17,7 +17,7 @@ Also called the Empower Plant UI/UX. This project was bootstrapped with [Create 
 
 ## Setup
 1. Permit your IP address in CloudSQL.
-2. Copy `env-config/local.env` from the private fork, [application-monitoring-config](https://github.com/sentry-demos/application-monitoring-config), or, if you don't have access to it, follow `env-config/example.env`.
+2. Copy `local.env` from [application-monitoring-config](https://github.com/sentry-demos/application-monitoring-config) into `env-config` directory of your local repo, or, if you don't have access to it, follow `env-config/example.env`.
 4. The `REACT_APP_FLASK_BACKEND` in `env-config/*.env` points to the backend instance deployed to AppEngine, the same one used by the cloud-hosted React web app. Flask is the default backend. If you expect to run other backend types, add values for those in `env-config/*.env` as well (i.e. `REACT_APP_EXPRESS_BACKEND`).
 
 `deploy.sh` takes a list of projects as arguments and will attempt to install dependencies, build and run or deploy them as long as each supplies a working `build.sh` and `run.sh` scripts. Here is the list of project that should work out of the box:
