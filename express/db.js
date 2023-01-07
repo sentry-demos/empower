@@ -145,17 +145,17 @@ function openDBConnection() {
     // The cloud sql instance connection
     // name doesn't work locally, but the
     // public IP of the instance does.
-    host = process.env.HOST
+    host = process.env.DB_HOST
   } else {
-    host = '/cloudsql/' + process.env.CLOUD_SQL_CONNECTION_NAME
+    host = '/cloudsql/' + process.env.DB_CLOUD_SQL_CONNECTION_NAME
   }
 
   const db = require('knex')({
     client: 'pg',
     connection: {
-      user: process.env.USERNAME,
-      password: process.env.PASSWORD,
-      database: process.env.DATABASE,
+      user: process.env.DB_USERNAME,
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_DATABASE,
       host: host
     }
   });

@@ -8,12 +8,12 @@ from utils import weighter
 from dotenv import load_dotenv
 load_dotenv()
 
-HOST = os.getenv("HOST")
-DATABASE = os.getenv("DATABASE")
-USERNAME = os.getenv("USERNAME")
-PASSWORD = os.getenv("PASSWORD")
+HOST = os.getenv("DB_HOST")
+DATABASE = os.getenv("DB_DATABASE")
+USERNAME = os.getenv("DB_USERNAME")
+PASSWORD = os.getenv("DB_PASSWORD")
 FLASK_ENV = os.environ.get("FLASK_ENV")
-CLOUD_SQL_CONNECTION_NAME = os.environ.get("CLOUD_SQL_CONNECTION_NAME")
+CLOUD_SQL_CONNECTION_NAME = os.environ.get("DB_CLOUD_SQL_CONNECTION_NAME")
 
 class DatabaseConnectionError (Exception):
     pass

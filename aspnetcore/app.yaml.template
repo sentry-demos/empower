@@ -2,7 +2,7 @@ service: <SERVICE>
 env: flex
 runtime: aspnetcore
 beta_settings:
-  cloud_sql_instances: <CLOUD SQL INSTANCE NAME>=tcp:5432
+  cloud_sql_instances: <CLOUD SQL CONNECTION NAME>=tcp:5432
 manual_scaling:
     instances: 1
 resources:
