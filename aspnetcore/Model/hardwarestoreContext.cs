@@ -11,14 +11,18 @@ namespace aspnetcore.Model
 {
     public partial class hardwarestoreContext : DbContext
     {
-        public hardwarestoreContext()
+        public hardwarestoreContext(IConfiguration configuration)
         {
+            Configuration = configuration;
         }
 
-        public hardwarestoreContext(DbContextOptions<hardwarestoreContext> options)
+        public hardwarestoreContext(IConfiguration configuration, DbContextOptions<hardwarestoreContext> options)
             : base(options)
         {
+            Configuration = configuration;
         }
+        
+        public IConfiguration Configuration { get; }
 
         public virtual DbSet<Inventory> Inventory { get; set; }
         public virtual DbSet<Product> Products { get; set; }
