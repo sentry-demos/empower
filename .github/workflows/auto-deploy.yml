@@ -45,14 +45,18 @@ jobs:
           token: ${{ SECRETS.SENTRY_AUTH_TOKEN }} # from GitHub secrets
           
       - name: Get GCP_ env variables from application-monitoring-config/.gcloudrc
-        run: source application-monitoring-config/.gcloudrc
+        run: |
+          source application-monitoring-config/.gcloudrc 
+          echo "GCP_WORKLOAD_IDENTITY_PROVIDER=$GCP_WORKLOAD_IDENTITY_PROVIDER" >> $GITHUB_OUTPUT
+          echo "GCP_SERVICE_ACCOUNT=$GCP_SERVICE_ACCOUNT" >> $GITHUB_OUTPUT 
+        id: gcloudrc
         
       - id: 'auth'
         name: 'Authenticate Google Cloud'
         uses: 'google-github-actions/auth@v0'
         with:
-          workload_identity_provider: $GCP_WORKLOAD_IDENTITY_PROVIDER
-          service_account: $GCP_SERVICE_ACCOUNT
+          workload_identity_provider: ${{ steps.gcloudrc.outputs.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ steps.gcloudrc.outputs.GCP_SERVICE_ACCOUNT }}
 
       - name: 'Set up Google Cloud SDK'
         uses: 'google-github-actions/setup-gcloud@v0'
