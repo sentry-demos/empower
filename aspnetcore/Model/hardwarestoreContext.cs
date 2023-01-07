@@ -1,4 +1,5 @@
 ﻿using System;
+using Microsoft.Extensions.Configuration;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 
@@ -28,8 +29,7 @@ namespace aspnetcore.Model
         {
             if (!optionsBuilder.IsConfigured)
             {
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. See http://go.microsoft.com/fwlink/?LinkId=723263 for guidance on storing connection strings.
-                optionsBuilder.UseNpgsql("Server=34.70.84.230;Database=hardwarestore;Username=postgres;Password=Qb&UdB$2EtBk3d9&");
+                optionsBuilder.UseNpgsql(Configuration.GetConnectionString("DefaultConnection"));
             }
         }
 
