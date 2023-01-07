@@ -21,8 +21,17 @@ jobs:
       - run: echo "Triggered by ${{ github.event_name }} event."
       - run: echo "Branch is ${{ github.ref }}"
       
-      - name: Check out repository code
+      - name: Check out this repository code
         uses: actions/checkout@v3
+        with:
+          path: application-monitoring
+        
+      - name: Check out `application-monitoring-config` to get env-config
+        uses: actions/checkout@v3
+        with:
+          repository: sentry-demos/application-monitoring-config
+          path: application-monitoring-config
+          token: ${{ secrets.KOSTY_PERSONAL_ACCESS_TOKEN_FOR_SYNC_DEPLOY_FORK }}
         
       - name: Install Node
         uses: actions/setup-node@v3
@@ -45,7 +54,10 @@ jobs:
       - name: 'Set up Google Cloud SDK'
         uses: 'google-github-actions/setup-gcloud@v0'
         
+      - name: Get env-config/production.env from application-monitoring-config
+        run: cp application-monitoring-config/env-config/production.env application-monitoring/env-config/
+        
       - name: Deploy to production
-        run: ./deploy.sh react --env=production
+        run: ./application-monitoring/deploy.sh react --env=production
           
       - run: echo "Job status is ${{ job.status }}."
