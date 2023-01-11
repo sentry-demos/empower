@@ -2,16 +2,11 @@
 
 class Api::V1::ProductsController < ApplicationController
   def index
-    results = []
-    conn = PG::Connection.new( "postgresql://#{ENV['USERNAME']}:#{ENV['PASSWORD']}@#{ENV['PG_HOST']}:5432/#{ENV['DATABASE']}" )
-    # ^ TODO: google cloud sql format
+    # results = []
 
-    # print Rails.const_defined? 'Console' # false when rails s, false when rackup
-    # print Rails.const_defined? 'Server' # true when rails s, false when rackup
+    products = Products.all
 
-    results = conn.exec("SELECT *, pg_sleep(1) FROM products")
-
-    render json: results, status: 200
+    render json: products, status: 200
   end
 
   def show
