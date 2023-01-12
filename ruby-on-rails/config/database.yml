@@ -17,6 +17,7 @@ test:
   port: "<%= ENV["DB_PORT"] %>"
   pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 1 } %>
 
+# production will only work on Google Cloud App Engine
 production:
   <<: *default
   host: "/cloudsql/<%= ENV["DB_CLOUD_SQL_CONNECTION_NAME"] %>"

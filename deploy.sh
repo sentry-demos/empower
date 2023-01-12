@@ -4,28 +4,28 @@
 # using ./env-config/*.env for both build-time and runtime environment configuration. Must be
 # called with --env parameter that specifies which env-config file to use. A special case is
 # --env=local which will run each project's 'run.sh' script instead of deploying to Google App
-# Engine (default). 
-# 
+# Engine (default).
+#
 # Usage: ./deploy.sh react flask --env=staging
 #
 # Can be run from any directory. In --env=local mode it will start web servers for ALL projects
-# specified on command-line (backends first) and then eventually, upon exit (Ctrl+C), every one 
-# of them. An error anywhere in the script (e.g. failed deployment or sentry-cli call) should 
+# specified on command-line (backends first) and then eventually, upon exit (Ctrl+C), every one
+# of them. An error anywhere in the script (e.g. failed deployment or sentry-cli call) should
 # make the entire script exit immediately.
 #
-# All variables in *.env are passed into each projects runtime environment. 
+# All variables in *.env are passed into each projects runtime environment.
 # Some variables, however, are special and are additionally used during the build:
-# 
+#
 #   SENTRY_ORG is passed to ./bin/sentry-release.sh and used to specify which Sentry
 #   org to create release in.
 #
-#   <PROJECT>_SENTRY_PROJECT is passed to ./bin/sentry-release.sh and used to specify 
-#   which Sentry project to create release in. 
-# 
+#   <PROJECT>_SENTRY_PROJECT is passed to ./bin/sentry-release.sh and used to specify
+#   which Sentry project to create release in.
+#
 #   <PROJECT>_RELEASE_PACKAGE_NAME is used to create a new Sentry release (prepended to calendar
 #   version e.g. 'package-name@22.9.5' )
 #
-#   <PROJECT>_SOURCEMAPS_URL_PREFIX 
+#   <PROJECT>_SOURCEMAPS_URL_PREFIX
 #
 #   <PROJECT>_SOURCEMAPS_DIR
 #
@@ -34,16 +34,16 @@
 #   These values should be configured once in production.env and staging.env and never changed
 #   again. Obviously, for local.env they are meaningless and not required.
 #   e.g.: REACT_APP_ENGINE_SERVICE
-# 
-#   REACT_APP_<PROJECT>_BACKEND besides being passed into React application runtime these are
-#   substituted with the values of respective REACT_APP_<PROJECT>_BACKEND_LOCAL when --env=local 
-#   AND <PROJECT> is included in the list of projects to build from command-line arguments.
-#    
-# MIGRATION NOTE: 
 #
-#   The old .env and app.yaml must now be deleted from ./<project>/ directory. Instead move all the 
+#   REACT_APP_<PROJECT>_BACKEND besides being passed into React application runtime these are
+#   substituted with the values of respective REACT_APP_<PROJECT>_BACKEND_LOCAL when --env=local
+#   AND <PROJECT> is included in the list of projects to build from command-line arguments.
+#
+# MIGRATION NOTE:
+#
+#   The old .env and app.yaml must now be deleted from ./<project>/ directory. Instead move all the
 #   variables to ./env-config/<env>.env and create ./<project>/app.yaml.template with '<SERVICE>' placeholder
-#   in place of actual service name. Finally add <PROJECT>_APP_ENGINE_SERVICE=<actual service name> to all the 
+#   in place of actual service name. Finally add <PROJECT>_APP_ENGINE_SERVICE=<actual service name> to all the
 #   ./env-config/<env>.env files.
 
 set -e # exit immediately if any command exits with a non-zero status
@@ -60,7 +60,7 @@ for arg in "$@"; do
   if [[ $arg = --env=* ]]; then
     env=$(echo $arg | cut -d '=' -f 2)
     echo "env = $env"
-  else 
+  else
     projects+="$arg "
   fi
 done
@@ -69,7 +69,7 @@ USAGE="[ERROR] Invalid arguments. Usage e.g.: ./deploy.sh --env=staging react fl
 
 # Validate CLI arguments
 if [[ "$env" == "" || "$projects" == "" ]]; then
-  echo "$USAGE"; 
+  echo "$USAGE";
   exit 1
 fi
 
@@ -83,7 +83,7 @@ fi
 be_projects=""
 fe_projects=""
 for proj in $projects; do
-  if [[ $proj =~ ^(flask|express|ruby|spring-boot|aspnetcore|laravel)$ ]]; then
+  if [[ $proj =~ ^(flask|express|ruby|spring-boot|aspnetcore|laravel|ruby-on-rails)$ ]]; then
     be_projects+="$proj "
   else
     fe_projects+="$proj "
@@ -91,19 +91,19 @@ for proj in $projects; do
 done
 projects="$be_projects $fe_projects"
 
-function cleanup { 
+function cleanup {
   for pid in $run_sh_pids; do
     # each run.sh has it's own cleanup function
     if ps -p $pid > /dev/null; then
       kill $pid 2>/dev/null
     fi
-  done 
+  done
   rm -f $top/*/.app.yaml
   rm -f $top/spring-boot/src/main/appengine/app.yaml
   rm -f $top/aspnetcore/bin/Release/netcoreapp3.1/publish/.app.yaml
   rm -f $top/aspnetcore/appsettings.json
   if [ "$generated_envs" != "" ]; then
-    rm -f $generated_envs # bash only (passed as separate args) 
+    rm -f $generated_envs # bash only (passed as separate args)
   fi
 }
 trap cleanup EXIT
@@ -117,8 +117,8 @@ for proj in $projects; do # bash only
   echo "||| $0: $proj"
   echo "|||"
 
-  validate_project.sh $top/$proj 
-  
+  validate_project.sh $top/$proj
+
   cd $top/$proj
 
   # React bakes in (exported) env variables from calling shell as well as contents of .env
@@ -126,18 +126,18 @@ for proj in $projects; do # bash only
   # See: https://github.com/facebook/create-react-app/blob/main/packages/react-scripts/config/env.js
   # and https://create-react-app.dev/docs/adding-custom-environment-variables/
   #
-  # Express and Flask on the other hand need .env deployed and present at runtime. 
+  # Express and Flask on the other hand need .env deployed and present at runtime.
   #
   # We generate a temporary .env dynamically from env-config/*.env then remove upon exit
   generated_envs+="$(../env.sh $env) "
-  
+
   # We do this because 1) we need RELEASE that's generated in env.sh 2) we need *_APP_*_BACKEND
   # 3) some projects may require env variables instead of .env (not the case for react, flask & express)
   # TODO: double check above comment is still correct, we do this 3 times (once here and twice in env.sh)
   # TODO: support spring-boot which seems to use .properties files
-  export $(grep -v '^#' .env | sed 's/ #.*//' | xargs) 
-    
-  if [[ "$env" == "local" && "$fe_projects" = *"$proj "* ]]; then 
+  export $(grep -v '^#' .env | sed 's/ #.*//' | xargs)
+
+  if [[ "$env" == "local" && "$fe_projects" = *"$proj "* ]]; then
     # Point to local backend http://host:port instead of cloud endpoints for all _built_ BE projects
     # If no backend projects specified in CLI args, keep using cloud (production or staging) BE endpoints.
     for be_proj in $be_projects; do
@@ -147,11 +147,11 @@ for proj in $projects; do # bash only
       backend_local="http://localhost:$local_port"
       echo "$backend_var=$backend_local" >> .env # append instead of search-replace should be OK
       export "$backend_var=$backend_local"
-    done 
+    done
   fi
 
   CLOUD_SQL_AUTH_PROXY=172.17.0.1
-  if [ "$env" != "local" ]; then 
+  if [ "$env" != "local" ]; then
     if [ "$proj" == "aspnetcore" ]; then
       # https://cloud.google.com/sql/docs/postgres/connect-app-engine-flexible
       export DB_HOST="$CLOUD_SQL_AUTH_PROXY"
@@ -182,9 +182,9 @@ for proj in $projects; do # bash only
     run_sh_pids+="$pid " # for later cleanup
 
     if [[ "$projects" != *"$proj " ]]; then # not last one
-      sleep 1 
+      sleep 1
       echo "$0: Waiting a few seconds before building next project to make sure this server process doesn't crash..."
-      sleep 4 
+      sleep 4
       if ! ps -p $pid > /dev/null
       then
         echo "$0 [ERROR]: $proj/run.sh exited early, must be a crash."
@@ -195,7 +195,7 @@ for proj in $projects; do # bash only
 
     # Replace <SERVICE> in app.yaml.template with <PROJECT>_APP_ENGINE_SERVICE
     . get_proj_var.sh "%s_APP_ENGINE_SERVICE" $proj
-    
+
     if [ "$proj" == "spring-boot" ]; then
       ypath="./src/main/appengine/"
       sed -e 's/<SERVICE>/'$app_engine_service'/g' $ypath/app.yaml.template > $ypath/app.yaml
@@ -208,9 +208,9 @@ for proj in $projects; do # bash only
       ypath=bin/Release/netcoreapp3.1/publish
       sed -e 's/<SERVICE>/'$app_engine_service'/g' app.yaml.template > $ypath/.app.yaml
       sed -i '' 's/<CLOUD SQL CONNECTION NAME>/'"$DB_CLOUD_SQL_CONNECTION_NAME"'/g' $ypath/.app.yaml
-      cd $ypath 
+      cd $ypath
       gcloud app deploy --version v1 --quiet .app.yaml
-      cd - 
+      cd -
     else
       # all other projects
       sed -e 's/<SERVICE>/'$app_engine_service'/g' app.yaml.template > .app.yaml
