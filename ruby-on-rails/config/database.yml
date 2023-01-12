@@ -19,4 +19,4 @@ test:
 
 production:
   <<: *default
-  host: "<%= ENV["INSTANCE_UNIX_SOCKET"] %>"
+  host: "/cloudsql/<%= ENV["DB_CLOUD_SQL_CONNECTION_NAME"] %>"
