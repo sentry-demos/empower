@@ -1,22 +1,29 @@
 #!/bin/bash
 
+set -e
+
 # Outputs diff --stat between the current working tree and master branch of
 # sentry-demos/application-monitoring
 
 UPSTREAM_BRANCH="master"
-UPSTREAM_URL="git@github.com:sentry-demos/application-monitoring-deploy.git"
-ALT_UPSTREAM_URL="https://github.com/sentry-demos/application-monitoring-deploy.git"
+UPSTREAM_URL="git@github.com:sentry-demos/application-monitoring.git"
+CONFIG_BRANCH="main"
+CONFIG_URL="git@github.com:sentry-demos/application-monitoring-config.git"
 
-remote=$(git remote -v | grep $UPSTREAM_URL | head -1 | cut -f 1)
-if [ "$remote" == "" ]; then
-  remote=$(git remote -v | grep $ALT_UPSTREAM_URL | head -1 | cut -f 1)
-fi
-if [ "$remote" == "" ]; then
-  remote="deploy"
-  git remote add $remote $UPSTREAM_URL >/dev/null
+upstream_remote=$(git remote -v | grep $UPSTREAM_URL | head -1 | cut -f 1)
+if [ "$upstream_remote" == "" ]; then
+  upstream_remote="deploy-upstream"
+  git remote add $upstream_remote $UPSTREAM_URL >/dev/null
 fi
 
-git fetch $remote >/dev/null
+config_remote=$(git remote -v | grep $CONFIG_URL | head -1 | cut -f 1)
+if [ "$config_remote" == "" ]; then
+  config_remote="deploy-config"
+  git remote add $config_remote $CONFIG_URL >/dev/null
+fi
 
-git diff --stat $remote/$UPSTREAM_BRANCH -- ':!.github/workflows/auto-deploy.yml' ':!env-config/*.env'
-git diff --stat $remote/$UPSTREAM_BRANCH:env-config/production.env env-config/production.env
+git fetch $upstream_remote >/dev/null
+git fetch $config_remote >/dev/null
+
+git diff --stat $upstream_remote/$UPSTREAM_BRANCH -- ':!env-config/*.env'
+git diff --stat $config_remote/$CONFIG_BRANCH:production.env env-config/production.env

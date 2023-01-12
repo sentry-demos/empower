@@ -7,7 +7,7 @@ handlers:
 - url: /.*
   script: this field is required, but ignored
 beta_settings:
-  cloud_sql_instances: <CLOUD SQL INSTANCE NAME>
+  cloud_sql_instances: <CLOUD SQL CONNECTION NAME>
 readiness_check:
   app_start_timeout_sec: 600
 resources:

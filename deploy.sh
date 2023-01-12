@@ -154,11 +154,10 @@ for proj in $projects; do # bash only
   if [ "$env" != "local" ]; then 
     if [ "$proj" == "aspnetcore" ]; then
       # https://cloud.google.com/sql/docs/postgres/connect-app-engine-flexible
-      export HOST="$CLOUD_SQL_AUTH_PROXY"
+      export DB_HOST="$CLOUD_SQL_AUTH_PROXY"
     elif [ "$proj" == "laravel" ]; then
       # https://cloud.google.com/sql/docs/postgres/connect-app-engine-standard#php
-      export HOST="pgsql:dbname=$DATABASE;host=/cloudsql/$CLOUD_SQL_CONNECTION_NAME/"
-      #unset PORT
+      export DB_HOST="pgsql:dbname=$DB_DATABASE;host=/cloudsql/$DB_CLOUD_SQL_CONNECTION_NAME/"
     fi
   fi
 
@@ -203,12 +202,12 @@ for proj in $projects; do # bash only
       # This sets SPRINGBOOT_ENV
       # TODO: Un-hardcode. Q: what non-production values does it take?
       sed -i '' 's/<ENV>/"production"/g' $ypath/app.yaml
-      sed -i '' 's/<CLOUD SQL INSTANCE NAME>/"'"$CLOUD_SQL_CONNECTION_NAME"'"/g' $ypath/app.yaml
+      sed -i '' 's/<CLOUD SQL CONNECTION NAME>/"'"$DB_CLOUD_SQL_CONNECTION_NAME"'"/g' $ypath/app.yaml
       mvn clean package appengine:deploy
     elif [ "$proj" == "aspnetcore" ]; then
       ypath=bin/Release/netcoreapp3.1/publish
       sed -e 's/<SERVICE>/'$app_engine_service'/g' app.yaml.template > $ypath/.app.yaml
-      sed -i '' 's/<CLOUD SQL INSTANCE NAME>/'"$CLOUD_SQL_CONNECTION_NAME"'/g' $ypath/.app.yaml
+      sed -i '' 's/<CLOUD SQL CONNECTION NAME>/'"$DB_CLOUD_SQL_CONNECTION_NAME"'/g' $ypath/.app.yaml
       cd $ypath 
       gcloud app deploy --version v1 --quiet .app.yaml
       cd - 

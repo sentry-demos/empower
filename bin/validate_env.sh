@@ -28,7 +28,7 @@ for var in $(grep -v '^#' validate_env.list | xargs); do
   if [ "$value" == "" ]; then
     >&2 echo "$0: [ERROR] required env variable $var not defined or has empty value.
       You must add it to your env-config/*.env file. Correct values can be obtained from
-      https://github.com/sentry-demos/application-monitoring-deploy/tree/master/env-config" 
+      https://github.com/sentry-demos/application-monitoring-config" 
     exit 1
   fi
 done 

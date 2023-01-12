@@ -82,10 +82,5 @@ else
     # do it over again in case we added something new to it?
     export $(grep -v '^#' .env | sed 's/ #.*//' | xargs) # in case project doesn't use dotenv
 
-    if [ "$proj" == "react" ]; then
-        # avoids error npm start tries to bind to every available network interface
-        HOST=localhost "${@:2}"
-    else
-        "${@:2}"
-    fi
+    "${@:2}"
 fi
