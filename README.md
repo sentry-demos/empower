@@ -39,7 +39,7 @@ This is a multi-language/framework project that implements Empower Plant web app
     1. Install compatible `npm` version with `npm install -g npm@XX.XX.XX`. NOTE: may need to use `sudo` with command.
     2. Install `n` to update `node` version with `npm install -g n`.
     3. Set the specific `node` version with `n XX.XX.XX`. NOTE: may need to use `sudo` with command.
-7. Configure the `CLI` using [this](https://docs.sentry.io/product/cli/configuration/) document.
+7. Configure the `CLI` using [this](https://docs.sentry.io/product/cli/configuration/) document. Set
 
 Following sub-projects might not work with `deploy.sh` at this moment. Consult their README's for how to run and deploy them (and feel free to submit a PR that fixes it):
 - vue
