@@ -16,7 +16,11 @@ Also called the Empower Plant UI/UX. This project was bootstrapped with [Create 
 | sentry-logback | 5.5.1 |
 
 ## Setup
-1. Permit your IP address in CloudSQL by posting a message in the `#se-team` Slack channel.
+1. Permit your IP address in CloudSQL:
+    1. Go to https://console.cloud.google.com/sql/instances
+    2. You will see 1 instance, under Actions column click "..." -> Edit
+    3. Expand "Connections", under Authorized Networks click "ADD NETWORK"
+    4. Google "my IP address", add it.
 2. Copy `local.env` from [application-monitoring-config](https://github.com/sentry-demos/application-monitoring-config) into `env-config` directory of your local repo, or, if you don't have access to it, follow `env-config/example.env`.
 3. The `REACT_APP_FLASK_BACKEND` in `env-config/local.env` points to the backend instance deployed to AppEngine, the same one used by the cloud-hosted React web app. Flask is the default backend. If you expect to run other backend types, add values for those in `env-config` in your `local.env` file as well (i.e. `REACT_APP_EXPRESS_BACKEND`).
 4. Confirm [Homebrew](https://brew.sh/) is installed with `brew -v`. If not, install using `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`.
@@ -25,7 +29,7 @@ Also called the Empower Plant UI/UX. This project was bootstrapped with [Create 
     1. Install compatible `npm` version with `npm install -g npm@XX.XX.XX`. NOTE: may need to use `sudo` with command.
     2. Install `n` to update `node` version with `npm install -g n`.
     3. Set the specific `node` version with `n XX.XX.XX`. NOTE: may need to use `sudo` with command.
-7. Configure the `CLI` using [this](https://docs.sentry.io/product/cli/configuration/) document.
+7. Configure the `CLI` using [this](https://docs.sentry.io/product/cli/configuration/) document. Set
 
 `deploy.sh` takes a list of projects as arguments and will attempt to install dependencies, build and run or deploy them as long as each supplies a working `build.sh` and `run.sh` scripts. Here is the list of project that should work out of the box:
 - react
@@ -45,7 +49,7 @@ projects in the command `react` will magically point to it instead of staging (s
 
 `deploy.sh` takes another argument `--env=<env>`, which can be either `local`, `staging` or `production`. Each value corresponds to a file in `env-config` directory. `local` is a special value, most significantly it will run all webservers locally instead of deploying to Google App Engine.
 
-`deploy.sh` does everything including validating that all required values are set in the `env-config/local.env`, that each project's
+`deploy.sh` does everything including validating that all required values are set in the `env-config/*.env`, that each project's
 DSN and project name point to the same project, and that you are not accidentally deploying to production, etc.
 
 For more info See the [comment at the top of `deploy.sh` file](https://github.com/sentry-demos/application-monitoring/blob/master/deploy.sh#L3-L47).
@@ -130,7 +134,6 @@ git merge master
 cd react && rm -rf node_modules && npm install
 cd flask && source env/bin/activate && pip3 install -r requirements.txt
 
-# Check that your react/local.env, flask/local.env and deploy.sh still have correct values
 ```
 
 ## Troubleshooting
