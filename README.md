@@ -1,5 +1,8 @@
 # Application Monitoring
-Also called the Empower Plant UI/UX. This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app). Features the following...
+This is a multi-language/framework project that implements Empower Plant web app. It has one actively maintained frontend, `react`, that can connect to any one of the backend implementations using a query string parameter (e.g. `?backend=express`) and uses `flask` by default.
+
+
+## Features
 - Error Monitoring...Performance Monitoring...Release Health...
 - BrowserTracing (Performance)  
 - Sentry.Profiler (class components)  
@@ -15,6 +18,13 @@ Also called the Empower Plant UI/UX. This project was bootstrapped with [Create 
 | sentry-spring-boot-starter | 5.5.1 |
 | sentry-logback | 5.5.1 |
 
+## Additional documentation
+- project README's in subdirectories (e.g. [react/README.md](./react/README.md)
+- **"New deploy.sh and env-config for application-monitoring"** (internal doc)
+- See [troubleshooting](./troubleshooting.md)
+- **"Checklist for adding new language/framework demo to application-monitoring"** (internal doc)
+- [comment at the top of `deploy.sh` file](https://github.com/sentry-demos/application-monitoring/blob/master/deploy.sh#L3-L47).
+
 ## Setup
 1. Permit your IP address in CloudSQL:
     1. Go to https://console.cloud.google.com/sql/instances
@@ -25,34 +35,24 @@ Also called the Empower Plant UI/UX. This project was bootstrapped with [Create 
 3. The `REACT_APP_FLASK_BACKEND` in `env-config/local.env` points to the backend instance deployed to AppEngine, the same one used by the cloud-hosted React web app. Flask is the default backend. If you expect to run other backend types, add values for those in `env-config` in your `local.env` file as well (i.e. `REACT_APP_EXPRESS_BACKEND`).
 4. Confirm [Homebrew](https://brew.sh/) is installed with `brew -v`. If not, install using `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`.
 5. Confirm PostgreSQL is installed with `Postgres -V`. If not, install using `brew install postgresql`.
-6. As the application is compatible with specific versions of `node` and `npm`, install the following to be able to set the specific versions required:
+6. As the application is compatible with specific versions of `node` and `npm`, install the following to be able to set the specific versions required (below describes how to achieve it using `n` package, but alternatively you can use `nvm`):
     1. Install compatible `npm` version with `npm install -g npm@XX.XX.XX`. NOTE: may need to use `sudo` with command.
     2. Install `n` to update `node` version with `npm install -g n`.
     3. Set the specific `node` version with `n XX.XX.XX`. NOTE: may need to use `sudo` with command.
-7. Configure the `CLI` using [this](https://docs.sentry.io/product/cli/configuration/) document. Set
+7. Configure the `CLI` using [this](https://docs.sentry.io/product/cli/configuration/) document.
 
-`deploy.sh` takes a list of projects as arguments and will attempt to install dependencies, build and run or deploy them as long as each supplies a working `build.sh` and `run.sh` scripts. Here is the list of project that should work out of the box:
-- react
-- flask
-- vue (confirm?)
-- express
-- spring-boot
-- aspnetcore (missing FE code for ?backend=)
-
- For projects that don't
-work feel free to read their README and submit a PR that makes it work. 
+Following sub-projects might not work with `deploy.sh` at this moment. Consult their README's for how to run and deploy them (and feel free to submit a PR that fixes it):
+- vue
+- ruby
 
 NOTE: `build.sh` and `run.sh` files in each project are not meant to be run directly, use top-level `deploy.sh` instead because it sets all required environment variables.
 
-If you run locally and only deploy `react` it will automatically point to `staging` backends, however if you include a backend
+If you run locally and only deploy `react` it will point to `staging` backends, however if you include a backend
 projects in the command `react` will magically point to it instead of staging (still requires `&be=<backend>` url param).
 
 `deploy.sh` takes another argument `--env=<env>`, which can be either `local`, `staging` or `production`. Each value corresponds to a file in `env-config` directory. `local` is a special value, most significantly it will run all webservers locally instead of deploying to Google App Engine.
 
-`deploy.sh` does everything including validating that all required values are set in the `env-config/*.env`, that each project's
-DSN and project name point to the same project, and that you are not accidentally deploying to production, etc.
-
-For more info See the [comment at the top of `deploy.sh` file](https://github.com/sentry-demos/application-monitoring/blob/master/deploy.sh#L3-L47).
+`deploy.sh` does everything including validating that all required values are set in the `env-config/*.env`, that each project's DSN and project name point to the same project, and that you are not accidentally deploying to production, etc.
 
 ## Run
 
@@ -80,9 +80,8 @@ The React app will default to Flask as its backend
 // points to Flask
 localhost:5000
 
-// points to Express, Springboot, Flask
+// points to Express
 localhost:5000?backend=express
-localhost:5000/products?backend=express
 localhost:5000/products?se=yourname&backend=express
 
 // throw an exception on any route via 'crash'
@@ -129,11 +128,6 @@ git merge upstream/master
 # merge those updates into your current branch, if it's behind
 git checkout yourbranch
 git merge master
-
-# update sentry_sdk's and other modules
-cd react && rm -rf node_modules && npm install
-cd flask && source env/bin/activate && pip3 install -r requirements.txt
-
 ```
 
 ## Troubleshooting
