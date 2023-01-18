@@ -8,9 +8,9 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache;
 use Sentry\State\Scope;
+use App\Product;
 
 Route::get('/products', ['as' => 'products', function () {
-    print "I'm in products route!";
 
     // for ORM migth be able to use `php artisan make:model <table>` from existing DB
     // https://medium.com/@mohansharma201.ms/laravel-working-with-an-existing-database-d9eba86aa941
@@ -18,6 +18,7 @@ Route::get('/products', ['as' => 'products', function () {
     // Basic DB operations: https://laravel.com/docs/8.x/database#running-a-select-query
 
     // $products = DB::select('select * from products');
+    $products = Product::all();
     // reviews sep table, look at Flask, then implement, should work
     // query `reviews` table
     // join to products query result
@@ -37,7 +38,7 @@ Route::get('/products', ['as' => 'products', function () {
     //     echo "product decode output", $product_decoded_json;
     //     return $reviews_json_output;
     // }
-    // return $products;
+    return $products;
 }]);
 
 Route::get('/handled', ['as' => 'handled', function (Request $request) {
