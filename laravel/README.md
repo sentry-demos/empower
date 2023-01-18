@@ -36,10 +36,10 @@ web.php has multiple endpoints for showing different ways that errors are handle
 6. Set your DSN key, projectID, and Sentry OrganizationID in `.env`
 7. Run `./deploy.sh --env=local react laravel` to spin up both the React FE + Laravel BE
 8. Configure Sentry based on [Laravel SDK docs](https://docs.sentry.io/platforms/php/guides/laravel/) including confirming the "My first Sentry error!" Exception is thrown in Sentry by hitting the `/debug-sentry' endpoint (described in the docs).
+9. Use `http://localhost:8000/handled` and `http://localhost:8000/unhandled` to trigger errors
 
-<--WIP-->
-3. make
-4. `http://localhost:8000/handled` and `http://localhost:8000/unhandled` to trigger errors
+## Tips
+* If you are noticing changes aren't being picked up by your app or any other unexpected behavior, try clearing your cache with: `php artisan cache:clear`
 
 # Run With Docker
 1. docker build -t my-first-image .
