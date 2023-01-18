@@ -3,3 +3,6 @@ env: standard
 runtime: ruby26
 
 service: <SERVICE>
+
+env_variables:
+  PIDFILE: "/tmp/puma.pid"
