@@ -30,7 +30,10 @@ web.php has multiple endpoints for showing different ways that errors are handle
 ## First-time Setup
 1. Install [Composer](https://getcomposer.org/download/)
 2. Run `composer install` to install dependencies
-2. Set your DSN key, projectID, and Sentry OrganizationID in `.env`
+3. Set your DSN key, projectID, and Sentry OrganizationID in `.env`
+4. Run `./deploy.sh --env=local react laravel` to spin up both the React FE + Laravel BE
+
+<--WIP-->
 3. make
 4. `http://localhost:8000/handled` and `http://localhost:8000/unhandled` to trigger errors
 
