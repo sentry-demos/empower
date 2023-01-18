@@ -28,7 +28,8 @@ web.php has multiple endpoints for showing different ways that errors are handle
 | php   | 7.2.5     |
 
 ## First-time Setup
-1. `composer install`
+1. Install [Composer](https://getcomposer.org/download/)
+2. Run `composer install` to install dependencies
 2. Set your DSN key, projectID, and Sentry OrganizationID in `.env`
 3. make
 4. `http://localhost:8000/handled` and `http://localhost:8000/unhandled` to trigger errors
