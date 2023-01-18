@@ -2,8 +2,19 @@ import { Component } from 'react';
 import logo from '../assets/logo.svg';
 import './Organization.css';
 import * as Sentry from '@sentry/react';
+import {isOddReleaseWeek, busy_sleep } from "../utils/time"
 
 class Organization extends Component {
+
+  constructor() {
+    super();
+    // must be inside the constructor to affect LCP, if in componentDidMount() only affects duration
+    if (isOddReleaseWeek()) {
+      // can't have async sleep in a constructor
+      busy_sleep(Math.random(40) + 150);
+    }
+  }
+
   render() {
     return (
       <div className="App">

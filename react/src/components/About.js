@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import slugify from '../utils/slugify';
 import * as Sentry from '@sentry/react';
 import './about.css';
-import { isOddReleaseWeek, sleep } from "../utils/time"
+import { isOddReleaseWeek, busy_sleep } from "../utils/time"
 
 import Jane from './employees/jane';
 import Lily from './employees/lily';
@@ -15,6 +15,15 @@ import Noah from './employees/noah';
 const employees = [Jane, Lily, Keith, Mason, Emma, Noah];
 
 class About extends Component {
+  
+  constructor() {
+    super();
+    // must be inside the constructor to affect LCP, if in componentDidMount() only affects duration
+    if (!isOddReleaseWeek()) {
+      // can't have async sleep in a constructor
+      busy_sleep(Math.random(25) + 100);
+    }
+  }
 
   async componentDidMount() {
     let se, customerType, email
@@ -22,10 +31,6 @@ class About extends Component {
       [ se, customerType ] = [scope._tags.se, scope._tags.customerType ]
       email = scope._user.email
     });
-
-    if (!isOddReleaseWeek()) {
-      await sleep(Math.random(25) + 100);
-    }
 
     // Http requests to make in parallel, so the Transaction has more Spans
     let request1 = fetch(this.props.backend + "/api", {
