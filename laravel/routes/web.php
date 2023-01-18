@@ -9,19 +9,6 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache;
 use Sentry\State\Scope;
 
-
-/*
-|--------------------------------------------------------------------------
-| Web Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register web routes for your application. These
-| routes are loaded by the RouteServiceProvider within a group which
-| contains the "web" middleware group. Now create something great!
-|
-*/
-//Auth::routes();
-
 Route::get('/products', ['as' => 'products', function () {
 
     // for ORM migth be able to use `php artisan make:model <table>` from existing DB
@@ -30,6 +17,25 @@ Route::get('/products', ['as' => 'products', function () {
     // Basic DB operations: https://laravel.com/docs/8.x/database#running-a-select-query
 
     $products = DB::select('select * from products');
+    // reviews sep table, look at Flask, then implement, should work
+    // query `reviews` table
+    // join to products query result
+    // return the new query with products + reviews
+
+    foreach ($products as $product) {
+        // TODO: get productID from $product
+        $id = $_GET['id'];
+        $productID = 3;
+        $reviews = DB::select('select * from reviews WHERE productid = ?', [$productID]);
+        $reviews_json_output = json_encode($reviews);
+        echo "id", $id;
+        echo "review output", $reviews_json_output;
+        // $product_json_output = json_encode($product);
+        $product_decoded_json = json_decode('string here', $product);
+        // echo "product output", $product_json_output;
+        echo "product decode output", $product_decoded_json;
+        return $reviews_json_output;
+    }
     return $products;
 }]);
 
@@ -106,5 +112,6 @@ Route::get('/', function () {
 });
 
 Route::get('/success', ['as' => 'success', function () {
+    print "I'm in success route!";
     return 'success';
 }]);
