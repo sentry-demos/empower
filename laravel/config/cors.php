@@ -15,18 +15,22 @@ return [
     |
     */
 
-    'paths' => ['api/*'],
+    // 'paths' => ['api/*'],
+
+    'paths' => ['*'],
 
     'allowed_methods' => ['*'],
 
     'allowed_origins' => ['*'],
 
-    'allowed_origins_patterns' => [],
+    'allowed_origins_patterns' => ['*'],
 
+    // 'allowed_headers' => ['se','baggage', 'customertype'],
     'allowed_headers' => ['*'],
 
     'exposed_headers' => [],
 
+    // 'max_age' => 600,
     'max_age' => 0,
 
     'supports_credentials' => false,

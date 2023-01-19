@@ -30,7 +30,7 @@ Route::get('/products', ['as' => 'products', function () {
         $review = Review::find($product->id);
         
         $review_json_output = json_encode($review);
-        echo "review decode output", $review_json_output;
+        // echo "review decode output", $review_json_output;
 
         
     }
