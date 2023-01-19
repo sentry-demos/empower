@@ -40,6 +40,7 @@ web.php has multiple endpoints for showing different ways that errors are handle
 
 ## Tips
 * If you are noticing changes aren't being picked up by your app or any other unexpected behavior, try clearing your cache with: `php artisan cache:clear`
+* For more information about the ORM being used, check out [Eloquent ORM](https://laravel.com/docs/5.0/eloquent#introduction)
 
 # Run With Docker
 1. docker build -t my-first-image .
