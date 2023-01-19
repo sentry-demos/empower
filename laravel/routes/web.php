@@ -12,33 +12,20 @@ use App\Product;
 use App\Review;
 
 Route::get('/products', ['as' => 'products', function () {
-
-    // for ORM migth be able to use `php artisan make:model <table>` from existing DB
-    // https://medium.com/@mohansharma201.ms/laravel-working-with-an-existing-database-d9eba86aa941
-    // OR https://github.com/digitaldreams/laracrud
-    // Basic DB operations: https://laravel.com/docs/8.x/database#running-a-select-query
-
-    // $products = DB::select('select * from products');
     $products = Product::all();
-    // reviews sep table, look at Flask, then implement, should work
-    // query `reviews` table
-    // join to products query result
-    // return the new query with products + reviews
 
     foreach ($products as $product) {
-        // TODO: get productID from $product
+        // TODO: join review results from query with products
         $review = Review::find($product->id);
         
         $review_json_output = json_encode($review);
-        // echo "review decode output", $review_json_output;
+        echo "review decode output", $review_json_output;
 
-        
     }
     return $products;
 }]);
 
 Route::get('/handled', ['as' => 'handled', function (Request $request) {
-    print "I'm in handled route!";
     try {
         throw new Exception("This is a handled exception");
     } catch (\Throwable $exception) {
@@ -48,13 +35,10 @@ Route::get('/handled', ['as' => 'handled', function (Request $request) {
 }]);
 
 Route::get('/unhandled', ['as' => 'unhandled', function () {
-    print "I'm in unhandled route!";
     1/0;
 }]);
 
 Route::post('/checkout', ['as' => 'checkout', function (Request $request) {
-    print "I'm in checkout route!";
-
     try {
         app('sentry')->configureScope(static function (Scope $scope) use ($request): void {
             $payload = $request->getContent();
@@ -116,6 +100,5 @@ Route::get('/', function () {
 });
 
 Route::get('/success', ['as' => 'success', function () {
-    print "I'm in success route!";
     return 'success';
 }]);
