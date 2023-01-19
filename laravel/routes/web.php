@@ -9,6 +9,7 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache;
 use Sentry\State\Scope;
 use App\Product;
+use App\Review;
 
 Route::get('/products', ['as' => 'products', function () {
 
@@ -24,20 +25,15 @@ Route::get('/products', ['as' => 'products', function () {
     // join to products query result
     // return the new query with products + reviews
 
-    // foreach ($products as $product) {
-    //     // TODO: get productID from $product
-    //     $id = $_GET['id'];
-    //     $productID = 3;
-    //     $reviews = DB::select('select * from reviews WHERE productid = ?', [$productID]);
-    //     $reviews_json_output = json_encode($reviews);
-    //     echo "id", $id;
-    //     echo "review output", $reviews_json_output;
-    //     // $product_json_output = json_encode($product);
-    //     $product_decoded_json = json_decode('string here', $product);
-    //     // echo "product output", $product_json_output;
-    //     echo "product decode output", $product_decoded_json;
-    //     return $reviews_json_output;
-    // }
+    foreach ($products as $product) {
+        // TODO: get productID from $product
+        $review = Review::find($product->id);
+        
+        $review_json_output = json_encode($review);
+        echo "review decode output", $review_json_output;
+
+        
+    }
     return $products;
 }]);
 
