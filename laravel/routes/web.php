@@ -31,6 +31,7 @@ Route::get('/products', ['as' => 'products', function () {
     return $products;
 }]);
 
+
 Route::get('/handled', ['as' => 'handled', function (Request $request) {
     try {
         throw new Exception("This is a handled exception");
