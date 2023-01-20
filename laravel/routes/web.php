@@ -13,13 +13,19 @@ use App\Review;
 
 Route::get('/products', ['as' => 'products', function () {
     $products = Product::all();
-
+    
+    # N+1 because a sql query for every product n
     foreach ($products as $product) {
         // TODO: join review results from query with products
+        // Add review array to product obj
         $review = Review::find($product->id);
         
+        $product_id_json_output = json_encode($product->id);
+        $product_json_output = json_encode($product);
         $review_json_output = json_encode($review);
-        echo "review decode output", $review_json_output;
+        echo "productId: ", $product_id_json_output;
+        echo "product: ", $product_json_output;
+        echo "review: ", $review_json_output;
 
     }
     return $products;
@@ -58,6 +64,28 @@ Route::post('/checkout', ['as' => 'checkout', function (Request $request) {
     }
 }]);
 
+Route::get('/', function () {
+    return view('welcome');
+});
+
+Route::get('/success', ['as' => 'success', function () {
+    return 'success';
+}]);
+
+//TODO Determine functionality of these routes
+Route::get('/api', function () {
+    return 'api route placeholder';
+});
+
+Route::get('/organization', function () {
+    return 'organization route placeholder';
+});
+
+Route::get('/connect', function () {
+    return 'connect route placeholder';
+});
+
+// TODO Refactor functions into own files/modules/controllers TBD
 function decrementInventory($item) {
     Cache::decrement($item->id, 1);
 }
@@ -94,11 +122,3 @@ function set_inventory() {
         }
     }
 }
-
-Route::get('/', function () {
-    return view('welcome');
-});
-
-Route::get('/success', ['as' => 'success', function () {
-    return 'success';
-}]);
