@@ -1,6 +1,5 @@
+## About
+This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app). 
+
 ## Deploy
-From the /react directory, run:
-```
-./deploy.sh
-```
-This will take care of producing a build, source maps, uploading source maps, and deploying to Google Cloud.
+See [../README.md](../README.md)
