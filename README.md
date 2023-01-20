@@ -45,7 +45,7 @@ work feel free to read their README and submit a PR that makes it work.
 NOTE: `build.sh` and `run.sh` files in each project are not meant to be run directly, use top-level `deploy.sh` instead because it sets all required environment variables.
 
 If you run locally and only deploy `react` it will automatically point to `staging` backends, however if you include a backend
-projects in the command `react` will magically point to it instead of staging (still requires `&be=<backend>` url param).
+projects in the command `react` will magically point to it instead of staging (still requires `&backend=<backend>` url param).
 
 `deploy.sh` takes another argument `--env=<env>`, which can be either `local`, `staging` or `production`. Each value corresponds to a file in `env-config` directory. `local` is a special value, most significantly it will run all webservers locally instead of deploying to Google App Engine.
 
