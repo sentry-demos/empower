@@ -4,7 +4,8 @@ This is a multi-language/framework project that implements Empower Plant web app
 
 ## Features
 - Error Monitoring...Performance Monitoring...Release Health...
-- BrowserTracing (Performance)  
+- BrowserTracing (Performance)
+- Session Replay  
 - Sentry.Profiler (class components)  
 - Sentry.withSentryRouting(Route); (react-router)  
 - FlaskIntegration, SqlAlchemyIntegration
