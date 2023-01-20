@@ -39,7 +39,8 @@ This is a multi-language/framework project that implements Empower Plant web app
     1. Install compatible `npm` version with `npm install -g npm@XX.XX.XX`. NOTE: may need to use `sudo` with command.
     2. Install `n` to update `node` version with `npm install -g n`.
     3. Set the specific `node` version with `n XX.XX.XX`. NOTE: may need to use `sudo` with command.
-7. Configure the `CLI` using [this](https://docs.sentry.io/product/cli/configuration/) document. Set
+7. Configure the `CLI` using [this](https://docs.sentry.io/product/cli/configuration/) document.
+8. Install [gcloud](https://cloud.google.com/sdk/docs/install) in the root of your project to be able to deploy to staging. Initialize the gcloud CLI by running `gcloud init`. When prompted, choose the project `sales-engineering-sf`.
 
 Following sub-projects might not work with `deploy.sh` at this moment. Consult their README's for how to run and deploy them (and feel free to submit a PR that fixes it):
 - vue
@@ -48,7 +49,7 @@ Following sub-projects might not work with `deploy.sh` at this moment. Consult t
 NOTE: `build.sh` and `run.sh` files in each project are not meant to be run directly, use top-level `deploy.sh` instead because it sets all required environment variables.
 
 If you run locally and only deploy `react` it will point to `staging` backends, however if you include a backend
-projects in the command `react` will magically point to it instead of staging (still requires `&be=<backend>` url param).
+projects in the command `react` will magically point to it instead of staging (still requires `&backend=<backend>` url param).
 
 `deploy.sh` takes another argument `--env=<env>`, which can be either `local`, `staging` or `production`. Each value corresponds to a file in `env-config` directory. `local` is a special value, most significantly it will run all webservers locally instead of deploying to Google App Engine.
 
