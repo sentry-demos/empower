@@ -12,6 +12,7 @@ on:
   
 jobs:
   default-job:
+    if: github.repository_owner == 'sentry-demos' # don't run in forks
     permissions:
       contents: 'read'
       id-token: 'write'
