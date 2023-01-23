@@ -8,7 +8,7 @@ def test_httperror_android(android_emu_driver):
     try:
         # navigate to list app
         android_emu_driver.find_element_by_accessibility_id('More').click()
-        android_emu_driver.find_element_by_xpath('/hierarchy/android.widget.FrameLayout/android.widget.FrameLayout/android.widget.ListView/android.widget.LinearLayout/android.widget.LinearLayout').click()
+        android_emu_driver.find_element_by_id('com.example.vu.android:id/content').click()
 
         # swipe down to have the HTTP Error button in the frame
         android_emu_driver.swipe(start_x=0, start_y=1100, end_x=0, end_y=500, duration=800)

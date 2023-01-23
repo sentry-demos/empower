@@ -7,16 +7,13 @@ def test_nativemessage_android(android_emu_driver):
     try:
         # navigate to list app
         android_emu_driver.find_element_by_accessibility_id('More').click()
-        android_emu_driver.find_element_by_xpath('/hierarchy/android.widget.FrameLayout/android.widget.FrameLayout/android.widget.ListView/android.widget.LinearLayout/android.widget.LinearLayout').click()
+        android_emu_driver.find_element_by_id('com.example.vu.android:id/content').click()
 
-        # scroll down first, so the nativemessage button can become visible
-        bottom_of_screen_element = android_emu_driver.find_element_by_xpath('/hierarchy/android.widget.FrameLayout/android.widget.LinearLayout/android.widget.FrameLayout/android.view.ViewGroup/android.widget.FrameLayout[2]/android.widget.LinearLayout/android.widget.ScrollView/android.widget.LinearLayout/android.widget.Button[4]')
-        top_of_screen_element = android_emu_driver.find_element_by_xpath('/hierarchy/android.widget.FrameLayout/android.widget.LinearLayout/android.widget.FrameLayout/android.view.ViewGroup/android.widget.FrameLayout[2]/android.widget.LinearLayout/android.widget.ScrollView/android.widget.LinearLayout/android.widget.Button[1]')
-        android_emu_driver.scroll(bottom_of_screen_element, top_of_screen_element)
+        # swipe down to have the Native Message button in the frame
+        android_emu_driver.swipe(start_x=0, start_y=1100, end_x=0, end_y=500, duration=800)
 
         # nativemessage button
-        btn = android_emu_driver.find_element_by_xpath('/hierarchy/android.widget.FrameLayout/android.widget.LinearLayout/android.widget.FrameLayout/android.view.ViewGroup/android.widget.FrameLayout[2]/android.widget.LinearLayout/android.widget.ScrollView/android.widget.LinearLayout/android.widget.Button[5]')
-        btn.click()
+        android_emu_driver.find_element_by_id('com.example.vu.android:id/native_message').click()
         
     except Exception as err:
         sentry_sdk.capture_exception(err)
