@@ -17,16 +17,16 @@ def test_about_employees(desktop_web_driver):
 
         # You can filter by se:tda in Sentry's UI as this will get set as a tag
         url = ""
-        query_string = { 
+        query_string = {
             'se': 'tda',
-            'backend': random.sample(['flask','express','springboot', 'ruby'], 1)[0]
+            'backend': random.sample(['flask','express','springboot', 'ruby', 'laravel'], 1)[0]
         }
         url = endpoint_about + '?' + urlencode(query_string)
-        
+
         employees = ["Jane Schmidt", "Lily Chan", "Keith Ryan", "Mason Kim", "Emma Garcia", "Noah Miller"]
 
         for i in range(random.randrange(20)):
-        
+
             desktop_web_driver.get(url)
 
             # images are being loaded in /about from Cloud Storage
