@@ -8,8 +8,6 @@ Rails.application.routes.draw do
 
   get '/products-join', to: 'api/v1/productsjoin#index'
 
-  #get '/', to: 'api/v1/'
-
   get '/api', to: 'api/v1/api#index'
 
   get '/connect', to: 'api/v1/connect#index'
@@ -20,7 +18,9 @@ Rails.application.routes.draw do
 
   get '/checkout', to: 'api/v1/checkout#index'
 
-  get '/*all', to: 'api/v1/products#default'
+  root :to => "api/v1/main"
+
+  #get '/*all', to: 'api/v1/products#default'
 
   # namespace :api do
   #   namespace :v1 do
