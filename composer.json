@@ -1,5 +1,0 @@
-{
-    "require": {
-        "sentry/sentry-laravel": "^3.1"
-    }
-}
