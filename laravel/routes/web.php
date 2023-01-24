@@ -12,23 +12,41 @@ use App\Product;
 use App\Review;
 
 Route::get('/products', ['as' => 'products', function () {
+    // TODO Clean up top level array of reviews
+    // TODO Rename vars so more clear
+    $complete_product_with_reviews = array();
     $products = Product::all();
-    
-    # N+1 because a sql query for every product n
-    foreach ($products as $product) {
-        // TODO: join review results from query with products
-        // Add review array to product obj
-        $review = Review::find($product->id);
-        
-        $product_id_json_output = json_encode($product->id);
-        $product_json_output = json_encode($product);
-        $review_json_output = json_encode($review);
-        echo "productId: ", $product_id_json_output;
-        echo "product: ", $product_json_output;
-        echo "review: ", $review_json_output;
+    $reviews = DB::select('SELECT reviews.id, products.id AS productid, reviews.rating, reviews.customerId, reviews.description, reviews.created FROM reviews INNER JOIN products ON reviews.productId = products.id');
+    // $products_json_output = json_encode($products);
+    // $reviews_json_output = json_encode($reviews);
+    // echo "products: ", $reviews_json_output;
+    // echo "reviews: ", $reviews_json_output;
 
+    foreach ($products as $product) {
+        $final_results = array();
+        $result = $product;
+        $review_array = array();
+
+        $productID = $product->id;
+
+        foreach ($reviews as $review) {
+            $review_product_id = $review->productid;
+
+            if ($productID == $review_product_id) {
+
+                array_push($review_array, $review);
+            } 
+        }
+        array_push($final_results, $review_array);
+        
+        $final_results_array= json_encode($final_results);
+        $result['reviews'] = $final_results;
+        $final_results= json_encode($result);
+
+        array_push($complete_product_with_reviews, $result);
     }
-    return $products;
+
+    return $complete_product_with_reviews;
 }]);
 
 
@@ -75,15 +93,15 @@ Route::get('/success', ['as' => 'success', function () {
 
 //TODO Determine functionality of these routes
 Route::get('/api', function () {
-    return 'api route placeholder';
+    return 'laravel /api';
 });
 
 Route::get('/organization', function () {
-    return 'organization route placeholder';
+    return 'laravel /organization';
 });
 
 Route::get('/connect', function () {
-    return 'connect route placeholder';
+    return 'laravel /connect';
 });
 
 // TODO Refactor functions into own files/modules/controllers TBD
