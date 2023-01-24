@@ -9,6 +9,14 @@ class Api::V1::ProductsController < ApplicationController
     render json: products, status: 200
   end
 
+  def default
+    begin
+        # TODO: capture route attempted to include in the exception
+        Sentry.capture_message "message: bad route response"
+        render json: {"message": "bad route response"}, status: :ok
+    end
+  end
+
   def show
   end
 
@@ -19,9 +27,9 @@ class Api::V1::ProductsController < ApplicationController
             Sentry.capture_exception(exception)
             render json: { "ERROR": exception.message  }, status: :ok
         end
-    end
+  end
 
-    def unhandled
+  def unhandled
       1 / 0
-    end
+  end
 end
