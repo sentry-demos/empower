@@ -103,6 +103,10 @@ Route::get('/connect', function () {
     return 'laravel /connect';
 });
 
+Route::get('/debug-sentry', function () {
+    throw new Exception('My first Sentry error!');
+});
+
 // TODO Refactor functions into own files/modules/controllers TBD
 function decrementInventory($item) {
     Cache::decrement($item->id, 1);
