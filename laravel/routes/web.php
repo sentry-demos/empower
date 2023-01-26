@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Cache;
 use Sentry\State\Scope;
 use App\Product;
 use App\Review;
+use App\Inventory;
+// use sentry_sdk;
 
 Route::get('/products', ['as' => 'products', function () {
     // TODO Clean up top level array of reviews
@@ -78,7 +80,8 @@ Route::post('/checkout', ['as' => 'checkout', function (Request $request) {
     //     report($e);
     // return response("Internal Server Error", 500)->header("HTTP/1.1 500", "")->header('Content-Type', "text/html");
     // }
-    $products = Product::all();
+    // $products = Product::all();
+    get_inventory();
     throw new Exception("Not enough inventory");
 }]);
 
@@ -117,10 +120,18 @@ function get_inventory() {
     // Get product ids off items in cart
     // Store product ids in array
     // $products = Product::all();
-    $inventory = new StdClass();
-    $inventory->wrench = Cache::get('wrench');
-    $inventory->nails = Cache::get('nails');
-    $inventory->hammer = Cache::get('hammer');
+    $inventory = Inventory::all();
+//     sentry_sdk.start_span(op="get_inventory", description="db.connect"):
+//     connection = db.connect()
+// with sentry_sdk.start_span(op="get_inventory", description="db.query") as span:
+//     inventory = connection.execute(
+//         "SELECT * FROM inventory WHERE productId in %s" % (productIds)
+//     ).fetchall()
+
+    // $inventory = new StdClass();
+    // $inventory->wrench = Cache::get('wrench');
+    // $inventory->nails = Cache::get('nails');
+    // $inventory->hammer = Cache::get('hammer');
     
     return $inventory;
 }
