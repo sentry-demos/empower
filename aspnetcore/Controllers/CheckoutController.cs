@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using aspnetcore.Model;
+using aspnetcore.Models;
 using Microsoft.Extensions.Configuration;
 
 namespace aspnetcore.Controllers
@@ -26,11 +26,10 @@ namespace aspnetcore.Controllers
         }
 
         // seems like this can return any object - will be automatically serialized to JSON
-        [HttpGet]
-        public ActionResult Get()
+        [HttpPost]
+        public ActionResult Checkout()
         {
-            string dsn = Configuration["SentryDSN"];
-            return Ok("aspnetcore /checkout");
+            throw new Exception("Not enough inventory");
         }
     }
 }
