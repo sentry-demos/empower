@@ -80,24 +80,9 @@ $app = require_once __DIR__.'/../bootstrap/app.php';
 
 $kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
 
-
 $response = $kernel->handle(
     $request = Illuminate\Http\Request::capture()
 );
-
-header('Access-Control-Allow-Origin: *');
-header("Access-Control-Allow-Methods: HEAD, GET, POST, PUT, PATCH, DELETE, OPTIONS");
-header("Access-Control-Allow-Headers: X-API-KEY, Origin, X-Requested-With, Content-Type, Accept, Access-Control-Request-Method,Access-Control-Request-Headers, Authorization, x-transaction-id, x-session-id");
-header('Content-Type: application/json');
-
-$method = $_SERVER['REQUEST_METHOD'];
-
-if ($method == "OPTIONS") {
-    header('Access-Control-Allow-Origin: *');
-    header("Access-Control-Allow-Headers: X-API-KEY, Origin, X-Requested-With, Content-Type, Accept, Access-Control-Request-Method,Access-Control-Request-Headers, Authorization, x-transaction-id, x-session-id");
-    error_log("RESPONSESSSSSSS");
-    die();
-}
 
 $response->send();
 

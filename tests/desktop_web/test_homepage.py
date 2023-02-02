@@ -29,7 +29,7 @@ def test_homepage(desktop_web_driver):
     else:
         # odd patch version, e.g. 22.6.3
         upper_bound = .4
-    
+
 
     for endpoint in endpoints:
         sentry_sdk.set_tag("endpoint", endpoint)
@@ -41,9 +41,9 @@ def test_homepage(desktop_web_driver):
             # This query string is parsed by utils/errors.js wherever the 'crasher' function is used
             # and causes the page to periodically crash, for Release Health
             # TODO make a query_string builder function for sharing this across tests
-            query_string = { 
+            query_string = {
                 'se': 'tda',
-                'backend': random.sample(['flask','express','springboot', 'ruby'], 1)[0],
+                'backend': random.sample(['flask','express','springboot', 'ruby', 'laravel'], 1)[0],
                 'crash': "%s" % (n)
             }
             url = endpoint + '?' + urlencode(query_string)

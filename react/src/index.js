@@ -53,6 +53,7 @@ Sentry.init({
   release: RELEASE,
   environment: ENVIRONMENT,
   tracesSampleRate: 1.0,
+  replaysSessionSampleRate: 1.0,
   debug: true,
   integrations: [
     new Integrations.BrowserTracing({
@@ -80,6 +81,10 @@ Sentry.init({
         };
       },
     }),
+    new Sentry.Replay({
+      // Additional configuration goes in here
+      // replaysSessionSampleRate and replaysOnErrorSampleRate is now a top-level SDK option
+    })
   ],
   beforeSend(event, hint) {
     // Parse from tags because src/index.js already set it there. Once there are React route changes, it is no longer in the URL bar
