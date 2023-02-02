@@ -18,9 +18,9 @@ Rails.application.routes.draw do
 
   get '/checkout', to: 'api/v1/checkout#index'
 
-  root :to => "api/v1/main"
+  root to: "api/v1/main#index"
 
-  #get '/*all', to: 'api/v1/products#default'
+  get '/*all', to: 'api/v1/products#default'
 
   # namespace :api do
   #   namespace :v1 do
