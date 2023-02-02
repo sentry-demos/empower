@@ -4,7 +4,7 @@ class Api::V1::OrganizationController < ApplicationController
   def index
     # results = []
 
-    render json: {"message": "organization response"}, status: 200
+    render json: {"message": "rails /organization"}, status: 200
 
   end
 end
