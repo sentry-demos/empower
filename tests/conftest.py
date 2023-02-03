@@ -6,6 +6,8 @@ import random
 
 from selenium import webdriver
 from appium import webdriver as appiumdriver
+from appium.options.android import UiAutomator2Options
+from appium.options.ios import XCUITestOptions
 from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.remote.remote_connection import RemoteConnection
 
@@ -40,28 +42,28 @@ sentry_sdk.init(
 
 desktop_browsers = [
     {
-        "seleniumVersion": '3.4.0',
-        "platform": "Windows 10",
+        "seleniumVersion": '4.8.0',
+        "platformName": "Windows 10",
         "browserName": "chrome",
-        "version": "latest",
+        "browserVersion": "latest",
         "sauce:options": {}
     }, {
-        "seleniumVersion": '3.4.0',
-        "platform": "Windows 10",
+        "seleniumVersion": '4.8.0',
+        "platformName": "Windows 10",
         "browserName": "firefox",
-        "version": "latest",
+        "browserVersion": "latest",
         "sauce:options": {}
     }, {
-        "seleniumVersion": '3.4.0',
-        "platform": "OS X 10.13",
+        "seleniumVersion": '4.8.0',
+        "platformName": "OS X 10.13",
         "browserName": "safari",
-        "version": "latest-1",
+        "browserVersion": "latest-1",
         "sauce:options": {}
     }, {
-        "seleniumVersion": '3.4.0',
-        "platform": "OS X 10.13",
+        "seleniumVersion": '4.8.0',
+        "platformName": "OS X 10.13",
         "browserName": "chrome",
-        "version": "latest",
+        "browserVersion": "latest",
         "sauce:options": {}
     }]
 
@@ -141,7 +143,7 @@ def android_react_native_emu_driver(request, data_center):
         access_key_cap = environ['SAUCE_ACCESS_KEY']
         release_version = ReleaseVersion.latest_react_native_github_release()
 
-        caps = {
+        options = UiAutomator2Options().load_capabilities({
             'username': username_cap,
             'accessKey': access_key_cap,
             'deviceName': 'Android GoogleAPI Emulator',
@@ -154,14 +156,14 @@ def android_react_native_emu_driver(request, data_center):
                 'name': request.node.name
             },
             'appWaitForLaunch': False
-        }
+        })
 
         if data_center and data_center.lower() == 'eu':
             sauce_url = SAUCELABS_PROTOCOL + "{}:{}@ondemand.eu-central-1.saucelabs.com/wd/hub".format(username_cap, access_key_cap)
         else:
             sauce_url = SAUCELABS_PROTOCOL + "{}:{}@ondemand.us-west-1.saucelabs.com/wd/hub".format(username_cap, access_key_cap)
 
-        driver = appiumdriver.Remote(sauce_url, desired_capabilities=caps)
+        driver = appiumdriver.Remote(sauce_url, options=options)
         driver.implicitly_wait(20)
 
         sentry_sdk.set_tag("seleniumSessionId", driver.session_id)
@@ -187,7 +189,7 @@ def android_emu_driver(request, data_center):
         access_key_cap = environ['SAUCE_ACCESS_KEY']
         release_version = ReleaseVersion.latest_android_github_release()
 
-        caps = {
+        options = UiAutomator2Options().load_capabilities({
             'username': username_cap,
             'accessKey': access_key_cap,
             'deviceName': 'Android GoogleAPI Emulator',
@@ -200,14 +202,14 @@ def android_emu_driver(request, data_center):
                 'name': request.node.name
             },
             'appWaitForLaunch': False
-        }
+        })
 
         if data_center and data_center.lower() == 'eu':
             sauce_url = SAUCELABS_PROTOCOL + "{}:{}@ondemand.eu-central-1.saucelabs.com/wd/hub".format(username_cap, access_key_cap)
         else:
             sauce_url = SAUCELABS_PROTOCOL + "{}:{}@ondemand.us-west-1.saucelabs.com/wd/hub".format(username_cap, access_key_cap)
 
-        driver = appiumdriver.Remote(sauce_url, desired_capabilities=caps)
+        driver = appiumdriver.Remote(sauce_url, options=options)
         driver.implicitly_wait(20)
 
         sentry_sdk.set_tag("seleniumSessionId", driver.session_id)
@@ -233,7 +235,7 @@ def ios_react_native_sim_driver(request, data_center):
         access_key_cap = environ['SAUCE_ACCESS_KEY']
         release_version = ReleaseVersion.latest_react_native_github_release()
 
-        caps = {
+        options = XCUITestOptions().load_capabilities({
             'username': username_cap,
             'accessKey': access_key_cap,
             'appium:deviceName': 'iPhone 11 Simulator',
@@ -246,14 +248,14 @@ def ios_react_native_sim_driver(request, data_center):
                 'name': request.node.name,
             },
             'appium:app': f'https://github.com/sentry-demos/sentry_react_native/releases/download/{release_version}/sentry_react_native.app.zip',
-        }
+        })
 
         if data_center and data_center.lower() == 'eu':
             sauce_url = SAUCELABS_PROTOCOL + "{}:{}@ondemand.eu-central-1.saucelabs.com/wd/hub".format(username_cap, access_key_cap)
         else:
             sauce_url = SAUCELABS_PROTOCOL + "{}:{}@ondemand.us-west-1.saucelabs.com/wd/hub".format(username_cap, access_key_cap)
 
-        driver = appiumdriver.Remote(sauce_url, desired_capabilities=caps)
+        driver = appiumdriver.Remote(sauce_url, options=options)
         driver.implicitly_wait(20)
 
         sentry_sdk.set_tag("seleniumSessionId", driver.session_id)
@@ -279,7 +281,7 @@ def ios_sim_driver(request, data_center):
         access_key_cap = environ['SAUCE_ACCESS_KEY']
         release_version = ReleaseVersion.latest_ios_github_release()
 
-        caps = {
+        options = XCUITestOptions().load_capabilities({
             'username': username_cap,
             'accessKey': access_key_cap,
             'appium:deviceName': 'iPhone 11 Simulator',
@@ -292,14 +294,14 @@ def ios_sim_driver(request, data_center):
                 'name': request.node.name,
             },
             'appium:app': f'https://github.com/sentry-demos/ios/releases/download/{release_version}/EmpowerPlant_release.zip',
-        }
+        })
 
         if data_center and data_center.lower() == 'eu':
             sauce_url = SAUCELABS_PROTOCOL + "{}:{}@ondemand.eu-central-1.saucelabs.com/wd/hub".format(username_cap, access_key_cap)
         else:
             sauce_url = SAUCELABS_PROTOCOL + "{}:{}@ondemand.us-west-1.saucelabs.com/wd/hub".format(username_cap, access_key_cap)
 
-        driver = appiumdriver.Remote(sauce_url, desired_capabilities=caps)
+        driver = appiumdriver.Remote(sauce_url, options=options)
         driver.implicitly_wait(20)
 
         sentry_sdk.set_tag("seleniumSessionId", driver.session_id)

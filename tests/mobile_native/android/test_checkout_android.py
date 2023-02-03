@@ -1,5 +1,6 @@
 import time
 import sentry_sdk
+from appium.webdriver.common.appiumby import AppiumBy
 
 # 'Regular' as in non-react-native
 def test_checkout_regular_android(android_emu_driver):
@@ -7,14 +8,14 @@ def test_checkout_regular_android(android_emu_driver):
 
     try:
         # Add items to cart
-        add_to_cart_btn = android_emu_driver.find_element_by_id('com.example.vu.android:id/add_to_cart_btn')
+        add_to_cart_btn = android_emu_driver.find_element(AppiumBy.ID, 'com.example.vu.android:id/add_to_cart_btn')
         add_to_cart_btn.click()
         add_to_cart_btn.click()
         add_to_cart_btn.click()
         add_to_cart_btn.click()
 
         # Checkout button
-        android_emu_driver.find_element_by_id('com.example.vu.android:id/checkout_btn').click()
+        android_emu_driver.find_element(AppiumBy.ID, 'com.example.vu.android:id/checkout_btn').click()
 
         time.sleep(5)
 
