@@ -2,6 +2,7 @@ import time
 import yaml
 import random
 import sentry_sdk
+import pytest
 from urllib.parse import urlencode
 from collections import OrderedDict
 from datetime import datetime
@@ -42,8 +43,8 @@ def test_homepage(desktop_web_driver):
             # and causes the page to periodically crash, for Release Health
             # TODO make a query_string builder function for sharing this across tests
             query_string = {
-                'se': 'tda',
-                'backend': random.sample(['flask','express','springboot', 'ruby', 'laravel'], 1)[0],
+                'se': pytest.SE_TAG,
+                'backend': pytest.random_backend(),
                 'crash': "%s" % (n)
             }
             url = endpoint + '?' + urlencode(query_string)
