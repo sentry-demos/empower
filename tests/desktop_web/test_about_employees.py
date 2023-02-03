@@ -2,6 +2,7 @@ import time
 import yaml
 import random
 import sentry_sdk
+import pytest
 from urllib.parse import urlencode
 
 def test_about_employees(desktop_web_driver):
@@ -18,8 +19,8 @@ def test_about_employees(desktop_web_driver):
         # You can filter by se:tda in Sentry's UI as this will get set as a tag
         url = ""
         query_string = {
-            'se': 'tda',
-            'backend': random.sample(['flask','express','springboot', 'ruby', 'laravel'], 1)[0]
+            'se': pytest.SE_TAG,
+            'backend': pytest.random_backend()
         }
         url = endpoint_about + '?' + urlencode(query_string)
 
