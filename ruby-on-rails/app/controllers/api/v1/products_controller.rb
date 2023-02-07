@@ -3,9 +3,15 @@
 class Api::V1::ProductsController < ApplicationController
   def index
     # results = []
+    #logger.debug("debug::" + "messageNEW2")
+    
+    #logger.debug("debug::" + pr.to_yaml)
+    
+    # products2 = products.all()
+    #logger.debug("debug::" + products.to_yaml)
 
-    products = Products.all
-
+    #products = Products.all.includes(:inventory).where('products.id = ?', 'productid').references(:inventory)
+    products = Products.all()
     render json: products, status: 200
   end
 
