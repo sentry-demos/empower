@@ -26,7 +26,7 @@ def test_about_employees(desktop_web_driver):
 
         employees = ["Jane Schmidt", "Lily Chan", "Keith Ryan", "Mason Kim", "Emma Garcia", "Noah Miller"]
 
-        for i in range(random.randrange(20)):
+        for i in range(pytest.batch_size()):
 
             desktop_web_driver.get(url)
 
