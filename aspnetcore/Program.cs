@@ -21,6 +21,12 @@ namespace aspnetcore
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     webBuilder.UseStartup<Startup>();
+                    webBuilder.UseSentry(o => {
+                        o.Dsn = Environment.GetEnvironmentVariable("ASPNETCORE_APP_DSN");
+                        o.Release = Environment.GetEnvironmentVariable("RELEASE");
+                        o.Environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENV");
+                        o.TracesSampleRate = 1.0; 
+                    });
                 });
     }
 }
