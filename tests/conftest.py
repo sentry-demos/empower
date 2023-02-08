@@ -3,6 +3,9 @@ from os import environ
 import os
 import release_version_manager as ReleaseVersion
 import random
+import subprocess
+import urllib.parse
+import atexit
 
 from selenium import webdriver
 from appium import webdriver as appiumdriver
@@ -13,35 +16,77 @@ from selenium.webdriver.remote.remote_connection import RemoteConnection
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from selenium.webdriver.safari.options import Options as SafariOptions
+from datetime import datetime, timedelta
 
 import sentry_sdk
 from dotenv import load_dotenv
 load_dotenv()
 
+def get_system_user():
+    return subprocess.check_output(['id', '-un']).strip().decode()
+
+# Get current timestamp, with +/- adjustment if desired, as string in ISO format (for Sentry URLs)
+# round seconds down (floor): adjust_seconds = 0
+# round seconds up (ceil): adjust_seconds = 1
+def get_current_time_iso_utc(adjust_seconds=0):
+    dt = datetime.utcnow().replace(microsecond=0) + timedelta(seconds = adjust_seconds)
+    return dt.isoformat()
+
+
+# Example command usage:
+#
+#   SE_TAG=tda-my-new-test BATCH_SIZE=10 py.test -n 6 desktop_web
+#
+
+start_time = get_current_time_iso_utc()
+
 SAUCELABS_PROTOCOL = "https://"
-DSN = os.getenv("DSN")
+DSN = "https://9802de20229e4afdaa0d60796cbb44d7@o87286.ingest.sentry.io/5390094"
 ENVIRONMENT = os.getenv("ENVIRONMENT") or "production"
+# SE_TAG will be both:
+#
+# 1. Passed on to desktop_web as ?se= URL parameter so will show up in
+# application-monitoring-* project issues generated as a result of running the test
+#
+# 2. Used for internal reporting of this test automation's own errors (to DSN above,
+# i.e. "job-monitor-application-monitoring" project)
+#
+# If no value is provided will attemptq
+
+SE_TAG = os.getenv("SE_TAG") or get_system_user()
+
+# BATCH_SIZE can be either <NUMBER> or random_<NUMBER>
+# The later means each time a test is run the inner steps will be repeated a random
+# number of times between 0 and <NUMBER> - 1
+# e.g. BATCH_SIZE=5, or BATCH_SIZE=random_100
+BATCH_SIZE = os.getenv("BATCH_SIZE") or "1"
+
+BACKENDS = (os.getenv("BACKENDS") or "flask,express,springboot,ruby,laravel").split(',')
 
 def pytest_configure():
-    pytest.SE_TAG=os.getenv("SE_TAG") or "tda"
+    pytest.SE_TAG=SE_TAG
+
+    if BATCH_SIZE.startswith("random_"):
+        pytest.batch_size = lambda: random.randrange(int(BATCH_SIZE.split('_')[1]))
+    else:
+        pytest.batch_size = lambda: int(BATCH_SIZE)
+
     def random_backend(exclude=[]):
-        ALL_BACKENDS=['flask','express','springboot', 'ruby', 'laravel']
         exclude = [exclude] if isinstance(exclude, str) else exclude
-        backends = list(set(ALL_BACKENDS) - set(exclude))
+        backends = list(set(BACKENDS) - set(exclude))
         return random.sample(backends, 1)[0]
     pytest.random_backend = random_backend
-
-print("ENV", ENVIRONMENT)
-print("DSN", DSN)
 
 import urllib3
 urllib3.disable_warnings()
 
 sentry_sdk.init(
-    dsn="https://9802de20229e4afdaa0d60796cbb44d7@o87286.ingest.sentry.io/5390094",
+    dsn=DSN,
     traces_sample_rate=0,
     environment=ENVIRONMENT,
 )
+
+sentry_sdk.set_tag("se", SE_TAG)
 
 _browser2class = {
     'chrome': ChromeOptions,
@@ -334,3 +379,13 @@ def pytest_runtest_makereport(item, call):
     # be "setup", "call", "teardown"
     setattr(item, "rep_" + rep.when, rep)
 
+def final_report():
+    end_time = get_current_time_iso_utc(adjust_seconds=1)
+    start = urllib.parse.quote(start_time)
+    end = urllib.parse.quote(end_time)
+    project = DSN.split('/')[-1]
+    print()
+    print(f'GENERATED errors: https://testorg-az.sentry.io/issues/?query=se%3A{SE_TAG}+%21project%3Ajob-monitor-application-monitoring&start={start}&end={end}')
+    print(f'OWN errors:       https://testorg-az.sentry.io/issues/?project={project}&query=se%3A{SE_TAG}&start={start}&end={end}')
+
+atexit.register(final_report)

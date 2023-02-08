@@ -1,5 +1,6 @@
 import time
 import yaml
+import pytest
 import random
 import sentry_sdk
 from urllib.parse import urlencode
@@ -19,7 +20,7 @@ def test_subscribe_vue(desktop_web_driver):
 
         sentry_sdk.set_tag("endpoint", endpoint)
 
-        for i in range(random.randrange(20)):
+        for i in range(pytest.batch_size()):
 
             try:
                 desktop_web_driver.get(endpoint)

@@ -19,7 +19,7 @@ def test_add_to_cart(desktop_web_driver):
 
         missedButtons = 0
 
-        for i in range(random.randrange(20)):
+        for i in range(10):
             # Ensures a different backend endpoint gets picked each time
             url = ""
             # TODO make a query_string builder function for sharing this across tests

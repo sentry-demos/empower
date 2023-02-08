@@ -1,5 +1,6 @@
 import time
 import yaml
+import pytest
 import random
 import sentry_sdk
 from urllib.parse import urlencode
@@ -21,7 +22,7 @@ def test_homepage_vue(desktop_web_driver):
 
         missedButtons = 0
 
-        for i in range(random.randrange(20)):
+        for i in range(pytest.batch_size()):
             # TODO in application-monitoring/vue repo
             # querystring support for 'se' and 'backend' tags
             
