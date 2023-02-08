@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using aspnetcore.Models;
 using Microsoft.Extensions.Configuration;
+using Sentry;
 
 namespace aspnetcore.Controllers
 {
@@ -28,7 +29,18 @@ namespace aspnetcore.Controllers
         // seems like this can return any object - will be automatically serialized to JSON
         [HttpPost]
         public ActionResult Checkout()
-        {
+        { 
+            var se = Request.Headers["se"];
+            var customerType = Request.Headers["customerType"];
+            var email = Request.Headers["email"];
+            SentrySdk.ConfigureScope(scope =>
+            {
+                scope.SetTag("se", se);
+                scope.SetTag("customerType", customerType);
+                scope.User = new User {
+                    Email = email
+                };
+            });
             throw new Exception("Not enough inventory");
         }
     }
