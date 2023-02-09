@@ -8,9 +8,9 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache;
 use Sentry\State\Scope;
-use App\Product;
-use App\Review;
-use App\Inventory;
+use App\Models\Product;
+use App\Models\Review;
+use App\Models\Inventory;
 // use sentry_sdk;
 
 Route::get('/products', ['as' => 'products', function () {
