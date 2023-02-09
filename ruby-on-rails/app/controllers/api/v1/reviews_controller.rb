@@ -1,6 +1,6 @@
 # require "pg"
 
-class Api::V1::ProductsjoinController < ApplicationController
+class Api::V1::ReviewsController < ApplicationController
   def index
     # results = []
     reviews = Reviews.all()

@@ -17,10 +17,14 @@ Rails.application.routes.draw do
   get '/success', to: 'api/v1/success#index'
 
   get '/checkout', to: 'api/v1/checkout#index'
+  
+  get '/reviews', to: 'api/v1/reviews#index'
 
   root to: "api/v1/main#index"
 
   get '/*all', to: 'api/v1/products#default'
+
+  
 
   # namespace :api do
   #   namespace :v1 do

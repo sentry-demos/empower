@@ -82,12 +82,12 @@ class Api::V1::CheckoutController < ApplicationController
       if cart_cnts[inv_objs["productid"].to_s] != nil
         #logged += objs["productid"].to_s + ": " + h_cnts[objs["productid"].to_s] + "\n"
         if cart_cnts[inv_objs["productid"].to_s] > inv_objs["count"].to_s
-          begin
+          #begin
             raise Exception.new "Not enough inventory for " + "product"
             STDERR.puts "Not enough inventory for " + "product"
-          rescue Exception => e
-            logged = e.message #"Not enough inventory for " + "product"
-          end       
+          #rescue Exception => e
+            logged = "Not enough inventory for " + "product" #e.message #"Not enough inventory for " + "product"
+          #end       
           break
         end
       end

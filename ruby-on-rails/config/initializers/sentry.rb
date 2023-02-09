@@ -6,4 +6,8 @@ Sentry.init do |config|
   config.environment = ENV['RUBYONRAILS_RAILS_ENV'] || "development"
 
   config.traces_sample_rate = 1.0
+  params = CGI.parse(uri.query)
+  if(params['se'].first != nil)
+    config.set_tags('se': params['se'].first)
+  end
 end
