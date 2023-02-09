@@ -30,6 +30,7 @@ namespace aspnetcore.Controllers
         [HttpPost]
         public ActionResult Checkout()
         { 
+            Response.Headers.Add("access-control-allow-origin", "*");
             var se = Request.Headers["se"];
             var customerType = Request.Headers["customerType"];
             var email = Request.Headers["email"];

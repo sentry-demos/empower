@@ -30,7 +30,7 @@ namespace aspnetcore.Controllers
         public ActionResult Get()
         {
             string dsn = Configuration["SentryDSN"];
-            return Ok("aspnetcore /api");
+            return Ok("aspnetcore /api" + dsn);
         }
     }
 }

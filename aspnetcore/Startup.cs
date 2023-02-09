@@ -15,7 +15,8 @@ using aspnetcore.Models;
 namespace aspnetcore
 {
     public class Startup
-    {
+    {   
+        readonly string allowSpecificOrigins = "_allowSpecificOrigins";
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
@@ -26,11 +27,21 @@ namespace aspnetcore
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddCors(options =>
+            {
+                options.AddPolicy(allowSpecificOrigins,
+                builder =>
+                {
+                    builder.AllowAnyOrigin()
+                            .AllowAnyHeader()
+                            .AllowAnyMethod();
+                });
+            });
             services.AddDbContext<hardwarestoreContext>(p=>p.UseNpgsql(Configuration.GetConnectionString("DefaultConnection")));
+            services.AddCors();
             services.AddControllers();
             services.AddControllers().AddNewtonsoftJson(x => 
                 x.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore);
-            services.AddCors();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -40,7 +51,7 @@ namespace aspnetcore
             {
                 app.UseDeveloperExceptionPage();
             }
-            app.UseCors(x => x.AllowAnyHeader().AllowAnyMethod().WithOrigins("*"));
+            app.UseCors(allowSpecificOrigins);
 
             app.UseRouting();
 
