@@ -47,6 +47,7 @@ jobs:
           
       - name: Run tests
         run: npm test
+        working-directory: ./application-monitoring/react
         
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v3
