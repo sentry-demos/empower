@@ -2,24 +2,14 @@
 
 class Api::V1::ProductsController < ApplicationController
   def index
-    # results = []
-    #logger.debug("debug::" + "messageNEW2")
-    
-    #logger.debug("debug::" + pr.to_yaml)
-    
-    # products2 = products.all()
-    #logger.debug("debug::" + products.to_yaml)
+    # get Sentry tags in application_controller.rb
+    set_Sentry_tags
+
+    # TODO: may want to introduce extra db calls here
+    # call to products db. may span around this?
     products = Products.select("id, title, description, descriptionfull, price, img, imgcropped, Null as pg_sleep, Null as reviews")
-    #products = Products.all.includes(:review).where('products.id = ?', 'productid').references(:review)
-    #products = Reviews.select('*').joins(:products)
+    # call to reviews db. may span around this?
     reviews = Reviews.select("id, productid, rating, customerid, description, created, Null as pg_sleep")
-
-    #products = Products.joins(:review).select("products.*,reviews.*")
-    #products = reviews.column_names
-    #products = Products.select('*').joins(:review)
-    #products = Products.select('*').joins(:review).where("products.id = reviews.productid")
-    #products = Reviews.all()
-
     
     products.each do |prod|  
       prod["pg_sleep"] = ""
@@ -35,11 +25,15 @@ class Api::V1::ProductsController < ApplicationController
     render json: products, status: 200
   end
 
-  def default
+  # sent here if unexpected route was enterered
+  def default 
+    # get Sentry tags in application_controller.rb
+    set_Sentry_tags
+
     begin
-        # TODO: capture route attempted to include in the exception
-        Sentry.capture_message "message: bad route response"
-        render json: {"message": "bad route response"}, status: :ok
+      # TODO: capture route attempted to include in the exception
+      Sentry.capture_message "message: bad route response"
+      render json: {"message": "bad route response"}, status: :ok
     end
   end
 
@@ -47,15 +41,21 @@ class Api::V1::ProductsController < ApplicationController
   end
 
   def handled
-        begin
-            '2' + 3
-        rescue Exception => exception
-            Sentry.capture_exception(exception)
-            render json: { "ERROR": exception.message  }, status: :ok
-        end
+    # get Sentry tags in application_controller.rb
+    set_Sentry_tags
+
+    begin
+      '2' + 3
+    rescue Exception => exception
+      Sentry.capture_exception(exception)
+      render json: { "ERROR": exception.message  }, status: :ok
+    end
   end
 
   def unhandled
-      1 / 0
+    # get Sentry tags in application_controller.rb
+    set_Sentry_tags
+
+    1 / 0
   end
 end
