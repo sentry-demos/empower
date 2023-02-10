@@ -48,7 +48,7 @@ jobs:
       - name: Run tests
         run: |
           npm install
-          npm test
+          npm test -- --coverage
         working-directory: ./application-monitoring/react
         
       - name: Upload coverage reports to Codecov
