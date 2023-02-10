@@ -46,7 +46,9 @@ jobs:
           token: ${{ SECRETS.SENTRY_AUTH_TOKEN }} # from GitHub secrets
           
       - name: Run tests
-        run: npm test
+        run: |
+          npm install
+          npm test
         working-directory: ./application-monitoring/react
         
       - name: Upload coverage reports to Codecov
