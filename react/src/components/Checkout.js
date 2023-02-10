@@ -43,6 +43,9 @@ function Checkout(props) {
     }
     return response;
   }
+  function generateUrl(product_id) {
+    return product_id;
+  }
 
   function handleInputChange(event) {
     const target = event.target;
