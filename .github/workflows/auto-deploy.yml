@@ -45,6 +45,9 @@ jobs:
           version: latest # optional if 'latest'
           token: ${{ SECRETS.SENTRY_AUTH_TOKEN }} # from GitHub secrets
           
+      - name: Run tests
+        run: npm test
+          
       - name: Get GCP_ env variables from application-monitoring-config/.gcloudrc
         run: |
           source application-monitoring-config/.gcloudrc 
