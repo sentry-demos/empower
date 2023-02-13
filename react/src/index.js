@@ -29,6 +29,7 @@ import NotFound from './components/NotFound';
 import Product from './components/Product';
 import Products from './components/Products';
 import ProductsJoin from './components/ProductsJoin';
+import Nplusone from './components/nplusone';
 
 const tracingOrigins = ['localhost', 'empowerplant.io', 'run.app', 'appspot.com', /^\//];
 
@@ -181,6 +182,7 @@ class App extends Component {
                   <Route path="/checkout" element={<Checkout backend={BACKEND_URL} history={history} />}></Route>
                   <Route path="/complete" element={<Complete/>} />
                   <Route path="/error" element={<CompleteError/>} />
+                  <Route path="/nplusone" element={<Nplusone/>}/>
                   <Route path="/organization" element={<Organization/>} />
                   <Route path="/employee/:id" element={<Employee/>}></Route>
                   <Route path="/product/:id" element={<Product/>}></Route>
