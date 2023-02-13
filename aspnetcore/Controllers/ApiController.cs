@@ -29,8 +29,8 @@ namespace aspnetcore.Controllers
         [HttpGet]
         public ActionResult Get()
         {
-            string dsn = Configuration["SentryDSN"];
-            return Ok("aspnetcore /api" + dsn);
+            string dsn = Configuration["Sentry:Dsn"];
+            return Ok("aspnetcore /api DSN: " + dsn);
         }
     }
 }

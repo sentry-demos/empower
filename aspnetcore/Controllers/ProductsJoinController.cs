@@ -29,7 +29,6 @@ namespace aspnetcore.Controllers
         [HttpGet]
         public ActionResult Get()
         {
-            string dsn = Configuration["SentryDSN"];
             return Ok("aspnetcore /products-join");
         }
     }
