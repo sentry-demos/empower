@@ -10,5 +10,7 @@
   "ConnectionStrings": {
     "DefaultConnection":"Server=<HOST>; port=5432; user id = <USERNAME>; password = <PASSWORD>; database=<DATABASE>; pooling = true"
   },
-  "SentryDSN": "<SENTRY_DSN>"
+  "Sentry": {
+    "Dsn": "<SENTRY_DSN>",
+  },
 }
