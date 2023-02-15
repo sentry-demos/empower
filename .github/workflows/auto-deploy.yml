@@ -55,7 +55,7 @@ jobs:
         uses: codecov/codecov-action@v3
         with:
             token: ${{ secrets.CODECOV_TOKEN }}
-            directory: ./application-monitoring
+            working-directory: ./application-monitoring
           
       - name: Get GCP_ env variables from application-monitoring-config/.gcloudrc
         run: |
