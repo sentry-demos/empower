@@ -78,6 +78,7 @@ You will need to downgrade your python version to fix this:
 source env/bin/activate
 pip install -r requirements.txt
 ```
+6. Instead of using `py.test` or `pytest` executable that is probably global and points to your Python 3.10+ installation, use `python3 -m pytest` that will pick up the Python 3.8 from virtual environment
 
 ### SSL Cert Issues
 
