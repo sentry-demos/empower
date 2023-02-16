@@ -10,6 +10,9 @@ from appium.options.android import UiAutomator2Options
 from appium.options.ios import XCUITestOptions
 from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.remote.remote_connection import RemoteConnection
+from selenium.webdriver.chrome.options import Options as ChromeOptions
+from selenium.webdriver.firefox.options import Options as FirefoxOptions
+from selenium.webdriver.safari.options import Options as SafariOptions
 
 import sentry_sdk
 from dotenv import load_dotenv
@@ -40,31 +43,29 @@ sentry_sdk.init(
     environment=ENVIRONMENT,
 )
 
+_browser2class = {
+    'chrome': ChromeOptions,
+    'firefox': FirefoxOptions,
+    'safari': SafariOptions
+}
+
 desktop_browsers = [
     {
-        "seleniumVersion": '4.8.0',
         "platformName": "Windows 10",
         "browserName": "chrome",
         "browserVersion": "latest",
-        "sauce:options": {}
     }, {
-        "seleniumVersion": '4.8.0',
         "platformName": "Windows 10",
         "browserName": "firefox",
         "browserVersion": "latest",
-        "sauce:options": {}
     }, {
-        "seleniumVersion": '4.8.0',
         "platformName": "OS X 10.13",
         "browserName": "safari",
         "browserVersion": "latest-1",
-        "sauce:options": {}
     }, {
-        "seleniumVersion": '4.8.0',
         "platformName": "OS X 10.13",
         "browserName": "chrome",
         "browserVersion": "latest",
-        "sauce:options": {}
     }]
 
 def pytest_addoption(parser):
@@ -91,14 +92,18 @@ def desktop_web_driver(request, data_center):
         else:
             selenium_endpoint = SAUCELABS_PROTOCOL + "{}:{}@ondemand.us-west-1.saucelabs.com/wd/hub".format(username, access_key)
 
-        caps = dict()
-        caps.update(request.param)
-        caps['sauce:options'].update({'build': build_tag})
-        caps['sauce:options'].update({'name': test_name})
+        options = _browser2class[request.param['browserName']]()
+        for c in ['platformName', 'browserVersion']:
+            options.set_capability(c, request.param[c])
+        options.set_capability('sauce:options', {
+            'seleniumVersion': '4.8.0',
+            'build': build_tag,
+            'name': test_name
+        })
 
         browser = webdriver.Remote(
             command_executor=selenium_endpoint,
-            desired_capabilities=caps,
+            options=options,
             keep_alive=True
         )
 
