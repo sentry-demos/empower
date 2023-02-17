@@ -6,11 +6,11 @@ import { connect } from 'react-redux';
 
 console.log(this.props.backend);
 // for loop to create 10 API calls and save them to variables.
-for (let i = 0; i < 10; i++) {
-  let response = fetch(this.props.backend + '/product/info?id=' + i) , {
-    method: 'GET'
-  })
-} 
+// for (let i = 0; i < 10; i++) {
+//   let response = fetch(this.props.backend + '/product/info?id=' + i) , {
+//     method: 'GET'
+//   })
+// } 
 
 class Nplusone extends Component {
   
