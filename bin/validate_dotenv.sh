@@ -14,10 +14,10 @@
 set -e # exit immediately if any command exits with a non-zero status
   
 if [ ! -f .env ]; then
-    echo "$0: ERROR: .env does not exist in current directory: $(pwd). It should have been
+    >&2 echo "$0: ERROR: .env does not exist in current directory: $(pwd). It should have been
     created by 'parent' script."
     exit 1
 fi
 
-env -i PATH="$PATH" SENTRY_AUTH_TOKEN="$SENTRY_AUTH_TOKEN" /bin/bash -c 'export $(grep -v ^# .env | xargs); validate_env.sh'
+env -i PATH="$PATH" SENTRY_AUTH_TOKEN="$SENTRY_AUTH_TOKEN" /bin/bash -c 'export $(grep -v ^# .env | sed "s/ #.*//" | xargs); validate_env.sh'
  

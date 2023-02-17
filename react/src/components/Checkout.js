@@ -27,7 +27,7 @@ function Checkout(props) {
       email = scope._user.email
     });
 
-    return await fetch(props.backend + "/checkout", {
+    const response = await fetch(props.backend + "/checkout", {
       method: "POST",
       headers: { se, customerType, email, "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -38,6 +38,13 @@ function Checkout(props) {
     .catch((err) => { 
       return { ok: false, status: 500 }
     })
+    if (!response.ok) {
+      throw new Error(response.status + " - " + (response.statusText || "Internal Server Error"));
+    }
+    return response;
+  }
+  function generateUrl(product_id) {
+    return product_id;
   }
 
   function handleInputChange(event) {
@@ -63,15 +70,17 @@ function Checkout(props) {
 
     setLoading(true)
 
-    let response = await checkout(cart)
-    if (!response.ok) {
-      Sentry.captureException(new Error(response.status + " - " + (response.statusText || "Internal Server Error")))
+    let hadError = false;
+    try {
+      await checkout(cart);
+    } catch (error) {
+      Sentry.captureException(error);
+      hadError = true;
     }
-
     setLoading(false)
     transaction.finish();
 
-    if (!response.ok) {
+    if (hadError) {
       navigate('/error')
     } else {
       navigate('/complete')

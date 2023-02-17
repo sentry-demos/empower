@@ -2,6 +2,7 @@ import time
 import yaml
 import random
 import sentry_sdk
+import pytest
 from urllib.parse import urlencode
 
 def test_add_to_cart(desktop_web_driver):
@@ -21,10 +22,10 @@ def test_add_to_cart(desktop_web_driver):
             # Ensures a different backend endpoint gets picked each time
             url = ""
             # TODO make a query_string builder function for sharing this across tests
-            query_string = { 
-                'se': 'tda',
+            query_string = {
+                'se': pytest.SE_TAG,
                 # 'ruby' /products /checkout endpoints not available yet
-                'backend': random.sample(['flask', 'express','springboot'], 1)[0]
+                'backend': pytest.random_backend(exclude='ruby')
             }
             url = endpoint_products + '?' + urlencode(query_string)
 

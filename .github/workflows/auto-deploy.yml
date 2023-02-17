@@ -1,0 +1,83 @@
+name: Deploy to Google App Engine upon commit to master branch and on schedule at midnight UTC
+run-name: Deployment triggered by ${{ github.event_name }} / ${{ github.actor }}
+
+on:
+  push:
+    branches:
+      - 'master'
+  schedule:
+    - cron:  '0 0 * * *' # every day at midnight UTC 
+    # see https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#schedule
+  workflow_dispatch:
+  
+jobs:
+  default-job:
+    if: github.repository_owner == 'sentry-demos' # don't run in forks
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+    runs-on: ubuntu-latest
+    
+    steps:
+      - run: echo "Triggered by ${{ github.event_name }} event."
+      - run: echo "Branch is ${{ github.ref }}"
+      
+      - name: Check out this repository code
+        uses: actions/checkout@v3
+        with:
+          path: application-monitoring
+        
+      - name: Check out `application-monitoring-config` to get env-config
+        uses: actions/checkout@v3
+        with:
+          repository: sentry-demos/application-monitoring-config
+          path: application-monitoring-config
+          token: ${{ secrets.KOSTY_PERSONAL_ACCESS_TOKEN_FOR_SYNC_DEPLOY_FORK }}
+        
+      - name: Install Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+          
+      - name: Setup Sentry CLI
+        uses: mathieu-bour/setup-sentry-cli@v1.3.0
+        with:
+          version: latest # optional if 'latest'
+          token: ${{ SECRETS.SENTRY_AUTH_TOKEN }} # from GitHub secrets
+          
+      - name: Run tests
+        run: |
+          npm install
+          npm test -- --coverage
+        working-directory: ./application-monitoring/react
+        
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+            token: ${{ secrets.CODECOV_TOKEN }}
+            working-directory: ./application-monitoring
+          
+      - name: Get GCP_ env variables from application-monitoring-config/.gcloudrc
+        run: |
+          source application-monitoring-config/.gcloudrc 
+          echo "GCP_WORKLOAD_IDENTITY_PROVIDER=$GCP_WORKLOAD_IDENTITY_PROVIDER" >> $GITHUB_OUTPUT
+          echo "GCP_SERVICE_ACCOUNT=$GCP_SERVICE_ACCOUNT" >> $GITHUB_OUTPUT 
+        id: gcloudrc
+        
+      - id: 'auth'
+        name: 'Authenticate Google Cloud'
+        uses: 'google-github-actions/auth@v0'
+        with:
+          workload_identity_provider: ${{ steps.gcloudrc.outputs.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ steps.gcloudrc.outputs.GCP_SERVICE_ACCOUNT }}
+
+      - name: 'Set up Google Cloud SDK'
+        uses: 'google-github-actions/setup-gcloud@v0'
+        
+      - name: Get env-config/production.env from application-monitoring-config
+        run: cp application-monitoring-config/production.env application-monitoring/env-config/
+        
+      - name: Deploy to production
+        run: ./application-monitoring/deploy.sh react --env=production
+          
+      - run: echo "Job status is ${{ job.status }}."

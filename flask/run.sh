@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 # This is not a standalone script. It is called from ../deploy.sh that
 # sets up the right environemnt variables and files for it.
 
@@ -10,11 +12,11 @@ source venv/bin/activate
 pip3 install -r requirements.txt
 
 function cleanup {
-  stop.sh python3 8080
+  stop.sh python3 $LOCAL_PORT 
   if [[ "$VIRTUAL_ENV" != "" ]]; then
     deactivate
   fi
 }
 trap cleanup EXIT
 
-python3 main.py
+PORT=$LOCAL_PORT python3 main.py

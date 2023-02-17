@@ -2,6 +2,7 @@ import pytest
 from os import environ
 import os
 import release_version_manager as ReleaseVersion
+import random
 
 from selenium import webdriver
 from appium import webdriver as appiumdriver
@@ -15,6 +16,15 @@ load_dotenv()
 SAUCELABS_PROTOCOL = "https://"
 DSN = os.getenv("DSN")
 ENVIRONMENT = os.getenv("ENVIRONMENT") or "production"
+
+def pytest_configure():
+    pytest.SE_TAG=os.getenv("SE_TAG") or "tda"
+    def random_backend(exclude=[]):
+        ALL_BACKENDS=['flask','express','springboot', 'ruby', 'laravel']
+        exclude = [exclude] if isinstance(exclude, str) else exclude
+        backends = list(set(ALL_BACKENDS) - set(exclude))
+        return random.sample(backends, 1)[0]
+    pytest.random_backend = random_backend
 
 print("ENV", ENVIRONMENT)
 print("DSN", DSN)

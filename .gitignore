@@ -41,6 +41,7 @@ react/app.yaml
 flask/app.yaml
 express/app.yaml
 ruby/app.yaml
+ruby-on-rails/app.yaml
 
 spring-boot/src/main/resources/application.properties
 spring-boot/src/main/appengine/app.yaml
@@ -82,3 +83,14 @@ env-config/*
 
 **/local.env
 tests/env
+
+# .NET
+aspnetcore/bin
+aspnetcore/obj
+
+/laravel/node_modules
+/laravel/public/hot
+/laravel/public/storage
+/laravel/storage/*.key
+/laravel/vendor
+

@@ -9,7 +9,7 @@
 set -e # exit immediately if any command exits with a non-zero status
 
 if [ ! -f validate_env.list ]; then
-  echo "$0: ERROR: validate_env.list file does not exist in current directory: $(pwd)"
+  >&2 echo "$0: ERROR: validate_env.list file does not exist in current directory: $(pwd)"
   exit 1
 fi
 
@@ -26,8 +26,9 @@ for var in $(grep -v '^#' validate_env.list | xargs); do
   value="${!var}" # won't work in zsh, only bash
 
   if [ "$value" == "" ]; then
-    >&2 echo "$0: [ERROR] required env variable $var not defined or has empty value." \
-            "You must add it to your env-config/*.env file." 
+    >&2 echo "$0: [ERROR] required env variable $var not defined or has empty value.
+      You must add it to your env-config/*.env file. Correct values can be obtained from
+      https://github.com/sentry-demos/application-monitoring-config" 
     exit 1
   fi
 done 

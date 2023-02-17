@@ -8,7 +8,7 @@ If you're running the app locally and the database queries are failing, here are
 
 Did you remember to permit / whitelist your IP address as an 'Authorized Network' in CloudSQL?
 
-Did any of the Connection Info for the CloudSQL instance change? Go to  CLoudSQL Settings -> Connection Info and check HOST and other details from the .env files.
+Did any of the Connection Info for the CloudSQL instance change? Go to  CLoudSQL Settings -> Connection Info and check DB_HOST and other details from the .env files.
 
 Did the GCP documentation change? For connecting via Unix socket vs TCP, regarding the recommended libraries and implementations to use.
 

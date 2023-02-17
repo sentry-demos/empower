@@ -1,0 +1,23 @@
+default: &default
+  adapter: postgresql
+  pool: 5
+  timeout: 5000
+  username: <%= ENV["DB_USERNAME"] %>
+  password: <%= ENV["DB_PASSWORD"] %>
+  database: <%= ENV.fetch("DB_DATABASE") %>
+
+development:
+  <<: *default
+  host: "<%= ENV["DB_HOST"] %>"
+  port: "<%= ENV["DB_PORT"] %>"
+
+test:
+  <<: *default
+  host: "<%= ENV["DB_HOST"] %>"
+  port: "<%= ENV["DB_PORT"] %>"
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 1 } %>
+
+# production will only work on Google Cloud App Engine
+production:
+  <<: *default
+  host: "/cloudsql/<%= ENV["DB_CLOUD_SQL_CONNECTION_NAME"] %>"

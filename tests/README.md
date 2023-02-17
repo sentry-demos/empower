@@ -62,6 +62,24 @@ kill -9 <PID of the script.sh>
 ```
 # Troubleshooting
 
+### TypeError: required field "lineno" missing from alias
+```
+  File "/Users/kosty/home/am/tests/env/lib/python3.10/site-packages/_pytest/assertion/rewrite.py", line 360, in _rewrite_test
+    co = compile(tree, fn_, "exec", dont_inherit=True)
+TypeError: required field "lineno" missing from alias
+```
+You will need to downgrade your python version to fix this:
+1. Install Python 3.8 with `brew install python@3.8`
+2. Nuke your `venv`-created `env`: `deactivate && rm -rf env`
+3. `pip3 install virtualenv`
+4. Create a virtual environment that uses Python 3.8 instead of your global python `virtualenv --python="/opt/homebrew/Cellar/python@3.8/3.8.16/bin/python3.8" env` (exact path may differ)
+5. The usual:
+```
+source env/bin/activate
+pip install -r requirements.txt
+```
+6. Instead of using `py.test` or `pytest` executable that is probably global and points to your Python 3.10+ installation, use `python3 -m pytest` that will pick up the Python 3.8 from virtual environment
+
 ### SSL Cert Issues
 
 Problem: When locally running TDA tests, i.e. `py.test -s -n 4 desktop_web`, if you experience this error (or similar relating to SSL Cert):
