@@ -11,6 +11,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using aspnetcore.Models;
+using Sentry.AspNetCore;
 
 namespace aspnetcore
 {
@@ -54,6 +55,8 @@ namespace aspnetcore
             app.UseCors(allowSpecificOrigins);
 
             app.UseRouting();
+
+            app.UseSentryTracing();
 
             app.UseAuthorization();
 

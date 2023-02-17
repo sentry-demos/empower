@@ -12,5 +12,6 @@
   },
   "Sentry": {
     "Dsn": "<SENTRY_DSN>",
+    "TracesSampleRate": 1.0,
   },
 }
