@@ -182,11 +182,11 @@ class App extends Component {
                   <Route path="/checkout" element={<Checkout backend={BACKEND_URL} history={history} />}></Route>
                   <Route path="/complete" element={<Complete/>} />
                   <Route path="/error" element={<CompleteError/>} />
-                  <Route path="/nplusone" element={<Nplusone/>}/>
                   <Route path="/organization" element={<Organization/>} />
                   <Route path="/employee/:id" element={<Employee/>}></Route>
                   <Route path="/product/:id" element={<Product/>}></Route>
                   <Route path="/products" element={<Products backend={BACKEND_URL} />}></Route>
+                  <Route path="/nplusone" element={<Nplusone/>}/>
                   <Route path="/products-join" element={<ProductsJoin backend={BACKEND_URL} />}></Route>
                   <Route path="*" element={<NotFound/>} />
                 </SentryRoutes>
@@ -200,3 +200,5 @@ class App extends Component {
 
 // React-router in use here https://reactrouter.com/web/guides/quick-start
 ReactDOM.render(<App />, document.getElementById('root'));
+
+

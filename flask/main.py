@@ -150,6 +150,13 @@ def organization():
 def connect():
     return "flask /connect"
 
+@app.route('/product/info', methods=['GET'])
+def product_info():
+    import time
+    time.sleep(.55)
+    response = make_response(generateMetrics(), 200)
+    response.mimetype = "text/plain"
+
 
 @app.before_request
 def sentry_event_context():
