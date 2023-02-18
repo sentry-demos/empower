@@ -55,6 +55,11 @@ ENVIRONMENT = os.getenv("ENVIRONMENT") or "production"
 
 SE_TAG = os.getenv("SE_TAG") or get_system_user()
 
+#
+# random will be truly random, not seeded, when SE_TAG == 'tda'
+#
+MAGIC_SE = 'tda'
+
 # BATCH_SIZE can be either <NUMBER> or random_<NUMBER>
 # The later means each time a test is run the inner steps will be repeated a random
 # number of times between 0 and <NUMBER> - 1
@@ -119,6 +124,16 @@ def pytest_addoption(parser):
 @pytest.fixture
 def data_center(request):
     return request.config.getoption('--dc')
+
+@pytest.fixture(autouse=True)
+def before_test(request):
+    if SE_TAG != MAGIC_SE:
+        # Ensure tests produce repeatable outcomes when re-run, see:
+        cwd = os.path.dirname(os.path.realpath(__file__)) + '/'
+        test_relpath = str(request.path).split(cwd)[1]
+        # e.g: desktop_web/test_mytest.py:test_myfunction[desktop_web_driver0]
+        seed = f'{test_relpath}:{request.node.name}'
+        random.seed(seed)
 
 @pytest.fixture(params=desktop_browsers)
 def desktop_web_driver(request, data_center):
