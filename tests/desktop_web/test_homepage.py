@@ -1,15 +1,16 @@
 import time
-import random
 import sentry_sdk
-import pytest
 from urllib.parse import urlencode
-from collections import OrderedDict
 from datetime import datetime
 
 
 # This test is for the homepage '/' transaction
-def test_homepage(desktop_web_driver, endpoints):
+def test_homepage(desktop_web_driver, endpoints, random, batch_size, backend):
     sentry_sdk.set_tag("pytestName", "test_homepage")
+
+    # n - float in [0,1]
+    def probability(p):
+        return random.random() <= p 
 
     # Find what week it is, as this is used as the patch version in YY.MM.W like 22.6.2
     d=datetime.today()
@@ -30,16 +31,20 @@ def test_homepage(desktop_web_driver, endpoints):
     for endpoint in endpoints['react_endpoints']:
         sentry_sdk.set_tag("endpoint", endpoint)
 
-        for i in range(pytest.batch_size()):
+        for i in range(batch_size):
             # Randomize the Failure Rate between 1% and 20% or 40%, depending what week it is. Returns values like 0.02, 0.14, 0.37
             n = random.uniform(0.01, upper_bound)
+
+            crash = probability(n) and 1.0 or 0.0
+            errnum = random.randint(0, 999) # decides which error type is thrown
 
             # This query string is parsed by utils/errors.js wherever the 'crasher' function is used
             # and causes the page to periodically crash, for Release Health
             # TODO make a query_string builder function for sharing this across tests
             query_string = {
-                'backend': pytest.random_backend(),
-                'crash': "%s" % (n)
+                'backend': backend(),
+                'crash': "%s" % (crash),
+                'errnum': "%d" % (errnum)
             }
             url = endpoint + '?' + urlencode(query_string)
 

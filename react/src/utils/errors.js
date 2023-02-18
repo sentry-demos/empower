@@ -26,9 +26,8 @@ const randomErrors = [
   unhandledError
 ]
 
-const throwRandomError = () => {
-  const randomNum = parseInt(Math.random()*randomErrors.length)
-  randomErrors[randomNum]()
+const throwErrorNumber = (i) => {
+  randomErrors[i % randomErrors.length]()
 }
 
 // if n is 0.2 then this will return false 20% of the time
@@ -42,8 +41,9 @@ const crasher = () => {
     const crash = queryParams.get("crash")
     if (crash) {
       console.log("> crash", crash)
+      const errnum = queryParams.get("errnum") || parseInt(Math.random()*randomErrors.length)
       if (crash === "true" || probability(parseFloat(crash))) {
-        throwRandomError();
+        throwErrorNumber(errnum);
       }
     }
   } else {

@@ -2,7 +2,7 @@ import pytest
 from os import environ
 import os
 import release_version_manager as ReleaseVersion
-import random
+import random as real_random
 import subprocess
 import urllib.parse
 import atexit
@@ -57,6 +57,11 @@ ENVIRONMENT = os.getenv("ENVIRONMENT") or "production"
 
 SE_TAG = os.getenv("SE_TAG") or get_system_user()
 
+#
+# random will be truly random, not seeded, when SE_TAG == 'tda'
+#
+MAGIC_SE = 'tda'
+
 # BATCH_SIZE can be either <NUMBER> or random_<NUMBER>
 # The later means each time a test is run the inner steps will be repeated a random
 # number of times between 0 and <NUMBER> - 1
@@ -67,17 +72,6 @@ BACKENDS = (os.getenv("BACKENDS") or "flask,express,springboot,ruby,laravel").sp
 
 def pytest_configure():
     pytest.SE_TAG=SE_TAG
-
-    if BATCH_SIZE.startswith("random_"):
-        pytest.batch_size = lambda: random.randrange(int(BATCH_SIZE.split('_')[1]))
-    else:
-        pytest.batch_size = lambda: int(BATCH_SIZE)
-
-    def random_backend(exclude=[]):
-        exclude = [exclude] if isinstance(exclude, str) else exclude
-        backends = list(set(BACKENDS) - set(exclude))
-        return random.sample(backends, 1)[0]
-    pytest.random_backend = random_backend
 
 import urllib3
 urllib3.disable_warnings()
@@ -121,6 +115,48 @@ def pytest_addoption(parser):
 @pytest.fixture
 def data_center(request):
     return request.config.getoption('--dc')
+
+@pytest.fixture
+def random(request):
+    if SE_TAG != MAGIC_SE:
+        # Ensure tests produce repeatable outcomes when re-run, see:
+        cwd = os.path.dirname(os.path.realpath(__file__)) + '/'
+        test_relpath = str(request.path).split(cwd)[1]
+        # e.g: desktop_web/test_mytest.py:test_myfunction[desktop_web_driver0]
+        seed = f'{test_relpath}:{request.node.name}'
+        # Use a new Random object doesn't share state with global random generator
+        # this is just in case some package uses global random in a way that would
+        # upset repeatability (e.g. numer of random() calls varies b/w executions)
+        return real_random.Random(seed)
+    else:
+        return real_random
+
+@pytest.fixture
+def batch_size(random):
+    if BATCH_SIZE.startswith("random_"):
+        return random.randrange(int(BATCH_SIZE.split('_')[1]))
+    else:
+        r = random.random() # unused, to make sure we call random same number of times
+        return int(BATCH_SIZE)
+
+@pytest.fixture
+def backend(random):
+    def random_backend(exclude=[]):
+        exclude = [exclude] if isinstance(exclude, str) else exclude
+        # Must sort to get same order across processes to ensure that seeded random.sample()
+        # always returns the same values.
+        # python3
+        #   >>> list(set(['b', 'a', 'f', 'd', 'e', 'c']) - set(['c', 'a']))
+        #   ['b', 'd', 'e', 'f']
+        #   >>> list(set(['b', 'a', 'f', 'd', 'e', 'c']) - set(['c', 'a']))
+        #   ['b', 'd', 'e', 'f']
+        #   >>> exit()
+        # python3
+        #   >>> list(set(['b', 'a', 'f', 'd', 'e', 'c']) - set(['c', 'a']))
+        #   ['d', 'f', 'b', 'e']
+        backends = sorted(list(set(BACKENDS) - set(exclude)))
+        return random.sample(backends, 1)[0]
+    return random_backend
 
 @pytest.fixture
 def endpoints():

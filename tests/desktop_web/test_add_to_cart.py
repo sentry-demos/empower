@@ -1,11 +1,9 @@
 import time
-import random
 import sentry_sdk
-import pytest
 from urllib.parse import urlencode
 from selenium.webdriver.common.by import By
 
-def test_add_to_cart(desktop_web_driver, endpoints):
+def test_add_to_cart(desktop_web_driver, endpoints, batch_size, backend, random):
     sentry_sdk.set_tag("pytestName", "test_add_to_cart")
 
     for endpoint in endpoints['react_endpoints']:
@@ -14,13 +12,13 @@ def test_add_to_cart(desktop_web_driver, endpoints):
 
         missedButtons = 0
 
-        for i in range(10):
+        for i in range(batch_size):
             # Ensures a different backend endpoint gets picked each time
             url = ""
             # TODO make a query_string builder function for sharing this across tests
             query_string = {
                 # 'ruby' /products /checkout endpoints not available yet
-                'backend': pytest.random_backend(exclude='ruby')
+                'backend': backend(exclude='ruby')
             }
             url = endpoint_products + '?' + urlencode(query_string)
 
