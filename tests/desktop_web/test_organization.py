@@ -1,9 +1,8 @@
 import time
-import random
 import pytest
 import sentry_sdk
 
-def test_organization(desktop_web_driver, endpoints):
+def test_organization(desktop_web_driver, endpoints, random, batch_size):
     sentry_sdk.set_tag("pytestName", "test_organization")
 
     for endpoint in endpoints['react_endpoints']:
@@ -12,7 +11,7 @@ def test_organization(desktop_web_driver, endpoints):
 
         url = endpoint_organization
 
-        for i in range(pytest.batch_size()):
+        for i in range(batch_size):
         
             desktop_web_driver.get(url)
 

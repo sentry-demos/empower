@@ -1,10 +1,9 @@
 import time
-import random
 import sentry_sdk
 import pytest
 from urllib.parse import urlencode
 
-def test_about_employees(desktop_web_driver, endpoints):
+def test_about_employees(desktop_web_driver, endpoints, random, batch_size, backend):
     sentry_sdk.set_tag("pytestName", "test_about_employees")
 
     for endpoint in endpoints['react_endpoints']:
@@ -14,13 +13,13 @@ def test_about_employees(desktop_web_driver, endpoints):
         # You can filter by se:tda in Sentry's UI as this will get set as a tag
         url = ""
         query_string = {
-            'backend': pytest.random_backend()
+            'backend': backend()
         }
         url = endpoint_about + '?' + urlencode(query_string)
 
         employees = ["Jane Schmidt", "Lily Chan", "Keith Ryan", "Mason Kim", "Emma Garcia", "Noah Miller"]
 
-        for i in range(pytest.batch_size()):
+        for i in range(batch_size):
 
             desktop_web_driver.get(url)
 

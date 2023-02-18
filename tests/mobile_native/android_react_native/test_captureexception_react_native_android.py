@@ -1,4 +1,3 @@
-import random
 import sentry_sdk
 from appium.webdriver.common.appiumby import AppiumBy
 
