@@ -2,7 +2,6 @@ import time
 import pytest
 import random
 import sentry_sdk
-from urllib.parse import urlencode
 from collections import OrderedDict
 from selenium.webdriver.common.by import By
 

@@ -19,7 +19,6 @@ def test_add_to_cart(desktop_web_driver, endpoints):
             url = ""
             # TODO make a query_string builder function for sharing this across tests
             query_string = {
-                'se': pytest.SE_TAG,
                 # 'ruby' /products /checkout endpoints not available yet
                 'backend': pytest.random_backend(exclude='ruby')
             }

@@ -2,7 +2,6 @@ import time
 import random
 import pytest
 import sentry_sdk
-from urllib.parse import urlencode
 
 def test_organization(desktop_web_driver, endpoints):
     sentry_sdk.set_tag("pytestName", "test_organization")
@@ -11,12 +10,7 @@ def test_organization(desktop_web_driver, endpoints):
         endpoint_organization = endpoint + "/organization"
         sentry_sdk.set_tag("endpoint", endpoint_organization)
 
-        # You can filter by se:tda in Sentry's UI as this will get set as a tag
-        url = ""
-        query_string = { 
-            'se': pytest.SE_TAG,
-        }
-        url = endpoint_organization + '?' + urlencode(query_string)
+        url = endpoint_organization
 
         for i in range(pytest.batch_size()):
         
