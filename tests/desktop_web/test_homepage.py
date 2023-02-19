@@ -38,7 +38,6 @@ def test_homepage(desktop_web_driver, endpoints):
             # and causes the page to periodically crash, for Release Health
             # TODO make a query_string builder function for sharing this across tests
             query_string = {
-                'se': pytest.SE_TAG,
                 'backend': pytest.random_backend(),
                 'crash': "%s" % (n)
             }

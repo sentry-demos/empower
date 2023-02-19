@@ -18,6 +18,7 @@ from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from selenium.webdriver.safari.options import Options as SafariOptions
 from datetime import datetime, timedelta
+from urllib.parse import urlencode
 
 import sentry_sdk
 from dotenv import load_dotenv
@@ -126,6 +127,27 @@ def endpoints():
     with open('endpoints.yaml', 'r') as stream:
         return yaml.safe_load(stream)
 
+# Automatically append a set of extra parameters to all URLs
+#
+#   remote = RemoteWithExtraUrlParams(..., extra_params='se=tda')
+#   remote.get('https://google.com/')
+#       -> webdriver.Remote.get(https://google.com/?se=tda)
+class RemoteWithExtraUrlParams(webdriver.Remote):
+    def __init__(self, *args, **kwargs):
+        if 'extra_params' in kwargs:
+            if kwargs['extra_params'].startswith(('&', '?')):
+                raise ValueError('extra_params must be in format: "param1=value1&param2=value2..."')
+            self.extra_params = kwargs['extra_params'] 
+            del kwargs['extra_params']
+        else:
+            self.extra_params = None
+        super().__init__(*args, **kwargs)
+
+    def get(self, url):
+        if self.extra_params:
+            url += ('?' in url and '&' or '?') + self.extra_params
+        super().get(url)
+
 @pytest.fixture
 def selenium_endpoint(data_center):
     username = environ['SAUCE_USERNAME']
@@ -154,10 +176,12 @@ def desktop_web_driver(request, selenium_endpoint):
             'name': test_name
         })
 
-        browser = webdriver.Remote(
+        browser = RemoteWithExtraUrlParams(
             command_executor=selenium_endpoint,
             options=options,
-            keep_alive=True
+            keep_alive=True,
+            # Note: these tags might not be supported by some frontends, e.g. Vue
+            extra_params=urlencode({'se': SE_TAG})
         )
 
         browser.implicitly_wait(10)

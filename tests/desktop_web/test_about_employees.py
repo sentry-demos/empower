@@ -14,7 +14,6 @@ def test_about_employees(desktop_web_driver, endpoints):
         # You can filter by se:tda in Sentry's UI as this will get set as a tag
         url = ""
         query_string = {
-            'se': pytest.SE_TAG,
             'backend': pytest.random_backend()
         }
         url = endpoint_about + '?' + urlencode(query_string)
