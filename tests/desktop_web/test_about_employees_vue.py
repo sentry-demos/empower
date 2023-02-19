@@ -1,19 +1,14 @@
 import time
-import yaml
 import pytest
 import random
 import sentry_sdk
 from urllib.parse import urlencode
 from collections import OrderedDict
 
-def test_about_employees_vue(desktop_web_driver):
+def test_about_employees_vue(desktop_web_driver, endpoints):
     sentry_sdk.set_tag("pytestName", "test_about_employees_vue")
 
-    with open('endpoints.yaml', 'r') as stream:
-        data_loaded = yaml.safe_load(stream)
-        endpoints = data_loaded['vue_endpoints']
-
-    for endpoint in endpoints:
+    for endpoint in endpoints["vue_endpoints"]:
 
         endpoint = endpoint + "/about"
 

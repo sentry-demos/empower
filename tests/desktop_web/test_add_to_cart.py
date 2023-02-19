@@ -1,19 +1,14 @@
 import time
-import yaml
 import random
 import sentry_sdk
 import pytest
 from urllib.parse import urlencode
 from selenium.webdriver.common.by import By
 
-def test_add_to_cart(desktop_web_driver):
+def test_add_to_cart(desktop_web_driver, endpoints):
     sentry_sdk.set_tag("pytestName", "test_add_to_cart")
 
-    with open('endpoints.yaml', 'r') as stream:
-        data_loaded = yaml.safe_load(stream)
-        endpoints = data_loaded['react_endpoints']
-
-    for endpoint in endpoints:
+    for endpoint in endpoints['react_endpoints']:
         endpoint_products = endpoint + "/products"
         sentry_sdk.set_tag("endpoint", endpoint_products)
 

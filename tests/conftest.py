@@ -6,6 +6,7 @@ import random
 import subprocess
 import urllib.parse
 import atexit
+import yaml
 
 from selenium import webdriver
 from appium import webdriver as appiumdriver
@@ -120,22 +121,29 @@ def pytest_addoption(parser):
 def data_center(request):
     return request.config.getoption('--dc')
 
+@pytest.fixture
+def endpoints():
+    with open('endpoints.yaml', 'r') as stream:
+        return yaml.safe_load(stream)
+
+@pytest.fixture
+def selenium_endpoint(data_center):
+    username = environ['SAUCE_USERNAME']
+    access_key = environ['SAUCE_ACCESS_KEY']
+
+    if data_center and data_center.lower() == 'eu':
+        return SAUCELABS_PROTOCOL + "{}:{}@ondemand.eu-central-1.saucelabs.com/wd/hub".format(username, access_key)
+    else:
+        return SAUCELABS_PROTOCOL + "{}:{}@ondemand.us-west-1.saucelabs.com/wd/hub".format(username, access_key)
+
 @pytest.fixture(params=desktop_browsers)
-def desktop_web_driver(request, data_center):
+def desktop_web_driver(request, selenium_endpoint):
 
     try:
         sentry_sdk.set_tag("pytestPlatform", "desktop_web")
 
         test_name = request.node.name
         build_tag = environ.get('BUILD_TAG', "Application-Monitoring-TDA")
-
-        username = environ['SAUCE_USERNAME']
-        access_key = environ['SAUCE_ACCESS_KEY']
-
-        if data_center and data_center.lower() == 'eu':
-            selenium_endpoint = SAUCELABS_PROTOCOL + "{}:{}@ondemand.eu-central-1.saucelabs.com/wd/hub".format(username, access_key)
-        else:
-            selenium_endpoint = SAUCELABS_PROTOCOL + "{}:{}@ondemand.us-west-1.saucelabs.com/wd/hub".format(username, access_key)
 
         options = _browser2class[request.param['browserName']]()
         for c in ['platformName', 'browserVersion']:
@@ -184,18 +192,14 @@ def desktop_web_driver(request, data_center):
         sentry_sdk.capture_exception(err)
 
 @pytest.fixture
-def android_react_native_emu_driver(request, data_center):
+def android_react_native_emu_driver(request, selenium_endpoint):
 
     try:
         sentry_sdk.set_tag("pytestPlatform", "android_react_native")
 
-        username_cap = environ['SAUCE_USERNAME']
-        access_key_cap = environ['SAUCE_ACCESS_KEY']
         release_version = ReleaseVersion.latest_react_native_github_release()
 
         options = UiAutomator2Options().load_capabilities({
-            'username': username_cap,
-            'accessKey': access_key_cap,
             'deviceName': 'Android GoogleAPI Emulator',
             'platformVersion': '10.0',
             'platformName': 'Android',
@@ -208,12 +212,7 @@ def android_react_native_emu_driver(request, data_center):
             'appWaitForLaunch': False
         })
 
-        if data_center and data_center.lower() == 'eu':
-            sauce_url = SAUCELABS_PROTOCOL + "{}:{}@ondemand.eu-central-1.saucelabs.com/wd/hub".format(username_cap, access_key_cap)
-        else:
-            sauce_url = SAUCELABS_PROTOCOL + "{}:{}@ondemand.us-west-1.saucelabs.com/wd/hub".format(username_cap, access_key_cap)
-
-        driver = appiumdriver.Remote(sauce_url, options=options)
+        driver = appiumdriver.Remote(selenium_endpoint, options=options)
         driver.implicitly_wait(20)
 
         sentry_sdk.set_tag("seleniumSessionId", driver.session_id)
@@ -230,18 +229,14 @@ def android_react_native_emu_driver(request, data_center):
         sentry_sdk.capture_exception(err)
 
 @pytest.fixture
-def android_emu_driver(request, data_center):
+def android_emu_driver(request, selenium_endpoint):
 
     try:
         sentry_sdk.set_tag("pytestPlatform", "android")
 
-        username_cap = environ['SAUCE_USERNAME']
-        access_key_cap = environ['SAUCE_ACCESS_KEY']
         release_version = ReleaseVersion.latest_android_github_release()
 
         options = UiAutomator2Options().load_capabilities({
-            'username': username_cap,
-            'accessKey': access_key_cap,
             'deviceName': 'Android GoogleAPI Emulator',
             'platformVersion': '10.0',
             'platformName': 'Android',
@@ -254,12 +249,7 @@ def android_emu_driver(request, data_center):
             'appWaitForLaunch': False
         })
 
-        if data_center and data_center.lower() == 'eu':
-            sauce_url = SAUCELABS_PROTOCOL + "{}:{}@ondemand.eu-central-1.saucelabs.com/wd/hub".format(username_cap, access_key_cap)
-        else:
-            sauce_url = SAUCELABS_PROTOCOL + "{}:{}@ondemand.us-west-1.saucelabs.com/wd/hub".format(username_cap, access_key_cap)
-
-        driver = appiumdriver.Remote(sauce_url, options=options)
+        driver = appiumdriver.Remote(selenium_endpoint, options=options)
         driver.implicitly_wait(20)
 
         sentry_sdk.set_tag("seleniumSessionId", driver.session_id)
@@ -276,18 +266,14 @@ def android_emu_driver(request, data_center):
         sentry_sdk.capture_exception(err)
 
 @pytest.fixture
-def ios_react_native_sim_driver(request, data_center):
+def ios_react_native_sim_driver(request, selenium_endpoint):
 
     try:
         sentry_sdk.set_tag("pytestPlatform", "ios_react_native")
 
-        username_cap = environ['SAUCE_USERNAME']
-        access_key_cap = environ['SAUCE_ACCESS_KEY']
         release_version = ReleaseVersion.latest_react_native_github_release()
 
         options = XCUITestOptions().load_capabilities({
-            'username': username_cap,
-            'accessKey': access_key_cap,
             'appium:deviceName': 'iPhone 11 Simulator',
             'platformName': 'iOS',
             'appium:platformVersion': '14.5',
@@ -300,12 +286,7 @@ def ios_react_native_sim_driver(request, data_center):
             'appium:app': f'https://github.com/sentry-demos/sentry_react_native/releases/download/{release_version}/sentry_react_native.app.zip',
         })
 
-        if data_center and data_center.lower() == 'eu':
-            sauce_url = SAUCELABS_PROTOCOL + "{}:{}@ondemand.eu-central-1.saucelabs.com/wd/hub".format(username_cap, access_key_cap)
-        else:
-            sauce_url = SAUCELABS_PROTOCOL + "{}:{}@ondemand.us-west-1.saucelabs.com/wd/hub".format(username_cap, access_key_cap)
-
-        driver = appiumdriver.Remote(sauce_url, options=options)
+        driver = appiumdriver.Remote(selenium_endpoint, options=options)
         driver.implicitly_wait(20)
 
         sentry_sdk.set_tag("seleniumSessionId", driver.session_id)
@@ -322,18 +303,14 @@ def ios_react_native_sim_driver(request, data_center):
         sentry_sdk.capture_exception(err)
 
 @pytest.fixture
-def ios_sim_driver(request, data_center):
+def ios_sim_driver(request, selenium_endpoint):
 
     try:
         sentry_sdk.set_tag("pytestPlatform", "ios")
 
-        username_cap = environ['SAUCE_USERNAME']
-        access_key_cap = environ['SAUCE_ACCESS_KEY']
         release_version = ReleaseVersion.latest_ios_github_release()
 
         options = XCUITestOptions().load_capabilities({
-            'username': username_cap,
-            'accessKey': access_key_cap,
             'appium:deviceName': 'iPhone 11 Simulator',
             'platformName': 'iOS',
             'appium:platformVersion': '14.5',
@@ -346,12 +323,7 @@ def ios_sim_driver(request, data_center):
             'appium:app': f'https://github.com/sentry-demos/ios/releases/download/{release_version}/EmpowerPlant_release.zip',
         })
 
-        if data_center and data_center.lower() == 'eu':
-            sauce_url = SAUCELABS_PROTOCOL + "{}:{}@ondemand.eu-central-1.saucelabs.com/wd/hub".format(username_cap, access_key_cap)
-        else:
-            sauce_url = SAUCELABS_PROTOCOL + "{}:{}@ondemand.us-west-1.saucelabs.com/wd/hub".format(username_cap, access_key_cap)
-
-        driver = appiumdriver.Remote(sauce_url, options=options)
+        driver = appiumdriver.Remote(selenium_endpoint, options=options)
         driver.implicitly_wait(20)
 
         sentry_sdk.set_tag("seleniumSessionId", driver.session_id)

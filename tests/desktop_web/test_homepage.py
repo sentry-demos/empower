@@ -1,5 +1,4 @@
 import time
-import yaml
 import random
 import sentry_sdk
 import pytest
@@ -9,12 +8,8 @@ from datetime import datetime
 
 
 # This test is for the homepage '/' transaction
-def test_homepage(desktop_web_driver):
+def test_homepage(desktop_web_driver, endpoints):
     sentry_sdk.set_tag("pytestName", "test_homepage")
-
-    with open('endpoints.yaml', 'r') as stream:
-        data_loaded = yaml.safe_load(stream)
-        endpoints = data_loaded['react_endpoints']
 
     # Find what week it is, as this is used as the patch version in YY.MM.W like 22.6.2
     d=datetime.today()
@@ -32,7 +27,7 @@ def test_homepage(desktop_web_driver):
         upper_bound = .4
 
 
-    for endpoint in endpoints:
+    for endpoint in endpoints['react_endpoints']:
         sentry_sdk.set_tag("endpoint", endpoint)
 
         for i in range(pytest.batch_size()):

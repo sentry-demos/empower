@@ -1,5 +1,4 @@
 import time
-import yaml
 import pytest
 import random
 import sentry_sdk
@@ -8,14 +7,10 @@ from collections import OrderedDict
 from selenium.webdriver.common.by import By
 
 # Note: Not sure why won't pytest find this and run it when I name it 'vue_test_homepage'
-def test_homepage_vue(desktop_web_driver):
+def test_homepage_vue(desktop_web_driver, endpoints):
     sentry_sdk.set_tag("pytestName", "test_homepage_vue")
 
-    with open('endpoints.yaml', 'r') as stream:
-        data_loaded = yaml.safe_load(stream)
-        endpoints = data_loaded['vue_endpoints']
-
-    for endpoint in endpoints:
+    for endpoint in endpoints['vue_endpoints']:
 
         # TODO homepage endpoint loads Products but in future will need to append /products to the endpoint
         sentry_sdk.set_tag("endpoint", endpoint)
