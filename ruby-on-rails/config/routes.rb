@@ -17,6 +17,8 @@ Rails.application.routes.draw do
   get '/success', to: 'api/v1/success#index'
 
   get '/checkout', to: 'api/v1/checkout#index'
+
+  post '/checkout', to: 'api/v1/checkout#index'
   
   get '/reviews', to: 'api/v1/reviews#index'
 

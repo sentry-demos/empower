@@ -1,16 +1,23 @@
-# require "pg"
-
 class Api::V1::ProductsController < ApplicationController
   def index
     # get Sentry tags in application_controller.rb
     set_Sentry_tags
 
-    # TODO: may want to introduce extra db calls here
-    # call to products db. may span around this?
+    transaction = Sentry.get_current_scope.get_transaction || Sentry.start_transaction(name: "custom transaction")
+
+    span_products_db = transaction.start_child(op: "custom.products_db_call")
+    sleep 0.5
     products = Products.select("id, title, description, descriptionfull, price, img, imgcropped, Null as pg_sleep, Null as reviews")
-    # call to reviews db. may span around this?
+    sleep 0.5
+    span_products_db.finish
+
+    span_reviews_db = transaction.start_child(op: "custom.reviews_db_call")
+    sleep 0.5
     reviews = Reviews.select("id, productid, rating, customerid, description, created, Null as pg_sleep")
-    
+    sleep 0.5
+    span_reviews_db.finish
+
+    span_response = transaction.start_child(op: "custom.construct_response_object")
     products.each do |prod|  
       prod["pg_sleep"] = ""
       reviews_arr = []
@@ -21,6 +28,7 @@ class Api::V1::ProductsController < ApplicationController
       prod["reviews"] = reviews_arr
       end
     end
+    span_response.finish
 
     render json: products, status: 200
   end
@@ -31,8 +39,9 @@ class Api::V1::ProductsController < ApplicationController
     set_Sentry_tags
 
     begin
-      # TODO: capture route attempted to include in the exception
-      Sentry.capture_message "message: bad route response"
+      unless request.original_url.include?("favicon.ico")
+        Sentry.capture_message "message: bad route response --> " + request.original_url
+      end
       render json: {"message": "bad route response"}, status: :ok
     end
   end
