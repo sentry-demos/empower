@@ -1,9 +1,8 @@
 class ApplicationController < ActionController::API
   def set_Sentry_tags
     #TODO: read both request headers and parameters more efficiently
-
     request.headers.each do |key, value|
-      if key.to_s.downcase == "se"
+      if key.to_s.downcase == "http_se"
         Sentry.set_tags('se': value)
         # not tested yet
         if value.to_s.downcase == "tda"
@@ -11,9 +10,9 @@ class ApplicationController < ActionController::API
         else
           # Sentry.event.fingerprint = [value]
         end
-      elsif key.to_s.downcase == "customerType"
+      elsif key.to_s.downcase == "http_customertype"
         Sentry.set_tags('customerType': value)
-      elsif key.to_s.downcase == "email"
+      elsif key.to_s.downcase == "http_email"
         Sentry.set_tags('email': value)
       end
     end
@@ -27,7 +26,7 @@ class ApplicationController < ActionController::API
         else
           # Sentry.event.fingerprint = [value]
         end
-      elsif key.to_s.downcase == "customerType"
+      elsif key.to_s.downcase == "customertype"
         Sentry.set_tags('customerType': value)
       elsif key.to_s.downcase == "email"
         Sentry.set_tags('email': value)
