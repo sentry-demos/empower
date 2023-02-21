@@ -11,14 +11,14 @@ namespace aspnetcore.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class ReviewsController : ControllerBase
+    public class ApiController : ControllerBase
     {
-        private readonly ILogger<ReviewsController> _logger;
+        private readonly ILogger<ApiController> _logger;
         private hardwarestoreContext _context = null;
         private readonly IConfiguration Configuration;
 
         /* These arguments are wired up automagically by the framework */
-        public ReviewsController(ILogger<ReviewsController> logger, hardwarestoreContext context, IConfiguration configuration)
+        public ApiController(ILogger<ApiController> logger, hardwarestoreContext context, IConfiguration configuration)
         {
             _logger = logger;
             _context = context;
@@ -29,7 +29,8 @@ namespace aspnetcore.Controllers
         [HttpGet]
         public ActionResult Get()
         {
-            return Ok(_context.Reviews.ToList());
+            string dsn = Configuration["Sentry:Dsn"];
+            return Ok("aspnetcore /api DSN: " + dsn);
         }
     }
 }

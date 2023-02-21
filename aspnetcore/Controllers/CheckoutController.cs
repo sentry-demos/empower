@@ -4,8 +4,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using aspnetcore.Model;
+using aspnetcore.Models;
 using Microsoft.Extensions.Configuration;
+using Sentry;
 
 namespace aspnetcore.Controllers
 {
@@ -26,11 +27,22 @@ namespace aspnetcore.Controllers
         }
 
         // seems like this can return any object - will be automatically serialized to JSON
-        [HttpGet]
-        public ActionResult Get()
-        {
-            string dsn = Configuration["SentryDSN"];
-            return Ok("aspnetcore /checkout");
+        [HttpPost]
+        public ActionResult Checkout()
+        { 
+            Response.Headers.Add("access-control-allow-origin", "*");
+            var se = Request.Headers["se"];
+            var customerType = Request.Headers["customerType"];
+            var email = Request.Headers["email"];
+            SentrySdk.ConfigureScope(scope =>
+            {
+                scope.SetTag("se", se);
+                scope.SetTag("customerType", customerType);
+                scope.User = new User {
+                    Email = email
+                };
+            });
+            throw new Exception("Not enough inventory");
         }
     }
 }

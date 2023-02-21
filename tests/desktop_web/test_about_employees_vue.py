@@ -1,5 +1,6 @@
 import time
 import yaml
+import pytest
 import random
 import sentry_sdk
 from urllib.parse import urlencode
@@ -18,7 +19,7 @@ def test_about_employees_vue(desktop_web_driver):
 
         sentry_sdk.set_tag("endpoint", endpoint)
 
-        for i in range(random.randrange(20)):
+        for i in range(pytest.batch_size()):
             # TODO in application-monitoring/vue repo
             # should be able to click each employee and it navigates to an /:employee page
             # this demonstrates parameterized transactions in Vue

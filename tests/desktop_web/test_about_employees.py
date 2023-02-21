@@ -2,6 +2,7 @@ import time
 import yaml
 import random
 import sentry_sdk
+import pytest
 from urllib.parse import urlencode
 
 def test_about_employees(desktop_web_driver):
@@ -18,14 +19,14 @@ def test_about_employees(desktop_web_driver):
         # You can filter by se:tda in Sentry's UI as this will get set as a tag
         url = ""
         query_string = {
-            'se': 'tda',
-            'backend': random.sample(['flask','express','springboot', 'ruby', 'laravel'], 1)[0]
+            'se': pytest.SE_TAG,
+            'backend': pytest.random_backend()
         }
         url = endpoint_about + '?' + urlencode(query_string)
 
         employees = ["Jane Schmidt", "Lily Chan", "Keith Ryan", "Mason Kim", "Emma Garcia", "Noah Miller"]
 
-        for i in range(random.randrange(20)):
+        for i in range(pytest.batch_size()):
 
             desktop_web_driver.get(url)
 
@@ -36,7 +37,7 @@ def test_about_employees(desktop_web_driver):
             n = random.randrange(6)
             elementName = employees[n]
 
-            employee_btn = desktop_web_driver.find_element_by_name(elementName)
+            employee_btn = desktop_web_driver.find_element("name", elementName)
             employee_btn.click()
 
             time.sleep(random.randrange(2) + 1)
