@@ -164,10 +164,10 @@ for proj in $projects; do # bash only
   unset CI # prevents build failing in GitHub Actions
   ./build.sh
 
-  # if [[ "$fe_projects" = *"$proj "* ]]; then # project is frontend
-  #   # bash -x sentry-release.sh $env $RELEASE
-  #   # NOTE: Sentry may create releases from events even without this step
-  # fi
+  if [[ "$fe_projects" = *"$proj "* ]]; then # project is frontend
+    bash -x sentry-release.sh $env $RELEASE
+    # NOTE: Sentry may create releases from events even without this step
+  fi
 
   # *** DEPLOY OR RUN ***
   if [ "$env" == "local" ]; then
