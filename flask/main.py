@@ -150,7 +150,7 @@ def organization():
 def connect():
     return "flask /connect"
 
-@app.route('/product/info', methods=['GET'])
+@app.route('/product/0/info', methods=['GET'])
 def product_info():
     import time
     time.sleep(.55)

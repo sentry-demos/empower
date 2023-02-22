@@ -186,7 +186,7 @@ class App extends Component {
                   <Route path="/employee/:id" element={<Employee/>}></Route>
                   <Route path="/product/:id" element={<Product/>}></Route>
                   <Route path="/products" element={<Products backend={BACKEND_URL} />}></Route>
-                  <Route path="/nplusone" element={<Nplusone/>}/>
+                  <Route path="/nplusone" element={<Nplusone backend={BACKEND_URL}/>}/>
                   <Route path="/products-join" element={<ProductsJoin backend={BACKEND_URL} />}></Route>
                   <Route path="*" element={<NotFound/>} />
                 </SentryRoutes>

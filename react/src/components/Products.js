@@ -35,7 +35,7 @@ class Products extends Component {
           Sentry.captureException(err)
         })
     })
-console.log(this.props.backend);
+
     let result = await fetch(this.props.backend + "/products", {
       method: "GET",
       headers: { se, customerType, email, "Content-Type": "application/json" }

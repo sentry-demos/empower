@@ -3,14 +3,29 @@ import Context from '../utils/context';
 import { Link, useFetcher } from 'react-router-dom';
 import * as Sentry from '@sentry/react';
 import { connect } from 'react-redux';
+import { determineBackendUrl } from '../utils/backendrouter';
 
-console.log(this.props.backend);
-// for loop to create 10 API calls and save them to variables.
-// for (let i = 0; i < 10; i++) {
-//   let response = fetch(this.props.backend + '/product/info?id=' + i) , {
-//     method: 'GET'
-//   })
-// } 
+function componentDidMount() {
+  console.log(this.props);
+
+  let urls = async () => {
+    let i=0;
+    let urllist=[]
+    for(i;i< this.state.data.length;i++){
+        const response = await fetch(this.props.backend + '/product/0/info?id=' + i)
+        console.log(this);
+        console.log(this.props.backend);
+        console.log(this.props.backend + '/product/0/info?id=' + i);
+        const json = await response.json()
+        urllist.push(json.items[0])
+        console.log({urllist})
+      }
+   }
+  
+  // fetch(for (let i = 0; i < 10; i++) {
+  //   let response = fetch Promise.all(this.props.backend + '/product/0/info?id=' + i);
+  // }) 
+}
 
 class Nplusone extends Component {
   
