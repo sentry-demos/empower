@@ -1,9 +1,11 @@
 import time
 import yaml
+import pytest
 import random
 import sentry_sdk
 from urllib.parse import urlencode
 from collections import OrderedDict
+from selenium.webdriver.common.by import By
 
 # Note: Not sure why won't pytest find this and run it when I name it 'vue_test_homepage'
 def test_homepage_vue(desktop_web_driver):
@@ -20,7 +22,7 @@ def test_homepage_vue(desktop_web_driver):
 
         missedButtons = 0
 
-        for i in range(random.randrange(20)):
+        for i in range(pytest.batch_size()):
             # TODO in application-monitoring/vue repo
             # querystring support for 'se' and 'backend' tags
             
@@ -41,7 +43,7 @@ def test_homepage_vue(desktop_web_driver):
                         if skips > 10:
                             sentry_sdk.capture_message("missed button more than 10 skips")
                             buttonRendered=True
-                        add_to_cart_btn = desktop_web_driver.find_element_by_css_selector('.products-list button')
+                        add_to_cart_btn = desktop_web_driver.find_element(By.CSS_SELECTOR, '.products-list button')
                         for i in range(random.randrange(4) + 1):
                             add_to_cart_btn.click()
                         buttonRendered=True
@@ -51,7 +53,7 @@ def test_homepage_vue(desktop_web_driver):
                         time.sleep(1)
                         pass
                 # TODO the Vue app class should be .complete-checkout-btn so it matches the React app
-                desktop_web_driver.find_element_by_css_selector('.checkout-button').click()
+                desktop_web_driver.find_element(By.CSS_SELECTOR, '.checkout-button').click()
                 time.sleep(random.randrange(2) + 1)
 
             except Exception as err:

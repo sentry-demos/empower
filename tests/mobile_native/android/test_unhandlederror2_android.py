@@ -1,4 +1,5 @@
 import sentry_sdk
+from appium.webdriver.common.appiumby import AppiumBy
 
 # Clicks the Unhandled Error button - NegativeArraySizeException - the button says RTE and Strip PII
 def test_unhandlederror2_android(android_emu_driver):
@@ -6,8 +7,8 @@ def test_unhandlederror2_android(android_emu_driver):
 
     try:
         # navigate to list app
-        android_emu_driver.find_element_by_accessibility_id('More').click()
-        android_emu_driver.find_element_by_id('com.example.vu.android:id/content').click()
+        android_emu_driver.find_element(AppiumBy.ACCESSIBILITY_ID, 'More').click()
+        android_emu_driver.find_element(AppiumBy.ID, 'com.example.vu.android:id/content').click()
 
         sentry_sdk.add_breadcrumb(
             category='btn.click',
@@ -16,7 +17,7 @@ def test_unhandlederror2_android(android_emu_driver):
         )
 
         # trigger error
-        android_emu_driver.find_element_by_id('com.example.vu.android:id/negative_index').click()
+        android_emu_driver.find_element(AppiumBy.ID, 'com.example.vu.android:id/negative_index').click()
 
         sentry_sdk.add_breadcrumb(
             category='btn.click',

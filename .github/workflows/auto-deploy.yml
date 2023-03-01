@@ -40,10 +40,22 @@ jobs:
           node-version: '16'
           
       - name: Setup Sentry CLI
-        uses: mathieu-bour/setup-sentry-cli@1.2.0
+        uses: mathieu-bour/setup-sentry-cli@v1.3.0
         with:
           version: latest # optional if 'latest'
           token: ${{ SECRETS.SENTRY_AUTH_TOKEN }} # from GitHub secrets
+          
+      - name: Run tests
+        run: |
+          npm install
+          npm test -- --coverage
+        working-directory: ./application-monitoring/react
+        
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+            token: ${{ secrets.CODECOV_TOKEN }}
+            working-directory: ./application-monitoring
           
       - name: Get GCP_ env variables from application-monitoring-config/.gcloudrc
         run: |

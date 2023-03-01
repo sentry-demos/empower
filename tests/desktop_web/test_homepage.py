@@ -2,6 +2,7 @@ import time
 import yaml
 import random
 import sentry_sdk
+import pytest
 from urllib.parse import urlencode
 from collections import OrderedDict
 from datetime import datetime
@@ -34,7 +35,7 @@ def test_homepage(desktop_web_driver):
     for endpoint in endpoints:
         sentry_sdk.set_tag("endpoint", endpoint)
 
-        for i in range(random.randrange(20)):
+        for i in range(pytest.batch_size()):
             # Randomize the Failure Rate between 1% and 20% or 40%, depending what week it is. Returns values like 0.02, 0.14, 0.37
             n = random.uniform(0.01, upper_bound)
 
@@ -42,8 +43,8 @@ def test_homepage(desktop_web_driver):
             # and causes the page to periodically crash, for Release Health
             # TODO make a query_string builder function for sharing this across tests
             query_string = {
-                'se': 'tda',
-                'backend': random.sample(['flask','express','springboot', 'ruby', 'laravel'], 1)[0],
+                'se': pytest.SE_TAG,
+                'backend': pytest.random_backend(),
                 'crash': "%s" % (n)
             }
             url = endpoint + '?' + urlencode(query_string)
