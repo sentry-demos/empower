@@ -1,14 +1,15 @@
 import sentry_sdk
+from appium.webdriver.common.appiumby import AppiumBy
 
 def test_uncaughtthrownerror_react_native_ios(ios_react_native_sim_driver):
     sentry_sdk.set_tag("pytestName", "test_uncaughtthrownerror_react_native_ios")
     
     try:
         # click on list app
-        ios_react_native_sim_driver.find_element_by_xpath('//XCUIElementTypeButton[@name="List App"]').click()
+        ios_react_native_sim_driver.find_element(AppiumBy.XPATH, '//XCUIElementTypeButton[@name="List App"]').click()
         
         # click uncaught-error button
-        btn = ios_react_native_sim_driver.find_element_by_accessibility_id("Uncaught Thrown Error")
+        btn = ios_react_native_sim_driver.find_element(AppiumBy.ACCESSIBILITY_ID, "Uncaught Thrown Error")
         btn.click()
         # launch app again or the error does not get sent to Sentry
         ios_react_native_sim_driver.launch_app()

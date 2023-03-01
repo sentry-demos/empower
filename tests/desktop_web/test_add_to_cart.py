@@ -4,6 +4,7 @@ import random
 import sentry_sdk
 import pytest
 from urllib.parse import urlencode
+from selenium.webdriver.common.by import By
 
 def test_add_to_cart(desktop_web_driver):
     sentry_sdk.set_tag("pytestName", "test_add_to_cart")
@@ -18,7 +19,7 @@ def test_add_to_cart(desktop_web_driver):
 
         missedButtons = 0
 
-        for i in range(random.randrange(20)):
+        for i in range(10):
             # Ensures a different backend endpoint gets picked each time
             url = ""
             # TODO make a query_string builder function for sharing this across tests
@@ -44,7 +45,7 @@ def test_add_to_cart(desktop_web_driver):
                         if skips > 10:
                             sentry_sdk.capture_message("missed button more than 10 skips")
                             buttonRendered=True
-                        add_to_cart_btn = desktop_web_driver.find_element_by_css_selector('.products-list button')
+                        add_to_cart_btn = desktop_web_driver.find_element(By.CSS_SELECTOR, '.products-list button')
                         for i in range(random.randrange(4) + 1):
                             add_to_cart_btn.click()
                         buttonRendered=True
@@ -54,15 +55,14 @@ def test_add_to_cart(desktop_web_driver):
                         time.sleep(1)
                         pass
 
-                desktop_web_driver.find_element_by_css_selector('.show-desktop #top-right-links a[href="/cart"]').click()
+                desktop_web_driver.find_element(By.CSS_SELECTOR, '.show-desktop #top-right-links a[href="/cart"]').click()
                 time.sleep(random.randrange(2) + 1)
-                desktop_web_driver.find_element_by_css_selector('a[href="/checkout"]').click()
-                time.sleep(random.randrange(2) + 1)
-
-                desktop_web_driver.find_element_by_css_selector('#email').send_keys("sampleEmail@email.com")
+                desktop_web_driver.find_element(By.CSS_SELECTOR, 'a[href="/checkout"]').click()
                 time.sleep(random.randrange(2) + 1)
 
-                desktop_web_driver.find_element_by_css_selector('.complete-checkout-btn').click()
+                desktop_web_driver.find_element(By.CSS_SELECTOR, '#email').send_keys("sampleEmail@email.com")
+
+                desktop_web_driver.find_element(By.CSS_SELECTOR, '.complete-checkout-btn').click()
                 time.sleep(random.randrange(2) + 1)
 
             except Exception as err:

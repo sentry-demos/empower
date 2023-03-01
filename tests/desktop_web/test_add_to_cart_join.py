@@ -16,7 +16,7 @@ def test_add_to_cart_join(desktop_web_driver):
         endpoint_products_join = endpoint + "/products-join"
         sentry_sdk.set_tag("endpoint", endpoint_products_join)
 
-        for i in range(random.randrange(20)):
+        for i in range(pytest.batch_size()):
             # Ensures a different backend endpoint gets picked each time
             url = ""
             # TODO make a query_string builder function for sharing this across tests

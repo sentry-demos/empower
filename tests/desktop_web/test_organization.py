@@ -23,7 +23,7 @@ def test_organization(desktop_web_driver):
         }
         url = endpoint_organization + '?' + urlencode(query_string)
 
-        for i in range(random.randrange(20)):
+        for i in range(pytest.batch_size()):
         
             desktop_web_driver.get(url)
 

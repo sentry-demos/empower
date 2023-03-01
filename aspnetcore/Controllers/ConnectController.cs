@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using aspnetcore.Model;
+using aspnetcore.Models;
 using Microsoft.Extensions.Configuration;
 
 namespace aspnetcore.Controllers
@@ -29,7 +29,6 @@ namespace aspnetcore.Controllers
         [HttpGet]
         public ActionResult Get()
         {
-            string dsn = Configuration["SentryDSN"];
             return Ok("aspnetcore /connect");
         }
     }

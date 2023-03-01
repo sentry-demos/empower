@@ -53,7 +53,10 @@ sentry_sdk.init(
     integrations=[FlaskIntegration(), SqlalchemyIntegration()],
     traces_sample_rate=1.0,
     before_send=before_send,
-    traces_sampler=traces_sampler
+    traces_sampler=traces_sampler,
+    _experiments={
+        "profiles_sample_rate": 1.0
+    }
 )
 
 app = Flask(__name__)

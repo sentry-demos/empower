@@ -26,7 +26,7 @@ def test_about_employees(desktop_web_driver):
 
         employees = ["Jane Schmidt", "Lily Chan", "Keith Ryan", "Mason Kim", "Emma Garcia", "Noah Miller"]
 
-        for i in range(random.randrange(20)):
+        for i in range(pytest.batch_size()):
 
             desktop_web_driver.get(url)
 
@@ -37,7 +37,7 @@ def test_about_employees(desktop_web_driver):
             n = random.randrange(6)
             elementName = employees[n]
 
-            employee_btn = desktop_web_driver.find_element_by_name(elementName)
+            employee_btn = desktop_web_driver.find_element("name", elementName)
             employee_btn.click()
 
             time.sleep(random.randrange(2) + 1)
