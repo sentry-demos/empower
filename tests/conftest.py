@@ -68,6 +68,8 @@ MAGIC_SE = 'tda'
 # e.g. BATCH_SIZE=5, or BATCH_SIZE=random_100
 BATCH_SIZE = os.getenv("BATCH_SIZE") or "1"
 
+SLEEP_LENGTH = os.getenv("SLEEP_LENGTH") or "random_2_1"
+
 BACKENDS = (os.getenv("BACKENDS") or "flask,express,springboot,ruby,laravel").split(',')
 
 def pytest_configure():
@@ -130,6 +132,24 @@ def random(request):
         return real_random.Random(seed)
     else:
         return real_random
+
+# random_1.5
+# random_3_1.0
+# 5.5
+@pytest.fixture
+def sleep_length(random):
+    def random_sleep_length():
+        if SLEEP_LENGTH.startswith("random_"):
+            spl = SLEEP_LENGTH.split('_')
+            r = random.randrange(float(spl[1]))
+            if len(spl) == 3:
+                r += float(spl[2])
+            return r 
+        else:
+            r = random.random() # unused, to make sure we call random same number of times
+            return float(SLEEP_LENGTH)
+    return random_sleep_length
+
 
 @pytest.fixture
 def batch_size(random):

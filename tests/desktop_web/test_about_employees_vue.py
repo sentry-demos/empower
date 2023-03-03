@@ -1,7 +1,7 @@
 import time
 import sentry_sdk
 
-def test_about_employees_vue(desktop_web_driver, endpoints, random, batch_size):
+def test_about_employees_vue(desktop_web_driver, endpoints, random, batch_size, sleep_length):
     sentry_sdk.set_tag("pytestName", "test_about_employees_vue")
 
     for endpoint in endpoints["vue_endpoints"]:
@@ -22,4 +22,4 @@ def test_about_employees_vue(desktop_web_driver, endpoints, random, batch_size):
                 if err:
                     sentry_sdk.capture_exception(err)
 
-            time.sleep(random.randrange(2) + 1)
+            time.sleep(sleep_length())

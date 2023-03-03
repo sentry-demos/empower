@@ -3,7 +3,7 @@ import sentry_sdk
 from urllib.parse import urlencode
 from selenium.webdriver.common.by import By
 
-def test_add_to_cart(desktop_web_driver, endpoints, batch_size, backend, random):
+def test_add_to_cart(desktop_web_driver, endpoints, batch_size, backend, random, sleep_length):
     sentry_sdk.set_tag("pytestName", "test_add_to_cart")
 
     for endpoint in endpoints['react_endpoints']:
@@ -48,14 +48,14 @@ def test_add_to_cart(desktop_web_driver, endpoints, batch_size, backend, random)
                         pass
 
                 desktop_web_driver.find_element(By.CSS_SELECTOR, '.show-desktop #top-right-links a[href="/cart"]').click()
-                time.sleep(random.randrange(2) + 1)
+                time.sleep(sleep_length())
                 desktop_web_driver.find_element(By.CSS_SELECTOR, 'a[href="/checkout"]').click()
-                time.sleep(random.randrange(2) + 1)
+                time.sleep(sleep_length())
 
                 desktop_web_driver.find_element(By.CSS_SELECTOR, '#email').send_keys("sampleEmail@email.com")
 
                 desktop_web_driver.find_element(By.CSS_SELECTOR, '.complete-checkout-btn').click()
-                time.sleep(random.randrange(2) + 1)
+                time.sleep(sleep_length())
 
             except Exception as err:
                 missedButtons = missedButtons + 1
@@ -64,7 +64,7 @@ def test_add_to_cart(desktop_web_driver, endpoints, batch_size, backend, random)
                 if err:
                     sentry_sdk.capture_exception(err)
 
-            time.sleep(random.randrange(2) + 1)
+            time.sleep(sleep_length())
 
 
 
