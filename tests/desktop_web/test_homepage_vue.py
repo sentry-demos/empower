@@ -4,7 +4,7 @@ from collections import OrderedDict
 from selenium.webdriver.common.by import By
 
 # Note: Not sure why won't pytest find this and run it when I name it 'vue_test_homepage'
-def test_homepage_vue(desktop_web_driver, endpoints, random, batch_size):
+def test_homepage_vue(desktop_web_driver, endpoints, random, batch_size, sleep_length):
     sentry_sdk.set_tag("pytestName", "test_homepage_vue")
 
     for endpoint in endpoints['vue_endpoints']:
@@ -46,7 +46,7 @@ def test_homepage_vue(desktop_web_driver, endpoints, random, batch_size):
                         pass
                 # TODO the Vue app class should be .complete-checkout-btn so it matches the React app
                 desktop_web_driver.find_element(By.CSS_SELECTOR, '.checkout-button').click()
-                time.sleep(random.randrange(2) + 1)
+                time.sleep(sleep_length())
 
             except Exception as err:
                 missedButtons = missedButtons + 1
@@ -56,4 +56,4 @@ def test_homepage_vue(desktop_web_driver, endpoints, random, batch_size):
                 if err:
                     sentry_sdk.capture_exception(err)
 
-            time.sleep(random.randrange(2) + 1)
+            time.sleep(sleep_length())

@@ -3,7 +3,7 @@ import sentry_sdk
 import pytest
 from urllib.parse import urlencode
 
-def test_about_employees(desktop_web_driver, endpoints, random, batch_size, backend):
+def test_about_employees(desktop_web_driver, endpoints, random, batch_size, backend, sleep_length):
     sentry_sdk.set_tag("pytestName", "test_about_employees")
 
     for endpoint in endpoints['react_endpoints']:
@@ -24,7 +24,7 @@ def test_about_employees(desktop_web_driver, endpoints, random, batch_size, back
             desktop_web_driver.get(url)
 
             # images are being loaded in /about from Cloud Storage
-            time.sleep(random.randrange(2) + 1)
+            time.sleep(sleep_length())
 
             # pick a random employee
             n = random.randrange(6)
@@ -33,4 +33,4 @@ def test_about_employees(desktop_web_driver, endpoints, random, batch_size, back
             employee_btn = desktop_web_driver.find_element("name", elementName)
             employee_btn.click()
 
-            time.sleep(random.randrange(2) + 1)
+            time.sleep(sleep_length())

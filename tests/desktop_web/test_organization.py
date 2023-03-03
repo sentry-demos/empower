@@ -2,7 +2,7 @@ import time
 import pytest
 import sentry_sdk
 
-def test_organization(desktop_web_driver, endpoints, random, batch_size):
+def test_organization(desktop_web_driver, endpoints, random, batch_size, sleep_length):
     sentry_sdk.set_tag("pytestName", "test_organization")
 
     for endpoint in endpoints['react_endpoints']:
@@ -16,4 +16,4 @@ def test_organization(desktop_web_driver, endpoints, random, batch_size):
             desktop_web_driver.get(url)
 
             # images are being loaded in /about from Cloud Storage
-            time.sleep(random.randrange(2) + 1)
+            time.sleep(sleep_length())
