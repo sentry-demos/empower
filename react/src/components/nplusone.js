@@ -4,16 +4,11 @@ import { Link, useFetcher } from "react-router-dom";
 import * as Sentry from "@sentry/react";
 import { connect } from "react-redux";
 import { determineBackendUrl } from "../utils/backendrouter";
+
 class NPlusOneItem extends Component {
   async componentDidMount() {
-    console.log("Mounting NPlusOneItem");
     const response = await fetch(this.props.backend + "/product/0/info?id=" + this.props.index);
-    console.log({ response });
     const json = await response.json();
-    console.log({ json });
-    this.setState({
-      data: json,
-    });
   }
   render() {
     return <li>{this.props.index}</li>;
