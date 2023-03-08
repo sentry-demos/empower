@@ -3,6 +3,7 @@ import operator
 import os
 import requests
 import sys
+import time
 from flask import Flask, json, request, make_response
 from flask_cors import CORS
 from dotenv import load_dotenv
@@ -53,7 +54,10 @@ sentry_sdk.init(
     integrations=[FlaskIntegration(), SqlalchemyIntegration()],
     traces_sample_rate=1.0,
     before_send=before_send,
-    traces_sampler=traces_sampler
+    traces_sampler=traces_sampler,
+    _experiments={
+        "profiles_sample_rate": 1.0
+    }
 )
 
 app = Flask(__name__)
@@ -149,6 +153,10 @@ def organization():
 @app.route('/connect', methods=['GET'])
 def connect():
     return "flask /connect"
+
+@app.route('/product/0/info', methods=['GET'])
+def product_info():
+    time.sleep(.55)
 
 
 @app.before_request
