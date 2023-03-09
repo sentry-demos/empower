@@ -3,6 +3,7 @@ import operator
 import os
 import requests
 import sys
+import time
 from flask import Flask, json, request, make_response
 from flask_cors import CORS
 from dotenv import load_dotenv
@@ -173,6 +174,10 @@ def organization():
 @app.route('/connect', methods=['GET'])
 def connect():
     return "flask /connect"
+
+@app.route('/product/0/info', methods=['GET'])
+def product_info():
+    time.sleep(.55)
 
 
 @app.before_request
