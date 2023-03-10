@@ -42,7 +42,7 @@ const sentryEventContext = function(req, res, next) {
     Sentry.setUser({ 'email': email })
     headers["email"]=email
   }
-  
+
   // keep executing the router middleware
   next();
 }
@@ -65,7 +65,10 @@ Sentry.init({
   release: release,
   integrations: [
     new Sentry.Integrations.Http({ tracing: true }),
-    new Tracing.Integrations.Express({ app })
+    new Tracing.Integrations.Express({ app }),
+    new Sentry.Integrations.LocalVariables({
+      captureAllExceptions: true,
+    }),
   ],
   tracesSampleRate: 1.0,
   tracesSampler: samplingContext => {
@@ -76,7 +79,8 @@ Sentry.init({
     }  else {
       return 1.0
     }
-  }
+  },
+  includeLocalVariables: true
 })
 
 // The Sentry request handler must be the first middleware on the app
@@ -167,7 +171,7 @@ app.post('/checkout', async(req, res) => {
     const transaction = Sentry.getCurrentHub()
       .getScope()
       .getTransaction();
-    
+
     // Get Inventory
     let spanGetInventory = transaction.startChild({
       op: "function",
@@ -177,7 +181,7 @@ app.post('/checkout', async(req, res) => {
     console.log("> /checkout inventory", inventory);
 
     spanGetInventory.finish();
-    
+
     // Process Order
     let spanProcessOrder = transaction.startChild({
       op: "function",
