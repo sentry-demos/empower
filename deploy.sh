@@ -165,7 +165,7 @@ for proj in $projects; do # bash only
   ./build.sh
 
   if [[ "$fe_projects" = *"$proj "* ]]; then # project is frontend
-    bash -x sentry-release.sh $env $RELEASE
+    sentry-release.sh $env $RELEASE
     # NOTE: Sentry may create releases from events even without this step
   fi
 
