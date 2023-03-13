@@ -15,5 +15,5 @@ def test_nplusone(desktop_web_driver, endpoints, random, batch_size, sleep_lengt
 
             desktop_web_driver.get(url)
 
-            # images are being loaded in /about from Cloud Storage
+            # many API requests sent out sequentially
             time.sleep(sleep_length())
