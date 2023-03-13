@@ -2,8 +2,8 @@ import time
 import sentry_sdk
 from urllib.parse import urlencode
 
-def test_checkout_products_join(desktop_web_driver, endpoints, random, batch_size, backend, sleep_length):
-    sentry_sdk.set_tag("pytestName", "test_checkout_products_join")
+def test_products_join(desktop_web_driver, endpoints, random, batch_size, backend, sleep_length):
+    sentry_sdk.set_tag("pytestName", "test_products_join")
 
     for endpoint in endpoints['react_endpoints']:
         endpoint_products_join = endpoint + "/products-join"
