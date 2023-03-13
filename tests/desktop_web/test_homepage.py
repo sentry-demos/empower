@@ -10,7 +10,7 @@ def test_homepage(desktop_web_driver, endpoints, random, batch_size, backend, sl
 
     # n - float in [0,1]
     def probability(p):
-        return random.random() <= p 
+        return random.random() <= p
 
     # Find what week it is, as this is used as the patch version in YY.MM.W like 22.6.2
     d=datetime.today()
@@ -38,15 +38,17 @@ def test_homepage(desktop_web_driver, endpoints, random, batch_size, backend, sl
             crash = probability(n) and 1.0 or 0.0
             errnum = random.randint(0, 999) # decides which error type is thrown
 
-            # This query string is parsed by utils/errors.js wherever the 'crasher' function is used
-            # and causes the page to periodically crash, for Release Health
-            # TODO make a query_string builder function for sharing this across tests
-            query_string = {
-                'backend': backend(),
-                'crash': "%s" % (crash),
-                'errnum': "%d" % (errnum)
-            }
-            url = endpoint + '?' + urlencode(query_string)
+            if crash == 1.0: # only run test if crash is certainrun test to cause homepage to force crash,
+                             # otherwise don't run test (as test_checkout.py starts at /)
+                # This query string is parsed by utils/errors.js wherever the 'crasher' function is used
+                # and causes the page to periodically crash, for Release Health
+                # TODO make a query_string builder function for sharing this across tests
+                query_string = {
+                    'backend': backend(),
+                    'crash': "%s" % (crash),
+                    'errnum': "%d" % (errnum)
+                }
+                url = endpoint + '?' + urlencode(query_string)
 
-            desktop_web_driver.get(url)
-            time.sleep(sleep_length() + sleep_length() + 1)
+                desktop_web_driver.get(url)
+                time.sleep(sleep_length() + sleep_length() + 1)
