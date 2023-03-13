@@ -7,7 +7,6 @@ def test_checkout(desktop_web_driver, endpoints, batch_size, backend, random, sl
     sentry_sdk.set_tag("pytestName", "test_checkout")
 
     for endpoint in endpoints['react_endpoints']:
-        # endpoint_products = endpoint + "/products"
         sentry_sdk.set_tag("endpoint", "/")
 
         missedButtons = 0
