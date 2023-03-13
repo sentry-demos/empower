@@ -1,5 +1,4 @@
 from datetime import datetime
-import numpy
 from pytz import timezone
 import time
 from random import choices
@@ -27,3 +26,14 @@ def parseHeaders(keys, headers):
         value = headers.get(key) if headers.get(key) != "undefined" else None
         parsedHeaders[key] = value
     return parsedHeaders
+
+def get_iterator(n):
+    #fibonacci
+    if n < 0:
+        print("Incorrect input")
+    elif n == 0:
+        return 0
+    elif n == 1 or n == 2:
+        return 1
+    else:
+        return get_iterator(n-1) + get_iterator(n-2)

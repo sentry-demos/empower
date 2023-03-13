@@ -17,7 +17,5 @@ def test_checkout_regular_android(android_emu_driver):
         # Checkout button
         android_emu_driver.find_element(AppiumBy.ID, 'com.example.vu.android:id/checkout_btn').click()
 
-        time.sleep(5)
-
     except Exception as err:
         sentry_sdk.capture_exception(err)

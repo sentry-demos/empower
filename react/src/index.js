@@ -29,6 +29,7 @@ import NotFound from './components/NotFound';
 import Product from './components/Product';
 import Products from './components/Products';
 import ProductsJoin from './components/ProductsJoin';
+import Nplusone from './components/nplusone';
 
 const tracingOrigins = ['localhost', 'empowerplant.io', 'run.app', 'appspot.com', /^\//];
 
@@ -185,6 +186,7 @@ class App extends Component {
                   <Route path="/employee/:id" element={<Employee/>}></Route>
                   <Route path="/product/:id" element={<Product/>}></Route>
                   <Route path="/products" element={<Products backend={BACKEND_URL} />}></Route>
+                  <Route path="/nplusone" element={<Nplusone backend={BACKEND_URL}/>}/>
                   <Route path="/products-join" element={<ProductsJoin backend={BACKEND_URL} />}></Route>
                   <Route path="*" element={<NotFound/>} />
                 </SentryRoutes>
@@ -198,3 +200,5 @@ class App extends Component {
 
 // React-router in use here https://reactrouter.com/web/guides/quick-start
 ReactDOM.render(<App />, document.getElementById('root'));
+
+
