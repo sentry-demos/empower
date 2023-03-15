@@ -3,7 +3,6 @@ from appium.webdriver.common.appiumby import AppiumBy
 
 # Clicks the Unhandled Error button - NegativeArraySizeException - the button says RTE and Strip PII
 def test_unhandlederror2_android(android_emu_driver):
-    sentry_sdk.set_tag("pytestName", "test_unhandlederror2_android")
 
     try:
         # navigate to list app

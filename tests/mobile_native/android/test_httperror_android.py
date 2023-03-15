@@ -4,7 +4,6 @@ from appium.webdriver.common.appiumby import AppiumBy
 
 # Automatically capture HTTP Errors with range (400 - 599) status codes
 def test_httperror_android(android_emu_driver):
-    sentry_sdk.set_tag("pytestName", "test_httperror_android")
 
     try:
         # navigate to list app

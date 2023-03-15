@@ -2,7 +2,6 @@ import sentry_sdk
 from appium.webdriver.common.appiumby import AppiumBy
 
 def test_homescreen_react_native_android(android_react_native_emu_driver, random):
-    sentry_sdk.set_tag("pytestName", "test_homescreen_react_native_android")
 
     try:
         # click into list app screen

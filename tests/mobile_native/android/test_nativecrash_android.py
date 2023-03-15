@@ -6,7 +6,6 @@ from appium.webdriver.common.appiumby import AppiumBy
 # NDK/C++ Native Crash SIGSEGV button
 @pytest.mark.skip(reason="not working")
 def test_nativecrash_android(android_emu_driver):
-    sentry_sdk.set_tag("pytestName", "test_nativecrash_android")
 
     try:
         # navigate to list app

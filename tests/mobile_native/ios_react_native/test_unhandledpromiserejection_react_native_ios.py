@@ -2,7 +2,6 @@ import sentry_sdk
 from appium.webdriver.common.appiumby import AppiumBy
 
 def test_unhandledpromiserejection_react_native_ios(ios_react_native_sim_driver):
-    sentry_sdk.set_tag("pytestName", "test_unhandledpromiserejection_react_native_ios")
 
     try:
         # click on list app
