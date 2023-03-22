@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore.Metadata;
 // If you have enabled NRTs for your project, then un-comment the following line:
 // #nullable disable
 
-namespace aspnetcore.Model
+namespace aspnetcore.Models
 {
     public partial class hardwarestoreContext : DbContext
     {

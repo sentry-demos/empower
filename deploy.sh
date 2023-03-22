@@ -214,7 +214,7 @@ for proj in $projects; do # bash only
     else
       # all other projects
       sed -e 's/<SERVICE>/'$app_engine_service'/g' app.yaml.template > .app.yaml
-      gcloud app deploy --quiet .app.yaml
+      gcloud app deploy --version v1 --quiet .app.yaml
     fi
   fi
 done
