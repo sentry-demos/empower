@@ -2,10 +2,11 @@ import pytest
 from os import environ
 import os
 import release_version_manager as ReleaseVersion
-import random
+import random as real_random
 import subprocess
 import urllib.parse
 import atexit
+import yaml
 
 from selenium import webdriver
 from appium import webdriver as appiumdriver
@@ -17,6 +18,7 @@ from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from selenium.webdriver.safari.options import Options as SafariOptions
 from datetime import datetime, timedelta
+from urllib.parse import urlencode
 
 import sentry_sdk
 from dotenv import load_dotenv
@@ -55,27 +57,23 @@ ENVIRONMENT = os.getenv("ENVIRONMENT") or "production"
 
 SE_TAG = os.getenv("SE_TAG") or get_system_user()
 
+#
+# random will be truly random, not seeded, when SE_TAG == 'tda'
+#
+MAGIC_SE = 'tda'
+
 # BATCH_SIZE can be either <NUMBER> or random_<NUMBER>
 # The later means each time a test is run the inner steps will be repeated a random
 # number of times between 0 and <NUMBER> - 1
 # e.g. BATCH_SIZE=5, or BATCH_SIZE=random_100
 BATCH_SIZE = os.getenv("BATCH_SIZE") or "1"
 
+SLEEP_LENGTH = os.getenv("SLEEP_LENGTH") or "random_2_1"
+
 BACKENDS = (os.getenv("BACKENDS") or "flask,express,springboot,ruby,laravel").split(',')
 
 def pytest_configure():
     pytest.SE_TAG=SE_TAG
-
-    if BATCH_SIZE.startswith("random_"):
-        pytest.batch_size = lambda: random.randrange(int(BATCH_SIZE.split('_')[1]))
-    else:
-        pytest.batch_size = lambda: int(BATCH_SIZE)
-
-    def random_backend(exclude=[]):
-        exclude = [exclude] if isinstance(exclude, str) else exclude
-        backends = list(set(BACKENDS) - set(exclude))
-        return random.sample(backends, 1)[0]
-    pytest.random_backend = random_backend
 
 import urllib3
 urllib3.disable_warnings()
@@ -120,22 +118,110 @@ def pytest_addoption(parser):
 def data_center(request):
     return request.config.getoption('--dc')
 
+@pytest.fixture
+def random(request):
+    if SE_TAG != MAGIC_SE:
+        # Ensure tests produce repeatable outcomes when re-run, see:
+        cwd = os.path.dirname(os.path.realpath(__file__)) + '/'
+        test_relpath = str(request.path).split(cwd)[1]
+        # e.g: desktop_web/test_mytest.py:test_myfunction[desktop_web_driver0]
+        seed = f'{test_relpath}:{request.node.name}'
+        # Use a new Random object doesn't share state with global random generator
+        # this is just in case some package uses global random in a way that would
+        # upset repeatability (e.g. numer of random() calls varies b/w executions)
+        return real_random.Random(seed)
+    else:
+        return real_random
+
+# random_1.5
+# random_3_1.0
+# 5.5
+@pytest.fixture
+def sleep_length(random):
+    def random_sleep_length():
+        if SLEEP_LENGTH.startswith("random_"):
+            spl = SLEEP_LENGTH.split('_')
+            r = random.randrange(float(spl[1]))
+            if len(spl) == 3:
+                r += float(spl[2])
+            return r 
+        else:
+            r = random.random() # unused, to make sure we call random same number of times
+            return float(SLEEP_LENGTH)
+    return random_sleep_length
+
+
+@pytest.fixture
+def batch_size(random):
+    if BATCH_SIZE.startswith("random_"):
+        return random.randrange(int(BATCH_SIZE.split('_')[1]))
+    else:
+        r = random.random() # unused, to make sure we call random same number of times
+        return int(BATCH_SIZE)
+
+@pytest.fixture
+def backend(random):
+    def random_backend(exclude=[]):
+        exclude = [exclude] if isinstance(exclude, str) else exclude
+        # Must sort to get same order across processes to ensure that seeded random.sample()
+        # always returns the same values.
+        # python3
+        #   >>> list(set(['b', 'a', 'f', 'd', 'e', 'c']) - set(['c', 'a']))
+        #   ['b', 'd', 'e', 'f']
+        #   >>> list(set(['b', 'a', 'f', 'd', 'e', 'c']) - set(['c', 'a']))
+        #   ['b', 'd', 'e', 'f']
+        #   >>> exit()
+        # python3
+        #   >>> list(set(['b', 'a', 'f', 'd', 'e', 'c']) - set(['c', 'a']))
+        #   ['d', 'f', 'b', 'e']
+        backends = sorted(list(set(BACKENDS) - set(exclude)))
+        return random.sample(backends, 1)[0]
+    return random_backend
+
+@pytest.fixture
+def endpoints():
+    with open('endpoints.yaml', 'r') as stream:
+        return yaml.safe_load(stream)
+
+# Automatically append a set of extra parameters to all URLs
+#
+#   remote = RemoteWithExtraUrlParams(..., extra_params='se=tda')
+#   remote.get('https://google.com/')
+#       -> webdriver.Remote.get(https://google.com/?se=tda)
+class RemoteWithExtraUrlParams(webdriver.Remote):
+    def __init__(self, *args, **kwargs):
+        if 'extra_params' in kwargs:
+            if kwargs['extra_params'].startswith(('&', '?')):
+                raise ValueError('extra_params must be in format: "param1=value1&param2=value2..."')
+            self.extra_params = kwargs['extra_params'] 
+            del kwargs['extra_params']
+        else:
+            self.extra_params = None
+        super().__init__(*args, **kwargs)
+
+    def get(self, url):
+        if self.extra_params:
+            url += ('?' in url and '&' or '?') + self.extra_params
+        super().get(url)
+
+@pytest.fixture
+def selenium_endpoint(data_center):
+    username = environ['SAUCE_USERNAME']
+    access_key = environ['SAUCE_ACCESS_KEY']
+
+    if data_center and data_center.lower() == 'eu':
+        return SAUCELABS_PROTOCOL + "{}:{}@ondemand.eu-central-1.saucelabs.com/wd/hub".format(username, access_key)
+    else:
+        return SAUCELABS_PROTOCOL + "{}:{}@ondemand.us-west-1.saucelabs.com/wd/hub".format(username, access_key)
+
 @pytest.fixture(params=desktop_browsers)
-def desktop_web_driver(request, data_center):
+def desktop_web_driver(request, selenium_endpoint):
 
     try:
         sentry_sdk.set_tag("pytestPlatform", "desktop_web")
 
         test_name = request.node.name
         build_tag = environ.get('BUILD_TAG', "Application-Monitoring-TDA")
-
-        username = environ['SAUCE_USERNAME']
-        access_key = environ['SAUCE_ACCESS_KEY']
-
-        if data_center and data_center.lower() == 'eu':
-            selenium_endpoint = SAUCELABS_PROTOCOL + "{}:{}@ondemand.eu-central-1.saucelabs.com/wd/hub".format(username, access_key)
-        else:
-            selenium_endpoint = SAUCELABS_PROTOCOL + "{}:{}@ondemand.us-west-1.saucelabs.com/wd/hub".format(username, access_key)
 
         options = _browser2class[request.param['browserName']]()
         for c in ['platformName', 'browserVersion']:
@@ -146,10 +232,12 @@ def desktop_web_driver(request, data_center):
             'name': test_name
         })
 
-        browser = webdriver.Remote(
+        browser = RemoteWithExtraUrlParams(
             command_executor=selenium_endpoint,
             options=options,
-            keep_alive=True
+            keep_alive=True,
+            # Note: these tags might not be supported by some frontends, e.g. Vue
+            extra_params=urlencode({'se': SE_TAG})
         )
 
         browser.implicitly_wait(10)
@@ -184,18 +272,14 @@ def desktop_web_driver(request, data_center):
         sentry_sdk.capture_exception(err)
 
 @pytest.fixture
-def android_react_native_emu_driver(request, data_center):
+def android_react_native_emu_driver(request, selenium_endpoint):
 
     try:
         sentry_sdk.set_tag("pytestPlatform", "android_react_native")
 
-        username_cap = environ['SAUCE_USERNAME']
-        access_key_cap = environ['SAUCE_ACCESS_KEY']
         release_version = ReleaseVersion.latest_react_native_github_release()
 
         options = UiAutomator2Options().load_capabilities({
-            'username': username_cap,
-            'accessKey': access_key_cap,
             'deviceName': 'Android GoogleAPI Emulator',
             'platformVersion': '10.0',
             'platformName': 'Android',
@@ -208,12 +292,7 @@ def android_react_native_emu_driver(request, data_center):
             'appWaitForLaunch': False
         })
 
-        if data_center and data_center.lower() == 'eu':
-            sauce_url = SAUCELABS_PROTOCOL + "{}:{}@ondemand.eu-central-1.saucelabs.com/wd/hub".format(username_cap, access_key_cap)
-        else:
-            sauce_url = SAUCELABS_PROTOCOL + "{}:{}@ondemand.us-west-1.saucelabs.com/wd/hub".format(username_cap, access_key_cap)
-
-        driver = appiumdriver.Remote(sauce_url, options=options)
+        driver = appiumdriver.Remote(selenium_endpoint, options=options)
         driver.implicitly_wait(20)
 
         sentry_sdk.set_tag("seleniumSessionId", driver.session_id)
@@ -230,18 +309,14 @@ def android_react_native_emu_driver(request, data_center):
         sentry_sdk.capture_exception(err)
 
 @pytest.fixture
-def android_emu_driver(request, data_center):
+def android_emu_driver(request, selenium_endpoint):
 
     try:
         sentry_sdk.set_tag("pytestPlatform", "android")
 
-        username_cap = environ['SAUCE_USERNAME']
-        access_key_cap = environ['SAUCE_ACCESS_KEY']
         release_version = ReleaseVersion.latest_android_github_release()
 
         options = UiAutomator2Options().load_capabilities({
-            'username': username_cap,
-            'accessKey': access_key_cap,
             'deviceName': 'Android GoogleAPI Emulator',
             'platformVersion': '10.0',
             'platformName': 'Android',
@@ -254,12 +329,7 @@ def android_emu_driver(request, data_center):
             'appWaitForLaunch': False
         })
 
-        if data_center and data_center.lower() == 'eu':
-            sauce_url = SAUCELABS_PROTOCOL + "{}:{}@ondemand.eu-central-1.saucelabs.com/wd/hub".format(username_cap, access_key_cap)
-        else:
-            sauce_url = SAUCELABS_PROTOCOL + "{}:{}@ondemand.us-west-1.saucelabs.com/wd/hub".format(username_cap, access_key_cap)
-
-        driver = appiumdriver.Remote(sauce_url, options=options)
+        driver = appiumdriver.Remote(selenium_endpoint, options=options)
         driver.implicitly_wait(20)
 
         sentry_sdk.set_tag("seleniumSessionId", driver.session_id)
@@ -276,18 +346,14 @@ def android_emu_driver(request, data_center):
         sentry_sdk.capture_exception(err)
 
 @pytest.fixture
-def ios_react_native_sim_driver(request, data_center):
+def ios_react_native_sim_driver(request, selenium_endpoint):
 
     try:
         sentry_sdk.set_tag("pytestPlatform", "ios_react_native")
 
-        username_cap = environ['SAUCE_USERNAME']
-        access_key_cap = environ['SAUCE_ACCESS_KEY']
         release_version = ReleaseVersion.latest_react_native_github_release()
 
         options = XCUITestOptions().load_capabilities({
-            'username': username_cap,
-            'accessKey': access_key_cap,
             'appium:deviceName': 'iPhone 11 Simulator',
             'platformName': 'iOS',
             'appium:platformVersion': '14.5',
@@ -300,12 +366,7 @@ def ios_react_native_sim_driver(request, data_center):
             'appium:app': f'https://github.com/sentry-demos/sentry_react_native/releases/download/{release_version}/sentry_react_native.app.zip',
         })
 
-        if data_center and data_center.lower() == 'eu':
-            sauce_url = SAUCELABS_PROTOCOL + "{}:{}@ondemand.eu-central-1.saucelabs.com/wd/hub".format(username_cap, access_key_cap)
-        else:
-            sauce_url = SAUCELABS_PROTOCOL + "{}:{}@ondemand.us-west-1.saucelabs.com/wd/hub".format(username_cap, access_key_cap)
-
-        driver = appiumdriver.Remote(sauce_url, options=options)
+        driver = appiumdriver.Remote(selenium_endpoint, options=options)
         driver.implicitly_wait(20)
 
         sentry_sdk.set_tag("seleniumSessionId", driver.session_id)
@@ -322,18 +383,14 @@ def ios_react_native_sim_driver(request, data_center):
         sentry_sdk.capture_exception(err)
 
 @pytest.fixture
-def ios_sim_driver(request, data_center):
+def ios_sim_driver(request, selenium_endpoint):
 
     try:
         sentry_sdk.set_tag("pytestPlatform", "ios")
 
-        username_cap = environ['SAUCE_USERNAME']
-        access_key_cap = environ['SAUCE_ACCESS_KEY']
         release_version = ReleaseVersion.latest_ios_github_release()
 
         options = XCUITestOptions().load_capabilities({
-            'username': username_cap,
-            'accessKey': access_key_cap,
             'appium:deviceName': 'iPhone 11 Simulator',
             'platformName': 'iOS',
             'appium:platformVersion': '14.5',
@@ -346,12 +403,7 @@ def ios_sim_driver(request, data_center):
             'appium:app': f'https://github.com/sentry-demos/ios/releases/download/{release_version}/EmpowerPlant_release.zip',
         })
 
-        if data_center and data_center.lower() == 'eu':
-            sauce_url = SAUCELABS_PROTOCOL + "{}:{}@ondemand.eu-central-1.saucelabs.com/wd/hub".format(username_cap, access_key_cap)
-        else:
-            sauce_url = SAUCELABS_PROTOCOL + "{}:{}@ondemand.us-west-1.saucelabs.com/wd/hub".format(username_cap, access_key_cap)
-
-        driver = appiumdriver.Remote(sauce_url, options=options)
+        driver = appiumdriver.Remote(selenium_endpoint, options=options)
         driver.implicitly_wait(20)
 
         sentry_sdk.set_tag("seleniumSessionId", driver.session_id)

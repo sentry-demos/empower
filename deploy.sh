@@ -165,7 +165,7 @@ for proj in $projects; do # bash only
   ./build.sh
 
   if [[ "$fe_projects" = *"$proj "* ]]; then # project is frontend
-    bash -x sentry-release.sh $env $RELEASE
+    sentry-release.sh $env $RELEASE
     # NOTE: Sentry may create releases from events even without this step
   fi
 
@@ -214,7 +214,7 @@ for proj in $projects; do # bash only
     else
       # all other projects
       sed -e 's/<SERVICE>/'$app_engine_service'/g' app.yaml.template > .app.yaml
-      gcloud app deploy --quiet .app.yaml
+      gcloud app deploy --version v1 --quiet .app.yaml
     fi
   fi
 done

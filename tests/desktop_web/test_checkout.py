@@ -1,38 +1,30 @@
 import time
-import yaml
-import random
 import sentry_sdk
-import pytest
 from urllib.parse import urlencode
 from selenium.webdriver.common.by import By
 
-def test_add_to_cart(desktop_web_driver):
-    sentry_sdk.set_tag("pytestName", "test_add_to_cart")
+def test_checkout(desktop_web_driver, endpoints, batch_size, backend, random, sleep_length):
+    sentry_sdk.set_tag("pytestName", "test_checkout")
 
-    with open('endpoints.yaml', 'r') as stream:
-        data_loaded = yaml.safe_load(stream)
-        endpoints = data_loaded['react_endpoints']
-
-    for endpoint in endpoints:
-        endpoint_products = endpoint + "/products"
-        sentry_sdk.set_tag("endpoint", endpoint_products)
+    for endpoint in endpoints['react_endpoints']:
+        sentry_sdk.set_tag("endpoint", "/")
 
         missedButtons = 0
 
-        for i in range(10):
+        for i in range(batch_size):
             # Ensures a different backend endpoint gets picked each time
             url = ""
             # TODO make a query_string builder function for sharing this across tests
             query_string = {
-                'se': pytest.SE_TAG,
                 # 'ruby' /products /checkout endpoints not available yet
-                'backend': pytest.random_backend(exclude='ruby')
+                'backend': backend(exclude='ruby')
             }
-            url = endpoint_products + '?' + urlencode(query_string)
+            url = endpoint + '/?' + urlencode(query_string)
 
             # Buttons are not available if products didn't load before selection, so handle this
             try:
                 desktop_web_driver.get(url)
+                desktop_web_driver.find_element(By.CSS_SELECTOR, '.hero a[href="/products"]').click()
 
                 # Optional - use the time.sleep here so button can rinish rendering before the desktop_web_driver tries to click it
                 # Solution - handle gracefully when the desktop_web_driver clicks a button that's not rendered yet, and then time.sleep(1) and try again
@@ -56,14 +48,14 @@ def test_add_to_cart(desktop_web_driver):
                         pass
 
                 desktop_web_driver.find_element(By.CSS_SELECTOR, '.show-desktop #top-right-links a[href="/cart"]').click()
-                time.sleep(random.randrange(2) + 1)
+                time.sleep(sleep_length())
                 desktop_web_driver.find_element(By.CSS_SELECTOR, 'a[href="/checkout"]').click()
-                time.sleep(random.randrange(2) + 1)
+                time.sleep(sleep_length())
 
                 desktop_web_driver.find_element(By.CSS_SELECTOR, '#email').send_keys("sampleEmail@email.com")
 
                 desktop_web_driver.find_element(By.CSS_SELECTOR, '.complete-checkout-btn').click()
-                time.sleep(random.randrange(2) + 1)
+                time.sleep(sleep_length())
 
             except Exception as err:
                 missedButtons = missedButtons + 1
@@ -72,7 +64,7 @@ def test_add_to_cart(desktop_web_driver):
                 if err:
                     sentry_sdk.capture_exception(err)
 
-            time.sleep(random.randrange(2) + 1)
+            time.sleep(sleep_length())
 
 
 
