@@ -15,6 +15,15 @@ class Organization extends Component {
     }
   }
 
+  componentDidMount () {
+    const script = document.createElement("script");
+
+    script.src = this.props.backend + "/assets/bigfile.js";
+    script.async = false;
+
+    document.body.appendChild(script);
+  }
+
   render() {
     return (
       <div className="App">
