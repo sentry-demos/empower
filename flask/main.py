@@ -157,6 +157,7 @@ def connect():
 @app.route('/product/0/info', methods=['GET'])
 def product_info():
     time.sleep(.55)
+    return "flask /product/0/info"
 
 
 @app.before_request
