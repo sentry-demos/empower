@@ -4,7 +4,6 @@ from urllib.parse import urlencode
 from selenium.webdriver.common.by import By
 
 def test_checkout(desktop_web_driver, endpoints, batch_size, backend, random, sleep_length):
-    sentry_sdk.set_tag("pytestName", "test_checkout")
 
     for endpoint in endpoints['react_endpoints']:
         sentry_sdk.set_tag("endpoint", "/")

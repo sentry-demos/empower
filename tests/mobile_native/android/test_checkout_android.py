@@ -4,7 +4,6 @@ from appium.webdriver.common.appiumby import AppiumBy
 
 # 'Regular' as in non-react-native
 def test_checkout_regular_android(android_emu_driver):
-    sentry_sdk.set_tag("pytestName", "test_checkout_regular_android")
 
     try:
         # Add items to cart

@@ -6,7 +6,6 @@ from appium.webdriver.common.appiumby import AppiumBy
 # Application Not Responding button
 @pytest.mark.skip(reason="not working")
 def test_anr_android(android_emu_driver):
-    sentry_sdk.set_tag("pytestName", "test_anr_android")
 
     try:
         # navigate to list app
