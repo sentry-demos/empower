@@ -89,10 +89,7 @@ class Api::V1::CheckoutController < ApplicationController
             STDERR.puts "Not enough inventory for productid " + inv_objs["productid"].to_s
             Sentry.capture_exception(Exception)
             logged = "Error: Not enough inventory"
-            render json: {"message": logged}, status: 400
-          #rescue Exception => e 
-          # Sentry.capture_exception(e)
-          #  logged = "Error: " + e.message
+            render json: {"message": logged}, status: 500
             break # breaks on first error. might be more inventory errors.
           end       
         end
