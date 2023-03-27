@@ -3,6 +3,4 @@
 /env-config/ @realkosty
 /bin/ @realkosty
 /react/ @sdzhong @thinkocapo @realkosty
-/react/src/ @sdzhong
-/react/src/components/ @sdzhong
 /flask/ @sdzhong
