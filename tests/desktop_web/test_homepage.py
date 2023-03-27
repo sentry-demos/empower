@@ -6,7 +6,6 @@ from datetime import datetime
 
 # This test is for the homepage '/' transaction
 def test_homepage(desktop_web_driver, endpoints, random, batch_size, backend, sleep_length):
-    sentry_sdk.set_tag("pytestName", "test_homepage")
 
     # n - float in [0,1]
     def probability(p):

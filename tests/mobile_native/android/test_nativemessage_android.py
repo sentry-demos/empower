@@ -3,7 +3,6 @@ from appium.webdriver.common.appiumby import AppiumBy
 
 # NDK/C++ Native Message button
 def test_nativemessage_android(android_emu_driver):
-    sentry_sdk.set_tag("pytestName", "test_nativemessage_android")
 
     try:
         # navigate to list app

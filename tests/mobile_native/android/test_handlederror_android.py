@@ -3,7 +3,6 @@ from appium.webdriver.common.appiumby import AppiumBy
 
 # Clicks the Handled Error button that says ArrayIndexOutOfBoundsException
 def test_handlederror_android(android_emu_driver):
-    sentry_sdk.set_tag("pytestName", "test_handlederror_android")
 
     try:
         # navigate to list app

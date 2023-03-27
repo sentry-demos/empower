@@ -3,7 +3,6 @@ from appium.webdriver.common.appiumby import AppiumBy
 
 # Clicks the Unhandled Error button that says ArithmeticException
 def test_unhandlederror_android(android_emu_driver):
-    sentry_sdk.set_tag("pytestName", "test_unhandlederror_android")
 
     try:
         # navigate to list app
