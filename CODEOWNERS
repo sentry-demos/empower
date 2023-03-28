@@ -2,5 +2,5 @@
 /* @realkosty
 /env-config/ @realkosty
 /bin/ @realkosty
-react/src/** @sentry-demos/am-team
+react/src/components @sentry-demos/am-team
 flask/ @sentry-demos/am-team
