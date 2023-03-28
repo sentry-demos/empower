@@ -94,3 +94,15 @@ aspnetcore/obj
 /laravel/storage/*.key
 /laravel/vendor
 
+.idea/.gitignore
+.idea/inspectionProfiles/Project_Default.xml
+.idea/inspectionProfiles/profiles_settings.xml
+.gitignore
+.gitignore
+.idea/misc.xml
+.gitignore
+.idea/vcs.xml
+.gitignore
+.gitignore
+.idea/modules.xml
+.idea/application-monitoring.iml

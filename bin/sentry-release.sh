@@ -32,5 +32,5 @@ fi
 sentry-cli releases -o $SENTRY_ORG new -p $sentry_project $release
 sentry-cli releases -o $SENTRY_ORG finalize -p $sentry_project $release
 sentry-cli releases -o $SENTRY_ORG -p $sentry_project set-commits --auto $release --ignore-missing
-sentry-cli releases -o $SENTRY_ORG -p $sentry_project files $release upload-sourcemaps --url-prefix "$sourcemaps_url_prefix" --validate "$sourcemaps_dir" 
+sentry-cli releases -o $SENTRY_ORG -p $sentry_project files $release upload-sourcemaps --url-prefix "$sourcemaps_url_prefix" --validate "$sourcemaps_dir"
 sentry-cli deploys -o $SENTRY_ORG new -p $sentry_project -r $release -e $env -n $env
