@@ -13,14 +13,26 @@ class Organization extends Component {
       // can't have async sleep in a constructor
       busy_sleep(Math.random(40) + 150);
     }
+
+    // const script = document.createElement("script");
+
+    // script.src = this.props.backend + "/assets/bigfile.js";
+    // script.async = false;
+
+    // document.body.appendChild(script);
   }
 
   componentDidMount () {
+    // small file, compresssed
+    const small_script = document.createElement("script");
+    small_script.src = this.props.backend + "/configured_properly_assets/configured_properly.js" + "?cacheBuster=" + Math.random();
+    small_script.async = false;
+    document.body.appendChild(small_script);
+
+    // bigfile, not compressed
     const script = document.createElement("script");
-
-    script.src = this.props.backend + "/assets/bigfile.js";
+    script.src = this.props.backend + "/assets/bigfile.js" + "?cacheBuster=" + Math.random();
     script.async = false;
-
     document.body.appendChild(script);
   }
 

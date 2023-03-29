@@ -184,6 +184,15 @@ def send_report(path):
     time.sleep(.55)
     response = send_from_directory('assets', path)
     response.headers['Timing-Allow-Origin'] = '*'
+    # TODO: INSERT COMMENT
+    response.headers['Content-Type'] = 'application/octet-stream'
+    return response
+
+
+@app.route('/configured_properly_assets/<path:path>')
+def send_report_configured_properly(path):
+    response = send_from_directory('configured_properly_assets', path)
+    response.headers['Timing-Allow-Origin'] = '*'
     return response
 
 @app.before_request

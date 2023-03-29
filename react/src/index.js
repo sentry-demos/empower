@@ -59,6 +59,7 @@ Sentry.init({
   integrations: [
     new Integrations.BrowserTracing({
       tracingOrigins: tracingOrigins,
+      tracePropagationTargets: tracingOrigins,
       routingInstrumentation: Sentry.reactRouterV6Instrumentation(
         useEffect,
         useLocation,
