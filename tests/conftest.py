@@ -21,8 +21,6 @@ from datetime import datetime, timedelta
 from urllib.parse import urlencode
 
 import sentry_sdk
-from dotenv import load_dotenv
-load_dotenv()
 
 def get_system_user():
     return subprocess.check_output(['id', '-un']).strip().decode()
@@ -66,7 +64,8 @@ MAGIC_SE = 'tda'
 # The later means each time a test is run the inner steps will be repeated a random
 # number of times between 0 and <NUMBER> - 1
 # e.g. BATCH_SIZE=5, or BATCH_SIZE=random_100
-BATCH_SIZE = os.getenv("BATCH_SIZE") or "1"
+# IS_CANARY always overrides BATCH_SIZE
+BATCH_SIZE = os.getenv("IS_CANARY") and "1" or (os.getenv("BATCH_SIZE") or "1")
 
 SLEEP_LENGTH = os.getenv("SLEEP_LENGTH") or "random_2_1"
 
