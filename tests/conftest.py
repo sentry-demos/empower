@@ -70,7 +70,7 @@ BATCH_SIZE = os.getenv("BATCH_SIZE") or "1"
 
 SLEEP_LENGTH = os.getenv("SLEEP_LENGTH") or "random_2_1"
 
-BACKENDS = (os.getenv("BACKENDS") or "flask,express,springboot,ruby,laravel").split(',')
+BACKENDS = (os.getenv("BACKENDS") or "flask,express,springboot,ruby,laravel,rails").split(',')
 
 def pytest_configure():
     pytest.SE_TAG=SE_TAG
