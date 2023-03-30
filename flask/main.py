@@ -178,20 +178,25 @@ def connect():
 @app.route('/product/0/info', methods=['GET'])
 def product_info():
     time.sleep(.55)
+    return "/product/0/info"
 
-@app.route('/assets/<path:path>')
+# uncompressed assets
+@app.route('/uc_assets/<path:path>')
 def send_report(path):
     time.sleep(.55)
-    response = send_from_directory('assets', path)
+    response = send_from_directory('uc_assets', path)
+    # `Timing-Allow-Origin: *` allows timing/sizes to visbile in span
     response.headers['Timing-Allow-Origin'] = '*'
-    # TODO: INSERT COMMENT
+    # Overwriting `Content-Type` header to disable compression
     response.headers['Content-Type'] = 'application/octet-stream'
     return response
 
 
-@app.route('/configured_properly_assets/<path:path>')
+# compressed assets
+@app.route('/c_assets/<path:path>')
 def send_report_configured_properly(path):
-    response = send_from_directory('configured_properly_assets', path)
+    response = send_from_directory('c_assets', path)
+    # `Timing-Allow-Origin: *` allows timing/sizes to visbile in span
     response.headers['Timing-Allow-Origin'] = '*'
     return response
 
