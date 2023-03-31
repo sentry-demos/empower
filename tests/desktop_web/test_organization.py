@@ -12,8 +12,6 @@ def test_organization(desktop_web_driver, endpoints, random, batch_size, backend
 
         query_string = {
             # only run against 'flask'
-            # make include parameter to backend fixture
-            # 'backend': backend(exclude=['express','springboot','ruby','laravel'])
             'backend': backend(include=['flask'])
         }
         url = endpoint_organization + '?' + urlencode(query_string)
