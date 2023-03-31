@@ -69,16 +69,16 @@ kill -9 <PID of the script.sh>
 TypeError: required field "lineno" missing from alias
 ```
 You will need to downgrade your python version to fix this:
-1. Install Python 3.8 with `brew install python@3.8`
+1. Install Python 3.8 with `brew install python@3.8` (macos) or google "install python 3.8 linux" for `apt-get` instructions for GCP VM.
 2. Nuke your `venv`-created `env`: `deactivate && rm -rf env`
-3. `pip3 install virtualenv`
-4. Create a virtual environment that uses Python 3.8 instead of your global python `virtualenv --python="/opt/homebrew/Cellar/python@3.8/3.8.16/bin/python3.8" env` (exact path may differ)
+3. `pip3 install virtualenv` or `python3 -m pip install virtualenv`, etc.
+4. Create a virtual environment that uses Python 3.8 instead of your global python `virtualenv --python="/opt/homebrew/Cellar/python@3.8/3.8.16/bin/python3.8" env` (exact path may differ, might be able to find it with `which python3.8` command)
 5. The usual:
 ```
 source env/bin/activate
 pip install -r requirements.txt
 ```
-6. Instead of using `py.test` or `pytest` executable that is probably global and points to your Python 3.10+ installation, use `python3 -m pytest` that will pick up the Python 3.8 from virtual environment
+6. Instead of using `py.test` or `pytest` executable that is probably global and points to your Python 3.10+ installation, use `python3 -m pytest` that will pick up the Python 3.8 from virtual environment. (Not an issue on GCP tda box)
 
 ### SSL Cert Issues
 

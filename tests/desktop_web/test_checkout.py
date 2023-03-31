@@ -3,12 +3,10 @@ import sentry_sdk
 from urllib.parse import urlencode
 from selenium.webdriver.common.by import By
 
-def test_add_to_cart(desktop_web_driver, endpoints, batch_size, backend, random, sleep_length):
-    sentry_sdk.set_tag("pytestName", "test_add_to_cart")
+def test_checkout(desktop_web_driver, endpoints, batch_size, backend, random, sleep_length):
 
     for endpoint in endpoints['react_endpoints']:
-        endpoint_products = endpoint + "/products"
-        sentry_sdk.set_tag("endpoint", endpoint_products)
+        sentry_sdk.set_tag("endpoint", "/")
 
         missedButtons = 0
 
@@ -20,11 +18,12 @@ def test_add_to_cart(desktop_web_driver, endpoints, batch_size, backend, random,
                 # 'ruby' /products /checkout endpoints not available yet
                 'backend': backend(exclude='ruby')
             }
-            url = endpoint_products + '?' + urlencode(query_string)
+            url = endpoint + '/?' + urlencode(query_string)
 
             # Buttons are not available if products didn't load before selection, so handle this
             try:
                 desktop_web_driver.get(url)
+                desktop_web_driver.find_element(By.CSS_SELECTOR, '.hero a[href="/products"]').click()
 
                 # Optional - use the time.sleep here so button can rinish rendering before the desktop_web_driver tries to click it
                 # Solution - handle gracefully when the desktop_web_driver clicks a button that's not rendered yet, and then time.sleep(1) and try again

@@ -70,7 +70,7 @@ BATCH_SIZE = os.getenv("BATCH_SIZE") or "1"
 
 SLEEP_LENGTH = os.getenv("SLEEP_LENGTH") or "random_2_1"
 
-BACKENDS = (os.getenv("BACKENDS") or "flask,express,springboot,ruby,laravel").split(',')
+BACKENDS = (os.getenv("BACKENDS") or "flask,express,springboot,ruby,laravel,rails").split(',')
 
 def pytest_configure():
     pytest.SE_TAG=SE_TAG
@@ -219,12 +219,23 @@ def selenium_endpoint(data_center):
     else:
         return SAUCELABS_PROTOCOL + "{}:{}@ondemand.us-west-1.saucelabs.com/wd/hub".format(username, access_key)
 
+@pytest.fixture
+def set_tags(request):
+    # request.fixturenames: Names of all active fixtures in this request.
+    # e.g value: ['android_emu_driver', 'request', 'set_tags', 'selenium_endpoint', 'data_center']
+    # NOTE: we depend on driver fixtures following *_driver naming convention here
+    driver_name = list(filter(lambda x: x.endswith('_driver'), request.fixturenames))[0]
+    # request.node: Underlying collection node (depends on current request scope).
+    # e.g name: test_myfunction[desktop_web_driver0]
+    test_name = request.node.name.split('[')[0]
+    platform = driver_name.replace('_emu_driver', '').replace('_sim_driver', '').replace('_driver','')
+    sentry_sdk.set_tag("pytestPlatform", platform)
+    sentry_sdk.set_tag("pytestName", test_name)
+
 @pytest.fixture(params=desktop_browsers)
-def desktop_web_driver(request, selenium_endpoint):
+def desktop_web_driver(request, set_tags, selenium_endpoint):
 
     try:
-        sentry_sdk.set_tag("pytestPlatform", "desktop_web")
-
         test_name = request.node.name
         build_tag = environ.get('BUILD_TAG', "Application-Monitoring-TDA")
 
@@ -277,11 +288,9 @@ def desktop_web_driver(request, selenium_endpoint):
         sentry_sdk.capture_exception(err)
 
 @pytest.fixture
-def android_react_native_emu_driver(request, selenium_endpoint):
+def android_react_native_emu_driver(request, set_tags, selenium_endpoint):
 
     try:
-        sentry_sdk.set_tag("pytestPlatform", "android_react_native")
-
         release_version = ReleaseVersion.latest_react_native_github_release()
 
         options = UiAutomator2Options().load_capabilities({
@@ -314,11 +323,9 @@ def android_react_native_emu_driver(request, selenium_endpoint):
         sentry_sdk.capture_exception(err)
 
 @pytest.fixture
-def android_emu_driver(request, selenium_endpoint):
+def android_emu_driver(request, set_tags, selenium_endpoint):
 
     try:
-        sentry_sdk.set_tag("pytestPlatform", "android")
-
         release_version = ReleaseVersion.latest_android_github_release()
 
         options = UiAutomator2Options().load_capabilities({
@@ -351,11 +358,9 @@ def android_emu_driver(request, selenium_endpoint):
         sentry_sdk.capture_exception(err)
 
 @pytest.fixture
-def ios_react_native_sim_driver(request, selenium_endpoint):
+def ios_react_native_sim_driver(request, set_tags, selenium_endpoint):
 
     try:
-        sentry_sdk.set_tag("pytestPlatform", "ios_react_native")
-
         release_version = ReleaseVersion.latest_react_native_github_release()
 
         options = XCUITestOptions().load_capabilities({
@@ -388,11 +393,9 @@ def ios_react_native_sim_driver(request, selenium_endpoint):
         sentry_sdk.capture_exception(err)
 
 @pytest.fixture
-def ios_sim_driver(request, selenium_endpoint):
+def ios_sim_driver(request, set_tags, selenium_endpoint):
 
     try:
-        sentry_sdk.set_tag("pytestPlatform", "ios")
-
         release_version = ReleaseVersion.latest_ios_github_release()
 
         options = XCUITestOptions().load_capabilities({

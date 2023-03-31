@@ -1,8 +1,5 @@
-* @cstavitsky 
 /* @realkosty
 /env-config/ @realkosty
 /bin/ @realkosty
-/react/ @sdzhong @thinkocapo @realkosty
-/react/src/ @sdzhong
-/react/src/components/ @sdzhong
-/flask/ @sdzhong
+react/src/components @sentry-demos/am-team
+flask/ @sentry-demos/am-team

@@ -8,7 +8,7 @@ from flask import Flask, json, request, make_response, send_from_directory
 from flask_cors import CORS
 from dotenv import load_dotenv
 from db import get_products, get_products_join, get_inventory
-from utils import parseHeaders, get_iterator
+from utils import parseHeaders
 import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
 from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
@@ -20,12 +20,6 @@ DSN = os.environ["FLASK_APP_DSN"]
 ENVIRONMENT = os.environ["FLASK_ENV"]
 RUBY_BACKEND = os.environ["RUBY_BACKEND"]
 RUBY_CUSTOM_HEADERS = ['se', 'customerType', 'email']
-
-pests = ["aphids", "thrips", "spider mites", "lead miners", "scale", "whiteflies", "earwigs", "cutworms", "mealybugs", "fungus gnats"]
-RUN_SLOW_PROFILE = True
-if "RUN_SLOW_PROFILE" in os.environ:
-    if os.environ["RUN_SLOW_PROFILE"].lower() == "false":
-        RUN_SLOW_PROFILE = False
 
 print("> DSN", DSN)
 print("> RELEASE", RELEASE)
@@ -104,29 +98,14 @@ def products():
     try:
         with sentry_sdk.start_span(op="/products.get_products", description="function"):
             rows = get_products()
-
-            if RUN_SLOW_PROFILE:
-                productsJSON = json.loads(rows)
-                descriptions = [product["description"] for product in productsJSON]
-                with sentry_sdk.start_span(op="/get_iterator", description="function"):
-                    loop = get_iterator(len(descriptions) * 6)
-                    for i in range(loop):
-                        for i, description in enumerate(descriptions):
-                            for pest in pests:
-                                if pest in description:
-                                    try:
-                                        del productsJSON[i:i+1]
-                                    except:
-                                        productsJSON = json.loads(rows)
     except Exception as err:
         sentry_sdk.capture_exception(err)
         raise(err)
 
     try:
-        with sentry_sdk.start_span(op="/api_request", description="function"):
-            headers = parseHeaders(RUBY_CUSTOM_HEADERS, request.headers)
-            r = requests.get(RUBY_BACKEND + "/api", headers=headers)
-            r.raise_for_status() # returns an HTTPError object if an error has occurred during the process
+        headers = parseHeaders(RUBY_CUSTOM_HEADERS, request.headers)
+        r = requests.get(RUBY_BACKEND + "/api", headers=headers)
+        r.raise_for_status() # returns an HTTPError object if an error has occurred during the process
     except Exception as err:
         sentry_sdk.capture_exception(err)
 
@@ -178,7 +157,7 @@ def connect():
 @app.route('/product/0/info', methods=['GET'])
 def product_info():
     time.sleep(.55)
-    return "/product/0/info"
+    return "flask /product/0/info"
 
 # uncompressed assets
 @app.route('/uc_assets/<path:path>')

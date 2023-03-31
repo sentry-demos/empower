@@ -5,7 +5,6 @@ from collections import OrderedDict
 from selenium.webdriver.common.by import By
 
 def test_subscribe_vue(desktop_web_driver, endpoints, random, batch_size, sleep_length):
-    sentry_sdk.set_tag("pytestName", "test_subscribe_vue")
 
     for endpoint in endpoints['vue_endpoints']:
         

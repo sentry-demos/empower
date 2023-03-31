@@ -2,7 +2,6 @@ import sentry_sdk
 from appium.webdriver.common.appiumby import AppiumBy
 
 def test_checkout_react_native_ios(ios_react_native_sim_driver):
-    sentry_sdk.set_tag("pytestName", "test_checkout_react_native_ios")
 
     try:
         cart_btn = ios_react_native_sim_driver.find_element(AppiumBy.XPATH, '(//XCUIElementTypeOther[@name="Add to Cart"])[1]')
