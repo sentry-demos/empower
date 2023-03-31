@@ -191,7 +191,6 @@ def send_report(path):
     response.headers['Content-Type'] = 'application/octet-stream'
     return response
 
-
 # compressed assets
 @app.route('/c_assets/<path:path>')
 def send_report_configured_properly(path):

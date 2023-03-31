@@ -13,13 +13,6 @@ class Organization extends Component {
       // can't have async sleep in a constructor
       busy_sleep(Math.random(40) + 150);
     }
-
-    // const script = document.createElement("script");
-
-    // script.src = this.props.backend + "/assets/bigfile.js";
-    // script.async = false;
-
-    // document.body.appendChild(script);
   }
 
   componentDidMount() {
