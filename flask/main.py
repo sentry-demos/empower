@@ -4,7 +4,7 @@ import os
 import requests
 import sys
 import time
-from flask import Flask, json, request, make_response
+from flask import Flask, json, request, make_response, send_from_directory
 from flask_cors import CORS
 from dotenv import load_dotenv
 from db import get_products, get_products_join, get_inventory
@@ -35,7 +35,7 @@ def before_send(event, hint):
     if se == "tda":
         event['fingerprint'] = [ '{{ default }}', se, RELEASE ]
     elif se not in [None, "undefined"]:
-        event['fingerprint'] = [ '{{ default }}', se]    
+        event['fingerprint'] = [ '{{ default }}', se]
 
     return event
 
@@ -85,16 +85,16 @@ def checkout():
                 print("> inventoryItem.count", inventoryItem['count'])
                 if (inventoryItem.count < quantities[cartItem]):
                     raise Exception("Not enough inventory for " + "product")
-        
+
     response = make_response("success")
     return response
- 
+
 @app.route('/success', methods=['GET'])
-def success():    
+def success():
     return "success from flask"
 
 @app.route('/products', methods=['GET'])
-def products():   
+def products():
     try:
         with sentry_sdk.start_span(op="/products.get_products", description="function"):
             rows = get_products()
@@ -108,7 +108,7 @@ def products():
         r.raise_for_status() # returns an HTTPError object if an error has occurred during the process
     except Exception as err:
         sentry_sdk.capture_exception(err)
-        
+
     return rows
 
 @app.route('/products-join', methods=['GET'])
@@ -140,14 +140,14 @@ def handled_exception():
 @app.route('/unhandled', methods=['GET'])
 def unhandled_exception():
     obj = {}
-    obj['keyDoesntExist']
+    obj['keyDoesnt  Exist']
 
 @app.route('/api', methods=['GET'])
-def api():    
+def api():
     return "flask /api"
 
 @app.route('/organization', methods=['GET'])
-def organization():    
+def organization():
     return "flask /organization"
 
 @app.route('/connect', methods=['GET'])
@@ -159,17 +159,35 @@ def product_info():
     time.sleep(.55)
     return "flask /product/0/info"
 
+# uncompressed assets
+@app.route('/uc_assets/<path:path>')
+def send_report(path):
+    time.sleep(.55)
+    response = send_from_directory('uc_assets', path)
+    # `Timing-Allow-Origin: *` allows timing/sizes to visbile in span
+    response.headers['Timing-Allow-Origin'] = '*'
+    # Overwriting `Content-Type` header to disable compression
+    response.headers['Content-Type'] = 'application/octet-stream'
+    return response
+
+# compressed assets
+@app.route('/c_assets/<path:path>')
+def send_report_configured_properly(path):
+    response = send_from_directory('c_assets', path)
+    # `Timing-Allow-Origin: *` allows timing/sizes to visbile in span
+    response.headers['Timing-Allow-Origin'] = '*'
+    return response
 
 @app.before_request
 def sentry_event_context():
     se = request.headers.get('se')
     if se not in [None, "undefined"]:
         sentry_sdk.set_tag("se", se)
-    
+
     customerType = request.headers.get('customerType')
     if customerType not in [None, "undefined"]:
         sentry_sdk.set_tag("customerType", customerType)
-    
+
     email = request.headers.get('email')
     if email not in [None, "undefined"]:
         sentry_sdk.set_user({ "email" : email })
