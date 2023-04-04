@@ -28,6 +28,10 @@ namespace aspnetcore
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddRouting();
+
+            // This is required for HTTP client integration
+            services.AddHttpClient();
             services.AddCors(options =>
             {
                 options.AddPolicy(allowSpecificOrigins,
@@ -54,15 +58,19 @@ namespace aspnetcore
             }
             app.UseCors(allowSpecificOrigins);
 
+            app.UseHttpsRedirection();
+            app.UseStaticFiles();
+            
             app.UseRouting();
-
             app.UseSentryTracing();
 
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
             {
-                endpoints.MapControllers();
+                endpoints.MapControllerRoute(
+                    name: "default",
+                    pattern: "{controller=Home}/{action=Index}/{id?}");
             });
         }
     }
