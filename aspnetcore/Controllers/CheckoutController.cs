@@ -27,7 +27,7 @@ namespace aspnetcore.Controllers
         }
 
         // seems like this can return any object - will be automatically serialized to JSON
-        [HttpPost]
+        [HttpPost("/checkout")]
         public ActionResult Checkout()
         { 
             Response.Headers.Add("access-control-allow-origin", "*");

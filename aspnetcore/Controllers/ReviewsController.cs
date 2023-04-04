@@ -26,7 +26,7 @@ namespace aspnetcore.Controllers
         }
 
         // seems like this can return any object - will be automatically serialized to JSON
-        [HttpGet]
+        [HttpGet("/reviews")]
         public ActionResult Get()
         {
             return Ok(_context.Reviews.ToList());

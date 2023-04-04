@@ -26,7 +26,7 @@ namespace aspnetcore.Controllers
         }
 
         // seems like this can return any object - will be automatically serialized to JSON
-        [HttpGet]
+        [HttpGet("/api")]
         public ActionResult Get()
         {
             string dsn = Configuration["Sentry:Dsn"];
