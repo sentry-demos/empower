@@ -27,10 +27,17 @@ namespace aspnetcore.Controllers
         }
 
         // seems like this can return any object - will be automatically serialized to JSON
-        [HttpGet]
-        public ActionResult Get()
+        [HttpGet("/products")]
+        public ActionResult<IEnumerable<Product>>  Get()
         {
-            return Ok(_context.Products.Include(e => e.Reviews).ToList());
+            var products = _context.Products.ToList();
+            
+            foreach(var product in products)
+            {
+                _context.Entry(product).Collection(p => p.Reviews).Load();
+            }
+
+            return Ok(products);
         }
     }
 }
