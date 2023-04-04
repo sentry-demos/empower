@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using aspnetcore.Models;
@@ -26,10 +27,10 @@ namespace aspnetcore.Controllers
         }
 
         // seems like this can return any object - will be automatically serialized to JSON
-        [HttpGet]
+        [HttpGet("/products-join")]
         public ActionResult Get()
         {
-            return Ok("aspnetcore /products-join");
+            return Ok(_context.Products.Include(e => e.Reviews).ToList());
         }
     }
 }
