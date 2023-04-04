@@ -100,6 +100,7 @@ function cleanup {
   done
   rm -f $top/*/.app.yaml
   rm -f $top/spring-boot/src/main/appengine/app.yaml
+  rm -f $top/spring-boot/src/main/resources/application.properties
   rm -f $top/aspnetcore/bin/Release/netcoreapp3.1/publish/.app.yaml
   rm -f $top/aspnetcore/appsettings.json
   if [ "$generated_envs" != "" ]; then
