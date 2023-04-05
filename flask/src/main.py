@@ -7,8 +7,8 @@ import time
 from flask import Flask, json, request, make_response, send_from_directory
 from flask_cors import CORS
 from dotenv import load_dotenv
-from db import get_products, get_products_join, get_inventory
-from utils import parseHeaders, get_iterator
+from .db import get_products, get_products_join, get_inventory
+from .utils import parseHeaders, get_iterator
 import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
 from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
@@ -217,7 +217,10 @@ def sentry_event_context():
     if email not in [None, "undefined"]:
         sentry_sdk.set_user({ "email" : email })
 
-if __name__ == '__main__':
+#
+# Main entry point, called from ../run.sh
+#
+def run():
     i = sys.version_info
     if sys.version_info[0] < 3:
         raise SystemExit("Failed to start: need python3")
