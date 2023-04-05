@@ -6,7 +6,8 @@ from selenium.webdriver.common.by import By
 def test_checkout(desktop_web_driver, endpoints, batch_size, backend, random, sleep_length):
 
     for endpoint in endpoints['react_endpoints']:
-        sentry_sdk.set_tag("endpoint", "/")
+        endpoint_products = endpoint + "/products"
+        sentry_sdk.set_tag("endpoint", endpoint_products)
 
         missedButtons = 0
 
@@ -18,12 +19,11 @@ def test_checkout(desktop_web_driver, endpoints, batch_size, backend, random, sl
                 # 'ruby' /products /checkout endpoints not available yet
                 'backend': backend(exclude='ruby')
             }
-            url = endpoint + '/?' + urlencode(query_string)
+            url = endpoint_products + '?' + urlencode(query_string)
 
             # Buttons are not available if products didn't load before selection, so handle this
             try:
                 desktop_web_driver.get(url)
-                desktop_web_driver.find_element(By.CSS_SELECTOR, '.hero a[href="/products"]').click()
 
                 # Optional - use the time.sleep here so button can rinish rendering before the desktop_web_driver tries to click it
                 # Solution - handle gracefully when the desktop_web_driver clicks a button that's not rendered yet, and then time.sleep(1) and try again
