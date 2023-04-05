@@ -4,7 +4,7 @@ import os
 import sentry_sdk
 import sqlalchemy
 from sqlalchemy import create_engine, text
-from .utils import weighter
+from utils import weighter
 from dotenv import load_dotenv
 load_dotenv()
 
