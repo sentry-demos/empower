@@ -8,6 +8,7 @@ cp ./src/main/resources/application.properties.template $properties
 
 echo "" >> $properties # newline
 echo "sentry.dsn=$SPRINGBOOT_APP_DSN" >> $properties
+echo "sentry.release=$RELEASE" >> $properties
 echo "spring.datasource.username=$DB_USERNAME" >> $properties
 echo "spring.datasource.password=$DB_PASSWORD" >> $properties
 echo "spring.cloud.gcp.sql.database-name=$DB_DATABASE" >> $properties
