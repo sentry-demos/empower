@@ -15,6 +15,21 @@ class Organization extends Component {
     }
   }
 
+  componentDidMount() {
+    // Must bust cache to have force transfer size
+    // small compressed file
+    let uc_small_script = document.createElement("script");
+    uc_small_script.async = false;
+    uc_small_script.src = this.props.backend + "/c_assets/c_small_file.js" + "?cacheBuster=" + Math.random();
+    document.body.appendChild(uc_small_script);
+
+    // big uncompressed file
+    let c_big_script = document.createElement("script");
+    c_big_script.async = false;
+    c_big_script.src = this.props.backend + "/uc_assets/uc_big_file.js" + "?cacheBuster=" + Math.random();
+    document.body.appendChild(c_big_script);
+  }
+
   render() {
     return (
       <div className="App">

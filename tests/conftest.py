@@ -21,8 +21,6 @@ from datetime import datetime, timedelta
 from urllib.parse import urlencode
 
 import sentry_sdk
-from dotenv import load_dotenv
-load_dotenv()
 
 def get_system_user():
     return subprocess.check_output(['id', '-un']).strip().decode()
@@ -66,7 +64,8 @@ MAGIC_SE = 'tda'
 # The later means each time a test is run the inner steps will be repeated a random
 # number of times between 0 and <NUMBER> - 1
 # e.g. BATCH_SIZE=5, or BATCH_SIZE=random_100
-BATCH_SIZE = os.getenv("BATCH_SIZE") or "1"
+# IS_CANARY always overrides BATCH_SIZE
+BATCH_SIZE = os.getenv("IS_CANARY") and "1" or (os.getenv("BATCH_SIZE") or "1")
 
 SLEEP_LENGTH = os.getenv("SLEEP_LENGTH") or "random_2_1"
 
@@ -144,7 +143,7 @@ def sleep_length(random):
             r = random.randrange(float(spl[1]))
             if len(spl) == 3:
                 r += float(spl[2])
-            return r 
+            return r
         else:
             r = random.random() # unused, to make sure we call random same number of times
             return float(SLEEP_LENGTH)
@@ -161,7 +160,12 @@ def batch_size(random):
 
 @pytest.fixture
 def backend(random):
-    def random_backend(exclude=[]):
+    def random_backend(exclude=[], include=[]):
+        if not include:
+            include = BACKENDS
+        else:
+            include = [include] if isinstance(include, str) else include
+
         exclude = [exclude] if isinstance(exclude, str) else exclude
         # Must sort to get same order across processes to ensure that seeded random.sample()
         # always returns the same values.
@@ -174,7 +178,7 @@ def backend(random):
         # python3
         #   >>> list(set(['b', 'a', 'f', 'd', 'e', 'c']) - set(['c', 'a']))
         #   ['d', 'f', 'b', 'e']
-        backends = sorted(list(set(BACKENDS) - set(exclude)))
+        backends = sorted(list(set(include) - set(exclude)))
         return random.sample(backends, 1)[0]
     return random_backend
 
@@ -193,7 +197,7 @@ class RemoteWithExtraUrlParams(webdriver.Remote):
         if 'extra_params' in kwargs:
             if kwargs['extra_params'].startswith(('&', '?')):
                 raise ValueError('extra_params must be in format: "param1=value1&param2=value2..."')
-            self.extra_params = kwargs['extra_params'] 
+            self.extra_params = kwargs['extra_params']
             del kwargs['extra_params']
         else:
             self.extra_params = None
@@ -278,7 +282,7 @@ def desktop_web_driver(request, set_tags, selenium_endpoint):
 
         # desktop_web tests finished, send to Sentry job-monitor-application-monitoring, look for tags pytestName, pytestPlatform, seleniumSessionId
         sentry_sdk.capture_message("Selenium Session Done")
-    
+
     except Exception as err:
         sentry_sdk.capture_exception(err)
 
@@ -313,7 +317,7 @@ def android_react_native_emu_driver(request, set_tags, selenium_endpoint):
 
         # android_react_native tests finished, send to Sentry job-monitor-application-monitoring, look for tags pytestName, pytestPlatform, seleniumSessionId
         sentry_sdk.capture_message("Selenium Session Done")
-    
+
     except Exception as err:
         sentry_sdk.capture_exception(err)
 
@@ -383,7 +387,7 @@ def ios_react_native_sim_driver(request, set_tags, selenium_endpoint):
 
         # ios_react_native tests finished, send to Sentry job-monitor-application-monitoring, look for tags pytestName, pytestPlatform, seleniumSessionId
         sentry_sdk.capture_message("Selenium Session Done")
-    
+
     except Exception as err:
         sentry_sdk.capture_exception(err)
 
@@ -418,7 +422,7 @@ def ios_sim_driver(request, set_tags, selenium_endpoint):
 
         # ios tests finished, send to Sentry job-monitor-application-monitoring, look for tags pytestName, pytestPlatform, seleniumSessionId
         sentry_sdk.capture_message("Selenium Session Done")
-        
+
     except Exception as err:
         sentry_sdk.capture_exception(err)
 

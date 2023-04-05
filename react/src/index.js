@@ -59,6 +59,7 @@ Sentry.init({
   integrations: [
     new Integrations.BrowserTracing({
       tracingOrigins: tracingOrigins,
+      tracePropagationTargets: tracingOrigins,
       routingInstrumentation: Sentry.reactRouterV6Instrumentation(
         useEffect,
         useLocation,
@@ -182,7 +183,7 @@ class App extends Component {
                   <Route path="/checkout" element={<Checkout backend={BACKEND_URL} history={history} />}></Route>
                   <Route path="/complete" element={<Complete/>} />
                   <Route path="/error" element={<CompleteError/>} />
-                  <Route path="/organization" element={<Organization/>} />
+                  <Route path="/organization" element={<Organization backend={BACKEND_URL} />}></Route>
                   <Route path="/employee/:id" element={<Employee/>}></Route>
                   <Route path="/product/:id" element={<Product/>}></Route>
                   <Route path="/products" element={<Products backend={BACKEND_URL} />}></Route>
