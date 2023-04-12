@@ -39,7 +39,7 @@ function Checkout(props) {
       return { ok: false, status: 500 }
     })
     if (!response.ok) {
-      throw new Error(response.status + " - " + (response.statusText || "Internal Server Error"));
+      throw new Error([response.status, response.statusText || "Internal Server Error"].join(" - "));
     }
     return response;
   }
