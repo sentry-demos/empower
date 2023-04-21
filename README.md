@@ -1,4 +1,4 @@
-# Application Monitoring
+# ~~Application Monitoring~~ Empower
 This is a multi-language/framework project that implements Empower Plant web app. It has one actively maintained frontend, `react`, that can connect to any one of the backend implementations using a query string parameter (e.g. `?backend=express`) and uses `flask` by default.
 
 
