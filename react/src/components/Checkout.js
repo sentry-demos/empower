@@ -93,15 +93,16 @@ function Checkout(props) {
       <Loader
       type="ThreeDots"
       color="#f6cfb2"
+      className="sentry-unmask"
       height={150}
       width={150}
       />) : (
       <>
-      <h2>Checkout</h2>
+      <h2 className="sentry-unmask">Checkout</h2>
        <form className="checkout-form" onSubmit={handleSubmit}>
-        <h4>Contact information</h4>
+        <h4 className="sentry-unmask">Contact information</h4>
 
-        <label htmlFor="email">Email</label>
+        <label htmlFor="email" className="sentry-unmask">Email</label>
         <input
           id="email"
           name="email"
@@ -118,12 +119,12 @@ function Checkout(props) {
           onChange={handleInputChange}
           defaultValue={form.subscribe}
         />
-        <label htmlFor="subscribe">
+        <label htmlFor="subscribe" className="sentry-unmask">
           Keep me updated with new sales and products
         </label>
 
-        <h4>Shipping address</h4>
-        <label htmlFor="firstName">First Name</label>
+        <h4 className="sentry-unmask">Shipping address</h4>
+        <label htmlFor="firstName" className="sentry-unmask">First Name</label>
         <input
           id="firstName"
           name="firstName"
@@ -133,7 +134,7 @@ function Checkout(props) {
           placeholder="Joe"
           className="half-width"
         />
-        <label htmlFor="lastName">Last Name</label>
+        <label htmlFor="lastName" className="sentry-unmask">Last Name</label>
         <input
           id="lastName"
           name="lastName"
@@ -143,7 +144,7 @@ function Checkout(props) {
           placeholder="Bobson"
         />
 
-        <label htmlFor="address">Address</label>
+        <label htmlFor="address" className="sentry-unmask">Address</label>
         <input
           id="address"
           name="address"
@@ -153,7 +154,7 @@ function Checkout(props) {
           placeholder="123 Main Street"
         />
 
-        <label htmlFor="city">City</label>
+        <label htmlFor="city" className="sentry-unmask">City</label>
         <input
           id="city"
           name="city"
@@ -163,7 +164,7 @@ function Checkout(props) {
           placeholder="Hope Springs"
         />
 
-        <label htmlFor="country">Country/Region</label>
+        <label htmlFor="country" className="sentry-unmask">Country/Region</label>
         <input
           id="country"
           name="country"
@@ -173,7 +174,7 @@ function Checkout(props) {
           placeholder="United States of America"
         />
 
-        <label htmlFor="state">State</label>
+        <label htmlFor="state" className="sentry-unmask">State</label>
         <input
           id="state"
           name="state"
@@ -183,7 +184,7 @@ function Checkout(props) {
           placeholder="Indiana"
         />
 
-        <label htmlFor="zipCode">Zip Code</label>
+        <label htmlFor="zipCode" className="sentry-unmask">Zip Code</label>
         <input
           id="zipCode"
           name="zipCode"
@@ -195,11 +196,11 @@ function Checkout(props) {
 
         <input
           type="submit"
-          className="complete-checkout-btn"
+          className="complete-checkout-btn sentry-unmask"
           defaultValue="Complete order"
         />
       </form>
-      <Link to="/cart">Back to cart</Link>
+      <Link to="/cart" className="sentry-unmask">Back to cart</Link>
       </>
       )}
       </div>

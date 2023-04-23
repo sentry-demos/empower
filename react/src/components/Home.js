@@ -31,7 +31,7 @@ class Home extends Component {
   
     render() {
       return (
-        <div className="hero">
+        <div className="hero sentry-unmask">
           <div className="hero-bg-img" style={divStyle}></div>
           <div className="hero-content">
             <h1>Empower your plants</h1>

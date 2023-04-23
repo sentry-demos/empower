@@ -36,7 +36,7 @@ function Product(props) {
           className="add-cart-btn"
           onClick={() => props.addProduct(product)}
         >
-          Add to cart — ${product.price}.00
+          <span className="sentry-unmask">Add to cart —</span> ${product.price}.00
         </button>
         <p>{averageRating} Rating</p>
       </div>

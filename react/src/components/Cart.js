@@ -19,7 +19,7 @@ class Cart extends Component {
 
     return (
       <div className="cart-container">
-        <h2>Cart</h2>
+        <h2 className="sentry-unmask">Cart</h2>
         {cart.items.length > 0 ? (
           <>
             <ul className="cart-list">
@@ -29,17 +29,18 @@ class Cart extends Component {
                 return (
                   <li className="cart-item" key={item.id}>
                     <Link to={itemLink}>
-                      <img src={item.img} alt="item-thumbnail" />
+                      <img src={item.img} alt="item-thumbnail" className="sentry-block"/>
                     </Link>
                     <Link to={itemLink}>
                       <h4>{item.title}</h4>
                     </Link>
-                    <p>${item.price}.00</p>
+                    <p><span className="sentry-unmask">$</span>{item.price}.00</p>
                     <div className="quantity-adjust">
                       <button
                         onClick={() =>
                           this.props.removeProduct(item)
                         }
+                        className="sentry-unmask"
                       >
                         –
                       </button>
@@ -48,17 +49,18 @@ class Cart extends Component {
                         onClick={() =>
                           this.props.addProduct(item)
                         }
+                        className="sentry-unmask"
                       >
                         +
                       </button>
                     </div>
-                    <p>${item.price * quantity}.00</p>
+                    <p><span className="sentry-unmask">$</span>{item.price * quantity}.00</p>
                   </li>
                 );
               })}
             </ul>
-            <h3 className="cart-subtotal">Cart Subtotal: ${cart.total}.00</h3>
-            <Button to="/checkout">Proceed to checkout</Button>
+            <h3 className="cart-subtotal"><span className="sentry-unmask">Cart Subtotal: $</span>{cart.total}.00</h3>
+            <Button to="/checkout" className="sentry-unmask">Proceed to checkout</Button>
           </>
         ) : (
           <p>Please add items to the cart</p>

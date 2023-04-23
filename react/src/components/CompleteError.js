@@ -5,7 +5,7 @@ import './complete.css';
 class CompleteError extends Component {
   render() {
     return (
-      <div className="checkout-container-complete">
+      <div className="checkout-container-complete sentry-unmask">
         <h2>We're having some trouble</h2>
         <p>
           We were unable to process your order but will do everything we can to

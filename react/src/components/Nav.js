@@ -24,15 +24,15 @@ class Nav extends Component {
         <nav id="top-nav" className="show-mobile">
           <div className="nav-contents">
             <Link to="/" id="home-link">
-              <img src={EPlogo} className="logo" alt="logo" />
+              <img src={EPlogo} className="logo sentry-unmask" alt="logo" />
             </Link>
 
             <div id="top-right-links">
-              <Link to="/about">About</Link>
-              <Link to="/products">Products</Link>
-              <Link to="/cart">
+              <Link to="/about" className="sentry-unmask">About</Link>
+              <Link to="/products" className="sentry-unmask">Products</Link>
+              <Link to="/cart" className="sentry-unmask">
                 Cart
-                {cart.items.length > 0 ? <span> (${cart.total}.00)</span> : ''}
+                {cart.items.length > 0 ? <span><span className="sentry-unmask"> ($</span><span className="sentry-mask">{cart.total}.00</span><span className="sentry-unmask">)</span></span> : ''}
               </Link>
             </div>
           </div>
@@ -40,17 +40,17 @@ class Nav extends Component {
 
         <nav id="top-nav" className="show-desktop">
           <div className="nav-contents">
-            <Link to="/" id="home-link">
-              <img src={EPlogo} className="logo" alt="logo" />
+            <Link to="/" id="home-link" className="sentry-unmask">
+              <img src={EPlogo} className="logo sentry-unmask" alt="logo" />
               Empower Plant
             </Link>
 
             <div id="top-right-links">
-              <Link to="/about">About</Link>
-              <Link to="/products">Products</Link>
+              <Link to="/about" className="sentry-unmask">About</Link>
+              <Link to="/products" className="sentry-unmask">Products</Link>
               <Link to="/cart">
-                Cart
-                {cart.items.length > 0 ? <span> (${cart.total}.00)</span> : ''}
+                <span className="sentry-unmask">Cart</span> 
+                {cart.items.length > 0 ? <span><span className="sentry-unmask"> ($</span><span className="sentry-mask">{cart.total}.00</span><span className="sentry-unmask">)</span></span> : ''}
               </Link>
             </div>
           </div>
