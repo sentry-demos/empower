@@ -55,7 +55,7 @@ jobs:
         uses: codecov/codecov-action@v3
         with:
             token: ${{ secrets.CODECOV_TOKEN }}
-            working-directory: ./empower
+            directory: ./empower
           
       - name: Get GCP_ env variables from empower-config/.gcloudrc
         run: |
