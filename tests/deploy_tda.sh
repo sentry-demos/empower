@@ -29,7 +29,7 @@ if ssh $HOST '[[ -d '"$DIR/env"' ]] && [[ ! -z `ls -A '"$DIR/env"'` ]]'; then
 fi
 
 echo "Copying code to remote directory..."
-rsync -az --exclude env * .sauce_credentials $HOST:$DIR/
+rsync -rz --exclude env * .sauce_credentials $HOST:$DIR/
 if [ $? != 0 ]; then
   echo "[ERROR] Failed to rsync code to remote directory."
   exit 1
