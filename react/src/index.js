@@ -86,6 +86,7 @@ Sentry.init({
     new Sentry.Replay({
       // Additional configuration goes in here
       // replaysSessionSampleRate and replaysOnErrorSampleRate is now a top-level SDK option
+      blockAllMedia: false,
     })
   ],
   beforeSend(event, hint) {

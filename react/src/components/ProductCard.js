@@ -13,11 +13,11 @@ function ProductCard (props) {
   return (
     <li key={product.id}>
         <div onClick={(event) => { 
-          if (event.target.id !== "addToCart") {
+          if (event.target.id !== "addToCart" && event.target.parentNode.id !== "addToCart") {
             navigate(itemLink, { state: product })
           }} 
         }>
-            <img src={product.img} alt="product" />
+            <img src={product.img} alt="product" className="sentry-block"/>
             <div>
             <h2>{product.title}</h2>
             <p className="product-description">
@@ -25,7 +25,7 @@ function ProductCard (props) {
             </p>
             </div>
         <button id="addToCart" onClick={() => props.addProduct(product) }>
-            Add to cart — ${product.price}.00
+            <span className="sentry-unmask">Add to cart — $</span>{product.price}.00
         </button>
         <p>{stars} ({product.reviews.length})</p>
         </div>
