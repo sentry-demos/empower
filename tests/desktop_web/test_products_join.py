@@ -14,7 +14,7 @@ def test_products_join(desktop_web_driver, endpoints, random, batch_size, backen
             # TODO make a query_string builder function for sharing this across tests
             query_string = {
                 # 'ruby' /products /checkout endpoints not available yet
-                'backend': backend(exclude=['ruby', 'laravel'])
+                'backend': backend(exclude=['ruby', 'laravel', 'aspnetcore'])
             }
             url = endpoint_products_join + '?' + urlencode(query_string)
 
