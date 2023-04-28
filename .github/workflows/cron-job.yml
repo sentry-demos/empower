@@ -27,4 +27,4 @@ jobs:
       - name: Run cron job script with `sentry-cli monitors run`
         run: |
           export SENTRY_DSN=https://16b1b593fa1c4c67b925cadb496a531b@o87286.ingest.sentry.io/4505093974654976
-          sentry-cli monitors run backend-cron-job -- bash cron-job.py
+          sentry-cli monitors run backend-cron-job -- bash ${{ github.workspace }}/cron-job.py
