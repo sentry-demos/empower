@@ -1,8 +1,23 @@
 import { Component } from 'react';
 import { Link } from 'react-router-dom';
 import './complete.css';
+import * as Sentry from '@sentry/react';
 
 class CompleteError extends Component {
+
+  componentDidMount() {
+    window.setTimeout(() => {
+      if (sessionStorage.getItem("userFeedback") === "true") {
+        sessionStorage.removeItem("userFeedback")
+        if (sessionStorage.getItem("lastErrorEventId")) {
+          Sentry.showReportDialog({ eventId: sessionStorage.getItem("lastErrorEventId")});
+        } else {
+          console.log("No error event id found, not showing User Feedback report dialog")
+        }
+      }
+    }, 3500);
+  }
+
   render() {
     return (
       <div className="checkout-container-complete sentry-unmask">

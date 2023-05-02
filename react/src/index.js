@@ -104,6 +104,10 @@ Sentry.init({
       event.fingerprint = ['{{ default }}', se ];
     }
 
+    if (event.exception) {
+      sessionStorage.setItem("lastErrorEventId", event.event_id)
+    }
+
     return event;
   }
 });
@@ -152,6 +156,13 @@ class App extends Component {
         console.log("> src/index.js se", queryParams.get("se"))
         scope.setTag("se", queryParams.get("se"))
       }
+      
+      if (queryParams.get("userFeedback")) {
+        sessionStorage.setItem("userFeedback", queryParams.get("userFeedback"))
+      } else {
+        sessionStorage.setItem("userFeedback", "false")
+      }
+      sessionStorage.removeItem("lastErrorEventId")
 
       scope.setTag("backendType", backendType)
 
