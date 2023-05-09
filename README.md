@@ -21,10 +21,10 @@ This is a multi-language/framework project that implements Empower Plant web app
 
 ## Additional documentation
 - project README's in subdirectories (e.g. [react/README.md](./react/README.md)
-- **"New deploy.sh and env-config for application-monitoring"** (internal doc)
+- **"New deploy.sh and env-config for empower"** (internal doc)
 - See [troubleshooting](./troubleshooting.md)
-- **"Checklist for adding new language/framework demo to application-monitoring"** (internal doc)
-- [comment at the top of `deploy.sh` file](https://github.com/sentry-demos/application-monitoring/blob/master/deploy.sh#L3-L47).
+- **"Checklist for adding new language/framework demo to Empower"** (internal doc)
+- [comment at the top of `deploy.sh` file](https://github.com/sentry-demos/empower/blob/master/deploy.sh#L3-L47).
 
 ## Setup
 1. Permit your IP address in CloudSQL:
@@ -32,7 +32,7 @@ This is a multi-language/framework project that implements Empower Plant web app
     2. You will see 1 instance, under Actions column click "..." -> Edit
     3. Expand "Connections", under Authorized Networks click "ADD NETWORK"
     4. Google "my IP address", add it.
-2. Copy `local.env` from [application-monitoring-config](https://github.com/sentry-demos/application-monitoring-config) into `env-config` directory of your local repo, or, if you don't have access to it, follow `env-config/example.env`.
+2. Copy `local.env` from [empower-config](https://github.com/sentry-demos/empower-config) into `env-config` directory of your local repo, or, if you don't have access to it, follow `env-config/example.env`.
 3. The `REACT_APP_FLASK_BACKEND` in `env-config/local.env` points to the backend instance deployed to AppEngine, the same one used by the cloud-hosted React web app. Flask is the default backend. If you expect to run other backend types, add values for those in `env-config` in your `local.env` file as well (i.e. `REACT_APP_EXPRESS_BACKEND`).
 4. Confirm [Homebrew](https://brew.sh/) is installed with `brew -v`. If not, install using `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`.
 5. Confirm PostgreSQL is installed with `Postgres -V`. If not, install using `brew install postgresql`.
@@ -112,13 +112,13 @@ Run `gcloud auth login` if it asks you to authenticate, or insert YubiKey.
 ```
 ## Check if you're on your fork. If so, you should see:
 git remote -v
-origin	git@github.com:<your_handle>/application-monitoring.git (fetch)
-origin	git@github.com:<your_handle>/application-monitoring.git (push)
-upstream	git@github.com:sentry-demos/application-monitoring.git (fetch)
-upstream	git@github.com:sentry-demos/application-monitoring.git (push)
+origin	git@github.com:<your_handle>/empower.git (fetch)
+origin	git@github.com:<your_handle>/empower.git (push)
+upstream	git@github.com:sentry-demos/empower.git (fetch)
+upstream	git@github.com:sentry-demos/empower.git (push)
 
 # If you don't have an upstream
-git remote add upstream git@github.com:sentry-demos/application-monitoring.git
+git remote add upstream git@github.com:sentry-demos/empower.git
 
 # Make sure you're on master
 git checkout master
