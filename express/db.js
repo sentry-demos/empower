@@ -43,7 +43,6 @@ const getProducts = async function() {
     }
     span.setData("Products With Reviews", formattedProducts);
     span.finish();
-    transaction.finish();
 
     return formattedProducts;
   } catch(error) {

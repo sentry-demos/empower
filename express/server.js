@@ -18,6 +18,9 @@ const axios = require('axios');
 // Imported Functions
 const DB = require('./db');
 
+// Utils
+const utils = require('./utils');
+
 // [START app]
 const express = require('express');
 const app = express();
@@ -59,6 +62,7 @@ console.log("> ENVIRONMENT", environment);
 // Initialize Sentry
 const Sentry = require('@sentry/node');
 const Tracing = require('@sentry/tracing');
+const { ProfilingIntegration } = require('@sentry/profiling-node');
 Sentry.init({
   dsn: dsn,
   environment: environment,
@@ -66,11 +70,13 @@ Sentry.init({
   integrations: [
     new Sentry.Integrations.Http({ tracing: true }),
     new Tracing.Integrations.Express({ app }),
+    new ProfilingIntegration(),
     new Sentry.Integrations.LocalVariables({
       captureAllExceptions: true,
     }),
   ],
   tracesSampleRate: 1.0,
+  profilesSampleRate: 1.0,
   tracesSampler: samplingContext => {
     // sample out transactions from http OPTIONS requests hitting endpoints
     const request = samplingContext.request
@@ -122,10 +128,15 @@ app.get('/products', async (req, res) => {
     let transaction = Sentry.getCurrentHub()
       .getScope()
       .getTransaction();
-    let span = transaction.startChild({ op: '/products.get_products', description: 'function' });
 
     const products = await DB.getProducts();
-    span.finish();
+
+    let profilingSpan = transaction.startChild({ op: '/products.get_iterator', description: 'function'});
+
+    await utils.getIteratorProcessor(products);
+    
+    profilingSpan.finish();
+    transaction.finish();
 
     res.status(200).send(products);
 
