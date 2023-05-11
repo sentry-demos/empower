@@ -15,7 +15,7 @@ const getProducts = async function() {
       .getScope()
       .getTransaction();
     let span = transaction.startChild({ op: 'getproducts', description: 'db.query'});
-    const productsQuery = `SELECT *, pg_sleep(${sleepTime}) FROM products`;
+    const productsQuery = `SELECT * FROM products WHERE id IN (SELECT id from products, pg_sleep(${sleepTime}))`;
     const subspan = span.startChild({op: 'fetch products', description: productsQuery});
 
     const products = await knex.raw(productsQuery)
@@ -32,7 +32,7 @@ const getProducts = async function() {
     span = transaction.startChild({ op: 'getproducts.reviews', description: 'db.query'});
     let formattedProducts = [];
     for(product of products.rows) {
-      const reviewsQuery = `SELECT *, pg_sleep(0.25) FROM reviews WHERE productId = ${product.id}`;
+      const reviewsQuery = `SELECT * FROM reviews WHERE productId = ${product.id} AND id IN (SELECT id from reviews, pg_sleep(0.25))`;
       const subspan = span.startChild({op: 'fetch review', description: reviewsQuery});
       const retrievedReviews = await knex.raw(reviewsQuery);
       let productWithReviews = product;
