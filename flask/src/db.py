@@ -48,11 +48,11 @@ def get_products():
 
         n = weighter(operator.le, 12)
         products = connection.execute(
-            "SELECT *, pg_sleep(%s) FROM products" % (n)
+            "SELECT * FROM products WHERE id IN (SELECT id from products, pg_sleep(%s))" % (n)
         ).fetchall()
 
         for product in products:
-            query = text("SELECT *, pg_sleep(0.0625) FROM reviews WHERE productId = :x")
+            query = text("SELECT * FROM reviews WHERE productId = :x AND id IN (SELECT id from reviews, pg_sleep(0.0625))")
             reviews = connection.execute(query, x=product.id).fetchall()
 
             result = dict(product)
