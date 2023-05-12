@@ -18,6 +18,7 @@ This is a multi-language/framework project that implements Empower Plant web app
 | @sentry/node | 6.16.1 |
 | sentry-spring-boot-starter | 5.5.1 |
 | sentry-logback | 5.5.1 |
+| Sentry.AspNetCore | 3.31.0 |
 
 ## Additional documentation
 - project README's in subdirectories (e.g. [react/README.md](./react/README.md)
