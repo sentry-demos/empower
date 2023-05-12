@@ -1,6 +1,5 @@
 import { createApp } from "vue";
 import * as Sentry from "@sentry/vue";
-import { BrowserTracing } from "@sentry/tracing";
 import { createPinia } from "pinia";
 // import { Debug as DebugIntegration } from "@sentry/integrations";
 
@@ -11,14 +10,14 @@ const app = createApp(App);
 app.use(createPinia());  
 app.use(router);
 
-const RELEASE = process.env.RELEASE
+const RELEASE = import.meta.env.VITE_RELEASE;
 
 Sentry.init({
     app,
     dsn: import.meta.env.VITE_APP_DSN,
     release: RELEASE,
     integrations: [
-      new BrowserTracing({
+      new Sentry.BrowserTracing({
         routingInstrumentation: Sentry.vueRouterInstrumentation(router),
         tracingOrigins: ["localhost", "my-site-url.com", /^\//],
       }),
@@ -31,11 +30,15 @@ Sentry.init({
     //       stringify: true,
     //     }
     //   )
+    new Sentry.Replay(),
     ],
     // Set tracesSampleRate to 1.0 to capture 100%
     // of transactions for performance monitoring.
     // We recommend adjusting this value in production
     tracesSampleRate: 1.0,
+
+    replaysOnErrorSampleRate: 1.0,
+    replaysSessionSampleRate: 1.0,
     autoSessionTracking: true,
     trackComponents: true,
   });
