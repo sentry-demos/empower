@@ -101,8 +101,6 @@ function cleanup {
   rm -f $top/*/.app.yaml
   rm -f $top/spring-boot/src/main/appengine/app.yaml
   rm -f $top/spring-boot/src/main/resources/application.properties
-  rm -f $top/aspnetcore/bin/Release/netcoreapp3.1/publish/.app.yaml
-  rm -f $top/aspnetcore/appsettings.json
   if [ "$generated_envs" != "" ]; then
     rm -f $generated_envs # bash only (passed as separate args)
   fi
@@ -206,12 +204,11 @@ for proj in $projects; do # bash only
       sed -i '' 's/<CLOUD SQL CONNECTION NAME>/"'"$DB_CLOUD_SQL_CONNECTION_NAME"'"/g' $ypath/app.yaml
       mvn clean package appengine:deploy
     elif [ "$proj" == "aspnetcore" ]; then
-      ypath=bin/Release/netcoreapp3.1/publish
-      sed -e 's/<SERVICE>/'$app_engine_service'/g' app.yaml.template > $ypath/.app.yaml
-      sed -i '' 's/<CLOUD SQL CONNECTION NAME>/'"$DB_CLOUD_SQL_CONNECTION_NAME"'/g' $ypath/.app.yaml
-      cd $ypath
+      # TODO: envsubst is super easy - this should be the default for all projects
+      envsubst < app.yaml.template > .app.yaml
+      envsubst < Dockerfile.template > Dockerfile
       gcloud app deploy --version v1 --quiet .app.yaml
-      cd -
+      rm Dockerfile
     else
       # all other projects
       sed -e 's/<SERVICE>/'$app_engine_service'/g' app.yaml.template > .app.yaml

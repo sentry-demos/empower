@@ -1,48 +1,37 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using aspnetcore.Models;
-using Microsoft.Extensions.Configuration;
-using Sentry;
+namespace Empower.Backend.Controllers;
 
-namespace aspnetcore.Controllers
+[ApiController]
+[Route("[controller]")]
+public class CheckoutController : ControllerBase
 {
-    [ApiController]
-    [Route("[controller]")]
-    public class CheckoutController : ControllerBase
+    [HttpPost]
+    public void Checkout()
     {
-        private readonly ILogger<CheckoutController> _logger;
-        private hardwarestoreContext _context = null;
-        private readonly IConfiguration Configuration;
+        var se = (string?) Request.Headers["se"];
+        var customerType = (string?) Request.Headers["customerType"];
+        var email = (string?) Request.Headers["email"];
 
-        /* These arguments are wired up automagically by the framework */
-        public CheckoutController(ILogger<CheckoutController> logger, hardwarestoreContext context, IConfiguration configuration)
+        SentrySdk.ConfigureScope(scope =>
         {
-            _logger = logger;
-            _context = context;
-            Configuration = configuration;
-        }
-
-        // seems like this can return any object - will be automatically serialized to JSON
-        [HttpPost]
-        public ActionResult Checkout()
-        { 
-            Response.Headers.Add("access-control-allow-origin", "*");
-            var se = Request.Headers["se"];
-            var customerType = Request.Headers["customerType"];
-            var email = Request.Headers["email"];
-            SentrySdk.ConfigureScope(scope =>
+            if (se is not null)
             {
                 scope.SetTag("se", se);
+            }
+
+            if (customerType is not null)
+            {
                 scope.SetTag("customerType", customerType);
-                scope.User = new User {
+            }
+
+            if (email is not null)
+            {
+                scope.User = new User
+                {
                     Email = email
                 };
-            });
-            throw new Exception("Not enough inventory");
-        }
+            }
+        });
+
+        throw new Exception("Not enough inventory");
     }
 }
