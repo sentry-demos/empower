@@ -28,10 +28,17 @@ builder.Services.AddDbContext<HardwareStoreContext>(options =>
 // Initialize Sentry.
 builder.WebHost.UseSentry(options =>
 {
-    // Use the environment variables set by the startup scripts.
-    options.Dsn = Environment.GetEnvironmentVariable("ASPNETCORE_APP_DSN");
+    // Set the DSN from the environment variable set by the deploy.sh script, if available.
+    // But don't overwrite any existing DSN with null, as that would disable Sentry.
+    var dsn = Environment.GetEnvironmentVariable("ASPNETCORE_APP_DSN");
+    if (dsn != null)
+    {
+        options.Dsn = dsn;
+    }
+
+    // Set the release from the environment variable set by the deploy.sh script, if available.
     options.Release = Environment.GetEnvironmentVariable("RELEASE");
-    
+
     // Enable some features.
     options.TracesSampleRate = 1.0;
     options.AutoSessionTracking = true;
@@ -44,10 +51,14 @@ builder.WebHost.UseSentry(options =>
     }
 });
 
+// Add the HTTP Client factory.
+builder.Services.AddHttpClient();
+
 // Build the application.
 var app = builder.Build();
 
 // Add middleware components, including Sentry Tracing.
+app.UseMiddleware<AppMiddleware>();
 app.UseCors();
 app.UseSentryTracing();
 app.MapControllers();

@@ -29,4 +29,15 @@ internal static class AppUtils
 
         throw new Exception("Failed to get the database connection string.");
     }
+
+    public static void CopyHeadersFrom(this HttpRequestMessage request, IHeaderDictionary headers, params string[] keys)
+    {
+        foreach (var key in keys)
+        {
+            if (headers.TryGetValue(key, out var value))
+            {
+                request.Headers.Add(key, value.ToString());
+            }
+        }
+    }
 }
