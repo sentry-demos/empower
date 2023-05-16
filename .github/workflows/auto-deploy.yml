@@ -53,6 +53,7 @@ jobs:
         
       - name: Run tests and collect coverage
         run: |
+          pip install --upgrade sentry-sdk
           pip install selenium
           pip install Appium-Python-Client
           pip install pytest
