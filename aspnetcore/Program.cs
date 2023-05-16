@@ -44,6 +44,9 @@ builder.WebHost.UseSentry(options =>
     }
 });
 
+// Add the HTTP Client factory.
+builder.Services.AddHttpClient();
+
 // Build the application.
 var app = builder.Build();
 
