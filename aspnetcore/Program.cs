@@ -48,6 +48,7 @@ builder.WebHost.UseSentry(options =>
 var app = builder.Build();
 
 // Add middleware components, including Sentry Tracing.
+app.UseMiddleware<AppMiddleware>();
 app.UseCors();
 app.UseSentryTracing();
 app.MapControllers();
