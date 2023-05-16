@@ -54,6 +54,7 @@ jobs:
       - name: Run tests and collect coverage
         run: |
           pip install pytest
+          pip install pytest-cov
           pytest --cov .
         
       - name: Upload coverage reports to Codecov
