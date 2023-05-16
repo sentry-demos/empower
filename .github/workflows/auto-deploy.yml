@@ -54,6 +54,7 @@ jobs:
       - name: Run tests and collect coverage
         run: |
           pip install selenium
+          pip install Appium-Python-Client
           pip install pytest
           pip install pytest-cov
           pytest --cov .
