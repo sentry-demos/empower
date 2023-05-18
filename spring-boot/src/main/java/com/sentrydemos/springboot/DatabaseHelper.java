@@ -53,7 +53,9 @@ public class DatabaseHelper {
 	}
 
 	public List<Review> mapAllReviews(int productId, ISpan span) {		
-		String sql = "SELECT * FROM reviews WHERE productId = " + String.valueOf(productId) + " AND id IN (SELECT id from reviews, pg_sleep(0.25))";
+		// weekly_promotions is a "sleepy view", run the following query to get current sleep duration:
+		// SELECT pg_get_viewdef('weekly_promotions', true)
+		String sql = "SELECT * FROM reviews, weekly_promotions WHERE productId = " + String.valueOf(productId);
 
 		ISpan sqlSpan = span.startChild("db", sql);
 		List<Review> allReviews = jdbcTemplate.query(sql, (rs, rowNum) -> new Review(rs.getInt("id"), rs.getInt("productid"),

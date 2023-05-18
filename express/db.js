@@ -5,7 +5,6 @@ const Sentry = require('@sentry/node');
 // is why we are using it here. See docs:
 // https://cloud.google.com/sql/docs/postgres/connect-app-engine-standard#node.js
 const knex = openDBConnection();
-const sleepTime = 0.2;
 
 const getProducts = async function() {
   let results = [];
@@ -15,7 +14,9 @@ const getProducts = async function() {
       .getScope()
       .getTransaction();
     let span = transaction.startChild({ op: 'getproducts', description: 'db.query'});
-    const productsQuery = `SELECT * FROM products WHERE id IN (SELECT id from products, pg_sleep(${sleepTime}))`;
+    // backorder_inventory is a "sleepy view", run the following query to get current sleep duration:
+    // SELECT pg_get_viewdef('backorder_inventory', true)
+    const productsQuery = `SELECT * FROM products CROSS JOIN backorder_inventory`; 
     const subspan = span.startChild({op: 'fetch products', description: productsQuery});
 
     const products = await knex.raw(productsQuery)
@@ -32,7 +33,9 @@ const getProducts = async function() {
     span = transaction.startChild({ op: 'getproducts.reviews', description: 'db.query'});
     let formattedProducts = [];
     for(product of products.rows) {
-      const reviewsQuery = `SELECT * FROM reviews WHERE productId = ${product.id} AND id IN (SELECT id from reviews, pg_sleep(0.25))`;
+      // weekly_promotions is a "sleepy view", run the following query to get current sleep duration:
+      // SELECT pg_get_viewdef('weekly_promotions', true)
+      const reviewsQuery = `SELECT * FROM reviews, weekly_promotions WHERE productId = ${product.id}`;
       const subspan = span.startChild({op: 'fetch review', description: reviewsQuery});
       const retrievedReviews = await knex.raw(reviewsQuery);
       let productWithReviews = product;

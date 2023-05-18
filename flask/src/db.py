@@ -52,7 +52,9 @@ def get_products():
         ).fetchall()
 
         for product in products:
-            query = text("SELECT * FROM reviews WHERE productId = :x AND id IN (SELECT id from reviews, pg_sleep(0.0625))")
+            # product_bundles is a "sleepy view", run the following query to get current sleep duration:
+            # SELECT pg_get_viewdef('product_bundles', true)
+            query = text("SELECT * FROM reviews, product_bundles WHERE productId = :x")
             reviews = connection.execute(query, x=product.id).fetchall()
 
             result = dict(product)
