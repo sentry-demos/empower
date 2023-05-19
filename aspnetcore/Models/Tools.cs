@@ -1,19 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
+namespace Empower.Backend.Models;
 
-// Code scaffolded by EF Core assumes nullable reference types (NRTs) are not used or disabled.
-// If you have enabled NRTs for your project, then un-comment the following line:
-// #nullable disable
-
-namespace aspnetcore.Models
+public class Tools
 {
-    public partial class Tools
-    {
-        public int Id { get; set; }
-        public string Name { get; set; }
-        public string Type { get; set; }
-        public string Sku { get; set; }
-        public string Image { get; set; }
-        public int Price { get; set; }
-    }
+    public required int Id { get; set; }
+    public required string Name { get; set; }
+    public required string Type { get; set; }
+    public required string Sku { get; set; }
+    public required string Image { get; set; }
+    public required int Price { get; set; }
 }

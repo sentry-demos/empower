@@ -7,6 +7,4 @@ function cleanup {
 }
 trap cleanup EXIT
 
-dotnet run --urls=http://localhost:$ASPNETCORE_LOCAL_PORT
-
-
+dotnet run -c Release --no-build --urls=http://localhost:$ASPNETCORE_LOCAL_PORT --environment=Development

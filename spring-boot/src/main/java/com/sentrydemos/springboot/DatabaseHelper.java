@@ -53,7 +53,7 @@ public class DatabaseHelper {
 	}
 
 	public List<Review> mapAllReviews(int productId, ISpan span) {		
-		String sql = "SELECT *, pg_sleep(0.25) FROM reviews WHERE productId = " + String.valueOf(productId);
+		String sql = "SELECT * FROM reviews WHERE productId = " + String.valueOf(productId) + " AND id IN (SELECT id from reviews, pg_sleep(0.25))";
 
 		ISpan sqlSpan = span.startChild("db", sql);
 		List<Review> allReviews = jdbcTemplate.query(sql, (rs, rowNum) -> new Review(rs.getInt("id"), rs.getInt("productid"),

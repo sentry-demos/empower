@@ -1,36 +1,78 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using aspnetcore.Models;
-using Microsoft.Extensions.Configuration;
+namespace Empower.Backend.Controllers;
 
-namespace aspnetcore.Controllers
+[ApiController]
+[Route("[controller]")]
+public class ProductsController : ControllerBase
 {
-    [ApiController]
-    [Route("[controller]")]
-    public class ProductsController : ControllerBase
+    private readonly HardwareStoreContext _dbContext;
+    private readonly IHttpClientFactory _httpClientFactory;
+    private readonly string _rubyBackendBaseUrl;
+
+    public ProductsController(HardwareStoreContext dbContext, IHttpClientFactory httpClientFactory)
     {
-        private readonly ILogger<ProductsController> _logger;
-        private hardwarestoreContext _context = null;
-        private readonly IConfiguration Configuration;
+        _dbContext = dbContext;
+        _httpClientFactory = httpClientFactory;
+        _rubyBackendBaseUrl = Environment.GetEnvironmentVariable("RUBY_BACKEND") ??
+                              "https://application-monitoring-ruby-dot-sales-engineering-sf.appspot.com";
+    }
 
-        /* These arguments are wired up automagically by the framework */
-        public ProductsController(ILogger<ProductsController> logger, hardwarestoreContext context, IConfiguration configuration)
+    [HttpGet]
+    public async Task<IList<Product>> Get()
+    {
+        var products = await GetProductsAsync();
+        
+        await CallHttpApiAsync();
+        
+        return products;
+    }
+
+    private async Task<List<Product>> GetProductsAsync()
+    {
+        var span = SentrySdk.GetSpan()?.StartChild("/products.get_products", "function");
+        
+        var products = await _dbContext.Products
+            .Include(e => e.Reviews)
+            .ToListAsync();
+
+        CloseDbConnectionSpan();
+        
+        span?.Finish();
+        
+        return products;
+    }
+
+    private static void CloseDbConnectionSpan()
+    {
+        // Workaround for https://github.com/getsentry/sentry-dotnet/issues/2372
+        var span = SentrySdk.GetSpan();
+        if (span?.Operation == "db.connection")
         {
-            _logger = logger;
-            _context = context;
-            Configuration = configuration;
+            span.Finish();
+        }
+    }
+
+    private async Task CallHttpApiAsync()
+    {
+        // NOTE: This is just here to demonstrate calling another service with HTTP and collecting spans accordingly.
+        // It doesn't actually do anything with the result unless there's a failure response code.
+
+        var span = SentrySdk.GetSpan()?.StartChild("/api_request", "function");
+        
+        var request = new HttpRequestMessage(HttpMethod.Get, _rubyBackendBaseUrl + "/api");
+        request.CopyHeadersFrom(Request.Headers, "se", "customerType", "email");
+        
+        var httpClient = _httpClientFactory.CreateClient();
+        var response = await httpClient.SendAsync(request);
+
+        try
+        {
+            response.EnsureSuccessStatusCode();
+        }
+        catch (Exception exception)
+        {
+            SentrySdk.CaptureException(exception);
         }
 
-        // seems like this can return any object - will be automatically serialized to JSON
-        [HttpGet]
-        public ActionResult Get()
-        {
-            return Ok(_context.Products.Include(e => e.Reviews).ToList());
-        }
+        span?.Finish();
     }
 }

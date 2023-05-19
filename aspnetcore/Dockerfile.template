@@ -1,0 +1,23 @@
+﻿FROM mcr.microsoft.com/dotnet/aspnet:7.0 AS base
+WORKDIR /app
+ENV ASPNETCORE_URLS=http://+:8080
+EXPOSE 8080
+
+FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
+ENV SENTRY_AUTH_TOKEN=${SENTRY_AUTH_TOKEN}
+ENV SENTRY_ORG=${SENTRY_ORG}
+ENV ASPNETCORE_SENTRY_PROJECT=${ASPNETCORE_SENTRY_PROJECT}
+WORKDIR /src
+COPY ["Empower.Backend.csproj", "./"]
+RUN dotnet restore "Empower.Backend.csproj"
+COPY . .
+WORKDIR "/src/"
+RUN dotnet build "Empower.Backend.csproj" --no-restore -c Release -o /app/build
+
+FROM build AS publish
+RUN dotnet publish "Empower.Backend.csproj" -c Release -o /app/publish -p:UseAppHost=false -p:UseSentryCLI=false
+
+FROM base AS final
+WORKDIR /app
+COPY --from=publish /app/publish .
+ENTRYPOINT ["dotnet", "Empower.Backend.dll"]
