@@ -110,6 +110,16 @@ trap cleanup EXIT
 run_sh_pids=""
 generated_envs=""
 
+# Use SENTRY_AUTH_TOKEN stored in Google Cloud Secret Manager. Sentry CLI will use this token for authentication.
+# This allows for more consisten behavior as opposed to relying on personal tokens. Secret Manger is preferable
+# to GitHub Secrets because it's accessible both from CI and when running locally.
+if command -v gcloud &> /dev/null ; then
+  export SENTRY_AUTH_TOKEN=$(gcloud secrets versions access latest --secret="SENTRY_AUTH_TOKEN")
+else
+  echo "$0 [ERROR]: Please install gcloud command (used to deploy to Google Cloud and retrieve SENTRY_AUTH_TOKEN)"
+  exit 1
+fi
+
 for proj in $projects; do # bash only
 
   echo "|||"
@@ -166,13 +176,6 @@ for proj in $projects; do # bash only
   if [[ "$fe_projects" = *"$proj "* ]]; then # project is frontend
     sentry-release.sh $env $RELEASE
     # NOTE: Sentry may create releases from events even without this step
-  fi
-
-  # If gcloud is installed, use it to get the sentry auth token from Google Cloud Secret Manager.
-  # Sentry CLI will use this token for authentication.  Otherwise, one can use `sentry-cli login`,
-  # but that will not work when deploying to staging or production.
-  if command -v gcloud &> /dev/null ; then
-    export SENTRY_AUTH_TOKEN=$(gcloud secrets versions access latest --secret="SENTRY_AUTH_TOKEN")
   fi
 
   # *** DEPLOY OR RUN ***
