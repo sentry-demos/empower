@@ -14,6 +14,7 @@ USERNAME = os.getenv("DB_USERNAME")
 PASSWORD = os.getenv("DB_PASSWORD")
 FLASK_ENV = os.environ.get("FLASK_ENV")
 CLOUD_SQL_CONNECTION_NAME = os.environ.get("DB_CLOUD_SQL_CONNECTION_NAME")
+PRODUCTS_NUM = 4;
 
 class DatabaseConnectionError (Exception):
     pass
@@ -47,6 +48,9 @@ def get_products():
             connection = db.connect()
 
         n = weighter(operator.le, 12)
+        # adjust by number of products to get the same timeout as we had in the past
+        # before pg_sleep() was moved out of SELECT clause.
+        n *= PRODUCTS_NUM; 
         products = connection.execute(
             "SELECT * FROM products WHERE id IN (SELECT id from products, pg_sleep(%s))" % (n)
         ).fetchall()
