@@ -9,7 +9,11 @@ on:
     - cron:  '0 0 * * *' # every day at midnight UTC 
     # see https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#schedule
   workflow_dispatch:
-  
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
 jobs:
   default-job:
     if: github.repository_owner == 'sentry-demos' # don't run in forks
