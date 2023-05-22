@@ -52,7 +52,8 @@ jobs:
         working-directory: ./empower/react
         
       - name: Run Python Tests
-        run:  
+        run: |
+          pip install -U pytest
           pytest --cov=.
         working-directory: ./empower/flask/src
         
