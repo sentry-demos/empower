@@ -51,15 +51,6 @@ jobs:
           npm test -- --coverage
         working-directory: ./empower/react
         
-      - name: Run tests and collect coverage
-        run: |
-          pip install --upgrade sentry-sdk
-          pip install selenium
-          pip install Appium-Python-Client
-          pip install pytest
-          pip install pytest-cov
-          pytest --cov .
-        
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v3
         with:
