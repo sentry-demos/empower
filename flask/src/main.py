@@ -6,29 +6,21 @@ import sys
 import time
 from flask import Flask, json, request, make_response, send_from_directory
 from flask_cors import CORS
-from dotenv import load_dotenv
+import dotenv
 from .db import get_products, get_products_join, get_inventory
 from .utils import parseHeaders, get_iterator
 import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
 from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
-load_dotenv()
 
-PORT = os.environ["PORT"]
-RELEASE = os.environ["RELEASE"]
-DSN = os.environ["FLASK_APP_DSN"]
-ENVIRONMENT = os.environ["FLASK_ENV"]
-RUBY_BACKEND = os.environ["RUBY_BACKEND"]
 RUBY_CUSTOM_HEADERS = ['se', 'customerType', 'email']
-
 pests = ["aphids", "thrips", "spider mites", "lead miners", "scale", "whiteflies", "earwigs", "cutworms", "mealybugs", "fungus gnats"]
-RUN_SLOW_PROFILE = True
-if "RUN_SLOW_PROFILE" in os.environ:
-    RUN_SLOW_PROFILE = os.environ["RUN_SLOW_PROFILE"].lower() == "true"
 
-print("> DSN", DSN)
-print("> RELEASE", RELEASE)
-print("> ENVIRONMENT", ENVIRONMENT)
+RELEASE = None
+DSN = None
+ENVIRONMENT = None
+RUBY_BACKEND = None
+RUN_SLOW_PROFILE = None
 
 def before_send(event, hint):
     # 'se' tag may have been set in app.before_request
@@ -52,20 +44,41 @@ def traces_sampler(sampling_context):
     else:
         return 1.0
 
-sentry_sdk.init(
-    dsn=DSN,
-    release=RELEASE,
-    environment=ENVIRONMENT,
-    integrations=[FlaskIntegration(), SqlalchemyIntegration()],
-    traces_sample_rate=1.0,
-    before_send=before_send,
-    traces_sampler=traces_sampler,
-    _experiments={
-        "profiles_sample_rate": 1.0
-    }
-)
+class MyFlask(Flask):
+    def run(self, host=None, port=None, debug=None, load_dotenv=True, **options):
+        global RELEASE, DSN, ENVIRONMENT, RUBY_BACKEND, RUN_SLOW_PROFILE;
+        dotenv.load_dotenv()
 
-app = Flask(__name__)
+        RELEASE = os.environ["RELEASE"]
+        DSN = os.environ["FLASK_APP_DSN"]
+        ENVIRONMENT = os.environ["FLASK_ENV"]
+        RUBY_BACKEND = os.environ["RUBY_BACKEND"]
+
+        RUN_SLOW_PROFILE = True
+        if "RUN_SLOW_PROFILE" in os.environ:
+            RUN_SLOW_PROFILE = os.environ["RUN_SLOW_PROFILE"].lower() == "true"
+
+        print("> DSN", DSN)
+        print("> RELEASE", RELEASE)
+        print("> ENVIRONMENT", ENVIRONMENT)
+
+        sentry_sdk.init(
+            dsn=DSN,
+            release=RELEASE,
+            environment=ENVIRONMENT,
+            integrations=[FlaskIntegration(), SqlalchemyIntegration()],
+            traces_sample_rate=1.0,
+            before_send=before_send,
+            traces_sampler=traces_sampler,
+            _experiments={
+                "profiles_sample_rate": 1.0
+            }
+        )
+
+        super(MyFlask, self).run(host=host, port=port, debug=debug, load_dotenv=load_dotenv, **options)
+
+
+app = MyFlask(__name__)
 CORS(app)
 
 @app.route('/checkout', methods=['POST'])
@@ -226,4 +239,4 @@ def run():
         raise SystemExit("Failed to start: need python3")
     # This is used when running locally only. When deploying to Google App
     # Engine, a webserver process such as Gunicorn will serve the app.
-    app.run(host='127.0.0.1', port=PORT, debug=False)
+    app.run(host='127.0.0.1', port=os.environ["PORT"], debug=False)
