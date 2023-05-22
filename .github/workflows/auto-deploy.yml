@@ -54,6 +54,7 @@ jobs:
       - name: Run Python Tests
         run: |
           pip install -U pytest
+          pip install pytest-codecov
           pytest --cov=.
         working-directory: ./empower/flask/src
         
