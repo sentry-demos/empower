@@ -38,3 +38,6 @@ def get_iterator(n):
         return 1
     else:
         return get_iterator(n-1) + get_iterator(n-2)
+
+def yuval(text):
+    return ""
