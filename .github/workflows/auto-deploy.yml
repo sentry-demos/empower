@@ -51,6 +51,11 @@ jobs:
           npm test -- --coverage
         working-directory: ./empower/react
         
+      - name: Run Python Tests
+        run:  
+          pytest --cov=.
+        working-directory: ./empower/flask/src
+        
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v3
         with:
