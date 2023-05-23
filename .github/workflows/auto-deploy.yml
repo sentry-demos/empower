@@ -50,6 +50,18 @@ jobs:
           version: 2.17.4
           token: ${{ SECRETS.SENTRY_AUTH_TOKEN }} # from GitHub secrets
           
+      - name: Get commit SHA that was last successfully deployed
+        uses: nrwl/nx-set-shas@v3.0.1
+        with:
+          main-branch-name: master
+          error-on-no-successful-workflow: true
+          working-directory: empower
+      
+      # Test previous step worked
+      - run: |
+          echo "BASE: ${{ env.NX_BASE }}"
+          echo "HEAD: ${{ env.NX_HEAD }}"
+          
       - name: Run tests
         run: |
           npm install
