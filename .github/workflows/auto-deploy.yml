@@ -54,7 +54,7 @@ jobs:
         uses: nrwl/nx-set-shas@v3.0.1
         with:
           main-branch-name: master
-          error-on-no-successful-workflow: true
+          error-on-no-successful-workflow: false
           working-directory: empower
       
       # Test previous step worked
