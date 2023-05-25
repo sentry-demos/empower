@@ -42,13 +42,6 @@ web.php has multiple endpoints for showing different ways that errors are handle
 * If you are noticing changes aren't being picked up by your app or any other unexpected behavior, try clearing your cache with: `php artisan cache:clear`
 * For more information about the ORM being used, check out [Eloquent ORM](https://laravel.com/docs/5.0/eloquent#introduction)
 
-# Run With Docker
-1. docker build -t my-first-image .
-2. docker run -p 8000:8000 my-first-image
-
-# GCP Cloud Run
-1. make deploy_gcp
-
 ## Technical Notes or Troubleshooting
 This demo leverages log channels to record more info and allow you
 to configure the log level in `logging.php`.
