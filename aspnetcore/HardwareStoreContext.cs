@@ -1,3 +1,6 @@
+using System.Data.Common;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+
 namespace Empower.Backend;
 
 public class HardwareStoreContext : DbContext
@@ -111,5 +114,20 @@ public class HardwareStoreContext : DbContext
                 .HasColumnName("type")
                 .HasColumnType("character varying");
         });
+    }
+}
+
+public class DemoCommandInterceptor : DbCommandInterceptor
+{
+    public override async ValueTask<InterceptionResult<DbDataReader>> ReaderExecutingAsync(
+        DbCommand command,
+        CommandEventData eventData,
+        InterceptionResult<DbDataReader> result,
+        CancellationToken cancellationToken = default)
+    {
+        // for demoing slowness of db query
+        await Task.Delay(TimeSpan.FromSeconds(Random.Shared.Next(1, 3)), cancellationToken);
+        
+        return await base.ReaderExecutingAsync(command, eventData, result, cancellationToken);
     }
 }
