@@ -28,7 +28,7 @@ web.php has multiple endpoints for showing different ways that errors are handle
 | php   | 7.2.5     |
 
 ## First-time Setup
-1. Install [php](https://www.php.net/downloads)
+1. Install [php](https://www.php.net/downloads).
 2. Install [Composer](https://getcomposer.org/download/)
 3. Install [Laravel](composer global require laravel/installer)
 4. Install [artisan](https://github.com/artisan-roaster-scope/artisan/releases/tag/v2.8.2)
@@ -46,7 +46,7 @@ web.php has multiple endpoints for showing different ways that errors are handle
 This demo leverages log channels to record more info and allow you
 to configure the log level in `logging.php`.
 The minimum event level is set to `debug` by default which may be
-too verbose. 
+too verbose.
 
 # GIF
 
