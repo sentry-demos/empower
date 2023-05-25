@@ -104,7 +104,7 @@ jobs:
       - name: Deploy to production
         run: |
           CHANGED_PROJECTS=$(./bin/projects_changed_bw_commits.sh "${{ env.NX_BASE }}" "${{ env.NX_HEAD }}")
-          if [[ ! -z "$X" ]]; then 
+          if [[ ! -z "$CHANGED_PROJECTS" ]]; then 
             ./deploy.sh $CHANGED_PROJECTS --env=production
           else 
             echo "No deployable projects have been changed since last successful deployment. Nothing to do."
