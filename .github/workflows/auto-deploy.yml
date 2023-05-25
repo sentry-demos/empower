@@ -102,6 +102,8 @@ jobs:
         run: cp empower-config/production.env empower/env-config/
         
       - name: Deploy to production
-        run: ./empower/deploy.sh react --env=production
+        run: |
+          CHANGED_PROJECTS=$(./bin/projects_changed_bw_commits.sh "${{ env.NX_BASE }}" "${{ env.NX_HEAD }}")
+          ./empower/deploy.sh $CHANGED_PROJECTS --env=production
           
       - run: echo "Job status is ${{ job.status }}."
