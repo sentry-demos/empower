@@ -1,0 +1,5 @@
+# Projects/directories listed here will be ommitted from auto-deployment to production
+
+vue
+ruby
+laravel
