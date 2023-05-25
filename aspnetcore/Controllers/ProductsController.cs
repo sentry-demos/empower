@@ -30,9 +30,6 @@ public class ProductsController : ControllerBase
     {
         var span = SentrySdk.GetSpan()?.StartChild("/products.get_products", "function");
 
-        // just for demoing slowness
-        await Task.Delay(TimeSpan.FromSeconds(Random.Shared.Next(1, 7)));
-        
         var products = await _dbContext.Products
             .Include(e => e.Reviews)
             .ToListAsync();

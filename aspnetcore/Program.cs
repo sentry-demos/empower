@@ -23,6 +23,8 @@ builder.Services.AddDbContext<HardwareStoreContext>(options =>
 {
     var connectionString = AppUtils.GetConnectionString(builder.Configuration);
     options.UseNpgsql(connectionString);
+
+    options.AddInterceptors(new DemoCommandInterceptor());
 });
 
 // Initialize Sentry.
