@@ -9,8 +9,17 @@ set -e
 # TODO: In the future, if/when empower-config is merged into empower, also include projects which
 # have their production env-config changed.
 
-# non-project directories and projects with missing deploy scripts
-exclude_dirs=(".github" "env-config" "bin" "vue" "ruby") 
+# non-project directories
+exclude_dirs=(".github" "env-config" "bin") 
+
+# Read all entries in auto-deploy.exclude file and add them to the exclude_dirs array
+while IFS= read -r line; do
+  # skip lines that have only whitespace or start with a #
+  if [[ "$line" =~ ^[[:space:]]*$ || "$line" =~ ^# ]]; then
+    continue
+  fi
+  exclude_dirs+=("$line")
+done < <(sed -e '$a\' auto-deploy.exclude) # handles missing newline at end of file
 
 # Parse and validate command-line arguments
 base="$1"
