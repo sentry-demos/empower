@@ -28,5 +28,8 @@ def job():
 
 if __name__ == "__main__":
     sentry_sdk.init(dsn=DSN)
+    sentry_sdk.set_context("monitor", {
+        "slug": "cron-job-monitor-python",
+    })
     job()
     exit(0)
