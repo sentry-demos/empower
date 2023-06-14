@@ -89,30 +89,7 @@ Sentry.init({
   includeLocalVariables: true
 })
 
-// The Sentry request handler must be the first middleware on the app
-app.use(Sentry.Handlers.requestHandler());
-
-// TracingHandler creates a trace for every incoming request
-app.use(Sentry.Handlers.tracingHandler());
-
-app.use(cors());
-app.use(express.urlencoded({extended: true}));
-app.use(express.json());
-app.use(sentryEventContext);
-
-// Configure ENV
-require('dotenv').config();
-
-app.get('/', (req, res) => {
-  res.send('Sentry Express Service says Hello - turn me into a microservice that powers Payments, Shipping, or Customers');
-});
-
-app.get('/success', (req, res) => {
-  console.log("> success")
-  res.send(`success from express`);
-});
-
-app.get('/products', async (req, res) => {
+async function fetchProducts(req, res){
   try {
     // This /api call must happen before the DB.products() call or else it's a broken subtrace (if you do it after DB.Products())
     await axios.get(RUBY_BACKEND + "/api", {headers: headers} )
@@ -144,7 +121,32 @@ app.get('/products', async (req, res) => {
     Sentry.captureException(error);
     throw(error);
   }
+}
+
+// The Sentry request handler must be the first middleware on the app
+app.use(Sentry.Handlers.requestHandler());
+
+// TracingHandler creates a trace for every incoming request
+app.use(Sentry.Handlers.tracingHandler());
+
+app.use(cors());
+app.use(express.urlencoded({extended: true}));
+app.use(express.json());
+app.use(sentryEventContext);
+
+// Configure ENV
+require('dotenv').config();
+
+app.get('/', (req, res) => {
+  res.send('Sentry Express Service says Hello - turn me into a microservice that powers Payments, Shipping, or Customers');
 });
+
+app.get('/success', (req, res) => {
+  console.log("> success")
+  res.send(`success from express`);
+});
+
+app.get('/products', fetchProducts);
 
 app.get('/products-join', async(req, res) => {
   try {
