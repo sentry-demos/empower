@@ -55,7 +55,6 @@ Sentry.init({
   environment: ENVIRONMENT,
   tracesSampleRate: 1.0,
   replaysSessionSampleRate: 1.0,
-  debug: true,
   integrations: [
     new Integrations.BrowserTracing({
       tracingOrigins: tracingOrigins,
@@ -156,7 +155,7 @@ class App extends Component {
         console.log("> src/index.js se", queryParams.get("se"))
         scope.setTag("se", queryParams.get("se"))
       }
-      
+
       if (queryParams.get("userFeedback")) {
         sessionStorage.setItem("userFeedback", queryParams.get("userFeedback"))
       } else {
