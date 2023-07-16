@@ -104,10 +104,13 @@ jobs:
       - name: Deploy to production
         run: |
           CHANGED_PROJECTS=$(./bin/projects_changed_bw_commits.sh "${{ env.NX_BASE }}" "${{ env.NX_HEAD }}")
-          if [[ ! -z "$CHANGED_PROJECTS" ]]; then 
+          if [[ ! -z "$CHANGED_PROJECTS" ]]; then
             ./deploy.sh $CHANGED_PROJECTS --env=production
+          elif [[ `./bin/release.sh` != `./bin/release.sh 1` ]]; then # different release than yesterday
+            # currently we create regular calendar releases only for React
+            ./deploy.sh react --env=production
           else 
-            echo "No deployable projects have been changed since last successful deployment. Nothing to do."
+            echo "No deployable projects have been changed since last successful deployment. New calendar release is not due either. Nothing to do."
           fi
         working-directory: ./empower
           
