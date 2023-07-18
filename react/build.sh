@@ -11,3 +11,5 @@ npm ci
 # below avoids source map processing error in Sentry when stacktrace includes inline JS
 export INLINE_RUNTIME_CHUNK=false
 npm run build # defined in 'scripts' in package.json
+
+cp ./serve.json build/serve.json
