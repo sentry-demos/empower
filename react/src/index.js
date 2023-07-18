@@ -54,9 +54,11 @@ Sentry.init({
   release: RELEASE,
   environment: ENVIRONMENT,
   tracesSampleRate: 1.0,
+  profilesSampleRate: 1.0,
   replaysSessionSampleRate: 1.0,
   debug: true,
   integrations: [
+    new Sentry.BrowserProfilingIntegration(),
     new Integrations.BrowserTracing({
       tracingOrigins: tracingOrigins,
       tracePropagationTargets: tracingOrigins,
@@ -82,6 +84,12 @@ Sentry.init({
           // name: window.location.pathname.replace(/\/employee.*/,'/employee/:id')
         };
       },
+      _experiments: {
+        // This enables tracing on user interactions like clicks
+        enableInteractions: true,
+        // This enables profiling of route transactions in react
+        onStartRouteTransaction: Sentry.onProfilingStartRouteTransaction,
+      }
     }),
     new Sentry.Replay({
       // Additional configuration goes in here
