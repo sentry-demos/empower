@@ -3,7 +3,6 @@ import ReactDOM from 'react-dom';
 import './index.css';
 import "react-loader-spinner/dist/loader/css/react-spinner-loader.css";
 import * as Sentry from '@sentry/react';
-import { Integrations } from '@sentry/tracing';
 import { createBrowserHistory } from 'history';
 import { Routes, Route, BrowserRouter, useLocation, useNavigationType, createRoutesFromChildren, matchRoutes } from "react-router-dom";
 import { crasher } from './utils/errors'
@@ -13,6 +12,7 @@ import { Provider } from 'react-redux'
 import { createStore, applyMiddleware, compose } from 'redux'
 import logger from 'redux-logger'
 import rootReducer from './reducers'
+
 
 import ScrollToTop from './components/ScrollToTop';
 import Footer from './components/Footer';
@@ -59,7 +59,7 @@ Sentry.init({
   debug: true,
   integrations: [
     new Sentry.BrowserProfilingIntegration(),
-    new Integrations.BrowserTracing({
+    new Sentry.BrowserTracing({
       tracingOrigins: tracingOrigins,
       tracePropagationTargets: tracingOrigins,
       routingInstrumentation: Sentry.reactRouterV6Instrumentation(
