@@ -94,6 +94,8 @@ Sentry.init({
       // Additional configuration goes in here
       // replaysSessionSampleRate and replaysOnErrorSampleRate is now a top-level SDK option
       blockAllMedia: false,
+      // https://docs.sentry.io/platforms/javascript/session-replay/configuration/#network-details
+      networkDetailAllowUrls: ['/checkout', '/products'],
     })
   ],
   beforeSend(event, hint) {
