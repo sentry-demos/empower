@@ -3,7 +3,6 @@ import ReactDOM from 'react-dom';
 import './index.css';
 import "react-loader-spinner/dist/loader/css/react-spinner-loader.css";
 import * as Sentry from '@sentry/react';
-import { Integrations } from '@sentry/tracing';
 import { createBrowserHistory } from 'history';
 import { Routes, Route, BrowserRouter, useLocation, useNavigationType, createRoutesFromChildren, matchRoutes } from "react-router-dom";
 import { crasher } from './utils/errors'
@@ -54,10 +53,12 @@ Sentry.init({
   release: RELEASE,
   environment: ENVIRONMENT,
   tracesSampleRate: 1.0,
+  profilesSampleRate: 1.0,
   replaysSessionSampleRate: 1.0,
   debug: true,
   integrations: [
-    new Integrations.BrowserTracing({
+    new Sentry.BrowserProfilingIntegration(),
+    new Sentry.BrowserTracing({
       tracingOrigins: tracingOrigins,
       tracePropagationTargets: tracingOrigins,
       routingInstrumentation: Sentry.reactRouterV6Instrumentation(
@@ -82,6 +83,12 @@ Sentry.init({
           // name: window.location.pathname.replace(/\/employee.*/,'/employee/:id')
         };
       },
+      _experiments: {
+        // This enables tracing on user interactions like clicks
+        enableInteractions: true,
+        // This enables profiling of route transactions in react
+        onStartRouteTransaction: Sentry.onProfilingStartRouteTransaction,
+      }
     }),
     new Sentry.Replay({
       // Additional configuration goes in here
