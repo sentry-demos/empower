@@ -2,7 +2,7 @@
 
 # Function to print the script usage.
 function show_usage() {
-  echo "Usage: $0 --project <gcp_project_id> --max-inactive-time-hours <max_inactive_time_hours> [--flexible-only] [--dry-run] [--service-id-contains <substring>]"
+  echo "Usage: $0 --project <gcp_project_id> --max-inactive-time-hours <max_inactive_time_hours> [--flexible-only] [--dry-run] [--service-id-contains <substring>] [--exclude-services <service_id1,service_id2,...>]"
 }
 
 # Default values for optional arguments.
@@ -34,6 +34,10 @@ while [[ $# -gt 0 ]]; do
       SERVICE_ID_CONTAINS="$2"
       shift 2
       ;;
+    --exclude-services)
+      exclude_services_str="$2"
+      shift 2
+      ;;
     *)
       echo "Error: Invalid option '$1'"
       show_usage
@@ -48,6 +52,8 @@ if [[ -z $GCP_PROJECT_ID || -z $MAX_INACTIVE_TIME_HOURS ]]; then
   show_usage
   exit 1
 fi
+
+IFS=',' read -r -a exclude_services <<< "$exclude_services_str"
 
 # Convert MAX_INACTIVE_TIME_HOURS to seconds.
 MAX_INACTIVE_TIME_SECONDS=$(( MAX_INACTIVE_TIME_HOURS * 3600 ))
@@ -118,6 +124,12 @@ for service in $services; do
   if [[ -n $SERVICE_ID_CONTAINS && ! $service =~ $SERVICE_ID_CONTAINS ]]; then
     continue
   fi
+
+  for excl_service in "${exclude_services[@]}"; do
+    if [[ $service == $excl_service ]]; then
+      continue 2 # outer loop
+    fi
+  done
 
   # Get the environment for the service using "gcloud app versions list".
   environment=$(gcloud app versions list --service="${service}" --project="${GCP_PROJECT_ID}" --filter="traffic_split=1.0" --format="value(environment.name)" 2>/dev/null | tr '[:upper:]' '[:lower:]')
