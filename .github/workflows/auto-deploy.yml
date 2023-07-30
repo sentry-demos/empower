@@ -25,9 +25,9 @@ jobs:
     
     steps:
       - run: |
-        SENTRY_CRON="https://o87286.ingest.sentry.io/api/4505620224540672/cron/auto-deploy/21b95d7975af21218dd7c14f1e48e193/"
-        curl "$SENTRY_CRON?status=in_progress"
-        echo "SENTRY_CRON=$SENTRY_CRON" >> "$GITHUB_ENV"
+          SENTRY_CRON='https//o87286.ingest.sentry.io/api/4505620224540672/cron/auto-deploy/21b95d7975af21218dd7c14f1e48e193/'
+          curl "$SENTRY_CRON?status=in_progress"
+          echo "SENTRY_CRON=$SENTRY_CRON" >> "$GITHUB_ENV"
     
       - run: echo "Triggered by ${{ github.event_name }} event."
       - run: echo "Branch is ${{ github.ref }}"
