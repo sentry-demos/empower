@@ -24,6 +24,8 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
+      - run: curl "https://o87286.ingest.sentry.io/api/4505620224540672/cron/auto-deploy/21b95d7975af21218dd7c14f1e48e193/?status=in_progress"
+    
       - run: echo "Triggered by ${{ github.event_name }} event."
       - run: echo "Branch is ${{ github.ref }}"
       
@@ -115,3 +117,12 @@ jobs:
         working-directory: ./empower
           
       - run: echo "Job status is ${{ job.status }}."
+      
+      - name: Report success to Cron monitor (demo/empower-github-workflows)
+        run: curl "https://o87286.ingest.sentry.io/api/4505620224540672/cron/auto-deploy/21b95d7975af21218dd7c14f1e48e193/?status=ok"
+      
+      # 'if: always()' ensures step is run even if earlier step failed
+      - name: Report error to Cron monitor (demo/empower-github-workflows)
+        if: always() && job.status == 'failure'
+        run: curl "https://o87286.ingest.sentry.io/api/4505620224540672/cron/auto-deploy/21b95d7975af21218dd7c14f1e48e193/?status=error"
+
