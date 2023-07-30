@@ -26,7 +26,7 @@ jobs:
     steps:
       - run: curl "https://o87286.ingest.sentry.io/api/4505620224540672/cron/auto-deploy/21b95d7975af21218dd7c14f1e48e193/?status=in_progress"
     
-      - run: ech "Triggered by ${{ github.event_name }} event."
+      - run: echo "Triggered by ${{ github.event_name }} event."
       - run: echo "Branch is ${{ github.ref }}"
       
       - name: Check out this repository code
