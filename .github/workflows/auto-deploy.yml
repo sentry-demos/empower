@@ -25,11 +25,11 @@ jobs:
     
     steps:
       - run: |
-          SENTRY_CRON='https//o87286.ingest.sentry.io/api/4505620224540672/cron/auto-deploy/21b95d7975af21218dd7c14f1e48e193/'
+          SENTRY_CRON='https://o87286.ingest.sentry.io/api/4505620224540672/cron/auto-deploy/21b95d7975af21218dd7c14f1e48e193/'
           curl "$SENTRY_CRON?status=in_progress"
           echo "SENTRY_CRON=$SENTRY_CRON" >> "$GITHUB_ENV"
     
-      - run: echo "Triggered by ${{ github.event_name }} event."
+      - run: ech "Triggered by ${{ github.event_name }} event."
       - run: echo "Branch is ${{ github.ref }}"
       
       - name: Check out this repository code
@@ -122,10 +122,10 @@ jobs:
       - run: echo "Job status is ${{ job.status }}."
       
       - name: Report success to Cron monitor (demo/empower-github-workflows)
-        run: curl "{{ env.SENTRY_CRON }}?status=ok"
+        run: curl "${{ env.SENTRY_CRON }}?status=ok"
       
       # 'if: always()' ensures step is run even if earlier step failed
       - name: Report error to Cron monitor (demo/empower-github-workflows)
         if: always() && job.status == 'failure'
-        run: curl "{{ env.SENTRY_CRON }}?status=error"
+        run: curl "${{ env.SENTRY_CRON }}?status=error"
 
