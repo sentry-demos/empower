@@ -6,7 +6,7 @@ on:
     branches:
       - 'master'
   schedule:
-    - cron:  '0 0 * * *' # every day at midnight UTC 
+    - cron:  '40 3 * * *' # every day at 8:40pm PDT / 5:40am GMT+2
     # see https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#schedule
   workflow_dispatch:
 
@@ -29,7 +29,7 @@ jobs:
           curl "$SENTRY_CRON?status=in_progress"
           echo "SENTRY_CRON=$SENTRY_CRON" >> "$GITHUB_ENV"
     
-      - run: ech "Triggered by ${{ github.event_name }} event."
+      - run: echo "Triggered by ${{ github.event_name }} event."
       - run: echo "Branch is ${{ github.ref }}"
       
       - name: Check out this repository code
