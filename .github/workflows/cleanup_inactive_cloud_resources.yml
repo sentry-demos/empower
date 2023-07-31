@@ -3,7 +3,7 @@ run-name: Deployment triggered by ${{ github.event_name }} / ${{ github.actor }}
 
 on:
   schedule:
-    - cron:  '0 0 * * *' # every day at midnight UTC 
+    - cron:  '40 3 * * *' # every day at 8:40pm PDT / 5:40am GMT+2
     # see https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#schedule
   workflow_dispatch:
 
@@ -21,6 +21,12 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
+      - name: Report job start to Cron monitor (demo/cleanup_inactive_cloud_resources)
+        run: |
+          SENTRY_CRON='https://o87286.ingest.sentry.io/api/4505620224540672/cron/cleanup_inactive_cloud_resources/21b95d7975af21218dd7c14f1e48e193/'
+          curl "$SENTRY_CRON?status=in_progress"
+          echo "SENTRY_CRON=$SENTRY_CRON" >> "$GITHUB_ENV"
+
       - name: Check out this repository code
         uses: actions/checkout@v3
         with:
@@ -60,3 +66,11 @@ jobs:
         working-directory: ./empower
           
       - run: echo "Job status is ${{ job.status }}."
+
+      - name: Report success to Cron monitor (demo/cleanup_inactive_cloud_resources)
+        run: curl "${{ env.SENTRY_CRON }}?status=ok"
+    
+      # 'always' ensures step is run even if earlier step failed
+      - name: Report error to Cron monitor (demo/cleanup_inactive_cloud_resources)
+        if: always() && job.status == 'failure'
+        run: curl "${{ env.SENTRY_CRON }}?status=error"
