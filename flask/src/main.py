@@ -45,7 +45,7 @@ def traces_sampler(sampling_context):
         return 1.0
 
 class MyFlask(Flask):
-    def run(self, host=None, port=None, debug=None, load_dotenv=True, **options):
+    def __init__(self, import_name, *args, **kwargs):
         global RELEASE, DSN, ENVIRONMENT, RUBY_BACKEND, RUN_SLOW_PROFILE;
         dotenv.load_dotenv()
 
@@ -75,7 +75,7 @@ class MyFlask(Flask):
             }
         )
 
-        super(MyFlask, self).run(host=host, port=port, debug=debug, load_dotenv=load_dotenv, **options)
+        super(MyFlask, self).__init__(import_name, *args, **kwargs)
 
 
 app = MyFlask(__name__)
