@@ -1,0 +1,76 @@
+name: Deploy to Google App Engine upon commit to master branch and on schedule at midnight UTC
+run-name: Deployment triggered by ${{ github.event_name }} / ${{ github.actor }}
+
+on:
+  schedule:
+    - cron:  '40 3 * * *' # every day at 8:40pm PDT / 5:40am GMT+2
+    # see https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#schedule
+  workflow_dispatch:
+
+# Only run 1 workflow at a time. If new one starts abort any that are already running.
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  default-job:
+    if: github.repository_owner == 'sentry-demos' # don't run in forks
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Report job start to Cron monitor (demo/cleanup_inactive_cloud_resources)
+        run: |
+          SENTRY_CRON='https://o87286.ingest.sentry.io/api/4505620224540672/cron/cleanup_inactive_cloud_resources/21b95d7975af21218dd7c14f1e48e193/'
+          curl "$SENTRY_CRON?status=in_progress"
+          echo "SENTRY_CRON=$SENTRY_CRON" >> "$GITHUB_ENV"
+
+      - name: Check out this repository code
+        uses: actions/checkout@v3
+        with:
+          path: empower
+          fetch-depth: 0
+        
+      - name: Check out `empower-config` to get env-config
+        uses: actions/checkout@v3
+        with:
+          repository: sentry-demos/empower-config
+          path: empower-config
+          token: ${{ secrets.KOSTY_PERSONAL_ACCESS_TOKEN_FOR_SYNC_DEPLOY_FORK }}
+          
+      - name: Get GCP_ env variables from empower-config/.gcloudrc
+        run: |
+          source empower-config/.gcloudrc 
+          echo "GCP_WORKLOAD_IDENTITY_PROVIDER=$GCP_WORKLOAD_IDENTITY_PROVIDER" >> $GITHUB_OUTPUT
+          echo "GCP_SERVICE_ACCOUNT=$GCP_SERVICE_ACCOUNT" >> $GITHUB_OUTPUT 
+        id: gcloudrc
+        
+      - id: 'auth'
+        name: 'Authenticate Google Cloud'
+        uses: 'google-github-actions/auth@v0'
+        with:
+          workload_identity_provider: ${{ steps.gcloudrc.outputs.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ steps.gcloudrc.outputs.GCP_SERVICE_ACCOUNT }}
+
+      - name: 'Set up Google Cloud SDK'
+        uses: 'google-github-actions/setup-gcloud@v0'
+        
+      # TODO: instead of hardcoding generate EXCLUDE list dynamically based on directory names (once naming is standardized)
+      - name: Run cleanup scripts (more agressive for Flex instances)
+        run: |
+          EXCLUDE="application-monitoring-aspnetcore,application-monitoring-flask,application-monitoring-laravel,application-monitoring-node,application-monitoring-rails,application-monitoring-react,application-monitoring-ruby,application-monitoring-vue,springboot"
+          bin/cleanup_inactive_cloud_resources.sh --project sales-engineering-sf --max-inactive-time-hours 336 --exclude-services "$EXCLUDE"
+          bin/cleanup_inactive_cloud_resources.sh --project sales-engineering-sf --max-inactive-time-hours 48 --flexible-only --exclude-services "$EXCLUDE"
+        working-directory: ./empower
+          
+      - run: echo "Job status is ${{ job.status }}."
+
+      - name: Report success to Cron monitor (demo/cleanup_inactive_cloud_resources)
+        run: curl "${{ env.SENTRY_CRON }}?status=ok"
+    
+      # 'always' ensures step is run even if earlier step failed
+      - name: Report error to Cron monitor (demo/cleanup_inactive_cloud_resources)
+        if: always() && job.status == 'failure'
+        run: curl "${{ env.SENTRY_CRON }}?status=error"
