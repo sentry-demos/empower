@@ -1,6 +1,9 @@
 # Test Data Automation
 Runs automted tests against Sentry demos on GCP, in order to generate errors and transactions to be sent to Sentry.io.
 
+
+** Some of the doc below is out of date **
+
 ## Components / Moving parts
 - `conftest.py` -> Sauce Labs configuration (browsers) for frontend_tests
 - `backend_tests/backend_test.py` -> Hits /handled, /unhandled/, + /checkout backend demo APIs
@@ -64,7 +67,7 @@ kill -9 <PID of the script.sh>
 
 ### TypeError: required field "lineno" missing from alias
 ```
-  File "/Users/kosty/home/am/tests/env/lib/python3.10/site-packages/_pytest/assertion/rewrite.py", line 360, in _rewrite_test
+  File "/Users/kosty/home/empower/tda/env/lib/python3.10/site-packages/_pytest/assertion/rewrite.py", line 360, in _rewrite_test
     co = compile(tree, fn_, "exec", dont_inherit=True)
 TypeError: required field "lineno" missing from alias
 ```
