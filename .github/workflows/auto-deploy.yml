@@ -110,7 +110,7 @@ jobs:
         run: |
           CHANGED_PROJECTS=$(./bin/projects_changed_bw_commits.sh "${{ env.NX_BASE }}" "${{ env.NX_HEAD }}")
           if [[ ! -z "$CHANGED_PROJECTS" ]]; then
-            ./deploy.sh $CHANGED_PROJECTS --env=production
+            bash -x ./deploy.sh $CHANGED_PROJECTS --env=production
           elif [[ `./bin/release.sh` != `./bin/release.sh 1` ]]; then # different release than yesterday
             # currently we create regular calendar releases only for React
             ./deploy.sh react --env=production
