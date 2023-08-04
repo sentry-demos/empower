@@ -27,7 +27,7 @@ function Checkout(props) {
       email = scope._user.email
     });
 
-    const response = await fetch(props.backend + "/checkout", {
+    const response = await fetch(props.backend + "/checkout?v2=true", {
       method: "POST",
       headers: { se, customerType, email, "Content-Type": "application/json" },
       body: JSON.stringify({
