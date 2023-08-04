@@ -66,7 +66,7 @@ class Products extends Component {
     try {
       products = await this.getProducts();
       // take first 4 products because that's all we have img/title/description for
-      this.props.setProducts(Array(250/4).fill(products.slice(0, 4)).flat().map((p, n) => {
+      this.props.setProducts(Array(200/4).fill(products.slice(0, 4)).flat().map((p, n) => {
         p.id = n
         return p
       }));
