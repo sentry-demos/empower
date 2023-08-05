@@ -4,6 +4,7 @@ on:
   schedule:
     # Every Wednesday after lunch PDT
     - cron: "0 20 * * WED"
+  workflow_dispatch:
 
 jobs:
   pr-reviews-reminder:
