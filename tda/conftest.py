@@ -49,7 +49,7 @@ ENVIRONMENT = os.getenv("ENVIRONMENT") or "production"
 # application-monitoring-* project issues generated as a result of running the test
 #
 # 2. Used for internal reporting of this test automation's own errors (to DSN above,
-# i.e. "job-monitor-application-monitoring" project)
+# i.e. "empower-tda" project)
 #
 # If no value is provided will attemptq
 
