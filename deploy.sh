@@ -207,8 +207,8 @@ for proj in $projects; do # bash only
       sed -e 's/<SERVICE>/'$app_engine_service'/g' $ypath/app.yaml.template > $ypath/app.yaml
       # This sets SPRINGBOOT_ENV
       # TODO: Un-hardcode. Q: what non-production values does it take?
-      sed -i '' 's/<ENV>/"production"/g' $ypath/app.yaml
-      sed -i '' 's/<CLOUD SQL CONNECTION NAME>/"'"$DB_CLOUD_SQL_CONNECTION_NAME"'"/g' $ypath/app.yaml
+      sed_inplace.sh 's/<ENV>/"production"/g' $ypath/app.yaml
+      sed_inplace.sh 's/<CLOUD SQL CONNECTION NAME>/"'"$DB_CLOUD_SQL_CONNECTION_NAME"'"/g' $ypath/app.yaml
       mvn clean package appengine:deploy
     elif [ "$proj" == "aspnetcore" ]; then
       # TODO: envsubst is super easy - this should be the default for all projects
