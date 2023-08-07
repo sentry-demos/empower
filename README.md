@@ -1,24 +1,8 @@
 # ~~Application Monitoring~~ Empower
 This is a multi-language/framework project that implements Empower Plant web app. It has one actively maintained frontend, `react`, that can connect to any one of the backend implementations using a query string parameter (e.g. `?backend=express`) and uses `flask` by default.
 
-
 ## Features
-- Error Monitoring...Performance Monitoring...Release Health...
-- BrowserTracing (Performance)
-- Session Replay  
-- Sentry.Profiler (class components)  
-- Sentry.withSentryRouting(Route); (react-router)  
-- FlaskIntegration, SqlAlchemyIntegration
-
-| sentry    | version
-| ------------- |:-------------:|
-| @sentry/react | 6.16.1 |
-| @sentry/tracing | 6.16.1 |
-| sentry_sdk | 1.5.1 |
-| @sentry/node | 6.16.1 |
-| sentry-spring-boot-starter | 5.5.1 |
-| sentry-logback | 5.5.1 |
-| Sentry.AspNetCore | 3.31.0 |
+https://www.notion.so/sentry/Demo-Data-Requirements-4b918453be6f4e4fbdcfd4b2e3e608e0
 
 ## Additional documentation
 - project README's in subdirectories (e.g. [react/README.md](./react/README.md)
@@ -154,17 +138,4 @@ gcloud config set account `ACCOUNT`
 gcloud config list, to display current account
 ```
 `gcloud app deploy` does not support `--update-env-vars RELEASE=$RELEASE` like `gcloud run deploy` does with Cloud Run
-
-## Versions
-
-| non-sentry    | version
-| ------------- |:-------------:|
-| npx | 7.8.0 |
-| npm | 7.8.0 |
-| node | v.14.2.0 |
-| python | 3 |
-| react | ^17.0.2 |
-| react-dom | ^17.0.2 |
-| react-router-dom | ^5.2.0 |
-| react-scripts | 4.0.3 |
 
