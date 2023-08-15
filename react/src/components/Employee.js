@@ -12,8 +12,8 @@ function Employee() {
       const promise = await import(`./employees/${id}`);
       setEmployee(promise.default);
     };
-    
-    fetchData()
+
+    fetchData();
   }, [employee, id]);
 
   return employee ? (
@@ -32,4 +32,4 @@ function Employee() {
   );
 }
 
-export default Sentry.withProfiler(Employee, { name: "Employee"})
+export default Sentry.withProfiler(Employee, { name: 'Employee' });
