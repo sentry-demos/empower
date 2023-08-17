@@ -4,14 +4,14 @@ import { Link } from 'react-router-dom';
 import './cart.css';
 import * as Sentry from '@sentry/react';
 import Button from './ButtonLink';
-import { connect } from 'react-redux'
-import { setProducts, addProduct, removeProduct } from '../actions'
+import { connect } from 'react-redux';
+import { setProducts, addProduct, removeProduct } from '../actions';
 
 class Cart extends Component {
   static contextType = Context;
 
   async shouldComponentUpdate() {
-    console.log("> Cart shouldComponentUpdate")
+    console.log('> Cart shouldComponentUpdate');
   }
 
   render() {
@@ -29,38 +29,49 @@ class Cart extends Component {
                 return (
                   <li className="cart-item" key={item.id}>
                     <Link to={itemLink}>
-                      <img src={item.img} alt="item-thumbnail" className="sentry-block"/>
+                      <img
+                        src={item.img}
+                        alt="item-thumbnail"
+                        className="sentry-block"
+                      />
                     </Link>
                     <Link to={itemLink}>
                       <h4>{item.title}</h4>
                     </Link>
-                    <p><span className="sentry-unmask">$</span>{item.price}.00</p>
+                    <p>
+                      <span className="sentry-unmask">$</span>
+                      {item.price}.00
+                    </p>
                     <div className="quantity-adjust">
                       <button
-                        onClick={() =>
-                          this.props.removeProduct(item)
-                        }
+                        onClick={() => this.props.removeProduct(item)}
                         className="sentry-unmask"
                       >
                         –
                       </button>
                       <span>{quantity}</span>
                       <button
-                        onClick={() =>
-                          this.props.addProduct(item)
-                        }
+                        onClick={() => this.props.addProduct(item)}
                         className="sentry-unmask"
                       >
                         +
                       </button>
                     </div>
-                    <p><span className="sentry-unmask">$</span>{item.price * quantity}.00</p>
+                    <p>
+                      <span className="sentry-unmask">$</span>
+                      {item.price * quantity}.00
+                    </p>
                   </li>
                 );
               })}
             </ul>
-            <h3 className="cart-subtotal"><span className="sentry-unmask">Cart Subtotal: $</span>{cart.total}.00</h3>
-            <Button to="/checkout" className="sentry-unmask">Proceed to checkout</Button>
+            <h3 className="cart-subtotal">
+              <span className="sentry-unmask">Cart Subtotal: $</span>
+              {cart.total}.00
+            </h3>
+            <Button to="/checkout" className="sentry-unmask">
+              Proceed to checkout
+            </Button>
           </>
         ) : (
           <p>Please add items to the cart</p>
@@ -73,11 +84,12 @@ class Cart extends Component {
 const mapStateToProps = (state, ownProps) => {
   return {
     cart: state.cart,
-    products: state.products
-  }
-}
+    products: state.products,
+  };
+};
 
-export default connect(
-  mapStateToProps,
-  { setProducts, addProduct, removeProduct }
-)(Sentry.withProfiler(Cart, { name: "Cart"}))
+export default connect(mapStateToProps, {
+  setProducts,
+  addProduct,
+  removeProduct,
+})(Sentry.withProfiler(Cart, { name: 'Cart' }));

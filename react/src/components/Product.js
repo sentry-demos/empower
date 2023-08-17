@@ -1,12 +1,9 @@
-
-
 import React, { useState, useEffect } from 'react';
 import './product.css';
 import * as Sentry from '@sentry/react';
 import { useLocation } from 'react-router-dom';
-import { connect } from 'react-redux'
-import { addProduct } from '../actions'
-
+import { connect } from 'react-redux';
+import { addProduct } from '../actions';
 
 function Product(props) {
   const [product, setProduct] = useState();
@@ -14,13 +11,16 @@ function Product(props) {
   const location = useLocation();
 
   useEffect(() => {
-    const product = location.state
-    setProduct(product)
+    const product = location.state;
+    setProduct(product);
   }, [product]);
 
-  let averageRating
+  let averageRating;
   if (product) {
-    averageRating = (product.reviews.reduce((a,b) => a + (b["rating"] || 0),0) / product.reviews.length).toFixed(1)
+    averageRating = (
+      product.reviews.reduce((a, b) => a + (b['rating'] || 0), 0) /
+      product.reviews.length
+    ).toFixed(1);
   }
 
   return product ? (
@@ -36,7 +36,8 @@ function Product(props) {
           className="add-cart-btn"
           onClick={() => props.addProduct(product)}
         >
-          <span className="sentry-unmask">Add to cart —</span> ${product.price}.00
+          <span className="sentry-unmask">Add to cart —</span> ${product.price}
+          .00
         </button>
         <p>{averageRating} Rating</p>
       </div>
@@ -49,11 +50,10 @@ function Product(props) {
 const mapStateToProps = (state, ownProps) => {
   return {
     cart: state.cart,
-    products: state.products
-  }
-}
+    products: state.products,
+  };
+};
 
-export default connect(
-  mapStateToProps,
-  { addProduct }
-)(Sentry.withProfiler(Product, { name: "Product"}))
+export default connect(mapStateToProps, { addProduct })(
+  Sentry.withProfiler(Product, { name: 'Product' })
+);

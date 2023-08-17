@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import slugify from '../utils/slugify';
 import * as Sentry from '@sentry/react';
 import './about.css';
-import { isOddReleaseWeek, busy_sleep } from "../utils/time"
+import { isOddReleaseWeek, busy_sleep } from '../utils/time';
 
 import Jane from './employees/jane';
 import Lily from './employees/lily';
@@ -15,7 +15,6 @@ import Noah from './employees/noah';
 const employees = [Jane, Lily, Keith, Mason, Emma, Noah];
 
 class About extends Component {
-  
   constructor() {
     super();
     // must be inside the constructor to affect LCP, if in componentDidMount() only affects duration
@@ -26,41 +25,45 @@ class About extends Component {
   }
 
   async componentDidMount() {
-    let se, customerType, email
-    Sentry.withScope(function(scope) {
-      [ se, customerType ] = [scope._tags.se, scope._tags.customerType ]
-      email = scope._user.email
+    let se, customerType, email;
+    Sentry.withScope(function (scope) {
+      [se, customerType] = [scope._tags.se, scope._tags.customerType];
+      email = scope._user.email;
     });
 
     // Http requests to make in parallel, so the Transaction has more Spans
-    let request1 = fetch(this.props.backend + "/api", {
-      method: "GET",
-      headers: { se, customerType, email, "Content-Type": "application/json" }
-    })
-    let request2 = fetch(this.props.backend + "/organization", {
-      method: "GET",
-      headers: { se, customerType, email, "Content-Type": "application/json" }
-    })
-    let request3 = fetch(this.props.backend + "/connect", {
-      method: "GET",
-      headers: { se, customerType, email, "Content-Type": "application/json" }
-    })
-    
+    let request1 = fetch(this.props.backend + '/api', {
+      method: 'GET',
+      headers: { se, customerType, email, 'Content-Type': 'application/json' },
+    });
+    let request2 = fetch(this.props.backend + '/organization', {
+      method: 'GET',
+      headers: { se, customerType, email, 'Content-Type': 'application/json' },
+    });
+    let request3 = fetch(this.props.backend + '/connect', {
+      method: 'GET',
+      headers: { se, customerType, email, 'Content-Type': 'application/json' },
+    });
+
     // Need Safari13 in tests/config.py in order for this modern javascript to work in Safari Browser
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/allSettled#browser_compatibility
     // let response = await Promise.allSettled([request1, request2, request3])
 
-    const response = [await request1, await request2, await request3]
+    const response = [await request1, await request2, await request3];
 
     // Error Handling
-    response.forEach(r => {
+    response.forEach((r) => {
       if (!r.ok) {
-        Sentry.configureScope(function(scope) {
-          Sentry.setContext("response", r)
+        Sentry.configureScope(function (scope) {
+          Sentry.setContext('response', r);
         });
-        Sentry.captureException(new Error(r.status + " - " + (response.statusText || "Server Error for API")))
+        Sentry.captureException(
+          new Error(
+            r.status + ' - ' + (response.statusText || 'Server Error for API')
+          )
+        );
       }
-    })
+    });
   }
   render() {
     return (
@@ -96,7 +99,9 @@ class About extends Component {
                 <li key={employee.name}>
                   <Link to={`/employee/${slugify(employee.url)}`}>
                     <img src={employee.img} alt={`${employee.name}`} />
-                    <h5 className="employee-name" name={employee.name}>{employee.name}</h5>
+                    <h5 className="employee-name" name={employee.name}>
+                      {employee.name}
+                    </h5>
                   </Link>
                 </li>
               );
@@ -108,4 +113,4 @@ class About extends Component {
   }
 }
 
-export default Sentry.withProfiler(About, { name: "About"})
+export default Sentry.withProfiler(About, { name: 'About' });

@@ -1,9 +1,9 @@
 import { Link } from 'react-router-dom';
 import './complete.css';
-import { useSelector } from 'react-redux'
+import { useSelector } from 'react-redux';
 
 function Complete(props) {
-  const cart = useSelector((state) => state.cart)
+  const cart = useSelector((state) => state.cart);
 
   const RandomNumber = Math.floor(Math.random() * 99999) + 10000;
 
