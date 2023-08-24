@@ -16,9 +16,12 @@
   padding: 8rem 0 4rem;
 }
 
-#footer form {
+#footer .formContainer {
   width: 50%;
   margin: 0 auto;
+}
+
+#footer form {
   text-align: left;
 }
 
