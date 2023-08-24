@@ -12,21 +12,23 @@ class Footer extends Component {
       <footer id="footer">
         <div>
           <h2 className="h3 sentry-unmask">Sign up for plant tech news</h2>
-          <form>
-            <label htmlFor="email-subscribe" className="sentry-unmask">
-              Email
-            </label>
-            <input
-              type="email"
-              name="email-subscribe"
-              id="email-subscribe"
-            ></input>
+          <div class="formContainer">
+            <form>
+              <label htmlFor="email-subscribe" className="sentry-unmask">
+                Email
+              </label>
+              <input
+                type="email"
+                name="email-subscribe"
+                id="email-subscribe"
+              ></input>
+            </form>
             <input
               type="submit"
               value="Subscribe"
               className="sentry-unmask"
             ></input>
-          </form>
+          </div>
           <p className="sentry-unmask">
             © 2021 • Empower Plant • <Link to="/about">About us</Link>
           </p>
