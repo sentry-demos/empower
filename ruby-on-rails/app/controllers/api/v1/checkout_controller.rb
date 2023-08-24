@@ -55,13 +55,13 @@ class Api::V1::CheckoutController < ApplicationController
     span_read_params = transaction.start_child(op: "custom.read_params")
 
     total = ""
-    cart_cnts = Hash.new
+    cart_contents = Hash.new
     params.each do |key, value|
       if key.to_s == "cart"
         value.each do |key2, value2|
          if key2.to_s == "quantities"
-           value2.each do | prodid, prodidcnt |
-             cart_cnts[prodid.to_s] = prodidcnt.to_s
+           value2.each do | product_id, product_quantity |
+             cart_contents[product_id.to_s] = product_quantity.to_s
            end
          elsif key2.to_s == "total"
            total = value2.to_s
@@ -82,16 +82,14 @@ class Api::V1::CheckoutController < ApplicationController
     span_logic = transaction.start_child(op: "custom.inventory_vs_cart_logic")
 
     products_in_inventory.each_with_index { |inv_objs, i|
-      if cart_cnts[inv_objs["productid"].to_s] != nil
-        if cart_cnts[inv_objs["productid"].to_s] > inv_objs["count"].to_s
-          begin
-            raise Exception.new "Not enough inventory for productid " + inv_objs["productid"].to_s
-            STDERR.puts "Not enough inventory for productid " + inv_objs["productid"].to_s
-            Sentry.capture_exception(Exception)
-            logged = "Error: Not enough inventory"
-            render json: {"message": logged}, status: 500
-            break # breaks on first error. might be more inventory errors.
-          end       
+      if !enough_inventory?(cart_contents)
+        begin
+          raise Exception.new "Not enough inventory for product"
+          STDERR.puts "Not enough inventory for productid " + inv_objs["productid"].to_s
+          Sentry.capture_exception(Exception)
+          logged = "Error: Not enough inventory"
+          render json: {"message": logged}, status: 500
+          break # breaks on first error. might be more inventory errors.
         end
       end
     }
@@ -100,5 +98,9 @@ class Api::V1::CheckoutController < ApplicationController
 
     render json: {"message": logged}, status: 200
 
+  end
+
+  def enough_inventory?(cart_contents)
+    return false
   end
 end
