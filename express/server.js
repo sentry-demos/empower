@@ -208,7 +208,7 @@ app.post("/checkout", async (req, res) => {
     for (const cartItem in quantities) {
       for (const inventoryItem of inventory) {
         console.log("> inventoryItem.count", inventoryItem["count"]);
-        if (inventoryItem.count < quantities[cartItem]) {
+        if (!hasInventory(inventoryItem)) {
           throw new Error("Not enough inventory for product");
         }
       }
@@ -241,5 +241,9 @@ app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}...`);
 });
 // [END app]
+
+function hasInventory(item) {
+  return false;
+}
 
 module.exports = { app, Sentry, Tracing };
