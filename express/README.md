@@ -2,7 +2,7 @@
 
 ## Setup
 
-Create a local `express/.env` file. Talk to a SE team member to get valid contents for this file. 
+Create a local `express/.env` file. Talk to a SE team member to get valid contents for this file.
 
 Add REACT_APP_EXPRESS_BACKEND=<value> to react/.env. The value is the URL of the App Engine express instance.
 
@@ -27,6 +27,7 @@ fetching products from backend =>>>>>>>>> https://application-monitoring-node-do
 ```
 
 ### In Production
+
 You can hit any route in production and add the `?backend=express` query parameter. An example would be: https://application-monitoring-react-dot-sales-engineering-sf.appspot.com/?backend=express.
 
 In production, the Express backend is deployed to https://application-monitoring-node-dot-sales-engineering-sf.appspot.com/.
@@ -38,6 +39,7 @@ You can hit any route locally and add the `?backend=express` query parameter. Le
 Locally, the Express backend is served on port 8088 when you run `express/run.sh`.
 
 ### Cloud GCP Deployment
+
 To deploy only the express service.
 
 ```
@@ -46,6 +48,7 @@ gcloud app deploy --quiet
 ```
 
 If you get an error about invalid authentication credentials, try running this first:
+
 ```
 gcloud auth login
 ```
