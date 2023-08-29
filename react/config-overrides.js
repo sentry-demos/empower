@@ -5,12 +5,9 @@ module.exports = function override(config, env) {
   config.plugins.push(
     SentryWebpackPlugin.sentryWebpackPlugin({
       authToken: process.env.SENTRY_AUTH_TOKEN,
-      include: '.',
       org: 'testorg-az',
       project: 'frontend-javascript',
-      ignoreFile: '.sentrycliignore',
-      ignore: ['webpack.config.js'],
-      configFile: 'sentry.properties',
+      ignore: [],
     })
   );
   return config;
