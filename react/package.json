@@ -47,6 +47,7 @@
     ]
   },
   "devDependencies": {
+    "@acemarke/react-prod-sourcemaps": "^0.0.2",
     "@sentry/webpack-plugin": "~2.4.0",
     "react-app-rewired": "~2.2.1"
   }
