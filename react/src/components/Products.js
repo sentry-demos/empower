@@ -66,7 +66,16 @@ class Products extends Component {
     try {
       products = await this.getProducts();
       // take first 4 products because that's all we have img/title/description for
-      this.props.setProducts(products.slice(0, 4));
+      this.props.setProducts(
+        // round to nearest int so we can adjust w/o having to worry about floats
+        Array(Math.round(200 / 4))
+          .fill(products.slice(0, 4))
+          .flat()
+          .map((p, n) => {
+            p.id = n;
+            return p;
+          })
+      );
     } catch (err) {
       Sentry.captureException(new Error('app unable to load products: ' + err));
     }
