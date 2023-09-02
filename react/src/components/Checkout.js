@@ -9,15 +9,15 @@ function Checkout(props) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
-    email: 'plant.lover@gardening.com',
+    email: '',
     subscribe: '',
-    firstName: 'Jane',
-    lastName: 'Greenthumb',
-    address: '1199 9th Ave',
-    city: 'San Francisco',
-    country: 'United States of America',
-    state: 'CA',
-    zipCode: '94122',
+    firstName: '',
+    lastName: '',
+    address: '',
+    city: '',
+    country: '',
+    state: '',
+    zipCode: '',
   });
 
   async function checkout(cart) {
@@ -117,6 +117,7 @@ function Checkout(props) {
               type="email"
               onChange={handleInputChange}
               defaultValue={form.email}
+              placeholder="joebobson@joeb.com"
             />
 
             <input
@@ -140,6 +141,7 @@ function Checkout(props) {
               type="text"
               onChange={handleInputChange}
               defaultValue={form.firstName}
+              placeholder="Joe"
               className="half-width"
             />
             <label htmlFor="lastName" className="sentry-unmask">
@@ -151,6 +153,7 @@ function Checkout(props) {
               type="text"
               onChange={handleInputChange}
               defaultValue={form.lastName}
+              placeholder="Bobson"
             />
 
             <label htmlFor="address" className="sentry-unmask">
@@ -162,6 +165,7 @@ function Checkout(props) {
               type="text"
               onChange={handleInputChange}
               defaultValue={form.address}
+              placeholder="123 Main Street"
             />
 
             <label htmlFor="city" className="sentry-unmask">
@@ -173,6 +177,7 @@ function Checkout(props) {
               type="text"
               onChange={handleInputChange}
               defaultValue={form.city}
+              placeholder="Hope Springs"
             />
 
             <label htmlFor="country" className="sentry-unmask">
@@ -184,6 +189,7 @@ function Checkout(props) {
               type="text"
               onChange={handleInputChange}
               defaultValue={form.country}
+              placeholder="United States of America"
             />
 
             <label htmlFor="state" className="sentry-unmask">
@@ -195,6 +201,7 @@ function Checkout(props) {
               type="text"
               onChange={handleInputChange}
               defaultValue={form.state}
+              placeholder="Indiana"
             />
 
             <label htmlFor="zipCode" className="sentry-unmask">
