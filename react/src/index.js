@@ -188,6 +188,9 @@ class App extends Component {
         // Route components (navigation changes) will now have 'se' tag on scope
         console.log('> src/index.js se', queryParams.get('se'));
         scope.setTag('se', queryParams.get('se'));
+        // for use in Checkout.js when deciding whether to pre-fill form
+        // lasts for as long as the tab is open
+        sessionStorage.setItem('se', queryParams.get('se'));  
       }
 
       if (queryParams.get('userFeedback')) {
