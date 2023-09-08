@@ -66,7 +66,10 @@ class Products extends Component {
     try {
       products = await this.getProducts();
       // take first 4 products because that's all we have img/title/description for
-      this.props.setProducts(products.slice(0, 4));
+      this.props.setProducts(Array(200/4).fill(products.slice(0, 4)).flat().map((p, n) => {
+        p.id = n
+        return p
+      }));
     } catch (err) {
       Sentry.captureException(new Error('app unable to load products: ' + err));
     }
@@ -77,7 +80,7 @@ class Products extends Component {
     return products.length > 0 ? (
       <div>
         <ul className="products-list">
-          {products.map((product) => {
+          {products.map((product,i) => {
             const averageRating = (
               product.reviews.reduce((a, b) => a + (b['rating'] || 0), 0) /
               product.reviews.length
@@ -101,7 +104,7 @@ class Products extends Component {
 
             return (
               <ProductCard
-                key={product.id}
+                key={i}
                 product={product}
                 stars={stars}
               ></ProductCard>
