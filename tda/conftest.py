@@ -444,7 +444,7 @@ def final_report():
     end = urllib.parse.quote(end_time)
     project = DSN.split('/')[-1]
     print()
-    print(f'GENERATED errors: https://testorg-az.sentry.io/issues/?query=se%3A{SE_TAG}+%21project%3Ajob-monitor-application-monitoring&start={start}&end={end}')
-    print(f'OWN errors:       https://testorg-az.sentry.io/issues/?project={project}&query=se%3A{SE_TAG}&start={start}&end={end}')
+    print(f'GENERATED errors: https://demo.sentry.io/issues/?query=se%3A{SE_TAG}+%21project%3Ajob-monitor-application-monitoring&start={start}&end={end}')
+    print(f'OWN errors:       https://demo.sentry.io/issues/?project={project}&query=se%3A{SE_TAG}&start={start}&end={end}')
 
 atexit.register(final_report)
