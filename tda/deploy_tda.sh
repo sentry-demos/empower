@@ -65,6 +65,6 @@ fi
 echo "________________________________________________________"
 echo "[OK] TDA started!"
 echo "Please verify manually:"
-echo " . Own errors: https://sentry.io/organizations/testorg-az/discover/results/?field=event.type&field=pytestPlatform&field=pytestName&field=title&field=seleniumSessionId&field=timestamp&id=10479&name=Job+Monitor+for+Pytest%2C+Selenium&project=5390094&query=%21title%3A%22Selenium+Session+Done%22&sort=-timestamp&statsPeriod=24h&topEvents=5&widths=76&widths=259&widths=235&widths=239&yAxis=count%28%29"
-echo " . Generated events: https://testorg-az.sentry.io/discover/homepage/?display=top5&field=project&field=count%28%29&field=se&interval=10s&name=All+Events&project=-1&query=&sort=-count&statsPeriod=1h&yAxis=count%28%29"
+echo " . Own errors: https://sentry.io/organizations/demo/discover/results/?field=event.type&field=pytestPlatform&field=pytestName&field=title&field=seleniumSessionId&field=timestamp&id=10479&name=Job+Monitor+for+Pytest%2C+Selenium&project=5390094&query=%21title%3A%22Selenium+Session+Done%22&sort=-timestamp&statsPeriod=24h&topEvents=5&widths=76&widths=259&widths=235&widths=239&yAxis=count%28%29"
+echo " . Generated events: https://demo.sentry.io/discover/homepage/?display=top5&field=project&field=count%28%29&field=se&interval=10s&name=All+Events&project=-1&query=&sort=-count&statsPeriod=1h&yAxis=count%28%29"
 echo " . Troubleshooting: canary.*.stderr and canary.*.stdout on the host."

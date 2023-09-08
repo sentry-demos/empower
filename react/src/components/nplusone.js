@@ -41,7 +41,7 @@ class Nplusone extends Component {
         <h3>
           look at the query{' '}
           <a
-            href="https://testorg-az.sentry.io/issues/?project=5808623&query=is%3Aunresolved+issue.type%3Aperformance_n_plus_one_api_calls&referrer=issue-list&statsPeriod=14d"
+            href="https://demo.sentry.io/issues/?project=5808623&query=is%3Aunresolved+issue.type%3Aperformance_n_plus_one_api_calls&referrer=issue-list&statsPeriod=14d"
             rel="noreferrer"
           >
             here
