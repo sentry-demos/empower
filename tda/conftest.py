@@ -296,7 +296,9 @@ def android_react_native_emu_driver(request, set_tags, selenium_endpoint):
             'deviceName': 'Android GoogleAPI Emulator',
             'platformVersion': '10.0',
             'platformName': 'Android',
-            'app': f'https://github.com/sentry-demos/sentry_react_native/releases/download/{release_version}/app-release.apk',
+            # 'app': f'https://github.com/sentry-demos/sentry_react_native/releases/download/{release_version}/app-release.apk',
+            # 'app': f'http://localhost:3000/app-release.apk',
+            'app': f'https://eb84-213-164-1-114.ngrok.io/app-release.apk',
             'sauce:options': {
                 'appiumVersion': '1.20.2',
                 'build': 'RDC-Android-Python-Best-Practice',

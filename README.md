@@ -64,20 +64,42 @@ cd react
 
 The React app will default to Flask as its backend
 ```
-// points to Flask
-localhost:5000
+// points to local Flask
+localhost:3000
 
 // points to Express
-localhost:5000?backend=express
-localhost:5000/products?se=yourname&backend=express
+localhost:3000?backend=express
+localhost:3000/products?se=yourname&backend=express
 
 // throw an exception on any route via 'crash'
-localhost:5000?crash=true
+localhost:3000?crash=true
 ```
+
+?
+springboot
+flask
+express
+aspnetcore
+laravel
+ruby
+rails
+
+## What to test
+Trigger an error via shopping cart
+
+Add +2 quantity of a single item to Cart and purchase in order to trigger an Error. Visit the routes defined in src/index.js to produce transactions.
+
+Trigger an error by query param
+
+Load products via the backend you ran the app with (react flask...)
+
+Load products via a cloud backend by passing a query param
+
+Set a user Email
 
 ## Trigger an error
 
-Add +2 quantity of a single item to Cart and purchase in order to trigger an Error. Visit the routes defined in src/index.js to produce transactions.
+
 
 ## Deploy to Prod
 This script deploys the flagship apps React + Flask. For deploying a single app to App Engine, check each platform's README for specific instructions. Make sure you don't have any local changes to `env-config/production.env`.

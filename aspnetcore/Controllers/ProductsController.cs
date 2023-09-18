@@ -19,11 +19,45 @@ public class ProductsController : ControllerBase
     [HttpGet]
     public async Task<IList<Product>> Get()
     {
-        var products = await GetProductsAsync();
-        
-        await CallHttpApiAsync();
-        
-        return products;
+        // 1. ONLY If EntityFramework/SQLClient/DiagnosticSource are NOT being used 
+        var db_query_span = _sentryHub.GetSpan()?.StartChild("custom_db-<NAME>");
+        try
+        {
+            // 2. Do your Database Query... 
+            var products = await GetProductsAsync();
+            await CallHttpApiAsync();
+            
+            // 3. finish the sentry span
+            db_query_span?.Finish(SpanStatus.Ok);
+            return products;
+        }
+        catch (Exception e)
+        {
+            db_query_span?.Finish(SpanStatus.InternalError);
+            throw;
+        }
+    }
+
+    // Write once, and it applies to ALL custom sql queries 
+    // Your Custom DB Queries
+    public async MyCustomSQLqueries Get(complex_sql_query)
+    {
+        // 1. ONLY If EntityFramework/SQLClient/DiagnosticSource are NOT being used 
+        var db_query_span = _sentryHub.GetSpan()?.StartChild("custom_db-<NAME>");
+
+        try
+        {
+            db_query_span?.Finish(SpanStatus.Ok);
+
+            // 2. Do your Database Query... 
+            var result = await RunQuery(complex_sql_query);
+            return result;
+        }
+        catch (Exception e)
+        {
+            db_query_span?.Finish(SpanStatus.InternalError);
+            throw;
+        }
     }
 
     private async Task<List<Product>> GetProductsAsync()
