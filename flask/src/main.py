@@ -2,7 +2,6 @@ import datetime
 import operator
 import os
 import requests
-import sys
 import time
 from flask import Flask, json, request, make_response, send_from_directory
 from flask_cors import CORS
@@ -231,14 +230,3 @@ def sentry_event_context():
     email = request.headers.get('email')
     if email not in [None, "undefined"]:
         sentry_sdk.set_user({ "email" : email })
-
-#
-# Main entry point, called from ../run.sh
-#
-def run():
-    i = sys.version_info
-    if sys.version_info[0] < 3:
-        raise SystemExit("Failed to start: need python3")
-    # This is used when running locally only. When deploying to Google App
-    # Engine, a webserver process such as Gunicorn will serve the app.
-    app.run(host='127.0.0.1', port=os.environ["PORT"], debug=False)
