@@ -1,0 +1,14 @@
+name: mock-data
+on:
+  push:
+    branches: [master, test-me-*]
+  pull_request:
+
+jobs:
+  mock-data:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - run: docker compose up --wait
+    - run: while ! curl --fail --silent http://localhost:3000; do sleep .5; done
+      timeout-minutes: 1
