@@ -21,7 +21,7 @@ class Organization extends Component {
     uc_small_script.async = false;
     uc_small_script.src =
       this.props.backend +
-      '/c_assets/c_small_file.js' +
+      '/compressed_assets/compressed_small_file.js' +
       '?cacheBuster=' +
       Math.random();
     document.body.appendChild(uc_small_script);
@@ -29,9 +29,10 @@ class Organization extends Component {
     // big uncompressed file
     let c_big_script = document.createElement('script');
     c_big_script.async = false;
+
     c_big_script.src =
       this.props.backend +
-      '/uc_assets/uc_big_file.js' +
+      '/uncompressed_assets/uncompressed_big_file.js' +
       '?cacheBuster=' +
       Math.random();
     document.body.appendChild(c_big_script);

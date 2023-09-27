@@ -200,10 +200,10 @@ def product_info():
     return "flask /product/0/info"
 
 # uncompressed assets
-@app.route('/uc_assets/<path:path>')
+@app.route('/uncompressed_assets/<path:path>')
 def send_report(path):
     time.sleep(.55)
-    response = send_from_directory('uc_assets', path)
+    response = send_from_directory('../uncompressed_assets', path)
     # `Timing-Allow-Origin: *` allows timing/sizes to visbile in span
     response.headers['Timing-Allow-Origin'] = '*'
     # Overwriting `Content-Type` header to disable compression
@@ -211,9 +211,9 @@ def send_report(path):
     return response
 
 # compressed assets
-@app.route('/c_assets/<path:path>')
+@app.route('/compressed_assets/<path:path>')
 def send_report_configured_properly(path):
-    response = send_from_directory('c_assets', path)
+    response = send_from_directory('../compressed_assets', path)
     # `Timing-Allow-Origin: *` allows timing/sizes to visbile in span
     response.headers['Timing-Allow-Origin'] = '*'
     return response
