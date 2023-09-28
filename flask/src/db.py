@@ -8,13 +8,12 @@ from .utils import weighter
 from dotenv import load_dotenv
 load_dotenv()
 
-HOST = os.getenv("DB_HOST")
-DATABASE = os.getenv("DB_DATABASE")
-USERNAME = os.getenv("DB_USERNAME")
-PASSWORD = os.getenv("DB_PASSWORD")
-FLASK_ENV = os.environ.get("FLASK_ENV")
-CLOUD_SQL_CONNECTION_NAME = os.environ.get("DB_CLOUD_SQL_CONNECTION_NAME")
-PRODUCTS_NUM = 4;
+HOST = os.environ["DB_HOST"]
+DATABASE = os.environ["DB_DATABASE"]
+USERNAME = os.environ["DB_USERNAME"]
+PASSWORD = os.environ["DB_PASSWORD"]
+FLASK_ENV = os.environ["FLASK_ENV"]
+PRODUCTS_NUM = 4
 
 class DatabaseConnectionError (Exception):
     pass
@@ -26,6 +25,7 @@ if FLASK_ENV == "test":
     print("> ENVIRONMENT test ")
     db = create_engine('postgresql://' + USERNAME + ':' + PASSWORD + '@' + HOST + ':5432/' + DATABASE)
 else:
+    CLOUD_SQL_CONNECTION_NAME = os.environ["DB_CLOUD_SQL_CONNECTION_NAME"]
     print("> ENVIRONMENT production ")
     print("> CLOUD_SQL_CONNECTION_NAME", CLOUD_SQL_CONNECTION_NAME)
     db = sqlalchemy.create_engine(
@@ -50,7 +50,7 @@ def get_products():
         n = weighter(operator.le, 12)
         # adjust by number of products to get the same timeout as we had in the past
         # before pg_sleep() was moved out of SELECT clause.
-        n *= PRODUCTS_NUM; 
+        n *= PRODUCTS_NUM
         products = connection.execute(
             "SELECT * FROM products WHERE id IN (SELECT id from products, pg_sleep(%s))" % (n)
         ).fetchall()
