@@ -20,9 +20,15 @@
   },
   "scripts": {
     "start": "react-app-rewired start",
-    "build": "react-app-rewired build",
+    "build": "INLINE_RUNTIME_CHUNK=false react-app-rewired build && cp serve.json build/",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
+  },
+  "scriptsComments": {
+    "build": [
+      "INLINE_RUNTIME_CHUNK is needed to avoid source map processing error in Sentry when stacktrace includes inline JS",
+      "serve.json is needed to set headers that enable browser profiling"
+    ]
   },
   "engines": {
     "npm": ">=8.0.0 <9.0.0",
