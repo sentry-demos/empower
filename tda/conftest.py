@@ -398,12 +398,12 @@ def ios_sim_driver(request, set_tags, selenium_endpoint):
         release_version = ReleaseVersion.latest_ios_github_release()
 
         options = XCUITestOptions().load_capabilities({
-            'appium:deviceName': 'iPhone 11 Simulator',
+            'appium:deviceName': 'iPhone 13 Simulator',
             'platformName': 'iOS',
-            'appium:platformVersion': '14.5',
+            'appium:platformVersion': '15.5',
 
             'sauce:options': {
-                'appiumVersion': '1.21.0',
+                'appiumVersion': '1.22.3',
                 'build': 'RDC-iOS-Mobile-Native',
                 'name': request.node.name,
             },
