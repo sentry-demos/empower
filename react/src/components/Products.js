@@ -64,12 +64,16 @@ class Products extends Component {
   async componentDidMount() {
     var products;
     try {
-      products = await this.getProducts();
       // take first 4 products because that's all we have img/title/description for
-      this.props.setProducts(Array(200/4).fill(products.slice(0, 4)).flat().map((p, n) => {
+      products = (await this.getProducts()).slice(0, 4);
+      const repeat = getRepeat() || 50;
+
+      const repeatedProducts = Array(repeat).fill(products).flat().map((p, n) => {
         p.id = n
         return p
-      }));
+      });
+
+      this.props.setProducts(repeatedProducts);
     } catch (err) {
       Sentry.captureException(new Error('app unable to load products: ' + err));
     }
@@ -130,3 +134,9 @@ const mapStateToProps = (state, ownProps) => {
 export default connect(mapStateToProps, { setProducts, addProduct })(
   Sentry.withProfiler(Products, { name: 'Products' })
 );
+
+function getRepeat() {
+  const url = new URL(window.location.href);
+  const repeat = parseInt(url.searchParams.get('repeat'));
+  return Number.isNaN(repeat) ? undefined : repeat;
+}

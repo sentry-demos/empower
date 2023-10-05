@@ -47,7 +47,14 @@ class ProductsJoin extends Component {
     var products;
     try {
       products = await this.getProductsJoin();
-      this.props.setProducts(products);
+      const repeat = getRepeat() || 1;
+
+      const repeatedProducts = Array(repeat).fill(products).flat().map((p, n) => {
+        p.id = n
+        return p
+      });
+
+      this.props.setProducts(repeatedProducts);
     } catch (err) {
       Sentry.captureException(new Error('app unable to load products'));
     }
@@ -108,3 +115,9 @@ const mapStateToProps = (state, ownProps) => {
 export default connect(mapStateToProps, { setProducts, addProduct })(
   Sentry.withProfiler(ProductsJoin, { name: 'ProductsJoin' })
 );
+
+function getRepeat() {
+  const url = new URL(window.location.href);
+  const repeat = parseInt(url.searchParams.get('repeat'));
+  return Number.isNaN(repeat) ? undefined : repeat;
+}
