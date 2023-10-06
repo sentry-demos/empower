@@ -79,6 +79,12 @@ localhost:5000?crash=true
 
 Add +2 quantity of a single item to Cart and purchase in order to trigger an Error. Visit the routes defined in src/index.js to produce transactions.
 
+## Trigger slow performance
+
+You can pass `?repeat=X` to the `/products` and `/products-join` URLs, like this: `/products?repeat=100`. 
+This will render a higher number of list items, which shows slow performance in the frontend. 
+You can see a slow react render span in the resulting transaction.
+
 ## Deploy to Prod
 This script deploys the flagship apps React + Flask. For deploying a single app to App Engine, check each platform's README for specific instructions. Make sure you don't have any local changes to `env-config/production.env`.
 ```
