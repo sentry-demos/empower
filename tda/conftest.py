@@ -109,6 +109,10 @@ desktop_browsers = [
         "browserName": "chrome",
         "browserVersion": "latest",
     }]
+desktop_browsers_ids = [
+    '{browserName}@{browserVersion}({platformName})'.format(**browser)
+    for browser in desktop_browsers
+]
 
 def pytest_addoption(parser):
     parser.addoption("--dc", action="store", default='us', help="Set Sauce Labs Data Center (US or EU)")
@@ -231,7 +235,7 @@ def set_tags(request):
     sentry_sdk.set_tag("pytestPlatform", platform)
     sentry_sdk.set_tag("pytestName", test_name)
 
-@pytest.fixture(params=desktop_browsers)
+@pytest.fixture(params=desktop_browsers, ids=desktop_browsers_ids)
 def desktop_web_driver(request, set_tags, selenium_endpoint):
 
     try:
