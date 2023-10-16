@@ -206,11 +206,8 @@ app.post("/checkout", async (req, res) => {
     let quantities = cart["quantities"];
     console.log("quantities", quantities);
     for (const cartItem in quantities) {
-      for (const inventoryItem of inventory) {
-        console.log("> inventoryItem.count", inventoryItem["count"]);
-        if (!hasInventory(inventoryItem)) {
-          throw new Error("Not enough inventory for product");
-        }
+      if (!hasInventory(cartItem)) {
+        throw new Error("Not enough inventory for product");
       }
     }
     spanProcessOrder.finish();
