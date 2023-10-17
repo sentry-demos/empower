@@ -12,3 +12,9 @@ jobs:
     - run: docker compose up --wait
     - run: while ! curl --fail --silent http://localhost:3000; do sleep .5; done
       timeout-minutes: 1
+    - uses: actions/setup-python@v4
+      with:
+        python-version: 3.12
+    - run: pip install -r tda/requirements.txt
+    - run: |
+        SLEEP_LENGTH=0 BACKENDS=flask TDA_CONFIG=tda/config.local.yaml pytest tda/desktop_web

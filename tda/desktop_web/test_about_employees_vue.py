@@ -3,7 +3,7 @@ import sentry_sdk
 
 def test_about_employees_vue(desktop_web_driver, endpoints, random, batch_size, sleep_length):
 
-    for endpoint in endpoints["vue_endpoints"]:
+    for endpoint in endpoints.vue_endpoints:
 
         endpoint = endpoint + "/about"
 

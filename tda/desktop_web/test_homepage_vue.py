@@ -6,7 +6,7 @@ from selenium.webdriver.common.by import By
 # Note: Not sure why won't pytest find this and run it when I name it 'vue_test_homepage'
 def test_homepage_vue(desktop_web_driver, endpoints, random, batch_size, sleep_length):
 
-    for endpoint in endpoints['vue_endpoints']:
+    for endpoint in endpoints.vue_endpoints:
 
         # TODO homepage endpoint loads Products but in future will need to append /products to the endpoint
         sentry_sdk.set_tag("endpoint", endpoint)
