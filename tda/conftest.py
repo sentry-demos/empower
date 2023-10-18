@@ -17,7 +17,7 @@ from selenium.webdriver.remote.remote_connection import RemoteConnection
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from selenium.webdriver.safari.options import Options as SafariOptions
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from urllib.parse import urlencode
 
 import sentry_sdk
@@ -29,8 +29,8 @@ def get_system_user():
 # round seconds down (floor): adjust_seconds = 0
 # round seconds up (ceil): adjust_seconds = 1
 def get_current_time_iso_utc(adjust_seconds=0):
-    dt = datetime.utcnow().replace(microsecond=0) + timedelta(seconds = adjust_seconds)
-    return dt.isoformat()
+    dt = datetime.now(timezone.utc).replace(microsecond=0) + timedelta(seconds = adjust_seconds)
+    return dt.strftime('%Y-%m-%dT%H:%M:%S')
 
 
 # Example command usage:
