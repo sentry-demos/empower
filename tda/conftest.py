@@ -276,14 +276,14 @@ def desktop_web_driver(request, set_tags, selenium_endpoint):
         # use the test result to send the pass/fail status to Sauce Labs
         sauce_result = "failed" if request.node.rep_call.failed else "passed"
 
-        # Handler failure scenario, send to Sentry job-monitor-application-monitoring
+        # Handler failure scenario, send to Sentry empower-tda
         if sauce_result == "failed":
             sentry_sdk.capture_message("Sauce Result: %s" % (sauce_result))
 
         browser.execute_script("sauce:job-result={}".format(sauce_result))
         browser.quit()
 
-        # desktop_web tests finished, send to Sentry job-monitor-application-monitoring, look for tags pytestName, pytestPlatform, seleniumSessionId
+        # desktop_web tests finished, send to Sentry empower-tda, look for tags pytestName, pytestPlatform, seleniumSessionId
         sentry_sdk.capture_message("Selenium Session Done")
 
     except Exception as err:
@@ -318,7 +318,7 @@ def android_react_native_emu_driver(request, set_tags, selenium_endpoint):
         driver.execute_script("sauce:job-result={}".format(sauce_result))
         driver.quit()
 
-        # android_react_native tests finished, send to Sentry job-monitor-application-monitoring, look for tags pytestName, pytestPlatform, seleniumSessionId
+        # android_react_native tests finished, send to Sentry empower-tda, look for tags pytestName, pytestPlatform, seleniumSessionId
         sentry_sdk.capture_message("Selenium Session Done")
 
     except Exception as err:
@@ -353,7 +353,7 @@ def android_emu_driver(request, set_tags, selenium_endpoint):
         driver.execute_script("sauce:job-result={}".format(sauce_result))
         driver.quit()
 
-        # android tests finished, send to Sentry job-monitor-application-monitoring, look for tags pytestName, pytestPlatform, seleniumSessionId
+        # android tests finished, send to Sentry empower-tda, look for tags pytestName, pytestPlatform, seleniumSessionId
         sentry_sdk.capture_message("Selenium Session Done")
 
     except Exception as err:
@@ -389,7 +389,7 @@ def ios_react_native_sim_driver(request, set_tags, selenium_endpoint):
         driver.execute_script("sauce:job-result={}".format(sauce_result))
         driver.quit()
 
-        # ios_react_native tests finished, send to Sentry job-monitor-application-monitoring, look for tags pytestName, pytestPlatform, seleniumSessionId
+        # ios_react_native tests finished, send to Sentry empower-tda, look for tags pytestName, pytestPlatform, seleniumSessionId
         sentry_sdk.capture_message("Selenium Session Done")
 
     except Exception as err:
@@ -424,7 +424,7 @@ def ios_sim_driver(request, set_tags, selenium_endpoint):
         driver.execute_script("sauce:job-result={}".format(sauce_result))
         driver.quit()
 
-        # ios tests finished, send to Sentry job-monitor-application-monitoring, look for tags pytestName, pytestPlatform, seleniumSessionId
+        # ios tests finished, send to Sentry empower-tda, look for tags pytestName, pytestPlatform, seleniumSessionId
         sentry_sdk.capture_message("Selenium Session Done")
 
     except Exception as err:
@@ -448,7 +448,7 @@ def final_report():
     end = urllib.parse.quote(end_time)
     project = DSN.split('/')[-1]
     print()
-    print(f'GENERATED errors: https://demo.sentry.io/issues/?query=se%3A{SE_TAG}+%21project%3Ajob-monitor-application-monitoring&start={start}&end={end}')
+    print(f'GENERATED errors: https://demo.sentry.io/issues/?query=se%3A{SE_TAG}+%21project%3Aempower-tda&start={start}&end={end}')
     print(f'OWN errors:       https://demo.sentry.io/issues/?project={project}&query=se%3A{SE_TAG}&start={start}&end={end}')
 
 atexit.register(final_report)
