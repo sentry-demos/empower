@@ -1,3 +1,6 @@
+Below is a bit out of date, please see 
+https://github.com/sentry-demos/empower/pull/173
+
 # Test Data Automation
 Runs automted tests against Sentry demos on GCP, in order to generate errors and transactions to be sent to Sentry.io.
 
