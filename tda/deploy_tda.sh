@@ -38,8 +38,10 @@ echo "Code copied."
 
 if [[ $reqs_changed == "1" || $env_nonempty == "0" ]]; then
   echo "re-installing requirements (because requirements.txt changed OR 'env' directory does not exist or is empty)..."
+  deploy_id=$(openssl rand -hex 3 | tr -d '\n')
+
   # Host must have python3.8 and virtualenv installed
-  ssh $HOST 'cd '$DIR' && ./build.sh'
+  ssh $HOST 'cd '$DIR' && ./build.sh '$deploy_id
   if [ $? != 0 ]; then
     echo "[ERROR] failed to install requirements on destination host"
     exit 1
@@ -56,7 +58,7 @@ echo Killing any currently running TDA processes...
 ssh $HOST 'cd '$DIR' && ./stop.sh'
 
 echo "Starting TDA..."
-ssh $HOST 'cd '$DIR' && ./run.sh'
+ssh $HOST 'cd '$DIR' && ./run.sh '$deploy_id
 if [ $? != 0 ]; then
   echo "[ERROR] failed to start TDA"
   exit 1
