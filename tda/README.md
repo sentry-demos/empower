@@ -86,25 +86,6 @@ pip install -r requirements.txt
 ```
 6. Instead of using `py.test` or `pytest` executable that is probably global and points to your Python 3.10+ installation, use `python3 -m pytest` that will pick up the Python 3.8 from virtual environment. (Not an issue on GCP tda box)
 
-### SSL Cert Issues
-
-Problem: When locally running TDA tests, i.e. `py.test -s -n 4 desktop_web`, if you experience this error (or similar relating to SSL Cert):
-
-```
-E           urllib3.exceptions.MaxRetryError: HTTPSConnectionPool(host='ondemand.us-west-1.saucelabs.com', port=443): Max retries exceeded with url: /wd/hub/session (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: self signed certificate in certificate chain (_ssl.c:1091)')))
-
-venv/lib/python3.7/site-packages/urllib3/util/retry.py:574: MaxRetryError
-```
-
-<details>
-<summary>Click to toggle error screenshot</summary>
-
-![Screen Shot 2021-11-29 at 2 57 11 PM](https://user-images.githubusercontent.com/12092849/145083651-5479f05c-107f-4d46-a981-1c728679172f.png)
-
-</details>
-
-**Solution:** A workaround is to locally change the `SAUCELABS_PROTOCOL` constant in `conftest.py` from `https` to `http`.
-
 Note that handled errors will not increment the crash counts in Release Health. But the Release Health UI does separate Handled from Unhandled Issues.
 
 https://appium.io/docs/en/commands/device/app/launch-app/
