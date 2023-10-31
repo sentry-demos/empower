@@ -1,7 +1,10 @@
 #!/bin/bash
 
-HOST=tda-application-monitoring.us-central1-a.sales-engineering-sf
-DIR=/home/kosty_maleyev/cron-job-python
+HOST=empower-tda-and-crons.us-central1-a.sales-engineering-sf
+DIR=/home/kosty/empower-crons-python
+CRON_EXPR="*/5 * * * *"
+CRON_USER=kosty
+COMMAND="$DIR/run.sh"
 
 function cleanup {
   echo "NOTE: if ssh check hangs, re-run 'gcloud compute config-ssh; ssh $HOST exit' to fix"
@@ -48,7 +51,20 @@ else
   echo "No need to install requirements, because no changes to requirements.txt, env exists on remote host and is not empty."
 fi
 
-# TODO update crontab or /etc/cron.d/ from local project's crontab file
-# https://stackoverflow.com/questions/610839/how-can-i-programmatically-create-a-new-cron-job
+# handle case when crontab is empty
+echo "EXISTING crontab:"
+ssh $HOST 'sudo crontab -u '$CRON_USER' -l'
+if [ $? != 0 ]; then
+  ssh $HOST 'echo "" | crontab -'
+fi
+echo "---"
+
+# set up cron job if not set up already
+# NOTE: this will overwrite any existing cron jobs from same project directory
+ssh $HOST '(sudo crontab -u '$CRON_USER' -l | grep -v '"$DIR"'; echo "'"$CRON_EXPR $COMMAND"'") | sort - | uniq - | sudo crontab -u '$CRON_USER' -'
+
+echo "UPDATED crontab:"
+ssh $HOST 'sudo crontab -u '$CRON_USER' -l'
+echo "---"
 
 echo "Done. New code should be picked up when cron job runs next time."
