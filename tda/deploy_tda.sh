@@ -1,7 +1,7 @@
 #!/bin/bash
 
-HOST=tda.us-central1-a.sales-engineering-sf
-DIR=/home/kosty/empower_tda
+HOST=empower-tda-and-crons.us-central1-a.sales-engineering-sf
+DIR=/home/kosty/empower-tda
 
 function cleanup {
   echo "NOTE: if ssh check hangs, re-run 'gcloud compute config-ssh; ssh $HOST exit' to fix"
