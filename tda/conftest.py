@@ -359,6 +359,7 @@ def android_emu_driver(request, set_tags, selenium_endpoint):
 
     except Exception as err:
         sentry_sdk.capture_exception(err)
+        raise
 
 @pytest.fixture
 def ios_react_native_sim_driver(request, set_tags, selenium_endpoint):
