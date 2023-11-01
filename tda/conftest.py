@@ -40,7 +40,6 @@ def get_current_time_iso_utc(adjust_seconds=0):
 
 start_time = get_current_time_iso_utc()
 
-SAUCELABS_PROTOCOL = "https://"
 DSN = "https://9802de20229e4afdaa0d60796cbb44d7@o87286.ingest.sentry.io/5390094"
 ENVIRONMENT = os.getenv("ENVIRONMENT") or "production"
 # SE_TAG will be both:
@@ -218,9 +217,9 @@ def selenium_endpoint(data_center):
     access_key = environ['SAUCE_ACCESS_KEY']
 
     if data_center and data_center.lower() == 'eu':
-        return SAUCELABS_PROTOCOL + "{}:{}@ondemand.eu-central-1.saucelabs.com/wd/hub".format(username, access_key)
+        return "https://{}:{}@ondemand.eu-central-1.saucelabs.com/wd/hub".format(username, access_key)
     else:
-        return SAUCELABS_PROTOCOL + "{}:{}@ondemand.us-west-1.saucelabs.com/wd/hub".format(username, access_key)
+        return "https://{}:{}@ondemand.us-west-1.saucelabs.com/wd/hub".format(username, access_key)
 
 @pytest.fixture
 def set_tags(request):
