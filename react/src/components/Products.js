@@ -19,13 +19,18 @@ class Products extends Component {
 
   // getProducts handles error responses differently, depending on the browser used
   async getProducts() {
-    let se, customerType, email;
+    let se, customerType, email, frontendSlowdown;
     Sentry.withScope(function (scope) {
-      [se, customerType] = [scope._tags.se, scope._tags.customerType];
+      const tags = scope._tags;
+      [se, customerType, frontendSlowdown] = [
+        tags.se,
+        tags.customerType,
+        tags.frontendSlowdown,
+      ];
       email = scope._user.email;
     });
 
-    ['/api', '/connect', '/organization'].forEach((endpoint) => {
+    [('/api', '/connect', '/organization')].forEach((endpoint) => {
       fetch(this.props.backend + endpoint, {
         method: 'GET',
         headers: {
@@ -40,7 +45,13 @@ class Products extends Component {
       });
     });
 
-    let result = await fetch(this.props.backend + '/products', {
+    // When triggering a frontend-only slowdown, use the products-join endpoint
+    // because it returns product data with a fast backend response.
+    // Otherwise use the /products endpoint, which provides a slow backend response.
+    const productsEndpoint = frontendSlowdown ? '/products-join' : '/products';
+    console.log(`productsEndpoint: ${productsEndpoint}`);
+    let result = await fetch(this.props.backend + productsEndpoint, {
+      method: 'GET',
       method: 'GET',
       headers: { se, customerType, email, 'Content-Type': 'application/json' },
     }).catch((err) => {
@@ -66,10 +77,15 @@ class Products extends Component {
     try {
       products = await this.getProducts();
       // take first 4 products because that's all we have img/title/description for
-      this.props.setProducts(Array(200/4).fill(products.slice(0, 4)).flat().map((p, n) => {
-        p.id = n
-        return p
-      }));
+      this.props.setProducts(
+        Array(200 / 4)
+          .fill(products.slice(0, 4))
+          .flat()
+          .map((p, n) => {
+            p.id = n;
+            return p;
+          })
+      );
     } catch (err) {
       Sentry.captureException(new Error('app unable to load products: ' + err));
     }
@@ -80,7 +96,7 @@ class Products extends Component {
     return products.length > 0 ? (
       <div>
         <ul className="products-list">
-          {products.map((product,i) => {
+          {products.map((product, i) => {
             const averageRating = (
               product.reviews.reduce((a, b) => a + (b['rating'] || 0), 0) /
               product.reviews.length
