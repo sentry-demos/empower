@@ -5,7 +5,7 @@ from selenium.webdriver.common.by import By
 
 def test_checkout(desktop_web_driver, endpoints, batch_size, backend, random, sleep_length):
 
-    for endpoint in endpoints['react_endpoints']:
+    for endpoint in endpoints.react_endpoints:
         endpoint_products = endpoint + "/products"
         sentry_sdk.set_tag("endpoint", endpoint_products)
 

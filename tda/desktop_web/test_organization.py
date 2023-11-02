@@ -6,7 +6,7 @@ from urllib.parse import urlencode
 def test_organization(desktop_web_driver, endpoints, random, batch_size, backend, sleep_length):
     sentry_sdk.set_tag("pytestName", "test_organization")
 
-    for endpoint in endpoints['react_endpoints']:
+    for endpoint in endpoints.react_endpoints:
         endpoint_organization = endpoint + "/organization"
         sentry_sdk.set_tag("endpoint", endpoint_organization)
 

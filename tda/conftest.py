@@ -1,5 +1,6 @@
 import pytest
 from os import environ
+import contextlib
 import os
 import release_version_manager as ReleaseVersion
 import random as real_random
@@ -7,13 +8,13 @@ import subprocess
 import urllib.parse
 import atexit
 import yaml
+from typing import NamedTuple
 
 from selenium import webdriver
 from appium import webdriver as appiumdriver
 from appium.options.android import UiAutomator2Options
 from appium.options.ios import XCUITestOptions
 from selenium.common.exceptions import WebDriverException
-from selenium.webdriver.remote.remote_connection import RemoteConnection
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from selenium.webdriver.safari.options import Options as SafariOptions
@@ -40,7 +41,41 @@ def get_current_time_iso_utc(adjust_seconds=0):
 
 start_time = get_current_time_iso_utc()
 
-DSN = "https://9802de20229e4afdaa0d60796cbb44d7@o87286.ingest.sentry.io/5390094"
+
+class Browser(NamedTuple):
+    remote: bool
+    browserName: str
+    browserVersion: str | None = None
+    platformName: str | None = None
+
+    @property
+    def param_display(self) -> str:
+        if self.remote:
+            return f'{self.browserName}@{self.browserVersion}({self.platformName})'
+        else:
+            return f'{self.browserName}(local)'
+
+
+class Config(NamedTuple):
+    browsers: tuple[Browser, ...]
+    dsn: str
+    react_endpoints: tuple[str, ...]
+    vue_endpoints: tuple[str, ...]
+
+
+def _config() -> Config:
+    cfg_filename = os.environ.get('TDA_CONFIG', 'config.yaml')
+    with open(cfg_filename) as f:
+        contents = yaml.safe_load(f)
+    return Config(
+        browsers=tuple(Browser(**d) for d in contents['browsers']),
+        dsn=contents['dsn'],
+        react_endpoints=tuple(contents['react_endpoints']),
+        vue_endpoints=tuple(contents['vue_endpoints']),
+    )
+
+CONFIG = _config()
+
 ENVIRONMENT = os.getenv("ENVIRONMENT") or "production"
 # SE_TAG will be both:
 #
@@ -77,7 +112,7 @@ import urllib3
 urllib3.disable_warnings()
 
 sentry_sdk.init(
-    dsn=DSN,
+    dsn=CONFIG.dsn,
     traces_sample_rate=0,
     environment=ENVIRONMENT,
 )
@@ -187,8 +222,7 @@ def backend(random):
 
 @pytest.fixture
 def endpoints():
-    with open('endpoints.yaml', 'r') as stream:
-        return yaml.safe_load(stream)
+    return CONFIG
 
 # Automatically append a set of extra parameters to all URLs
 #
@@ -234,16 +268,16 @@ def set_tags(request):
     sentry_sdk.set_tag("pytestPlatform", platform)
     sentry_sdk.set_tag("pytestName", test_name)
 
-@pytest.fixture(params=desktop_browsers, ids=desktop_browsers_ids)
-def desktop_web_driver(request, set_tags, selenium_endpoint):
 
+@contextlib.contextmanager
+def _sauce_browser(request, selenium_endpoint):
     try:
         test_name = request.node.name
         build_tag = environ.get('BUILD_TAG', "Application-Monitoring-TDA")
 
-        options = _browser2class[request.param['browserName']]()
-        for c in ['platformName', 'browserVersion']:
-            options.set_capability(c, request.param[c])
+        options = _browser2class[request.param.browserName]()
+        options.set_capability('platformName', request.param.platformName)
+        options.set_capability('browserVersion', request.param.browserVersion)
         options.set_capability('sauce:options', {
             'seleniumVersion': '4.8.0',
             'build': build_tag,
@@ -269,25 +303,48 @@ def desktop_web_driver(request, set_tags, selenium_endpoint):
         else:
             raise WebDriverException("Never created!")
 
-        yield browser
+        try:
+            yield browser
+        finally:
+            # Teardown starts here
+            # report results
+            # use the test result to send the pass/fail status to Sauce Labs
+            sauce_result = "failed" if request.node.rep_call.failed else "passed"
 
-        # Teardown starts here
-        # report results
-        # use the test result to send the pass/fail status to Sauce Labs
-        sauce_result = "failed" if request.node.rep_call.failed else "passed"
+            # Handler failure scenario, send to Sentry empower-tda
+            if sauce_result == "failed":
+                sentry_sdk.capture_message("Sauce Result: %s" % (sauce_result))
 
-        # Handler failure scenario, send to Sentry empower-tda
-        if sauce_result == "failed":
-            sentry_sdk.capture_message("Sauce Result: %s" % (sauce_result))
+            browser.execute_script("sauce:job-result={}".format(sauce_result))
+            browser.quit()
 
-        browser.execute_script("sauce:job-result={}".format(sauce_result))
-        browser.quit()
-
-        # desktop_web tests finished, send to Sentry empower-tda, look for tags pytestName, pytestPlatform, seleniumSessionId
-        sentry_sdk.capture_message("Selenium Session Done")
+            # desktop_web tests finished, send to Sentry empower-tda, look for tags pytestName, pytestPlatform, seleniumSessionId
+            sentry_sdk.capture_message("Selenium Session Done")
 
     except Exception as err:
         sentry_sdk.capture_exception(err)
+
+
+@contextlib.contextmanager
+def _local_browser(request):
+    assert request.param.browserName == 'chrome'  # TODO: add others
+    options = webdriver.ChromeOptions()
+    options.add_argument("no-sandbox")
+    options.add_argument("disable-gpu")
+    options.add_argument("disable-dev-shm-usage")
+    options.add_argument("headless")
+    with webdriver.Chrome(options=options) as driver:
+        yield driver
+
+
+@pytest.fixture(params=CONFIG.browsers, ids=[b.param_display for b in CONFIG.browsers])
+def desktop_web_driver(request, set_tags):
+    if request.param.remote:
+        with _sauce_browser(request, request.getfixturevalue('selenium_endpoint')) as b:
+            yield b
+    else:
+        with _local_browser(request) as b:
+            yield b
 
 @pytest.fixture
 def android_react_native_emu_driver(request, set_tags, selenium_endpoint):
@@ -442,13 +499,14 @@ def pytest_runtest_makereport(item, call):
     # be "setup", "call", "teardown"
     setattr(item, "rep_" + rep.when, rep)
 
-def final_report():
-    end_time = get_current_time_iso_utc(adjust_seconds=1)
-    start = urllib.parse.quote(start_time)
-    end = urllib.parse.quote(end_time)
-    project = DSN.split('/')[-1]
-    print()
-    print(f'GENERATED errors: https://demo.sentry.io/issues/?query=se%3A{SE_TAG}+%21project%3Aempower-tda&start={start}&end={end}')
-    print(f'OWN errors:       https://demo.sentry.io/issues/?project={project}&query=se%3A{SE_TAG}&start={start}&end={end}')
+if 'localhost' not in CONFIG.dsn:
+    def final_report():
+        end_time = get_current_time_iso_utc(adjust_seconds=1)
+        start = urllib.parse.quote(start_time)
+        end = urllib.parse.quote(end_time)
+        project = CONFIG.dsn.split('/')[-1]
+        print()
+        print(f'GENERATED errors: https://demo.sentry.io/issues/?query=se%3A{SE_TAG}+%21project%3Aempower-tda&start={start}&end={end}')
+        print(f'OWN errors:       https://demo.sentry.io/issues/?project={project}&query=se%3A{SE_TAG}&start={start}&end={end}')
 
-atexit.register(final_report)
+    atexit.register(final_report)
