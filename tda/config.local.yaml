@@ -1,0 +1,9 @@
+browsers:
+- remote: false
+  browserName: chrome
+
+dsn: 'http://tda@localhost:9989/9'
+
+react_endpoints: [http://localhost:3000]
+
+vue_endpoints: []

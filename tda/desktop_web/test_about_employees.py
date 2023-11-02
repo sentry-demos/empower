@@ -5,7 +5,7 @@ from urllib.parse import urlencode
 
 def test_about_employees(desktop_web_driver, endpoints, random, batch_size, backend, sleep_length):
 
-    for endpoint in endpoints['react_endpoints']:
+    for endpoint in endpoints.react_endpoints:
         endpoint_about = endpoint + "/about"
         sentry_sdk.set_tag("endpoint", endpoint_about)
 

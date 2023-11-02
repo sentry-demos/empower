@@ -27,7 +27,7 @@ def test_homepage(desktop_web_driver, endpoints, random, batch_size, backend, sl
         upper_bound = .4
 
 
-    for endpoint in endpoints['react_endpoints']:
+    for endpoint in endpoints.react_endpoints:
         sentry_sdk.set_tag("endpoint", endpoint)
 
         for i in range(batch_size):
