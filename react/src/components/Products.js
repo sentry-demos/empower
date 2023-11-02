@@ -74,6 +74,33 @@ class Products extends Component {
       Sentry.withScope(function (scope) {
         frontendSlowdown = scope._tags.frontendSlowdown;
       });
+
+      // Trigger a Sentry 'Performance Issue' in the case of
+      // a frontend slowdown
+      if (frontendSlowdown) {
+        // Must bust cache to have force transfer size
+        // small compressed file
+        let uc_small_script = document.createElement('script');
+        uc_small_script.async = false;
+        uc_small_script.src =
+          this.props.backend +
+          '/compressed_assets/compressed_small_file.js' +
+          '?cacheBuster=' +
+          Math.random();
+        document.body.appendChild(uc_small_script);
+
+        // big uncompressed file
+        let c_big_script = document.createElement('script');
+        c_big_script.async = false;
+
+        c_big_script.src =
+          this.props.backend +
+          '/uncompressed_assets/uncompressed_big_file.js' +
+          '?cacheBuster=' +
+          Math.random();
+        document.body.appendChild(c_big_script);
+      }
+
       products = await this.getProducts(frontendSlowdown);
       // If triggering a frontend-only slowdown, cause a render problem
       if (frontendSlowdown) {
