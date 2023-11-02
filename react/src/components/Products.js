@@ -18,15 +18,10 @@ class Products extends Component {
   }
 
   // getProducts handles error responses differently, depending on the browser used
-  async getProducts() {
-    let se, customerType, email, frontendSlowdown;
+  async getProducts(frontendSlowdown) {
+    let se, customerType, email;
     Sentry.withScope(function (scope) {
-      const tags = scope._tags;
-      [se, customerType, frontendSlowdown] = [
-        tags.se,
-        tags.customerType,
-        tags.frontendSlowdown,
-      ];
+      [se, customerType] = [scope._tags.se, scope._tags.customerType];
       email = scope._user.email;
     });
 
@@ -75,17 +70,25 @@ class Products extends Component {
   async componentDidMount() {
     var products;
     try {
-      products = await this.getProducts();
-      // take first 4 products because that's all we have img/title/description for
-      this.props.setProducts(
-        Array(200 / 4)
-          .fill(products.slice(0, 4))
-          .flat()
-          .map((p, n) => {
-            p.id = n;
-            return p;
-          })
-      );
+      let frontendSlowdown;
+      Sentry.withScope(function (scope) {
+        frontendSlowdown = scope._tags.frontendSlowdown;
+      });
+      products = await this.getProducts(frontendSlowdown);
+      // If triggering a frontend-only slowdown, cause a render problem
+      if (frontendSlowdown) {
+        this.props.setProducts(
+          Array(200 / 4)
+            .fill(products.slice(0, 4))
+            .flat()
+            .map((p, n) => {
+              p.id = n;
+              return p;
+            })
+        );
+      } else {
+        this.props.setProducts(products.slice(0, 4));
+      }
     } catch (err) {
       Sentry.captureException(new Error('app unable to load products: ' + err));
     }
