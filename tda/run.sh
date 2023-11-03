@@ -16,6 +16,7 @@ source env/bin/activate
 source .sauce_credentials
 export LATEST_REACT_NATIVE_GITHUB_RELEASE=$(python3 latest_github_release.py react_native)
 export LATEST_ANDROID_GITHUB_RELEASE=$(python3 latest_github_release.py android)
+export LATEST_IOS_GITHUB_RELEASE=$(python3 latest_github_release.py android)
 
 # First run ALL canaries to ensure not a single one fails
 for job in jobs/*.sh; do
