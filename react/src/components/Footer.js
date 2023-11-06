@@ -1,6 +1,6 @@
 import * as Sentry from '@sentry/react';
-import { Fragment } from 'react';
-import { Component } from 'react';
+import { Fragment, Component } from 'react';
+import { Link } from 'react-router-dom';
 import './footer.css';
 
 class Footer extends Component {
@@ -56,6 +56,9 @@ class Footer extends Component {
               {this.state.subscribed && <SubscribedMessage />}
             </div>
           </Sentry.ErrorBoundary>
+          <p className="sentry-unmask">
+            © 2021 • Empower Plant • <Link to="/about">About us</Link>
+          </p>
         </div>
       </footer>
     );
