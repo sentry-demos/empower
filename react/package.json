@@ -56,5 +56,9 @@
     "@acemarke/react-prod-sourcemaps": "^0.2.1",
     "@sentry/webpack-plugin": "~2.4.0",
     "react-app-rewired": "~2.2.1"
+  },
+  "volta": {
+    "node": "16.20.2",
+    "npm": "8.19.4"
   }
 }
