@@ -83,7 +83,7 @@ fi
 be_projects=""
 fe_projects=""
 for proj in $projects; do
-  if [[ $proj =~ ^(flask|express|ruby|spring-boot|aspnetcore|laravel|ruby-on-rails)$ ]]; then
+  if [[ $proj =~ ^(flask|express|ruby|spring-boot|aspnetcore|laravel|ruby-on-rails|crons-python)$ ]]; then
     be_projects+="$proj "
   else
     fe_projects+="$proj "
@@ -101,6 +101,7 @@ function cleanup {
   rm -f $top/*/.app.yaml
   rm -f $top/spring-boot/src/main/appengine/app.yaml
   rm -f $top/spring-boot/src/main/resources/application.properties
+  rm -f $top/crons-python/crontab
   if [ "$generated_envs" != "" ]; then
     rm -f $generated_envs # bash only (passed as separate args)
   fi
@@ -197,6 +198,13 @@ for proj in $projects; do # bash only
         exit 1
       fi
     fi
+  elif [ -f deploy_project.sh ]; then
+    if [[ "$proj" =~ ^crons- ]]; then
+      . get_proj_var.sh "%s_DEPLOY_DIR" $proj
+      escaped_deploy_dir=$(echo "$deploy_dir" | sed 's_/_\\/_g')
+      sed -e 's/<CRONSPYTHON_DEPLOY_DIR>/'$escaped_deploy_dir'/g' crontab.template > crontab 
+    fi
+    ./deploy_project.sh
   else
 
     # Replace <SERVICE> in app.yaml.template with <PROJECT>_APP_ENGINE_SERVICE

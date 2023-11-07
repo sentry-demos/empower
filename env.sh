@@ -53,13 +53,15 @@ echo "" >> .env # in case no newline
 unset RELEASE # so we don't accidentally pick up RELEASE from another project (deploy.sh)
 # Ignore both comment lines and inline comments
 export $(grep -v '^#' .env | sed 's/ #.*//' | xargs) # just for *_RELEASE_PACKAGE_NAME and RELEASE
-if [ "$RELEASE" == "" ]; then
-    . get_proj_var.sh "%s_RELEASE_PACKAGE_NAME" $proj
-    release="${release_package_name}@"`release.sh`
-    >&2 echo $release
-    # deploy.sh script itself and non-React projects expect RELEASE
-    echo "RELEASE=$release" >> .env
-    export RELEASE="$release"
+if ! [[ $proj =~ ^(crons|tda)- ]]; then
+    if [ "$RELEASE" == "" ]; then
+        . get_proj_var.sh "%s_RELEASE_PACKAGE_NAME" $proj
+        release="${release_package_name}@"`release.sh`
+        >&2 echo $release
+        # deploy.sh script itself and non-React projects expect RELEASE
+        echo "RELEASE=$release" >> .env
+        export RELEASE="$release"
+    fi
 fi
 if [ "$proj" == "react" ]; then
     echo "REACT_APP_RELEASE=$RELEASE" >> .env
