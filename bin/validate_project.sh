@@ -15,8 +15,8 @@ if [ "$proj" != "spring-boot" ]; then
         echo "[ERROR] project '$proj' contains legacy app.yaml file that is no longer used. Please delete this file,
         it is no longer be needed and has been replaced by app.yaml.template."
         exit 1
-    elif [ ! -f "$path/app.yaml.template" ]; then
-        echo "[ERROR] Missing $proj/app.yaml.template with '<SERVICE>' placeholder in place of actual service name."
+    elif [ ! -f "$path/app.yaml.template" -a ! -f "$path/deploy_project.sh" ]; then
+        echo "[ERROR] Project $proj must contain either app.yaml.template with '<SERVICE>' placeholder OR a deploy_project.sh script."
         exit 1
     fi
 fi

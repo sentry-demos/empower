@@ -1,0 +1,1 @@
+*/5 * * * * <CRONSPYTHON_DEPLOY_DIR>/run.sh

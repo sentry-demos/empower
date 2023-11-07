@@ -1,10 +1,15 @@
 #!/bin/bash
 
-HOST=empower-tda-and-crons.us-central1-a.sales-engineering-sf
-DIR=/home/kosty/empower-crons-python
-CRON_EXPR="*/5 * * * *"
-CRON_USER=kosty
-COMMAND="$DIR/run.sh"
+if [ ! -f .env ]; then
+  >&2 echo "[ERROR] Missing .env file. Project deploy scripts are not supposed to be run \
+directly, run the following command instead (from parent dir): ./deploy.sh --env=production crons-python"
+  exit 1
+fi
+source .env
+
+HOST="$CRONSPYTHON_DEPLOY_HOST"
+DIR="$CRONSPYTHON_DEPLOY_DIR"
+CRONTAB_USER=$CRONSPYTHON_CRONTAB_USER
 
 function cleanup {
   echo "NOTE: if ssh check hangs, re-run 'gcloud compute config-ssh; ssh $HOST exit' to fix"
@@ -32,7 +37,7 @@ if ssh $HOST '[[ -d '"$DIR/env"' ]] && [[ ! -z `ls -A '"$DIR/env"'` ]]'; then
 fi
 
 echo "Copying code to remote directory..."
-rsync -rz --exclude env * $HOST:$DIR/
+rsync -rz --exclude env * .env $HOST:$DIR/
 if [ $? != 0 ]; then
   echo "[ERROR] Failed to rsync code to remote directory."
   exit 1
@@ -53,7 +58,7 @@ fi
 
 # handle case when crontab is empty
 echo "EXISTING crontab:"
-ssh $HOST 'sudo crontab -u '$CRON_USER' -l'
+ssh $HOST 'sudo crontab -u '$CRONTAB_USER' -l'
 if [ $? != 0 ]; then
   ssh $HOST 'echo "" | crontab -'
 fi
@@ -61,10 +66,11 @@ echo "---"
 
 # set up cron job if not set up already
 # NOTE: this will overwrite any existing cron jobs from same project directory
-ssh $HOST '(sudo crontab -u '$CRON_USER' -l | grep -v '"$DIR"'; echo "'"$CRON_EXPR $COMMAND"'") | sort - | uniq - | sudo crontab -u '$CRON_USER' -'
+ssh $HOST '(sudo crontab -u '$CRONTAB_USER' -l | grep -v '"$DIR"'; cat '$DIR'/crontab) | sort - | uniq - | sudo crontab -u '$CRONTAB_USER' -'
 
 echo "UPDATED crontab:"
-ssh $HOST 'sudo crontab -u '$CRON_USER' -l'
+ssh $HOST 'sudo crontab -u '$CRONTAB_USER' -l'
 echo "---"
 
 echo "Done. New code should be picked up when cron job runs next time."
+echo "If not working, ssh into the host ($HOST) and check the logs in $DIR/crons-python.log"

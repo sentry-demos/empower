@@ -3,9 +3,14 @@ from sentry_sdk.crons import monitor
 import random
 import urllib.request
 import time
+import dotenv
+import os
 
-# crons-python
-DSN = "https://5c0f7b0814074657819c61bee198d316@o87286.ingest.sentry.io/4505197623705600"
+dotenv.load_dotenv()
+
+# set in ../env-config/*.env
+DSN = os.environ["CRONSPYTHON_APP_DSN"]
+MONITOR_SLUG = os.environ["CRONSPYTHON_MONITOR_SLUG"]
 FAILURE_PERCENT_CHANCE = 5 
 STUCK_PERCENT_CHANCE = 5 
 STUCK_SLEEP_MIN_MINUTES = 6
@@ -13,7 +18,7 @@ STUCK_SLEEP_MAX_MINUTES = 20
 
 random_number = random.randint(0, 99)
 
-@monitor(monitor_slug='crons-python-monitor')
+@monitor(monitor_slug=MONITOR_SLUG)
 def job():
     if random_number < FAILURE_PERCENT_CHANCE:
         print("Attempting to call an API that is down.")
@@ -29,7 +34,7 @@ def job():
 if __name__ == "__main__":
     sentry_sdk.init(dsn=DSN)
     sentry_sdk.set_context("monitor", {
-        "slug": "cron-job-monitor-python",
+        "slug": MONITOR_SLUG,
     })
     job()
     exit(0)
