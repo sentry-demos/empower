@@ -13,7 +13,7 @@ class Footer extends Component {
   }
 
   render() {
-    const handleSubscribeClick = () => {
+    const handleSubmit = () => {
       this.setState({ subscribed: true });
     };
 
@@ -37,7 +37,7 @@ class Footer extends Component {
             }}
           >
             <div className="formContainer">
-              <form>
+              <form onSubmitCapture={handleSubmit}>
                 <label htmlFor="email-subscribe" className="sentry-unmask">
                   Email
                 </label>
@@ -51,7 +51,7 @@ class Footer extends Component {
                 type="submit"
                 value="Subscribe"
                 className="sentry-unmask"
-                onClick={handleSubscribeClick}
+                onClick={handleSubmit}
               />
               {this.state.subscribed && <SubscribedMessage />}
             </div>
