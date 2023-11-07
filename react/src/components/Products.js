@@ -70,14 +70,11 @@ class Products extends Component {
   async componentDidMount() {
     var products;
     try {
-      let frontendSlowdown;
-      Sentry.withScope(function (scope) {
-        frontendSlowdown = scope._tags.frontendSlowdown;
-      });
+      products = await this.getProducts(this.props.frontendSlowdown);
 
       // Trigger a Sentry 'Performance Issue' in the case of
       // a frontend slowdown
-      if (frontendSlowdown) {
+      if (this.props.frontendSlowdown) {
         // Must bust cache to have force transfer size
         // small compressed file
         let uc_small_script = document.createElement('script');
@@ -99,11 +96,8 @@ class Products extends Component {
           '?cacheBuster=' +
           Math.random();
         document.body.appendChild(c_big_script);
-      }
 
-      products = await this.getProducts(frontendSlowdown);
-      // If triggering a frontend-only slowdown, cause a render problem
-      if (frontendSlowdown) {
+        // When triggering a frontend-only slowdown, cause a slow render problem
         this.props.setProducts(
           Array(200 / 4)
             .fill(products.slice(0, 4))

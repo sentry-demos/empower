@@ -60,6 +60,7 @@ if (window.location.hostname === 'localhost') {
 }
 
 let BACKEND_URL;
+let FRONTEND_SLOWDOWN;
 const DSN = process.env.REACT_APP_DSN;
 const RELEASE = process.env.REACT_APP_RELEASE;
 
@@ -193,6 +194,7 @@ class App extends Component {
 
       if (queryParams.get('frontendSlowdown') === 'true') {
         console.log('> frontend-only slowdown: true');
+        FRONTEND_SLOWDOWN = true;
         scope.setTag('frontendSlowdown', true);
       } else {
         console.log('> frontend + backend slowdown');
@@ -257,10 +259,18 @@ class App extends Component {
       <Provider store={store}>
         <BrowserRouter history={history}>
           <ScrollToTop />
-          <Nav />
+          <Nav frontendSlowdown={FRONTEND_SLOWDOWN} />
           <div id="body-container">
             <SentryRoutes>
-              <Route path="/" element={<Home backend={BACKEND_URL} />}></Route>
+              <Route
+                path="/"
+                element={
+                  <Home
+                    backend={BACKEND_URL}
+                    frontendSlowdown={FRONTEND_SLOWDOWN}
+                  />
+                }
+              ></Route>
               <Route
                 path="/about"
                 element={<About backend={BACKEND_URL} history={history} />}
@@ -281,6 +291,12 @@ class App extends Component {
               <Route
                 path="/products"
                 element={<Products backend={BACKEND_URL} />}
+              ></Route>
+              <Route
+                path="/products-fes" // fes = frontend slowdown (only frontend)
+                element={
+                  <Products backend={BACKEND_URL} frontendSlowdown={true} />
+                }
               ></Route>
               <Route
                 path="/nplusone"
