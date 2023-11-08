@@ -75,6 +75,7 @@ class MyFlask(Flask):
             before_send=before_send,
             traces_sampler=traces_sampler,
             _experiments={
+                "enable_metrics": True,
                 "profiles_sample_rate": 1.0
             }
         )
