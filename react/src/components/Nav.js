@@ -61,7 +61,10 @@ class Nav extends Component {
               <Link to="/about" className="sentry-unmask">
                 About
               </Link>
-              <Link to="/products" className="sentry-unmask">
+              <Link
+                to={this.props.frontendSlowdown ? '/products-fes' : '/products'}
+                className="sentry-unmask"
+              >
                 Products
               </Link>
               <Link to="/cart">

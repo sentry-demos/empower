@@ -60,6 +60,7 @@ if (window.location.hostname === 'localhost') {
 }
 
 let BACKEND_URL;
+let FRONTEND_SLOWDOWN;
 const DSN = process.env.REACT_APP_DSN;
 const RELEASE = process.env.REACT_APP_RELEASE;
 
@@ -166,9 +167,7 @@ class App extends Component {
     let queryParams = new URLSearchParams(history.location.search);
 
     // Set desired backend
-    let backendTypeParam = new URLSearchParams(history.location.search).get(
-      'backend'
-    );
+    let backendTypeParam = queryParams.get('backend');
     const backendType = determineBackendType(backendTypeParam);
     BACKEND_URL = determineBackendUrl(backendType, ENVIRONMENT);
 
@@ -190,9 +189,17 @@ class App extends Component {
         scope.setTag('se', queryParams.get('se'));
         // for use in Checkout.js when deciding whether to pre-fill form
         // lasts for as long as the tab is open
-        sessionStorage.setItem('se', queryParams.get('se'));  
+        sessionStorage.setItem('se', queryParams.get('se'));
       }
 
+      if (queryParams.get('frontendSlowdown') === 'true') {
+        console.log('> frontend-only slowdown: true');
+        FRONTEND_SLOWDOWN = true;
+        scope.setTag('frontendSlowdown', true);
+      } else {
+        console.log('> frontend + backend slowdown');
+        scope.setTag('frontendSlowdown', false);
+      }
       if (queryParams.get('userFeedback')) {
         sessionStorage.setItem('userFeedback', queryParams.get('userFeedback'));
       } else {
@@ -207,7 +214,34 @@ class App extends Component {
         email = queryParams.get('userEmail');
       } else {
         // making fewer emails so event and user counts for an Issue are not the same
-        let array=['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z',];
+        let array = [
+          'a',
+          'b',
+          'c',
+          'd',
+          'e',
+          'f',
+          'g',
+          'h',
+          'i',
+          'j',
+          'k',
+          'l',
+          'm',
+          'n',
+          'o',
+          'p',
+          'q',
+          'r',
+          's',
+          't',
+          'u',
+          'v',
+          'w',
+          'x',
+          'y',
+          'z',
+        ];
         let a = array[Math.floor(Math.random() * array.length)];
         let b = array[Math.floor(Math.random() * array.length)];
         let c = array[Math.floor(Math.random() * array.length)];
@@ -225,10 +259,18 @@ class App extends Component {
       <Provider store={store}>
         <BrowserRouter history={history}>
           <ScrollToTop />
-          <Nav />
+          <Nav frontendSlowdown={FRONTEND_SLOWDOWN} />
           <div id="body-container">
             <SentryRoutes>
-              <Route path="/" element={<Home backend={BACKEND_URL} />}></Route>
+              <Route
+                path="/"
+                element={
+                  <Home
+                    backend={BACKEND_URL}
+                    frontendSlowdown={FRONTEND_SLOWDOWN}
+                  />
+                }
+              ></Route>
               <Route
                 path="/about"
                 element={<About backend={BACKEND_URL} history={history} />}
@@ -249,6 +291,12 @@ class App extends Component {
               <Route
                 path="/products"
                 element={<Products backend={BACKEND_URL} />}
+              ></Route>
+              <Route
+                path="/products-fes" // fes = frontend slowdown (only frontend)
+                element={
+                  <Products backend={BACKEND_URL} frontendSlowdown={true} />
+                }
               ></Route>
               <Route
                 path="/nplusone"

@@ -40,7 +40,11 @@ class Home extends Component {
         <div className="hero-content">
           <h1>Empower your plants</h1>
           <p>Keep your houseplants happy.</p>
-          <Button to="/products">Browse products</Button>
+          <Button
+            to={this.props.frontendSlowdown ? '/products-fes' : '/products'}
+          >
+            Browse products
+          </Button>
         </div>
       </div>
     );
