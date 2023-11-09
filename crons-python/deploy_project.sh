@@ -19,7 +19,13 @@ trap cleanup EXIT
 echo "Checking ssh connection can be established..."
 ssh $HOST exit
 if [ $? != "0" ]; then
-  echo "[ERROR] Can't ssh into destination host. Please run 'gcloud compute config-ssh; ssh $HOST exit' to fix"
+  echo "Running 'glcoud compute config-ssh' ..." 
+  gcloud compute config-ssh
+fi
+ssh $HOST exit
+if [ $? != "0" ]; then
+  echo "[ERROR] Can't ssh into destination host. Please make sure your gcloud is set up correctly and you \
+have the right IAM permissions in sales-engingeering-sf GCP project."
   exit 5 
 fi
 
