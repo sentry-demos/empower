@@ -1,4 +1,4 @@
-# ### COMMENTING OUT since we know have /products-fes (which generates uncompressed asset perf-issue ###)
+# ### COMMENTING OUT since we know have /products-fes (which generates uncompressed asset perf-issue) ###
 
 
 # import time
