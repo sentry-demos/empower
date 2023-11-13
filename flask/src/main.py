@@ -101,9 +101,9 @@ def checkout():
             for inventoryItem in inventory:
                 print("> inventoryItem.count", inventoryItem['count'])
                 if (inventoryItem.count < quantities[cartItem] or quantities[cartItem] >= inventoryItem.count):
-                    raise Exception("Not enough inventory for " + "product")
+                    raise Exception("Not enough inventory for product")
         if len(inventory) == 0 or len(quantities) == 0:
-            raise Exception("Not enough inventory for " + "product")
+            raise Exception("Not enough inventory for product")
 
     response = make_response("success")
     return response
