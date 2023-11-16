@@ -37,6 +37,6 @@ jobs:
         uses: 'google-github-actions/setup-gcloud@v0'
 
       - name: 'Try ssh-ing into GCP host'
-        run: gcloud compute ssh empower-tda-and-crons --zone us-central1-a
+        run: gcloud compute ssh empower-tda-and-crons --zone us-central1-a -- ls
         
       - run: echo "Job status is ${{ job.status }}."
