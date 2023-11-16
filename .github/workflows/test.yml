@@ -12,6 +12,13 @@ jobs:
     runs-on: ubuntu-22.04
     
     steps:
+      - name: Check out `empower-config` to get env-config
+        uses: actions/checkout@v3
+        with:
+          repository: sentry-demos/empower-config
+          path: empower-config
+          token: ${{ secrets.KOSTY_PERSONAL_ACCESS_TOKEN_FOR_SYNC_DEPLOY_FORK }}
+          
       - name: Get GCP_ env variables from empower-config/.gcloudrc
         run: |
           source empower-config/.gcloudrc 
