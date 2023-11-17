@@ -1,5 +1,4 @@
 import pytest
-from os import environ
 import contextlib
 import os
 import release_version_manager as ReleaseVersion
@@ -247,8 +246,8 @@ class RemoteWithExtraUrlParams(webdriver.Remote):
 
 @pytest.fixture
 def selenium_endpoint(data_center):
-    username = environ['SAUCE_USERNAME']
-    access_key = environ['SAUCE_ACCESS_KEY']
+    username = os.environ['SAUCE_USERNAME']
+    access_key = os.environ['SAUCE_ACCESS_KEY']
 
     if data_center and data_center.lower() == 'eu':
         return "https://{}:{}@ondemand.eu-central-1.saucelabs.com/wd/hub".format(username, access_key)
@@ -273,7 +272,7 @@ def set_tags(request):
 def _sauce_browser(request, selenium_endpoint):
     try:
         test_name = request.node.name
-        build_tag = environ.get('BUILD_TAG', "Application-Monitoring-TDA")
+        build_tag = os.environ.get('BUILD_TAG', "Application-Monitoring-TDA")
 
         options = _browser2class[request.param.browserName]()
         options.set_capability('platformName', request.param.platformName)
