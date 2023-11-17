@@ -57,6 +57,7 @@ class Browser(NamedTuple):
 
 
 class Config(NamedTuple):
+    collect_mock_data: bool
     browsers: tuple[Browser, ...]
     dsn: str
     react_endpoints: tuple[str, ...]
@@ -68,6 +69,7 @@ def _config() -> Config:
     with open(cfg_filename) as f:
         contents = yaml.safe_load(f)
     return Config(
+        collect_mock_data=contents['collect_mock_data'],
         browsers=tuple(Browser(**d) for d in contents['browsers']),
         dsn=contents['dsn'],
         react_endpoints=tuple(contents['react_endpoints']),
@@ -499,7 +501,7 @@ def pytest_runtest_makereport(item, call):
     # be "setup", "call", "teardown"
     setattr(item, "rep_" + rep.when, rep)
 
-if 'localhost' not in CONFIG.dsn:
+if not CONFIG.collect_mock_data:
     def final_report():
         end_time = get_current_time_iso_utc(adjust_seconds=1)
         start = urllib.parse.quote(start_time)

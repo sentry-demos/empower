@@ -1,3 +1,5 @@
+collect_mock_data: true
+
 browsers:
 - remote: false
   browserName: chrome
