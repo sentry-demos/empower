@@ -173,7 +173,7 @@ class App extends Component {
 
     console.log(`> backendType: ${backendType} | backendUrl: ${BACKEND_URL}`);
 
-    // These also get passed via request headers
+    // These also get passed via request headers (see window.fetch below)
     Sentry.configureScope((scope) => {
       const customerType = [
         'medium-plan',
@@ -249,6 +249,23 @@ class App extends Component {
       }
       scope.setUser({ email: email });
     });
+
+    // Automatically append `se`, `customerType` and `userEmail` query params to all requests
+    // (except for requests to Sentry)
+    const nativeFetch = window.fetch;
+    window.fetch = function(...args) {
+      let url = args[0];
+      let ignore_match = url.match(/^http[s]:\/\/([^.]+\.ingest\.sentry\.io\/|localhost:9989|127.0.0.1:9989).*/);
+      if (!ignore_match) {
+        Sentry.withScope(function (scope) {
+          let se, customerType, email;
+          [se, customerType] = [scope._tags.se, scope._tags.customerType];
+          email = scope._user.email;
+          args[1].headers = {...args[1].headers, se, customerType, email};
+        });
+      }
+      return nativeFetch.apply(window, args);
+    };
 
     // Crasher parses query params sent by /tests for triggering crashes for Release Health
     crasher();

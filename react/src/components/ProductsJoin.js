@@ -12,15 +12,9 @@ class ProductsJoin extends Component {
 
   // getProductsJoin handles error responses differently, depending on the browser used
   async getProductsJoin() {
-    let se, customerType, email;
-    Sentry.withScope(function (scope) {
-      [se, customerType] = [scope._tags.se, scope._tags.customerType];
-      email = scope._user.email;
-    });
-
     let result = await fetch(this.props.backend + '/products-join', {
       method: 'GET',
-      headers: { se, customerType, email, 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
     }).catch((err) => {
       return { ok: false, status: 500 };
     });
