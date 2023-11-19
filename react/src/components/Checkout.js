@@ -38,15 +38,9 @@ function Checkout(props) {
   const [form, setForm] = useState(initialFormValues);
 
   async function checkout(cart) {
-    let se, customerType, email;
-    Sentry.withScope(function (scope) {
-      [se, customerType] = [scope._tags.se, scope._tags.customerType];
-      email = scope._user.email;
-    });
-
     const response = await fetch(props.backend + '/checkout?v2=true', {
       method: 'POST',
-      headers: { se, customerType, email, 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         cart: cart,
         form: form,

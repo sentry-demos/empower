@@ -25,24 +25,15 @@ class About extends Component {
   }
 
   async componentDidMount() {
-    let se, customerType, email;
-    Sentry.withScope(function (scope) {
-      [se, customerType] = [scope._tags.se, scope._tags.customerType];
-      email = scope._user.email;
-    });
-
     // Http requests to make in parallel, so the Transaction has more Spans
     let request1 = fetch(this.props.backend + '/api', {
       method: 'GET',
-      headers: { se, customerType, email, 'Content-Type': 'application/json' },
     });
     let request2 = fetch(this.props.backend + '/organization', {
       method: 'GET',
-      headers: { se, customerType, email, 'Content-Type': 'application/json' },
     });
     let request3 = fetch(this.props.backend + '/connect', {
       method: 'GET',
-      headers: { se, customerType, email, 'Content-Type': 'application/json' },
     });
 
     // Need Safari13 in tests/config.py in order for this modern javascript to work in Safari Browser
