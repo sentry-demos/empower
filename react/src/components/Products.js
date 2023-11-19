@@ -19,19 +19,10 @@ class Products extends Component {
 
   // getProducts handles error responses differently, depending on the browser used
   async getProducts(frontendSlowdown) {
-    let se, customerType, email;
-    Sentry.withScope(function (scope) {
-      [se, customerType] = [scope._tags.se, scope._tags.customerType];
-      email = scope._user.email;
-    });
-
     [('/api', '/connect', '/organization')].forEach((endpoint) => {
       fetch(this.props.backend + endpoint, {
         method: 'GET',
         headers: {
-          se,
-          customerType,
-          email,
           'Content-Type': 'application/json',
         },
       }).catch((err) => {
@@ -47,8 +38,7 @@ class Products extends Component {
     console.log(`productsEndpoint: ${productsEndpoint}`);
     let result = await fetch(this.props.backend + productsEndpoint, {
       method: 'GET',
-      method: 'GET',
-      headers: { se, customerType, email, 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
     }).catch((err) => {
       return { ok: false, status: 500 };
     });

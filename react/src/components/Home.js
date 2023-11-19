@@ -12,19 +12,11 @@ class Home extends Component {
   static contextType = Context;
 
   async componentDidMount() {
-    let se, customerType, email;
-    Sentry.withScope(function (scope) {
-      [se, customerType] = [scope._tags.se, scope._tags.customerType];
-      email = scope._user.email;
-    });
     try {
       // This should be the only http request for home page, for health check purposes
       await fetch(this.props.backend + '/success', {
         method: 'GET',
         headers: {
-          se,
-          customerType,
-          email,
           'Content-Type': 'application/json',
         },
       });
