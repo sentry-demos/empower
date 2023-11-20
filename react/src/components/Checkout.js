@@ -9,19 +9,8 @@ function Checkout(props) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   let initialFormValues;
-  if (sessionStorage.getItem('se') !== 'tda') {
-    initialFormValues = {
-      email: 'plant.lover@gardening.com',
-      subscribe: '',
-      firstName: 'Jane',
-      lastName: 'Greenthumb',
-      address: '1199 9th Ave',
-      city: 'San Francisco',
-      country: 'United States of America',
-      state: 'CA',
-      zipCode: '94122',
-    }
-  } else {
+  let se = sessionStorage.getItem('se');
+  if (se && se.startsWith('prod-tda-')) {
     // we want form actually filled out in TDA for a realistic-looking Replay 
     initialFormValues = {
       email: '',
@@ -34,6 +23,18 @@ function Checkout(props) {
       state: '',
       zipCode: '',
     };
+  } else {
+    initialFormValues = {
+      email: 'plant.lover@gardening.com',
+      subscribe: '',
+      firstName: 'Jane',
+      lastName: 'Greenthumb',
+      address: '1199 9th Ave',
+      city: 'San Francisco',
+      country: 'United States of America',
+      state: 'CA',
+      zipCode: '94122',
+    }
   }
   const [form, setForm] = useState(initialFormValues);
 

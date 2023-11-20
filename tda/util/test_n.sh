@@ -6,7 +6,7 @@
 date
 for i in {1..12}; do
   echo "-n $i"
-  SE_TAG=util_test_n_$i BATCH_SIZE=10 py.test -s -n $i desktop_web
+  RUN_ID=util_test_n_$i BATCH_SIZE=10 py.test -s -n $i desktop_web
 done
 date
 

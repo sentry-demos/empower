@@ -2,7 +2,7 @@ import sentry_sdk
 import time
 from appium.webdriver.common.appiumby import AppiumBy
 
-def test_errorlist_ios(ios_sim_driver):
+def test_error_list_ios(ios_sim_driver):
 
     try:
         ios_sim_driver.find_element(AppiumBy.ACCESSIBILITY_ID, "more").click()

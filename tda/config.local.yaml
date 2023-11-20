@@ -1,8 +1,9 @@
-collect_mock_data: true
+mode: mock # events captured by mini-relay as to be used as templates for streaming events later
 
 browsers:
 - remote: false
   browserName: chrome
+  param_display: chrome
 
 dsn: 'http://tda@localhost:9989/9'
 

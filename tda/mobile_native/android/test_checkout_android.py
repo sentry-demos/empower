@@ -3,7 +3,7 @@ import sentry_sdk
 from appium.webdriver.common.appiumby import AppiumBy
 
 # 'Regular' as in non-react-native
-def test_checkout_regular_android(android_emu_driver):
+def test_checkout_android(android_emu_driver):
 
     try:
         # Add items to cart
