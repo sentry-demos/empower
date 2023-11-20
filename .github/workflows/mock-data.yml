@@ -17,4 +17,4 @@ jobs:
         python-version: 3.12
     - run: pip install -r tda/requirements.txt
     - run: |
-        SLEEP_LENGTH=0 BACKENDS=flask TDA_CONFIG=tda/config.local.yaml pytest tda/desktop_web
+        SLEEP_LENGTH=0 BACKENDS=flask RUN_ID=${{ github.run_id }}_flask TDA_CONFIG=tda/config.local.yaml pytest tda/desktop_web

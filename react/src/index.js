@@ -124,12 +124,14 @@ Sentry.init({
       se = scope._tags.se;
     });
 
-    if (se === 'tda') {
-      // Release Health
-      event.fingerprint = ['{{ default }}', se, RELEASE];
-    } else if (se) {
-      // SE Testing
-      event.fingerprint = ['{{ default }}', se];
+    if (se) {
+      if (se.startsWith('prod-tda-')) {
+        // Release Health
+        event.fingerprint = ['{{ default }}', se, RELEASE];
+      } else {
+        // SE Testing
+        event.fingerprint = ['{{ default }}', se];
+      }
     }
 
     if (event.exception) {

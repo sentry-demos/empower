@@ -31,10 +31,11 @@ def before_send(event, hint):
     if 'se' in event['tags']:
         se = event['tags']['se']
 
-    if se == "tda":
-        event['fingerprint'] = ['{{ default }}', se, RELEASE]
-    elif se not in [None, "undefined"]:
-        event['fingerprint'] = ['{{ default }}', se]
+    if se not in [None, "undefined"]:
+        if se.startswith('prod-tda-'):
+            event['fingerprint'] = ['{{ default }}', se, RELEASE]
+        else:
+            event['fingerprint'] = ['{{ default }}', se]
 
     return event
 
