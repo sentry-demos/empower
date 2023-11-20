@@ -224,26 +224,25 @@ def backend(random):
 def endpoints():
     return CONFIG
 
+
+class _ExtraParams:
+    def __init__(self, *args, extra_params, **kwargs):
+        if extra_params.startswith(('&', '?')):
+            raise ValueError('extra_params must be in format: "param1=value1&param2=value2..."')
+        self.extra_params = extra_params
+        super().__init__(*args, **kwargs)
+
+    def get(self, url):
+        url += ('&' if '?' in url else '?') + self.extra_params
+        return super().get(url)
+
 # Automatically append a set of extra parameters to all URLs
 #
 #   remote = RemoteWithExtraUrlParams(..., extra_params='se=tda')
 #   remote.get('https://google.com/')
 #       -> webdriver.Remote.get(https://google.com/?se=tda)
-class RemoteWithExtraUrlParams(webdriver.Remote):
-    def __init__(self, *args, **kwargs):
-        if 'extra_params' in kwargs:
-            if kwargs['extra_params'].startswith(('&', '?')):
-                raise ValueError('extra_params must be in format: "param1=value1&param2=value2..."')
-            self.extra_params = kwargs['extra_params']
-            del kwargs['extra_params']
-        else:
-            self.extra_params = None
-        super().__init__(*args, **kwargs)
-
-    def get(self, url):
-        if self.extra_params:
-            url += ('?' in url and '&' or '?') + self.extra_params
-        super().get(url)
+class RemoteWithExtraUrlParams(_ExtraParams, webdriver.Remote): pass
+class ChromeWithExtraUrlParams(_ExtraParams, webdriver.Chrome): pass
 
 @pytest.fixture
 def selenium_endpoint(data_center):
@@ -333,7 +332,10 @@ def _local_browser(request):
     options.add_argument("disable-gpu")
     options.add_argument("disable-dev-shm-usage")
     options.add_argument("headless")
-    with webdriver.Chrome(options=options) as driver:
+    with ChromeWithExtraUrlParams(
+            options=options,
+            extra_params=urlencode({'se': request.node.nodeid}),
+    ) as driver:
         yield driver
 
 
