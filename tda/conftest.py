@@ -9,6 +9,7 @@ import urllib.parse
 import atexit
 import yaml
 from typing import NamedTuple
+import requests
 
 from selenium import webdriver
 from appium import webdriver as appiumdriver
@@ -26,6 +27,20 @@ import sentry_sdk
 def get_system_user():
     return subprocess.check_output(['id', '-un']).strip().decode()
 
+def is_running_in_gcp():
+    try:
+        # Google Compute Engine instances have a metadata server available at this URL
+        metadata_url = "http://metadata.google.internal"
+        headers = {'Metadata-Flavor': 'Google'}
+        response = requests.get(metadata_url, headers=headers, timeout=2)
+        return response.status_code == 200
+    except requests.exceptions.RequestException:
+        return False
+
+def is_running_in_ci():
+    # TODO implement
+    return False
+
 # Get current timestamp, with +/- adjustment if desired, as string in ISO format (for Sentry URLs)
 # round seconds down (floor): adjust_seconds = 0
 # round seconds up (ceil): adjust_seconds = 1
@@ -36,7 +51,7 @@ def get_current_time_iso_utc(adjust_seconds=0):
 
 # Example command usage:
 #
-#   SE_TAG=tda-my-new-test BATCH_SIZE=10 py.test -n 6 desktop_web
+#   RUN_ID=test_desktop_web_13 BATCH_SIZE=10 py.test -n 6 desktop_web
 #
 
 start_time = get_current_time_iso_utc()
@@ -78,23 +93,25 @@ def _config() -> Config:
 
 CONFIG = _config()
 
-ENVIRONMENT = os.getenv("ENVIRONMENT") or "production"
-# SE_TAG will be both:
-#
+# SE_TAG is constructed based on whether this is being run locally or in production, 
+# whether it's being run against Saucelabs or local server, and RUN_ID if provided.
+# It will be both:
 # 1. Passed on to desktop_web as ?se= URL parameter so will show up in
 # application-monitoring-* project issues generated as a result of running the test
-#
 # 2. Used for internal reporting of this test automation's own errors (to DSN above,
 # i.e. "empower-tda" project)
-#
-# If no value is provided will attemptq
+# Example values: tda-sauce, tda-mock-<run_id>, <user>-tda-sauce-<run_id>, <user>-tda-mock
+SE_TAG=""
+if not (is_running_in_gcp() or is_running_in_ci()):
+    # non-production
+    SE_TAG += get_system_user() + '-'
+SE_TAG += request.param.remote and 'tda-sauce' or 'tda-mock'
+RUN_ID = os.getenv("RUN_ID")
+if RUN_ID:
+    SE_TAG += '-' + RUN_ID
 
-SE_TAG = os.getenv("SE_TAG") or get_system_user()
-
-#
-# random will be truly random, not seeded, when SE_TAG == 'tda'
-#
-MAGIC_SE = 'tda'
+# flag, value doesn't matter
+REPEATABLE_RANDOM = os.getenv("REPEATABLE_RANDOM") and True or False
 
 # BATCH_SIZE can be either <NUMBER> or random_<NUMBER>
 # The later means each time a test is run the inner steps will be repeated a random
@@ -159,7 +176,7 @@ def data_center(request):
 
 @pytest.fixture
 def random(request):
-    if SE_TAG != MAGIC_SE:
+    if REPEATABLE_RANDOM:
         # Ensure tests produce repeatable outcomes when re-run, see:
         cwd = os.path.dirname(os.path.realpath(__file__)) + '/'
         test_relpath = str(request.path).split(cwd)[1]
@@ -228,9 +245,9 @@ def endpoints():
 
 # Automatically append a set of extra parameters to all URLs
 #
-#   remote = RemoteWithExtraUrlParams(..., extra_params='se=tda')
+#   remote = RemoteWithExtraUrlParams(..., extra_params='se=tda-sauce')
 #   remote.get('https://google.com/')
-#       -> webdriver.Remote.get(https://google.com/?se=tda)
+#       -> webdriver.Remote.get(https://google.com/?se=tda-sauce)
 class RemoteWithExtraUrlParams(webdriver.Remote):
     def __init__(self, *args, **kwargs):
         if 'extra_params' in kwargs:
@@ -329,6 +346,7 @@ def _sauce_browser(request, selenium_endpoint):
 
 @contextlib.contextmanager
 def _local_browser(request):
+    sentry_sdk.set_tag("se", 'tda-mock')
     assert request.param.browserName == 'chrome'  # TODO: add others
     options = webdriver.ChromeOptions()
     options.add_argument("no-sandbox")

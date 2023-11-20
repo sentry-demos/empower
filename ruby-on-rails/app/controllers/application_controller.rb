@@ -5,7 +5,7 @@ class ApplicationController < ActionController::API
       if key.to_s.downcase == "http_se"
         Sentry.set_tags('se': value)
         # not tested yet
-        if value.to_s.downcase == "tda"
+        if value.to_s.downcase.start_with?('tda-')
           # Sentry.event.fingerprint = [value, ENV["RELEASE"]]
         else
           # Sentry.event.fingerprint = [value]
@@ -21,7 +21,7 @@ class ApplicationController < ActionController::API
       if key.to_s.downcase == "se"
         Sentry.set_tags('se': value)
         # not tested yet
-        if value.to_s.downcase == "tda"
+        if value.to_s.downcase.start_with?('tda-')
           # Sentry.event.fingerprint = [value, ENV["RELEASE"]]
         else
           # Sentry.event.fingerprint = [value]

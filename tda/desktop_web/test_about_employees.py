@@ -9,7 +9,7 @@ def test_about_employees(desktop_web_driver, endpoints, random, batch_size, back
         endpoint_about = endpoint + "/about"
         sentry_sdk.set_tag("endpoint", endpoint_about)
 
-        # You can filter by se:tda in Sentry's UI as this will get set as a tag
+        # You can filter by se:tda-sauce in Sentry's UI as this will get set as a tag
         url = ""
         query_string = {
             'backend': backend()

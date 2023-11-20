@@ -195,9 +195,6 @@ export default {
     if ("se" in this.$route.query) {
       this.SE = this.$route.query.se;
       console.log(this.SE);
-    } else {
-      this.SE = "tda";
-      console.log(this.SE);
     }
   },
 };
