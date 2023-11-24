@@ -125,7 +125,7 @@ Sentry.init({
     });
 
     if (se) {
-      if (se.startsWith('tda-')) {
+      if (se.startsWith('prod-tda-')) {
         // Release Health
         event.fingerprint = ['{{ default }}', se, RELEASE];
       } else {

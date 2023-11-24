@@ -1,22 +1,26 @@
-collect_mock_data: false
+mode: direct # events ingested directly into demo.sentry.io
 
 browsers:
 - remote: true
   browserName: chrome
   browserVersion: latest
   platformName: Windows 10
+  param_display: chrome_windows 
 - remote: true
   browserName: firefox
   browserVersion: latest
   platformName: Windows 10
+  param_display: chrome_windows
 - remote: true
   browserName: safari
   browserVersion: latest-1
   platformName: OS X 10.13
+  param_display: safari_osx
 - remote: true
   browserName: chrome
   browserVersion: latest
   platformName: OS X 10.13
+  param_display: chrome_osx
 
 dsn: 'https://9802de20229e4afdaa0d60796cbb44d7@o87286.ingest.sentry.io/5390094'
 

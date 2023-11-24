@@ -31,7 +31,7 @@ def before_send(event, hint):
         se = event['tags']['se']
 
     if se not in [None, "undefined"]:
-        if se.startswith('tda-'):
+        if se.startswith('prod-tda-'):
             event['fingerprint'] = ['{{ default }}', se, RELEASE]
         else:
             event['fingerprint'] = ['{{ default }}', se]

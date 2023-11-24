@@ -10,7 +10,7 @@ function Checkout(props) {
   const [loading, setLoading] = useState(false);
   let initialFormValues;
   let se = sessionStorage.getItem('se');
-  if (se && se.startsWith('tda-')) {
+  if (se && se.startsWith('prod-tda-')) {
     // we want form actually filled out in TDA for a realistic-looking Replay 
     initialFormValues = {
       email: '',
