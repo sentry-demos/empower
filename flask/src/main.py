@@ -27,9 +27,8 @@ RUN_SLOW_PROFILE = None
 def before_send(event, hint):
     # 'se' tag may have been set in app.before_request
     se = None
-    with sentry_sdk.configure_scope() as scope:
-        if 'se' in scope._tags:
-            se = scope._tags['se']
+    if 'se' in event['tags']:
+        se = event['tags']['se']
 
     if se == "tda":
         event['fingerprint'] = ['{{ default }}', se, RELEASE]
