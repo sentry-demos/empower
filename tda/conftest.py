@@ -123,29 +123,6 @@ _browser2class = {
     'safari': SafariOptions
 }
 
-desktop_browsers = [
-    {
-        "platformName": "Windows 10",
-        "browserName": "chrome",
-        "browserVersion": "latest",
-    }, {
-        "platformName": "Windows 10",
-        "browserName": "firefox",
-        "browserVersion": "latest",
-    }, {
-        "platformName": "OS X 10.13",
-        "browserName": "safari",
-        "browserVersion": "latest-1",
-    }, {
-        "platformName": "OS X 10.13",
-        "browserName": "chrome",
-        "browserVersion": "latest",
-    }]
-desktop_browsers_ids = [
-    '{browserName}@{browserVersion}({platformName})'.format(**browser)
-    for browser in desktop_browsers
-]
-
 def pytest_addoption(parser):
     parser.addoption("--dc", action="store", default='us', help="Set Sauce Labs Data Center (US or EU)")
 
