@@ -107,9 +107,6 @@ SLEEP_LENGTH = os.getenv("SLEEP_LENGTH") or "random_2_1"
 
 BACKENDS = (os.getenv("BACKENDS") or "flask,express,springboot,ruby,laravel,rails,aspnetcore").split(',')
 
-def pytest_configure():
-    pytest.SE_TAG=SE_TAG
-
 import urllib3
 urllib3.disable_warnings()
 
