@@ -1,6 +1,7 @@
 import datetime
 import operator
 import os
+import random
 import requests
 import time
 from flask import Flask, json, request, make_response, send_from_directory
@@ -9,11 +10,13 @@ import dotenv
 from .db import get_products, get_products_join, get_inventory
 from .utils import parseHeaders, get_iterator
 import sentry_sdk
+from sentry_sdk import metrics
 from sentry_sdk.integrations.flask import FlaskIntegration
 from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 
 RUBY_CUSTOM_HEADERS = ['se', 'customerType', 'email']
-pests = ["aphids", "thrips", "spider mites", "lead miners", "scale", "whiteflies", "earwigs", "cutworms", "mealybugs", "fungus gnats"]
+pests = ["aphids", "thrips", "spider mites", "lead miners", "scale", "whiteflies", "earwigs", "cutworms", "mealybugs",
+         "fungus gnats"]
 
 RELEASE = None
 DSN = None
@@ -21,27 +24,29 @@ ENVIRONMENT = None
 RUBY_BACKEND = None
 RUN_SLOW_PROFILE = None
 
+
 def before_send(event, hint):
     # 'se' tag may have been set in app.before_request
     se = None
-    with sentry_sdk.configure_scope() as scope:
-        if 'se' in scope._tags:
-            se = scope._tags['se']
+    if 'se' in event['tags']:
+        se = event['tags']['se']
 
     if se == "tda":
-        event['fingerprint'] = [ '{{ default }}', se, RELEASE ]
+        event['fingerprint'] = ['{{ default }}', se, RELEASE]
     elif se not in [None, "undefined"]:
-        event['fingerprint'] = [ '{{ default }}', se]
+        event['fingerprint'] = ['{{ default }}', se]
 
     return event
 
+
 def traces_sampler(sampling_context):
     sentry_sdk.set_context("sampling_context", sampling_context)
-    REQUEST_METHOD=sampling_context['wsgi_environ']['REQUEST_METHOD']
+    REQUEST_METHOD = sampling_context['wsgi_environ']['REQUEST_METHOD']
     if REQUEST_METHOD == 'OPTIONS':
         return 0.0
     else:
         return 1.0
+
 
 class MyFlask(Flask):
     def __init__(self, import_name, *args, **kwargs):
@@ -70,6 +75,7 @@ class MyFlask(Flask):
             before_send=before_send,
             traces_sampler=traces_sampler,
             _experiments={
+                "enable_metrics": True,
                 "profiles_sample_rate": 1.0
             }
         )
@@ -80,8 +86,15 @@ class MyFlask(Flask):
 app = MyFlask(__name__)
 CORS(app)
 
+
 @app.route('/checkout', methods=['POST'])
 def checkout():
+    sentry_sdk.metrics.incr(
+        key="endpoint_call",
+        value=1,
+        tags={"endpoint": "/checkout", "method": "POST"},
+    )
+
     order = json.loads(request.data)
     cart = order["cart"]
     form = order["form"]
@@ -91,7 +104,7 @@ def checkout():
         with sentry_sdk.start_span(op="/checkout.get_inventory", description="function"):
             inventory = get_inventory(cart)
     except Exception as err:
-        raise(err)
+        raise (err)
 
     print("> /checkout inventory", inventory)
 
@@ -101,23 +114,37 @@ def checkout():
             for inventoryItem in inventory:
                 print("> inventoryItem.count", inventoryItem['count'])
                 if (inventoryItem.count < quantities[cartItem] or quantities[cartItem] >= inventoryItem.count):
-                    raise Exception("Not enough inventory for " + "product")
+                    raise Exception("Not enough inventory for product")
         if len(inventory) == 0 or len(quantities) == 0:
-            raise Exception("Not enough inventory for " + "product")
+            raise Exception("Not enough inventory for product")
 
     response = make_response("success")
     return response
 
+
 @app.route('/success', methods=['GET'])
 def success():
+    sentry_sdk.metrics.incr(
+        key="endpoint_call",
+        value=1,
+        tags={"endpoint": "/success", "method": "GET"},
+    )
+
     return "success from flask"
+
 
 @app.route('/products', methods=['GET'])
 def products():
+    sentry_sdk.metrics.incr(
+        key="endpoint_call",
+        value=1,
+        tags={"endpoint": "/products", "method": "GET"},
+    )
+
     try:
         with sentry_sdk.start_span(op="/products.get_products", description="function"):
             rows = get_products()
-            
+
             if RUN_SLOW_PROFILE:
                 start_time = time.time()
                 productsJSON = json.loads(rows)
@@ -133,22 +160,23 @@ def products():
                             for pest in pests:
                                 if pest in description:
                                     try:
-                                        del productsJSON[i:i+1]
+                                        del productsJSON[i:i + 1]
                                     except:
                                         productsJSON = json.loads(rows)
     except Exception as err:
         sentry_sdk.capture_exception(err)
-        raise(err)
+        raise (err)
 
     try:
         with sentry_sdk.start_span(op="/api_request", description="function"):
             headers = parseHeaders(RUBY_CUSTOM_HEADERS, request.headers)
             r = requests.get(RUBY_BACKEND + "/api", headers=headers)
-            r.raise_for_status() # returns an HTTPError object if an error has occurred during the process
+            r.raise_for_status()  # returns an HTTPError object if an error has occurred during the process
     except Exception as err:
         sentry_sdk.capture_exception(err)
 
     return rows
+
 
 @app.route('/products-join', methods=['GET'])
 def products_join():
@@ -157,16 +185,17 @@ def products_join():
             rows = get_products_join()
     except Exception as err:
         sentry_sdk.capture_exception(err)
-        raise(err)
+        raise (err)
 
     try:
         headers = parseHeaders(RUBY_CUSTOM_HEADERS, request.headers)
         r = requests.get(RUBY_BACKEND + "/api", headers=headers)
-        r.raise_for_status() # returns an HTTPError object if an error has occurred during the process
+        r.raise_for_status()  # returns an HTTPError object if an error has occurred during the process
     except Exception as err:
         sentry_sdk.capture_exception(err)
 
     return rows
+
 
 @app.route('/handled', methods=['GET'])
 def handled_exception():
@@ -176,27 +205,37 @@ def handled_exception():
         sentry_sdk.capture_exception(err)
     return 'failed'
 
+
 @app.route('/unhandled', methods=['GET'])
 def unhandled_exception():
     obj = {}
     obj['keyDoesnt  Exist']
 
+
 @app.route('/api', methods=['GET'])
 def api():
     return "flask /api"
 
+
 @app.route('/organization', methods=['GET'])
 def organization():
+    # perform get_products db query 1% of time in order
+    #   to populate "Found In" endpoints in Queries
+    if random.random() < 0.01:
+        rows = get_products()
     return "flask /organization"
+
 
 @app.route('/connect', methods=['GET'])
 def connect():
     return "flask /connect"
 
+
 @app.route('/product/0/info', methods=['GET'])
 def product_info():
     time.sleep(.55)
     return "flask /product/0/info"
+
 
 # uncompressed assets
 @app.route('/uncompressed_assets/<path:path>')
@@ -209,6 +248,7 @@ def send_report(path):
     response.headers['Content-Type'] = 'application/octet-stream'
     return response
 
+
 # compressed assets
 @app.route('/compressed_assets/<path:path>')
 def send_report_configured_properly(path):
@@ -216,6 +256,7 @@ def send_report_configured_properly(path):
     # `Timing-Allow-Origin: *` allows timing/sizes to visbile in span
     response.headers['Timing-Allow-Origin'] = '*'
     return response
+
 
 @app.before_request
 def sentry_event_context():
@@ -229,4 +270,4 @@ def sentry_event_context():
 
     email = request.headers.get('email')
     if email not in [None, "undefined"]:
-        sentry_sdk.set_user({ "email" : email })
+        sentry_sdk.set_user({"email": email})

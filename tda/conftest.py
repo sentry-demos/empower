@@ -1,5 +1,4 @@
 import pytest
-from os import environ
 import contextlib
 import os
 import release_version_manager as ReleaseVersion
@@ -57,6 +56,7 @@ class Browser(NamedTuple):
 
 
 class Config(NamedTuple):
+    collect_mock_data: bool
     browsers: tuple[Browser, ...]
     dsn: str
     react_endpoints: tuple[str, ...]
@@ -68,6 +68,7 @@ def _config() -> Config:
     with open(cfg_filename) as f:
         contents = yaml.safe_load(f)
     return Config(
+        collect_mock_data=contents['collect_mock_data'],
         browsers=tuple(Browser(**d) for d in contents['browsers']),
         dsn=contents['dsn'],
         react_endpoints=tuple(contents['react_endpoints']),
@@ -105,9 +106,6 @@ SLEEP_LENGTH = os.getenv("SLEEP_LENGTH") or "random_2_1"
 
 BACKENDS = (os.getenv("BACKENDS") or "flask,express,springboot,ruby,laravel,rails,aspnetcore").split(',')
 
-def pytest_configure():
-    pytest.SE_TAG=SE_TAG
-
 import urllib3
 urllib3.disable_warnings()
 
@@ -124,29 +122,6 @@ _browser2class = {
     'firefox': FirefoxOptions,
     'safari': SafariOptions
 }
-
-desktop_browsers = [
-    {
-        "platformName": "Windows 10",
-        "browserName": "chrome",
-        "browserVersion": "latest",
-    }, {
-        "platformName": "Windows 10",
-        "browserName": "firefox",
-        "browserVersion": "latest",
-    }, {
-        "platformName": "OS X 10.13",
-        "browserName": "safari",
-        "browserVersion": "latest-1",
-    }, {
-        "platformName": "OS X 10.13",
-        "browserName": "chrome",
-        "browserVersion": "latest",
-    }]
-desktop_browsers_ids = [
-    '{browserName}@{browserVersion}({platformName})'.format(**browser)
-    for browser in desktop_browsers
-]
 
 def pytest_addoption(parser):
     parser.addoption("--dc", action="store", default='us', help="Set Sauce Labs Data Center (US or EU)")
@@ -224,31 +199,30 @@ def backend(random):
 def endpoints():
     return CONFIG
 
+
+class _ExtraParams:
+    def __init__(self, *args, extra_params, **kwargs):
+        if extra_params.startswith(('&', '?')):
+            raise ValueError('extra_params must be in format: "param1=value1&param2=value2..."')
+        self.extra_params = extra_params
+        super().__init__(*args, **kwargs)
+
+    def get(self, url):
+        url += ('&' if '?' in url else '?') + self.extra_params
+        return super().get(url)
+
 # Automatically append a set of extra parameters to all URLs
 #
 #   remote = RemoteWithExtraUrlParams(..., extra_params='se=tda')
 #   remote.get('https://google.com/')
 #       -> webdriver.Remote.get(https://google.com/?se=tda)
-class RemoteWithExtraUrlParams(webdriver.Remote):
-    def __init__(self, *args, **kwargs):
-        if 'extra_params' in kwargs:
-            if kwargs['extra_params'].startswith(('&', '?')):
-                raise ValueError('extra_params must be in format: "param1=value1&param2=value2..."')
-            self.extra_params = kwargs['extra_params']
-            del kwargs['extra_params']
-        else:
-            self.extra_params = None
-        super().__init__(*args, **kwargs)
-
-    def get(self, url):
-        if self.extra_params:
-            url += ('?' in url and '&' or '?') + self.extra_params
-        super().get(url)
+class RemoteWithExtraUrlParams(_ExtraParams, webdriver.Remote): pass
+class ChromeWithExtraUrlParams(_ExtraParams, webdriver.Chrome): pass
 
 @pytest.fixture
 def selenium_endpoint(data_center):
-    username = environ['SAUCE_USERNAME']
-    access_key = environ['SAUCE_ACCESS_KEY']
+    username = os.environ['SAUCE_USERNAME']
+    access_key = os.environ['SAUCE_ACCESS_KEY']
 
     if data_center and data_center.lower() == 'eu':
         return "https://{}:{}@ondemand.eu-central-1.saucelabs.com/wd/hub".format(username, access_key)
@@ -273,7 +247,7 @@ def set_tags(request):
 def _sauce_browser(request, selenium_endpoint):
     try:
         test_name = request.node.name
-        build_tag = environ.get('BUILD_TAG', "Application-Monitoring-TDA")
+        build_tag = os.environ.get('BUILD_TAG', "Application-Monitoring-TDA")
 
         options = _browser2class[request.param.browserName]()
         options.set_capability('platformName', request.param.platformName)
@@ -333,7 +307,10 @@ def _local_browser(request):
     options.add_argument("disable-gpu")
     options.add_argument("disable-dev-shm-usage")
     options.add_argument("headless")
-    with webdriver.Chrome(options=options) as driver:
+    with ChromeWithExtraUrlParams(
+            options=options,
+            extra_params=urlencode({'se': request.node.nodeid}),
+    ) as driver:
         yield driver
 
 
@@ -499,7 +476,7 @@ def pytest_runtest_makereport(item, call):
     # be "setup", "call", "teardown"
     setattr(item, "rep_" + rep.when, rep)
 
-if 'localhost' not in CONFIG.dsn:
+if not CONFIG.collect_mock_data:
     def final_report():
         end_time = get_current_time_iso_utc(adjust_seconds=1)
         start = urllib.parse.quote(start_time)

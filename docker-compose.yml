@@ -28,6 +28,7 @@ services:
     build: mini-relay
     init: true
     ports: [9989:9989]
+    volumes: [./mini-relay/data:/data:rw]
   postgres:
     image: 'postgres:alpine'
     environment:
