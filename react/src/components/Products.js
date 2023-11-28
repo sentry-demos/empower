@@ -66,6 +66,17 @@ function Products({ frontendSlowdown, backend }) {
     }
   }
 
+  /*
+    Fetching and setting the products used to be done in an
+    async componentDidMount function. We have (Nov 2023) changed the way of
+    doing this to be non-async, because the async function was getting minified in the
+    relevant browser profiling frame, and this made it hard to showcase profiling.
+
+    Jonas B explained why switching away from async function helped:
+    "I think what you are seeing is unrelated to hooks and probably
+    related to the async keyword + babel transform, hence why it probably got
+    fixed with hooks (no transform on that class method anymore)"
+  */
   useEffect(() => {
     // getProducts handles error responses differently, depending on the browser used
     function getProducts(frontendSlowdown) {
