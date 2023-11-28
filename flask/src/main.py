@@ -1,6 +1,7 @@
 import datetime
 import operator
 import os
+import random
 import requests
 import time
 from flask import Flask, json, request, make_response, send_from_directory
@@ -218,6 +219,10 @@ def api():
 
 @app.route('/organization', methods=['GET'])
 def organization():
+    # perform get_products db query 1% of time in order
+    #   to populate "Found In" endpoints in Queries
+    if random.random() < 0.01:
+        rows = get_products()
     return "flask /organization"
 
 
