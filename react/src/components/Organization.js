@@ -15,6 +15,9 @@ class Organization extends Component {
   }
 
   componentDidMount() {
+    let se; // `se` is automatically added to all fetch requests, but need to do manually for script tags
+    Sentry.withScope(function (scope) { se = scope._tags.se; });
+
     // Must bust cache to have force transfer size
     // small compressed file
     let uc_small_script = document.createElement('script');
@@ -22,8 +25,7 @@ class Organization extends Component {
     uc_small_script.src =
       this.props.backend +
       '/compressed_assets/compressed_small_file.js' +
-      '?cacheBuster=' +
-      Math.random();
+      `?cacheBuster=${Math.random()}&se=${se}`;
     document.body.appendChild(uc_small_script);
 
     // big uncompressed file
@@ -33,8 +35,7 @@ class Organization extends Component {
     c_big_script.src =
       this.props.backend +
       '/uncompressed_assets/uncompressed_big_file.js' +
-      '?cacheBuster=' +
-      Math.random();
+      `?cacheBuster=${Math.random()}&se=${se}`;
     document.body.appendChild(c_big_script);
   }
 
