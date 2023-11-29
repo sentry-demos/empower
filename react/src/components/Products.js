@@ -80,21 +80,10 @@ function Products({ frontendSlowdown, backend }) {
   useEffect(() => {
     // getProducts handles error responses differently, depending on the browser used
     function getProducts(frontendSlowdown) {
-      let se, customerType, email;
-      Sentry.withScope(function (scope) {
-        [se, customerType] = [scope._tags.se, scope._tags.customerType];
-        email = scope._user.email;
-      });
-
       [('/api', '/connect', '/organization')].forEach((endpoint) => {
         fetch(backend + endpoint, {
           method: 'GET',
-          headers: {
-            se,
-            customerType,
-            email,
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
         }).catch((err) => {
           // If there's an error, it won't stop the Products http request and page from loading
           Sentry.captureException(err);
@@ -108,12 +97,7 @@ function Products({ frontendSlowdown, backend }) {
 
       fetch(backend + productsEndpoint, {
         method: 'GET',
-        headers: {
-          se,
-          customerType,
-          email,
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
       })
         .then((result) => {
           if (!result.ok) {
