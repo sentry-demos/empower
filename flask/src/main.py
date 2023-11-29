@@ -263,6 +263,12 @@ def sentry_event_context():
     se = request.headers.get('se')
     if se not in [None, "undefined"]:
         sentry_sdk.set_tag("se", se)
+    else:
+        # sometimes this is the only way to propagate, e.g. when requested through a dynamically
+        # inserted HTML tag as in case with (un)compressed_assets
+        se = request.args.get('se') 
+        if se not in [None, "undefined"]:
+            sentry_sdk.set_tag("se", se)
 
     customerType = request.headers.get('customerType')
     if customerType not in [None, "undefined"]:

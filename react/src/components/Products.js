@@ -15,13 +15,15 @@ function Products({ frontendSlowdown, backend }) {
   }
 
   function fetchUncompressedAsset() {
+    let se; // `se` is automatically added to all fetch requests, but need to do manually for script tags
+    Sentry.withScope(function (scope) { se = scope._tags.se; });
+
     let uc_small_script = document.createElement('script');
     uc_small_script.async = false;
     uc_small_script.src =
       backend +
       '/compressed_assets/compressed_small_file.js' +
-      '?cacheBuster=' +
-      Math.random();
+      `?cacheBuster=${Math.random()}&se=${se}`; 
     document.body.appendChild(uc_small_script);
 
     // big uncompressed file
@@ -31,8 +33,7 @@ function Products({ frontendSlowdown, backend }) {
     c_big_script.src =
       backend +
       '/uncompressed_assets/uncompressed_big_file.js' +
-      '?cacheBuster=' +
-      Math.random();
+      `?cacheBuster=${Math.random()}&se=${se}`; 
     document.body.appendChild(c_big_script);
   }
 
