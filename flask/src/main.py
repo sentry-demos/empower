@@ -102,7 +102,8 @@ def checkout():
     inventory = []
     try:
         with sentry_sdk.start_span(op="/checkout.get_inventory", description="function"):
-            inventory = get_inventory(cart)
+            with sentry_sdk.metrics.timing(key="checkout.get_inventory.execution_time"):
+                inventory = get_inventory(cart)
     except Exception as err:
         raise (err)
 
