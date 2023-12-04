@@ -103,7 +103,8 @@ def checkout():
     inventory = []
     try:
         with sentry_sdk.start_span(op="/checkout.get_inventory", description="function"):
-            inventory = get_inventory(cart)
+            with sentry_sdk.metrics.timing(key="checkout.get_inventory.execution_time"):
+                inventory = get_inventory(cart)
     except Exception as err:
         raise (err)
 
@@ -115,6 +116,7 @@ def checkout():
             for inventoryItem in inventory:
                 print("> inventoryItem.count", inventoryItem['count'])
                 if (inventoryItem.count < quantities[cartItem] or quantities[cartItem] >= inventoryItem.count):
+                    sentry_sdk.metrics.incr(key="checkout.failed")
                     raise Exception("Not enough inventory for product")
         if len(inventory) == 0 or len(quantities) == 0:
             raise Exception("Not enough inventory for product")
@@ -144,14 +146,17 @@ def products():
 
     try:
         with sentry_sdk.start_span(op="/products.get_products", description="function"):
-            rows = get_products()
+            with sentry_sdk.metrics.timing(key="products.get_products.execution_time"):
+                rows = get_products()
 
             if RUN_SLOW_PROFILE:
                 start_time = time.time()
                 productsJSON = json.loads(rows)
                 descriptions = [product["description"] for product in productsJSON]
                 with sentry_sdk.start_span(op="/get_iterator", description="function"):
-                    loop = get_iterator(len(descriptions) * 6)
+                    with sentry_sdk.metrics.timing(key="products.get_iterator.execution_time"):
+                        loop = get_iterator(len(descriptions) * 6)
+
                     for i in range(loop):
                         time_delta = time.time() - start_time
                         if time_delta > 4:
