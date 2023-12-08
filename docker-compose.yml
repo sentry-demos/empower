@@ -23,6 +23,7 @@ services:
     build: ruby
     environment:
       <<: *x-base-env
+      RUBY_APP_DSN: http://ruby@mini-relay:9989/4
     init: true
   mini-relay:
     build: mini-relay
