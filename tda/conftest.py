@@ -344,11 +344,11 @@ def _local_browser(request, se):
 
 
 @pytest.fixture(params=CONFIG.browsers, ids=[b.param_display for b in CONFIG.browsers])
-def desktop_web_driver(request, selenium_endpoint, se_prefix):
+def desktop_web_driver(request, se_prefix):
     if request.param.remote:
         se = f'{se_prefix}-sauce-{request.param.param_display}'
         sentry_sdk.set_tag("se", se)
-        with _sauce_browser(request, selenium_endpoint, se) as b:
+        with _sauce_browser(request, request.getfixturevalue('selenium_endpoint'), se) as b:
             yield b
     else:
         se = f'{se_prefix}-local-{request.param.param_display}'
