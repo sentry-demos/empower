@@ -155,11 +155,11 @@ def products():
                 descriptions = [product["description"] for product in productsJSON]
                 with sentry_sdk.start_span(op="/get_iterator", description="function"):
                     with sentry_sdk.metrics.timing(key="products.get_iterator.execution_time"):
-                        loop = get_iterator(len(descriptions) * 6)
+                        loop = get_iterator(len(descriptions) * 6 - 1)
 
                     for i in range(loop):
                         time_delta = time.time() - start_time
-                        if time_delta > 4:
+                        if time_delta > 2:
                             break
 
                         for i, description in enumerate(descriptions):
