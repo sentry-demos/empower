@@ -18,3 +18,8 @@ jobs:
     - run: pip install -r tda/requirements.txt
     - run: |
         SLEEP_LENGTH=0 BACKENDS=flask RUN_ID=${{ github.run_id }}_flask TDA_CONFIG=tda/config.local.yaml pytest tda/desktop_web
+    - run: |
+        echo 'waiting for eventual consistency...'
+        sleep 10
+        python3 mini-relay/classify_data.py mini-relay/data out
+        tree out
