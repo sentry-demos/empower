@@ -5,10 +5,10 @@ def test_homescreen_react_native_android(android_react_native_emu_driver, random
 
     try:
         # click into list app screen
-        android_react_native_emu_driver.find_element(AppiumBy.XPATH, '/hierarchy/android.widget.FrameLayout/android.widget.LinearLayout/android.widget.FrameLayout/android.widget.LinearLayout/android.widget.FrameLayout/android.widget.FrameLayout/android.view.ViewGroup/android.view.ViewGroup/android.view.ViewGroup/android.view.ViewGroup/android.view.ViewGroup/android.view.ViewGroup/android.view.ViewGroup/android.view.ViewGroup[1]/android.widget.Button[1]/android.widget.TextView').click()
-        
+        android_react_native_emu_driver.find_element(AppiumBy.ACCESSIBILITY_ID, 'LIST APP').click()
+
         # Handled Exceptions - This clicks the Handled Exception' button in the app
-        # This error type does not increment the Crash Count for the release, 
+        # This error type does not increment the Crash Count for the release,
         # but the UI in Release dashboard separates from Handled vs Handled, so good to capture some of these, for having a more diverse data set.
         # 40% of the time this will error.
         if random.randint(1,10) < 3:
@@ -32,4 +32,4 @@ def test_homescreen_react_native_android(android_react_native_emu_driver, random
         sentry_sdk.capture_exception(err)
 
 
-        
+
