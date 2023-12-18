@@ -28,7 +28,7 @@ RUN_SLOW_PROFILE = None
 def before_send(event, hint):
     # 'se' tag may have been set in app.before_request
     se = None
-    if 'se' in event['tags']:
+    if 'tags' in event.keys() and 'se' in event['tags']:
         se = event['tags']['se']
 
     if se not in [None, "undefined"]:
