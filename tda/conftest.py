@@ -199,6 +199,8 @@ def backend(random):
         #   >>> list(set(['b', 'a', 'f', 'd', 'e', 'c']) - set(['c', 'a']))
         #   ['d', 'f', 'b', 'e']
         backends = sorted(list(set(include) - set(exclude)))
+        if 'flask' in backends:
+            backends += ['flask'] # make flask 2x more likely than others
         return random.sample(backends, 1)[0]
     return random_backend
 
