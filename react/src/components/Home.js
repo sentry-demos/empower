@@ -1,20 +1,18 @@
 import { Component } from 'react';
-import Context from '../utils/context';
 import * as Sentry from '@sentry/react';
 import plantsBackground from '../assets/plants-background-img.jpg';
 import Button from './ButtonLink';
+import { useEffect } from 'react';
 
 const divStyle = {
   backgroundImage: 'url(' + plantsBackground + ')',
 };
 
-class Home extends Component {
-  static contextType = Context;
-
-  async componentDidMount() {
+function Home({ frontendSlowdown, backend }) {
+  useEffect(() => {
     try {
       // This should be the only http request for home page, for health check purposes
-      await fetch(this.props.backend + '/success', {
+      fetch(backend + '/success', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -23,24 +21,20 @@ class Home extends Component {
     } catch (err) {
       Sentry.captureException(err);
     }
-  }
+  }, []);
 
-  render() {
-    return (
-      <div className="hero sentry-unmask">
-        <div className="hero-bg-img" style={divStyle}></div>
-        <div className="hero-content">
-          <h1>Empower your plants</h1>
-          <p>Keep your houseplants happy.</p>
-          <Button
-            to={this.props.frontendSlowdown ? '/products-fes' : '/products'}
-          >
-            Browse products
-          </Button>
-        </div>
+  return (
+    <div className="hero sentry-unmask">
+      <div className="hero-bg-img" style={divStyle}></div>
+      <div className="hero-content">
+        <h1>Empower your plants</h1>
+        <p>Keep your houseplants happy.</p>
+        <Button to={frontendSlowdown ? '/products-fes' : '/products'}>
+          Browse products
+        </Button>
       </div>
-    );
-  }
+    </div>
+  );
 }
 
 export default Home;
