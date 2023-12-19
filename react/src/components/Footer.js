@@ -8,7 +8,7 @@ function Footer() {
   const [subscribed, setSubscribed] = useState(false);
 
   const handleSubmit = () => {
-    this.setState({ subscribed: true });
+    setSubscribed(true);
   };
 
   return (

@@ -14,7 +14,7 @@ import Noah from './employees/noah';
 
 const employees = [Jane, Lily, Keith, Mason, Emma, Noah];
 
-function About() {
+function About({ backend }) {
   useEffect(() => {
     if (!isOddReleaseWeek()) {
       // can't have async sleep in a constructor
@@ -22,13 +22,13 @@ function About() {
     }
 
     // Http requests to make in parallel, so the Transaction has more Spans
-    let request1 = fetch(this.props.backend + '/api', {
+    let request1 = fetch(backend + '/api', {
       method: 'GET',
     });
-    let request2 = fetch(this.props.backend + '/organization', {
+    let request2 = fetch(backend + '/organization', {
       method: 'GET',
     });
-    let request3 = fetch(this.props.backend + '/connect', {
+    let request3 = fetch(backend + '/connect', {
       method: 'GET',
     });
 

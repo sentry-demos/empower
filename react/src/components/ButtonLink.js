@@ -1,9 +1,9 @@
 import { Link } from 'react-router-dom';
 
-function Button() {
+function Button({ props }) {
   return (
-    <Link {...this.props} className="btn">
-      {this.props.children}
+    <Link {...props} className="btn">
+      {props.children}
     </Link>
   );
 }
