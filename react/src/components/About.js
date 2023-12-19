@@ -1,10 +1,9 @@
-import { Component } from 'react';
 import { Link } from 'react-router-dom';
 import slugify from '../utils/slugify';
 import * as Sentry from '@sentry/react';
 import './about.css';
 import { isOddReleaseWeek, busy_sleep } from '../utils/time';
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 
 import Jane from './employees/jane';
 import Lily from './employees/lily';
