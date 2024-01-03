@@ -7,10 +7,6 @@ import { setProducts, addProduct, removeProduct } from '../actions';
 import { useEffect } from 'react';
 
 function Cart(props) {
-  useEffect(() => {
-    console.log('> Cart shouldComponentUpdate');
-  }, []);
-
   return (
     <div className="cart-container">
       <h2 className="sentry-unmask">Cart</h2>
