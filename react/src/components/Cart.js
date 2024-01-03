@@ -57,14 +57,14 @@ function Cart(props) {
           </ul>
           <h3 className="cart-subtotal">
             <span className="sentry-unmask">Cart Subtotal: $</span>
-            {props.total}.00
+            {props.cart.total}.00
           </h3>
           <Button to="/checkout" className="sentry-unmask">
             Proceed to checkout
           </Button>
         </>
       ) : (
-        <p>Please add items to the cart SDZ2</p>
+        <p>Please add items to the cart</p>
       )}
     </div>
   );
