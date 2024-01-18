@@ -4,17 +4,16 @@ import * as Sentry from '@sentry/react';
 import Button from './ButtonLink';
 import { connect } from 'react-redux';
 import { setProducts, addProduct, removeProduct } from '../actions';
-import { useEffect } from 'react';
 
-function Cart(props) {
+function Cart({ cart, removeProduct, addProduct }) {
   return (
     <div className="cart-container">
       <h2 className="sentry-unmask">Cart</h2>
-      {props.cart.items.length > 0 ? (
+      {cart.items.length > 0 ? (
         <>
           <ul className="cart-list">
-            {props.cart.items.map((item) => {
-              const quantity = props.cart.quantities[item.id];
+            {cart.items.map((item) => {
+              const quantity = cart.quantities[item.id];
               const itemLink = '/product/' + item.id;
               return (
                 <li className="cart-item" key={item.id}>
@@ -34,14 +33,14 @@ function Cart(props) {
                   </p>
                   <div className="quantity-adjust">
                     <button
-                      onClick={() => props.removeProduct(item)}
+                      onClick={() => removeProduct(item)}
                       className="sentry-unmask"
                     >
                       –
                     </button>
                     <span>{quantity}</span>
                     <button
-                      onClick={() => props.addProduct(item)}
+                      onClick={() => addProduct(item)}
                       className="sentry-unmask"
                     >
                       +
@@ -57,7 +56,7 @@ function Cart(props) {
           </ul>
           <h3 className="cart-subtotal">
             <span className="sentry-unmask">Cart Subtotal: $</span>
-            {props.cart.total}.00
+            {cart.total}.00
           </h3>
           <Button to="/checkout" className="sentry-unmask">
             Proceed to checkout
