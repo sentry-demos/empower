@@ -365,6 +365,7 @@ def android_react_native_emu_driver(request, selenium_endpoint, se_prefix):
     sentry_sdk.set_tag('se', se)
     try:
         release_version = ReleaseVersion.latest_react_native_github_release()
+        sentry_sdk.set_tag("github_release_version", release_version)
 
         options = UiAutomator2Options().load_capabilities({
             'deviceName': 'Android GoogleAPI Emulator',
@@ -402,6 +403,7 @@ def android_emu_driver(request, selenium_endpoint, se_prefix):
     sentry_sdk.set_tag('se', se)
     try:
         release_version = ReleaseVersion.latest_android_github_release()
+        sentry_sdk.set_tag("github_release_version", release_version)
 
         options = UiAutomator2Options().load_capabilities({
             'deviceName': 'Android GoogleAPI Emulator',
@@ -440,6 +442,7 @@ def ios_react_native_sim_driver(request, selenium_endpoint, se_prefix):
     sentry_sdk.set_tag('se', se)
     try:
         release_version = ReleaseVersion.latest_react_native_github_release()
+        sentry_sdk.set_tag("github_release_version", release_version)
 
         options = XCUITestOptions().load_capabilities({
             'appium:deviceName': 'iPhone 11 Simulator',
@@ -477,6 +480,7 @@ def ios_sim_driver(request, selenium_endpoint, se_prefix):
     sentry_sdk.set_tag('se', se)
     try:
         release_version = ReleaseVersion.latest_ios_github_release()
+        sentry_sdk.set_tag("github_release_version", release_version)
 
         options = XCUITestOptions().load_capabilities({
             'appium:deviceName': 'iPhone 13 Simulator',

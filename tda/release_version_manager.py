@@ -1,11 +1,22 @@
 import requests
 import os
+from datetime import datetime
+
+GITHUB_API_RELEASES_MAX_RESULTS = 30
 
 GITHUB_REPOS = {
-    # platform: <github repo name>
-    'react_native': 'sentry_react_native',
-    'android': 'android',
-    'ios': 'ios'
+    'react_native': {
+        'repo': 'sentry_react_native',
+        'use_prefix': False
+    },
+    'android': {
+        'repo': 'android', 
+        'use_prefix': False
+     },
+    'ios': {
+        'repo': 'ios',
+        'use_prefix': True
+    }
 }
 
 # Setting the release version in an environment variable
@@ -40,6 +51,20 @@ def latest_ios_github_release():
     return latest_github_release('ios')
 
 def determine_latest_release_version(platform):
-    repo_name = GITHUB_REPOS[platform]
-    react_native_releases = requests.get(f"https://api.github.com/repos/sentry-demos/{repo_name}/releases")
-    return react_native_releases.json()[0]['tag_name']
+    repo = GITHUB_REPOS[platform]
+    releases = requests.get(f"https://api.github.com/repos/sentry-demos/{repo['name']}/releases").json()
+    if not repo['use_prefix']:
+        # Assuming correct ordering (might cause bugs)
+        return releases[0]['tag_name']
+    else:
+        # When using <platform>-1.2.3 format GH will order releases alphabetically, i.e. 0.0.21 -> 0.0.3
+        # We can't use "Latest" because we have multiple latest releasese - one for each platform
+        if len(releases) >= GITHUB_API_RELEASES_MAX_RESULTS:
+            raise NotImplementedError(
+                f"Github /releases API returned maximum number of results (${GITHUB_API_RELEASES_MAX_RESULTS}). " + 
+                "Current implementation is not able to handle pagination. Please delete old releases or implement.") 
+
+        platform_releases = list(filter(lambda r: r['tag_name'].startswith(platform + '-'), releases))
+        # Parse the 'published_at' times and sort the releases
+        platform_releases.sort(key=lambda release: datetime.strptime(release["published_at"], "%Y-%m-%dT%H:%M:%SZ"), reverse=True)
+        return platform_releases[0]['tag_name']
