@@ -39,6 +39,7 @@ function Checkout(props) {
   const [form, setForm] = useState(initialFormValues);
 
   async function checkout(cart) {
+    Sentry.metrics.increment('checkout.click');
     const response = await fetch(props.backend + '/checkout?v2=true', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -47,15 +48,19 @@ function Checkout(props) {
         form: form,
       }),
     }).catch((err) => {
+      Sentry.metrics.increment('checkout.error', 1,  { tags: { status: 500 } });
       return { ok: false, status: 500 };
     });
     if (!response.ok) {
+      Sentry.metrics.increment('checkout.error', 1,  { tags: { status: response.status } });
       throw new Error(
         [response.status, response.statusText || 'Internal Server Error'].join(
           ' - '
         )
       );
     }
+    Sentry.metrics.increment('checkout.success');
+    Sentry.metrics.distribution('checkout.order.total', cart.total);
     return response;
   }
   function generateUrl(product_id) {

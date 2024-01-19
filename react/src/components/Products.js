@@ -95,7 +95,7 @@ function Products({ frontendSlowdown, backend }) {
       // because it returns product data with a fast backend response.
       // Otherwise use the /products endpoint, which provides a slow backend response.
       const productsEndpoint = determineProductsEndpoint();
-
+      const start = Date.now();
       fetch(backend + productsEndpoint, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
@@ -116,7 +116,14 @@ function Products({ frontendSlowdown, backend }) {
         .then(renderProducts)
         .catch((err) => {
           return { ok: false, status: 500 };
-        });
+        }).then(() => {
+          const end = Date.now();
+          const duration = end - start;
+          Sentry.metrics.distribution('request.duration', duration, {
+            unit: 'milliseconds',
+            tags: { endpoint: productsEndpoint }
+          });
+        })
     }
 
     getProducts(frontendSlowdown);
