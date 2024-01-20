@@ -1,95 +1,74 @@
-import { Component } from 'react';
-import Context from '../utils/context';
 import './products.css';
 import * as Sentry from '@sentry/react';
 import { connect } from 'react-redux';
 import { setProducts, addProduct } from '../actions';
 import Loader from 'react-loader-spinner';
 import ProductCard from './ProductCard';
+import { useState, useEffect } from 'react';
 
-class ProductsJoin extends Component {
-  static contextType = Context;
+function ProductsJoin({ backend }) {
+  const [products, setProducts] = useState([]);
 
-  // getProductsJoin handles error responses differently, depending on the browser used
-  async getProductsJoin() {
-    let result = await fetch(this.props.backend + '/products-join', {
+  useEffect(() => {
+    fetch(backend + '/products-join', {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
-    }).catch((err) => {
-      return { ok: false, status: 500 };
-    });
-
-    if (!result.ok) {
-      Sentry.configureScope(function (scope) {
-        Sentry.setContext('err', {
-          status: result.status,
-          statusText: result.statusText,
-        });
-      });
-      return Promise.reject();
-    } else {
-      const jsonValue = await result.json();
-      return Promise.resolve(jsonValue);
-    }
-  }
-
-  async shouldComponentUpdate() {
-    console.log('> ProductsJoin shouldComponentUpdate');
-  }
-
-  async componentDidMount() {
-    var products;
-    try {
-      products = await this.getProductsJoin();
-      this.props.setProducts(products);
-    } catch (err) {
-      Sentry.captureException(new Error('app unable to load products'));
-    }
-  }
-
-  render() {
-    const { products } = this.props;
-    return products.length > 0 ? (
-      <div>
-        <ul className="products-list">
-          {products.map((product) => {
-            const averageRating = (
-              product.reviews.reduce((a, b) => a + (b['rating'] || 0), 0) /
-              product.reviews.length
-            ).toFixed(1);
-
-            let stars = [1, 2, 3, 4, 5].map((index) => {
-              if (index <= averageRating) {
-                return (
-                  <span className="star" key={index}>
-                    &#9733;
-                  </span>
-                );
-              } else {
-                return (
-                  <span className="star" key={index}>
-                    &#9734;
-                  </span>
-                );
-              }
+    })
+      .then((result) => {
+        if (!result.ok) {
+          Sentry.configureScope(function (scope) {
+            Sentry.setContext('err', {
+              status: result.status,
+              statusText: result.statusText,
             });
+          });
+          return Promise.reject();
+        } else {
+          return result.json();
+        }
+      })
+      .then((data) => setProducts(data.slice(0, 4)))
+      .catch((err) => {
+        return { ok: false, status: 500 };
+      });
+  }, []);
 
-            return (
-              <ProductCard
-                key={product.id}
-                product={product}
-                stars={stars}
-              ></ProductCard>
-            );
-          })}
-        </ul>
-      </div>
-    ) : (
-      <div className="loader-container">
-        <Loader type="ThreeDots" color="#f6cfb2" height={150} width={150} />
-      </div>
-    );
-  }
+  return products.length > 0 ? (
+    <div>
+      <ul className="products-list">
+        {products.map((product, i) => {
+          const averageRating = (
+            product.reviews.reduce((a, b) => a + (b['rating'] || 0), 0) /
+            product.reviews.length
+          ).toFixed(1);
+
+          let stars = [1, 2, 3, 4, 5].map((index) => {
+            if (index <= averageRating) {
+              return (
+                <span className="star" key={index}>
+                  &#9733;
+                </span>
+              );
+            } else {
+              return (
+                <span className="star" key={index}>
+                  &#9734;
+                </span>
+              );
+            }
+          });
+
+          return (
+            <ProductCard key={i} product={product} stars={stars}></ProductCard>
+          );
+        })}
+      </ul>
+    </div>
+  ) : (
+    <div className="loader-container">
+      <Loader type="ThreeDots" color="#f6cfb2" height={150} width={150} />
+    </div>
+  );
 }
 
 const mapStateToProps = (state, ownProps) => {
