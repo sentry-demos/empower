@@ -13,7 +13,7 @@ export default function measureRequestDuration(endpoint) {
     const end = Date.now();
     const duration = end - start;
     Sentry.metrics.distribution('request.duration', duration, {
-      unit: 'milliseconds',
+      unit: 'millisecond',
       tags: { endpoint }
     });
   }
