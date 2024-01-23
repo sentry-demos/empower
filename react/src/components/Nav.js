@@ -7,7 +7,7 @@ import { resetCart, addProduct, setProducts } from '../actions';
 
 import EPlogo from '../assets/empowerplant-logo.svg';
 
-function Nav(props) {
+function Nav({ cart, frontendSlowdown }) {
   return (
     <>
       <nav id="top-nav" className="show-mobile">
@@ -25,10 +25,10 @@ function Nav(props) {
             </Link>
             <Link to="/cart" className="sentry-unmask">
               Cart
-              {props.cart.items.length > 0 ? (
+              {cart.items.length > 0 ? (
                 <span>
                   <span className="sentry-unmask"> ($</span>
-                  <span className="sentry-mask">{props.cart.total}.00</span>
+                  <span className="sentry-mask">{cart.total}.00</span>
                   <span className="sentry-unmask">)</span>
                 </span>
               ) : (
@@ -51,17 +51,17 @@ function Nav(props) {
               About
             </Link>
             <Link
-              to={props.frontendSlowdown ? '/products-fes' : '/products'}
+              to={frontendSlowdown ? '/products-fes' : '/products'}
               className="sentry-unmask"
             >
               Products
             </Link>
             <Link to="/cart">
               <span className="sentry-unmask">Cart</span>
-              {props.cart.items.length > 0 ? (
+              {cart.items.length > 0 ? (
                 <span>
                   <span className="sentry-unmask"> ($</span>
-                  <span className="sentry-mask">{props.cart.total}.00</span>
+                  <span className="sentry-mask">{cart.total}.00</span>
                   <span className="sentry-unmask">)</span>
                 </span>
               ) : (
