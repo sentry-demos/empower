@@ -140,6 +140,15 @@ Sentry.init({
 
     return event;
   },
+  beforeSendTransaction(event) {
+    // ui.action.click transactions are showing up in the demo
+    // which is undesirable
+    if (event?.contexts?.trace?.op === 'ui.action.click') {
+      console.log('> Deliberately discarding ui.action.click event');
+      return null;
+    }
+    return event;
+  },
 });
 
 // TODO is this best placement?
@@ -255,17 +264,19 @@ class App extends Component {
     // Automatically append `se`, `customerType` and `userEmail` query params to all requests
     // (except for requests to Sentry)
     const nativeFetch = window.fetch;
-    window.fetch = function(...args) {
+    window.fetch = function (...args) {
       let url = args[0];
       // When TDA is run in 'mock' mode inside Docker mini-relay will be ingesting on port 9989, see:
       // https://github.com/sentry-demos/empower/blob/79bed0b78fb3d40dff30411ef26c31dc7d4838dc/mini-relay/Dockerfile#L9
-      let ignore_match = url.match(/^http[s]:\/\/([^.]+\.ingest\.sentry\.io\/|localhost:9989|127.0.0.1:9989).*/);
+      let ignore_match = url.match(
+        /^http[s]:\/\/([^.]+\.ingest\.sentry\.io\/|localhost:9989|127.0.0.1:9989).*/
+      );
       if (!ignore_match) {
         Sentry.withScope(function (scope) {
           let se, customerType, email;
           [se, customerType] = [scope._tags.se, scope._tags.customerType];
           email = scope._user.email;
-          args[1].headers = {...args[1].headers, se, customerType, email};
+          args[1].headers = { ...args[1].headers, se, customerType, email };
         });
       }
       return nativeFetch.apply(window, args);
