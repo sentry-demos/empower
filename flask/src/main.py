@@ -75,6 +75,7 @@ class MyFlask(Flask):
             traces_sample_rate=1.0,
             before_send=before_send,
             traces_sampler=traces_sampler,
+            enable_db_query_source=True,
             _experiments={
                 "enable_metrics": True,
                 "profiles_sample_rate": 1.0
