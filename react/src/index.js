@@ -75,6 +75,7 @@ Sentry.init({
   replaysSessionSampleRate: 1.0,
   debug: true,
   integrations: [
+    new Sentry.metrics.MetricsAggregator(),
     new Sentry.BrowserProfilingIntegration(),
     new Sentry.BrowserTracing({
       tracingOrigins: tracingOrigins,

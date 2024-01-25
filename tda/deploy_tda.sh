@@ -29,12 +29,20 @@ if ssh $HOST '[[ -d '"$DIR/env"' ]] && [[ ! -z `ls -A '"$DIR/env"'` ]]'; then
 fi
 
 echo "Copying code to remote directory..."
-rsync -rz --delete --exclude env * .sauce_credentials $HOST:$DIR/
-if [ $? != 0 ]; then
+# for whatever reason can't delete or chmod __pycache__ directories
+rsync -rz --delete --force-delete --exclude env/ --exclude __pycache__ * .sauce_credentials $HOST:$DIR/
+ret="$?"
+
+if [ $ret == 1 ]; then # some versions of rsync don't recognize --force-delete option
+  rsync -rz --delete --force --exclude env/ --exclude __pycache__ * .sauce_credentials $HOST:$DIR/
+fi
+if [ $ret != 0 ]; then
   echo "[ERROR] Failed to rsync code to remote directory."
   exit 1
 fi
 echo "Code copied."
+# setting permissions with rscync doesn't work, leaves 775 instead of 777 (umask?)
+ssh $HOST 'find '$DIR' ! -path "*/__pycache__/*" ! -path "*/empower-tda/env/*" ! -path "*/canary.*" -exec sudo chmod 777 {}'
 
 if [[ $reqs_changed == "1" || $env_nonempty == "0" ]]; then
   echo "re-installing requirements (because requirements.txt changed OR 'env' directory does not exist or is empty)..."
