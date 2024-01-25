@@ -3,6 +3,7 @@ import './products.css';
 import * as Sentry from '@sentry/react';
 import { connect } from 'react-redux';
 import { setProducts, addProduct } from '../actions';
+import measureRequestDuration from '../utils/measureRequestDuration';
 import Loader from 'react-loader-spinner';
 import ProductCard from './ProductCard';
 import { useState, useEffect } from 'react';
@@ -95,7 +96,7 @@ function Products({ frontendSlowdown, backend }) {
       // because it returns product data with a fast backend response.
       // Otherwise use the /products endpoint, which provides a slow backend response.
       const productsEndpoint = determineProductsEndpoint();
-
+      const stopMeasurement = measureRequestDuration(productsEndpoint);
       fetch(backend + productsEndpoint, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
@@ -116,6 +117,9 @@ function Products({ frontendSlowdown, backend }) {
         .then(renderProducts)
         .catch((err) => {
           return { ok: false, status: 500 };
+        }).then((res) => {
+          stopMeasurement()
+          return res
         });
     }
 
