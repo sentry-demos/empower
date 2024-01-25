@@ -1,54 +1,32 @@
-import { Component } from 'react';
-import Context from '../utils/context';
-import { Link, useFetcher } from 'react-router-dom';
-import * as Sentry from '@sentry/react';
-import { connect } from 'react-redux';
-import { determineBackendUrl } from '../utils/backendrouter';
+import { useEffect } from 'react';
 
-class NPlusOneItem extends Component {
-  async componentDidMount() {
-    const response = await fetch(
-      this.props.backend + '/product/0/info?id=' + this.props.index
-    );
-    const json = await response.json();
-  }
-  render() {
-    return <li>{this.props.index}</li>;
-  }
+function Nplusone({ backend }) {
+  const idRequests = 20;
+
+  useEffect(() => {
+    for (let i = 0; i < idRequests; i++) {
+      fetch(backend + '/product/0/info?id=' + i, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+  }, []);
+
+  return (
+    <div>
+      <h1>API N+1 Performance Issue</h1>
+      executed GET product id's {idRequests} times
+      <h3>
+        look at the query{' '}
+        <a
+          href="https://demo.sentry.io/issues/?project=5808623&query=is%3Aunresolved+issue.type%3Aperformance_n_plus_one_api_calls&referrer=issue-list&statsPeriod=14d"
+          rel="noreferrer"
+        >
+          here
+        </a>
+      </h3>
+    </div>
+  );
 }
-class Nplusone extends Component {
-  constructor(props) {
-    super(props);
-    const ids = new Array(20).fill(0).map((item, index) => index);
-    this.state = {
-      ids,
-    };
-  }
-  async componentDidMount() {
-    console.log('Mounting NPlusOne with props', this.props);
-  }
-  render() {
-    return (
-      <div>
-        <h1>API N+1 Performance Issue</h1>
-        {this.state.ids.map((index) => (
-          <NPlusOneItem
-            key={index}
-            index={index}
-            backend={this.props.backend}
-          />
-        ))}
-        <h3>
-          look at the query{' '}
-          <a
-            href="https://demo.sentry.io/issues/?project=5808623&query=is%3Aunresolved+issue.type%3Aperformance_n_plus_one_api_calls&referrer=issue-list&statsPeriod=14d"
-            rel="noreferrer"
-          >
-            here
-          </a>
-        </h3>
-      </div>
-    );
-  }
-}
+
 export default Nplusone;

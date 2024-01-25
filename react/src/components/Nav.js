@@ -1,5 +1,3 @@
-import { Component } from 'react';
-import Context from '../utils/context';
 import { Link } from 'react-router-dom';
 import './nav.css';
 import * as Sentry from '@sentry/react';
@@ -9,82 +7,72 @@ import { resetCart, addProduct, setProducts } from '../actions';
 
 import EPlogo from '../assets/empowerplant-logo.svg';
 
-class Nav extends Component {
-  static contextType = Context;
+function Nav({ cart, frontendSlowdown }) {
+  return (
+    <>
+      <nav id="top-nav" className="show-mobile">
+        <div className="nav-contents">
+          <Link to="/" id="home-link">
+            <img src={EPlogo} className="logo sentry-unmask" alt="logo" />
+          </Link>
 
-  async shouldComponentUpdate() {
-    console.log('> Nav shouldComponentUpdate');
-  }
-
-  render() {
-    const { cart } = this.props;
-
-    return (
-      <>
-        <nav id="top-nav" className="show-mobile">
-          <div className="nav-contents">
-            <Link to="/" id="home-link">
-              <img src={EPlogo} className="logo sentry-unmask" alt="logo" />
+          <div id="top-right-links">
+            <Link to="/about" className="sentry-unmask">
+              About
             </Link>
-
-            <div id="top-right-links">
-              <Link to="/about" className="sentry-unmask">
-                About
-              </Link>
-              <Link to="/products" className="sentry-unmask">
-                Products
-              </Link>
-              <Link to="/cart" className="sentry-unmask">
-                Cart
-                {cart.items.length > 0 ? (
-                  <span>
-                    <span className="sentry-unmask"> ($</span>
-                    <span className="sentry-mask">{cart.total}.00</span>
-                    <span className="sentry-unmask">)</span>
-                  </span>
-                ) : (
-                  ''
-                )}
-              </Link>
-            </div>
-          </div>
-        </nav>
-
-        <nav id="top-nav" className="show-desktop">
-          <div className="nav-contents">
-            <Link to="/" id="home-link" className="sentry-unmask">
-              <img src={EPlogo} className="logo sentry-unmask" alt="logo" />
-              Empower Plant
+            <Link to="/products" className="sentry-unmask">
+              Products
             </Link>
-
-            <div id="top-right-links">
-              <Link to="/about" className="sentry-unmask">
-                About
-              </Link>
-              <Link
-                to={this.props.frontendSlowdown ? '/products-fes' : '/products'}
-                className="sentry-unmask"
-              >
-                Products
-              </Link>
-              <Link to="/cart">
-                <span className="sentry-unmask">Cart</span>
-                {cart.items.length > 0 ? (
-                  <span>
-                    <span className="sentry-unmask"> ($</span>
-                    <span className="sentry-mask">{cart.total}.00</span>
-                    <span className="sentry-unmask">)</span>
-                  </span>
-                ) : (
-                  ''
-                )}
-              </Link>
-            </div>
+            <Link to="/cart" className="sentry-unmask">
+              Cart
+              {cart.items.length > 0 ? (
+                <span>
+                  <span className="sentry-unmask"> ($</span>
+                  <span className="sentry-mask">{cart.total}.00</span>
+                  <span className="sentry-unmask">)</span>
+                </span>
+              ) : (
+                ''
+              )}
+            </Link>
           </div>
-        </nav>
-      </>
-    );
-  }
+        </div>
+      </nav>
+
+      <nav id="top-nav" className="show-desktop">
+        <div className="nav-contents">
+          <Link to="/" id="home-link" className="sentry-unmask">
+            <img src={EPlogo} className="logo sentry-unmask" alt="logo" />
+            Empower Plant
+          </Link>
+
+          <div id="top-right-links">
+            <Link to="/about" className="sentry-unmask">
+              About
+            </Link>
+            <Link
+              to={frontendSlowdown ? '/products-fes' : '/products'}
+              className="sentry-unmask"
+            >
+              Products
+            </Link>
+            <Link to="/cart">
+              <span className="sentry-unmask">Cart</span>
+              {cart.items.length > 0 ? (
+                <span>
+                  <span className="sentry-unmask"> ($</span>
+                  <span className="sentry-mask">{cart.total}.00</span>
+                  <span className="sentry-unmask">)</span>
+                </span>
+              ) : (
+                ''
+              )}
+            </Link>
+          </div>
+        </div>
+      </nav>
+    </>
+  );
 }
 
 const mapStateToProps = (state, ownProps) => {
