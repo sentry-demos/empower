@@ -45,7 +45,7 @@ projects in the command `react` will magically point to it instead of staging (s
 
 Pick one of two ways to run the React app:
 
-### 1) Run React app w/ sourcemaps, suspect commits
+### Option 1: Run React app w/ sourcemaps, suspect commits
 Recommended to use this command rather than `npm start`, as deploy.sh uploads source maps and handles crashes more realistically.
 ```
 ./deploy.sh --env=local react flask
@@ -55,13 +55,14 @@ or
 ./deploy.sh react --env=local
 ```
 
-### 2) Run React app w/ hot reload
+### Option 2: Run React app w/ hot reload
 NOTE: this will cause crashing errors to be tagged in sentry as handled (`handled: true`)
 ```
 cd react
 ../env.sh local npm start
 ```
 
+### Port Notes
 The React app will default to Flask as its backend
 ```
 // points to Flask

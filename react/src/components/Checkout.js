@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import measureRequestDuration from '../utils/measureRequestDuration';
 import './checkout.css';
 import * as Sentry from '@sentry/react';
 import { connect } from 'react-redux';
@@ -39,6 +40,8 @@ function Checkout(props) {
   const [form, setForm] = useState(initialFormValues);
 
   async function checkout(cart) {
+    Sentry.metrics.increment('checkout.click');
+    const stopMeasurement = measureRequestDuration('/checkout');
     const response = await fetch(props.backend + '/checkout?v2=true', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -47,15 +50,22 @@ function Checkout(props) {
         form: form,
       }),
     }).catch((err) => {
+      Sentry.metrics.increment('checkout.error', 1,  { tags: { status: 500 } });
       return { ok: false, status: 500 };
+    }).then((res) => {
+      stopMeasurement();
+      return res;
     });
     if (!response.ok) {
+      Sentry.metrics.increment('checkout.error', 1,  { tags: { status: response.status } });
       throw new Error(
         [response.status, response.statusText || 'Internal Server Error'].join(
           ' - '
         )
       );
     }
+    Sentry.metrics.increment('checkout.success');
+    Sentry.metrics.distribution('checkout.order.total', cart.total);
     return response;
   }
   function generateUrl(product_id) {
