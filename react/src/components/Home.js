@@ -1,4 +1,3 @@
-import { Component } from 'react';
 import * as Sentry from '@sentry/react';
 import plantsBackground from '../assets/plants-background-img.jpg';
 import Button from './ButtonLink';

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 
-function Button({ props }) {
+function Button(props) {
   return (
     <Link {...props} className="btn">
       {props.children}
