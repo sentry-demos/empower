@@ -46,6 +46,11 @@ def test_checkout(desktop_web_driver, endpoints, batch_size, backend, random, sl
                         time.sleep(1)
                         pass
 
+                # Add 2 second sleep between the initial /products pageload
+                #   and the navigation to the checkout cart
+                #   to solve for web vitals issue as transaction may not be resolving
+                time.sleep(2)
+
                 desktop_web_driver.find_element(By.CSS_SELECTOR, '.show-desktop #top-right-links a[href="/cart"]').click()
                 time.sleep(sleep_length())
                 desktop_web_driver.find_element(By.CSS_SELECTOR, 'a[href="/checkout"]').click()
