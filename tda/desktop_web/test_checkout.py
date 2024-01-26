@@ -25,11 +25,6 @@ def test_checkout(desktop_web_driver, endpoints, batch_size, backend, random, sl
             try:
                 desktop_web_driver.get(url)
 
-                # Add 2 second sleep between the initial /products pageload
-                #   and the navigation to the checkout cart
-                #   to solve for web vitals issue as transaction may not be resolving
-                time.sleep(2)
-
                 # Optional - use the time.sleep here so button can rinish rendering before the desktop_web_driver tries to click it
                 # Solution - handle gracefully when the desktop_web_driver clicks a button that's not rendered yet, and then time.sleep(1) and try again
                 # time.sleep(5)
@@ -50,6 +45,11 @@ def test_checkout(desktop_web_driver, endpoints, batch_size, backend, random, sl
                         sentry_sdk.capture_message("missed button handling %s skips gracefully" % (skips))
                         time.sleep(1)
                         pass
+
+                # Add 2 second sleep between the initial /products pageload
+                #   and the navigation to the checkout cart
+                #   to solve for web vitals issue as transaction may not be resolving
+                time.sleep(2)
 
                 desktop_web_driver.find_element(By.CSS_SELECTOR, '.show-desktop #top-right-links a[href="/cart"]').click()
                 time.sleep(sleep_length())
