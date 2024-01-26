@@ -1,68 +1,61 @@
 import * as Sentry from '@sentry/react';
-import { Fragment, Component } from 'react';
+import { Fragment } from 'react';
 import { Link } from 'react-router-dom';
+import { useState } from 'react';
 import './footer.css';
 
-class Footer extends Component {
-  state = {
-    subscribed: false,
+function Footer() {
+  const [subscribed, setSubscribed] = useState(false);
+
+  const handleSubmit = () => {
+    setSubscribed(true);
   };
 
-  async shouldComponentUpdate() {
-    console.log('> Footer shouldComponentUpdate');
-  }
-
-  render() {
-    const handleSubmit = () => {
-      this.setState({ subscribed: true });
-    };
-
-    return (
-      <footer id="footer">
-        <div>
-          <h2 className="h3 sentry-unmask">Sign up for plant tech news</h2>
-          <Sentry.ErrorBoundary
-            onReset={() => {
-              this.setState({ subscribed: false });
-            }}
-            fallback={({ resetError, eventId }) => {
-              return (
-                <Fragment>
-                  <div>An error has occurred. Sentry Event ID: {eventId}</div>
-                  <button className="btn" onClick={resetError}>
-                    Reset Form
-                  </button>
-                </Fragment>
-              );
-            }}
-          >
-            <div className="formContainer">
-              <form onSubmitCapture={handleSubmit}>
-                <label htmlFor="email-subscribe" className="sentry-unmask">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  name="email-subscribe"
-                  id="email-subscribe"
-                ></input>
-              </form>
+  return (
+    <footer id="footer">
+      <div>
+        <h2 className="h3 sentry-unmask">Sign up for plant tech news</h2>
+        <Sentry.ErrorBoundary
+          onReset={() => {
+            setSubscribed(false);
+          }}
+          fallback={({ resetError, eventId }) => {
+            return (
+              <Fragment>
+                <div>An error has occurred. Sentry Event ID: {eventId}</div>
+                <button className="btn" onClick={resetError}>
+                  Reset Form
+                </button>
+              </Fragment>
+            );
+          }}
+        >
+          <div className="formContainer">
+            <form onSubmitCapture={handleSubmit}>
+              <label htmlFor="email-subscribe" className="sentry-unmask">
+                Email
+              </label>
               <input
-                type="submit"
-                value="Subscribe"
-                className="sentry-unmask"
-                onClick={handleSubmit}
-              />
-              {this.state.subscribed && <SubscribedMessage />}
-            </div>
-          </Sentry.ErrorBoundary>
-          <p className="sentry-unmask">
-            © 2021 • Empower Plant • <Link to="/about">About us</Link>
-          </p>
-        </div>
-      </footer>
-    );
-  }
+                type="email"
+                name="email-subscribe"
+                id="email-subscribe"
+              ></input>
+            </form>
+            <input
+              type="submit"
+              value="Subscribe"
+              className="sentry-unmask"
+              onClick={handleSubmit}
+            />
+            {subscribed && <SubscribedMessage />}
+          </div>
+        </Sentry.ErrorBoundary>
+        <p className="sentry-unmask">
+          © 2021 • Empower Plant • <Link to="/about">About us</Link>
+        </p>
+      </div>
+    </footer>
+  );
 }
 
 function SubscribedMessage() {
