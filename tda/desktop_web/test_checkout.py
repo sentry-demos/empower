@@ -37,6 +37,7 @@ def test_checkout(desktop_web_driver, endpoints, batch_size, backend, random, sl
                             sentry_sdk.capture_message("missed button more than 10 skips")
                             buttonRendered=True
                         add_to_cart_btn = desktop_web_driver.find_element(By.CSS_SELECTOR, '.products-list button')
+                        time.sleep(2)
                         for i in range(random.randrange(4) + 1):
                             add_to_cart_btn.click()
                         buttonRendered=True
