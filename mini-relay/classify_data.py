@@ -45,20 +45,15 @@ class Envelope(NamedTuple):
         except (ValueError, KeyError):
             return None
 
-    def is_session_envelope(self) -> bool:
-        return (
-            self.items[0].header_type in {'session', 'sessions'} and
-            all(
-                item.header_type == 'client_report' for item in self.items[1:]
-            )
-        )
-
-    def is_statsd_envelope(self) -> bool:
-        return (
-            self.items[0].header_type == 'statsd' and
-            all(
-                item.header_type == 'client_report' for item in self.items[1:]
-            )
+    def is_unclassifiable(self) -> bool:
+        return all(
+            item.header_type in {
+                'session', 'sessions',
+                # TODO: include tags somehow
+                'statsd', 'metric_meta',
+                'client_report',
+            }
+            for item in self.items
         )
 
     def debug(self) -> str:
@@ -115,8 +110,7 @@ def main() -> int:
     by_se = collections.defaultdict(list)
 
     # can't classify these :(
-    session_envelopes = []
-    stats_envelopes = []
+    unclassifiable = []
 
     while envelopes:
         new = []
@@ -135,10 +129,8 @@ def main() -> int:
                 if trace_id is not None:
                     trace_id_to_se[trace_id] = se
 
-            elif envelope.is_session_envelope():
-                session_envelopes.append(envelope)
-            elif envelope.is_statsd_envelope():
-                stats_envelopes.append(envelope)
+            elif envelope.is_unclassifiable():
+                unclassifiable.append(envelope)
             else:
                 new.append(envelope)
 
@@ -149,8 +141,7 @@ def main() -> int:
         else:
             envelopes = new
 
-    print(f'ignoring {len(session_envelopes)} session envelopes')
-    print(f'ignoring {len(stats_envelopes)} statsd envelopes')
+    print(f'ignoring {len(unclassifiable)} unclassifiable envelopes')
     os.makedirs(args.dest, exist_ok=True)
     for k, v in by_se.items():
         k = k.replace('/', '__')
