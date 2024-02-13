@@ -104,7 +104,8 @@ Sentry.init({
       },
       _experiments: {
         // This enables tracing on user interactions like clicks
-        enableInteractions: true,
+        //  --> disabling experimental interactions feature
+        enableInteractions: false,
         // This enables profiling of route transactions in react
         onStartRouteTransaction: Sentry.onProfilingStartRouteTransaction,
       },
