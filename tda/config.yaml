@@ -10,7 +10,7 @@ browsers:
   browserName: firefox
   browserVersion: latest
   platformName: Windows 10
-  param_display: chrome_windows
+  param_display: firefox_windows
 - remote: true
   browserName: safari
   browserVersion: latest-1
