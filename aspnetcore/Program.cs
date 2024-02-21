@@ -1,3 +1,5 @@
+using Sentry.Extensibility;
+
 // Create the web application builder.
 var builder = WebApplication.CreateBuilder(args);
 
@@ -51,6 +53,8 @@ builder.WebHost.UseSentry(options =>
     {
         options.Debug = true;
     }
+
+    options.MaxRequestBodySize = RequestSize.Always; // Capture request body
 });
 
 // Add the HTTP Client factory.
