@@ -1,0 +1,45 @@
+name: Run Codecov on PR open or change
+on: pull_request
+jobs:
+  codecov:
+    runs-on: ubuntu-20.04
+
+    steps:
+      - name: Check out this repository code
+        uses: actions/checkout@v3
+        with:
+          path: empower
+          fetch-depth: 0
+
+      - name: Check out `empower-config` to get env-config
+        uses: actions/checkout@v3
+        with:
+          repository: sentry-demos/empower-config
+          path: empower-config
+          token: ${{ secrets.KOSTY_PERSONAL_ACCESS_TOKEN_FOR_SYNC_DEPLOY_FORK }}
+
+      - name: Install Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: "16"
+
+      - name: Run tests
+        run: |
+          npm install
+          npm test -- --coverage
+        working-directory: ./empower/react
+
+      - name: Run Python Tests
+        run: |
+          pip install -U pytest
+          pip install pytz
+          pip install pytest-codecov
+          pytest --cov=. --cov-report=xml
+        working-directory: ./empower/flask/src
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - run: echo "Job status is ${{ job.status }}."
