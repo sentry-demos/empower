@@ -19,7 +19,7 @@ jobs:
       - name: Run React tests
         run: |
           npm install
-          npm test -- --coverage -F react
+          npm test -- --coverage
         working-directory: ./empower/react
 
       - name: Run Python Tests
@@ -27,12 +27,13 @@ jobs:
           pip install -U pytest
           pip install pytz
           pip install pytest-codecov
-          pytest --cov=. --cov-report=xml -F flask
+          pytest --cov=. --cov-report=xml
         working-directory: ./empower/flask/src
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+          flags: react | flask
 
       - run: echo "Job status is ${{ job.status }}."
