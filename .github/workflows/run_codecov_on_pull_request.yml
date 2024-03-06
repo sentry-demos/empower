@@ -34,6 +34,6 @@ jobs:
         uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          flags: react | flask
+          flags: react, flask
 
       - run: echo "Job status is ${{ job.status }}."
