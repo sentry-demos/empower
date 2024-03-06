@@ -16,10 +16,10 @@ jobs:
         with:
           node-version: "16"
 
-      - name: Run tests
+      - name: Run React tests
         run: |
           npm install
-          npm test -- --coverage
+          npm test -- --coverage -F react
         working-directory: ./empower/react
 
       - name: Run Python Tests
@@ -27,7 +27,7 @@ jobs:
           pip install -U pytest
           pip install pytz
           pip install pytest-codecov
-          pytest --cov=. --cov-report=xml
+          pytest --cov=. --cov-report=xml -F flask
         working-directory: ./empower/flask/src
 
       - name: Upload coverage reports to Codecov
