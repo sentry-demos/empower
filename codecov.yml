@@ -41,15 +41,6 @@ coverage:
       paths:
         - react
 
-  ignore:
-    - "laravel"
-    - "express"
-    - "ruby"
-    - "ruby-on-rails"
-    - "spring-boot"
-    - "flask/src/main.py"
-    - "flask/src/db.py"
-
 ignore:
   - "laravel"
   - "express"
@@ -58,3 +49,4 @@ ignore:
   - "spring-boot"
   - "flask/src/main.py"
   - "flask/src/db.py"
+  - "empower/flask"
