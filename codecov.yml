@@ -23,6 +23,7 @@ coverage:
     annotations: true
 
   comment:
+    require_changes: false # https://docs.codecov.com/docs/pull-request-comments#requiring-changes
     layout: "newheader, diff, flags, files"
     require_changes: false #if true: only post the comment if coverage changes
     require_base: false # [yes :: must have a base report to post]
@@ -48,3 +49,4 @@ ignore:
   - "ruby-on-rails"
   - "spring-boot"
   - "**/*.py"
+  - "react"
