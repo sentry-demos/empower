@@ -41,12 +41,3 @@ coverage:
       carryforward: true
       paths:
         - react
-
-ignore:
-  - "laravel"
-  - "express"
-  - "ruby"
-  - "ruby-on-rails"
-  - "spring-boot"
-  - "**/*.py"
-  - "react"
