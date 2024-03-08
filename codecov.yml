@@ -47,3 +47,5 @@ ignore:
   - "ruby"
   - "ruby-on-rails"
   - "spring-boot"
+  - "flask/src/main.py"
+  - "flask/src/db.py"
