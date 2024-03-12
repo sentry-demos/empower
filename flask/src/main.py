@@ -102,6 +102,7 @@ def checkout():
 
     inventory = []
     try:
+
         with sentry_sdk.start_span(op="/checkout.get_inventory", description="function"):
             with sentry_sdk.metrics.timing(key="checkout.get_inventory.execution_time"):
                 inventory = get_inventory(cart)
@@ -118,7 +119,7 @@ def checkout():
                 if (inventoryItem['count'] < quantities[cartItem]):
                     sentry_sdk.metrics.incr(key="checkout.failed")
                     raise Exception("Not enough inventory for product")
-        if len(inventory) == 0 or len(quantities) == 0:
+        if not inventory or not quantities:
             raise Exception("Not enough inventory for product")
 
     response = make_response("success")
@@ -134,6 +135,7 @@ def success():
     )
 
     return "success from flask"
+
 
 
 @app.route('/products', methods=['GET'])
