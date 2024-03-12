@@ -128,12 +128,20 @@ Sentry.init({
     });
 
     if (se) {
+      const se_tda_prefix_regex = /[^-]+-tda-[^-]+-/
+      let se_fp = se;
+      let prefix = se_tda_prefix_regex.exec(se);
+      if (prefix) {
+        // Now that TDA puts platform/browser and test path into SE tag we want to prevent
+        // creating separate issues for those. See https://github.com/sentry-demos/empower/pull/332
+        se_fp = prefix[0] ;
+      }
       if (se.startsWith('prod-tda-')) {
         // Release Health
-        event.fingerprint = ['{{ default }}', se, RELEASE];
+        event.fingerprint = ['{{ default }}', se_fp, RELEASE];
       } else {
         // SE Testing
-        event.fingerprint = ['{{ default }}', se];
+        event.fingerprint = ['{{ default }}', se_fp];
       }
     }
 
