@@ -110,17 +110,19 @@ function Checkout(props) {
     setLoading(true);
 
     let hadError = false;
+    let handleError;
     try {
       await checkout(cart);
     } catch (error) {
       Sentry.captureException(error);
       hadError = true;
+      handleError = error;
     }
     setLoading(false);
     transaction.finish();
 
     if (hadError) {
-      navigate('/error');
+      navigate('/error', { state: { error: handleError.toString() } });
     } else {
       navigate('/complete');
     }
