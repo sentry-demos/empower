@@ -100,29 +100,29 @@ def checkout():
     cart = order["cart"]
     form = order["form"]
 
-    inventory = []
-    try:
-        with sentry_sdk.start_span(op="/checkout.get_inventory", description="function"):
-            with sentry_sdk.metrics.timing(key="checkout.get_inventory.execution_time"):
-                inventory = get_inventory(cart)
-    except Exception as err:
-        raise (err)
+inventory = []
+try:
+    with sentry_sdk.start_span(op="/checkout.get_inventory", description="function"):
+        with sentry_sdk.metrics.timing(key="checkout.get_inventory.execution_time"):
+            inventory = get_inventory(cart)
+except Exception as err:
+    raise (err)
 
-    print("> /checkout inventory", inventory)
+print("> /checkout inventory", inventory)
 
-    with sentry_sdk.start_span(op="process_order", description="function"):
-        quantities = cart['quantities']
-        for cartItem in quantities:
-            for inventoryItem in inventory:
-                print("> inventoryItem.count", inventoryItem['count'])
-                if (inventoryItem.count < quantities[cartItem] or quantities[cartItem] >= inventoryItem.count):
-                    sentry_sdk.metrics.incr(key="checkout.failed")
-                    raise Exception("Not enough inventory for product")
-        if len(inventory) == 0 or len(quantities) == 0:
-            raise Exception("Not enough inventory for product")
+with sentry_sdk.start_span(op="process_order", description="function"):
+    quantities = cart['quantities']
+    for cartItem in quantities:
+        for inventoryItem in inventory:
+            print("> inventoryItem.count", inventoryItem['count'])
+            if (inventoryItem['count'] < quantities[cartItem]):
+                sentry_sdk.metrics.incr(key="checkout.failed")
+                raise Exception("Not enough inventory for product")
+    if len(inventory) == 0 or len(quantities) == 0:
+        raise Exception("Not enough inventory for product")
 
-    response = make_response("success")
-    return response
+response = make_response("success")
+return response
 
 
 @app.route('/success', methods=['GET'])
