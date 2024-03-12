@@ -50,8 +50,20 @@ function Checkout(props) {
         form: form,
       }),
     }).catch((err) => {
-      Sentry.metrics.increment('checkout.error', 1,  { tags: { status: 500 } });
-      return { ok: false, status: 500 };
+        let errorDescription = '';
+        switch (response.status) {
+            case 400:
+                errorDescription = 'Bad Request - Your request cannot be processed.';
+                break;
+            case 404:
+                errorDescription = 'Not Found - The requested resource was not found.';
+                break;
+            case 500:
+            default:
+                errorDescription = 'Internal Server Error - Please try again later.';
+        }
+        Sentry.metrics.increment('checkout.error', 1,  { tags: { status: response.status, error_description: errorDescription } });
+        throw new Error(errorDescription);
     }).then((res) => {
       stopMeasurement();
       return res;
