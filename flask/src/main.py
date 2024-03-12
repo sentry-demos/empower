@@ -115,7 +115,7 @@ def checkout():
         for cartItem in quantities:
             for inventoryItem in inventory:
                 print("> inventoryItem.count", inventoryItem['count'])
-                if (inventoryItem.count < quantities[cartItem] or quantities[cartItem] >= inventoryItem.count):
+                if (inventoryItem['count'] < quantities[cartItem]):
                     sentry_sdk.metrics.incr(key="checkout.failed")
                     raise Exception("Not enough inventory for product")
         if len(inventory) == 0 or len(quantities) == 0:
