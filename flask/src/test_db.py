@@ -1,6 +1,7 @@
 import unittest
 from unittest.mock import patch, MagicMock
-from flask.src import db
+import sys
+sys.path.append('../src')
 
 class TestDb(unittest.TestCase):
 
