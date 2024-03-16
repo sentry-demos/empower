@@ -102,6 +102,7 @@ function cleanup {
   rm -f $top/spring-boot/src/main/appengine/app.yaml
   rm -f $top/spring-boot/src/main/resources/application.properties
   rm -f $top/crons-python/crontab
+  rm -f $top/react/config-overrides.js
   if [ "$generated_envs" != "" ]; then
     rm -f $generated_envs # bash only (passed as separate args)
   fi
@@ -165,7 +166,12 @@ for proj in $projects; do # bash only
   ./build.sh
 
   if [[ "$fe_projects" = *"$proj "* ]]; then # project is frontend
-    sentry-release.sh $env $RELEASE
+    if [[ "$proj" == "react" ]]; then
+      upload_sourcemaps="false" # using webpack plugin
+    else
+      upload_sourcemaps="true"
+    fi
+    sentry-release.sh $env $RELEASE $upload_sourcemaps
     # NOTE: Sentry may create releases from events even without this step
   fi
 
