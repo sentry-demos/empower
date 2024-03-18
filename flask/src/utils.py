@@ -41,3 +41,6 @@ def get_iterator(n):
 
 def yuval(text):
     return ""
+
+def chris():
+    return ""
