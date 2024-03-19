@@ -1,4 +1,4 @@
-FROM node:16-buster-slim
+FROM node:18.19.1-buster-slim
 
 RUN npm install -g serve
 
