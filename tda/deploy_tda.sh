@@ -9,7 +9,7 @@ function cleanup {
 trap cleanup EXIT
 
 echo "Checking ssh connection can be established..."
-ssh $HOST exit
+ssh -o StrictHostKeyChecking=accept-new $HOST exit
 if [ $? != "0" ]; then
   echo "[ERROR] Can't ssh into destination host. Please run 'gcloud compute config-ssh; ssh $HOST exit' to fix"
   exit 5 
@@ -30,11 +30,13 @@ fi
 
 echo "Copying code to remote directory..."
 # for whatever reason can't delete or chmod __pycache__ directories
-rsync -rz --delete --force-delete --exclude env/ --exclude __pycache__ * .sauce_credentials $HOST:$DIR/
+rsync -rz --delete --force-delete --exclude env/ --exclude __pycache__ --exclude .pytest_cache * .sauce_credentials $HOST:$DIR/
 ret="$?"
 
+echo "Re-attempting with --delete instead of --force-delete..."
 if [ $ret == 1 ]; then # some versions of rsync don't recognize --force-delete option
-  rsync -rz --delete --force --exclude env/ --exclude __pycache__ * .sauce_credentials $HOST:$DIR/
+  rsync -rz --delete --force --exclude env/ --exclude __pycache__ --exclude .pytest_cache * .sauce_credentials $HOST:$DIR/
+  ret="$?"
 fi
 if [ $ret != 0 ]; then
   echo "[ERROR] Failed to rsync code to remote directory."
