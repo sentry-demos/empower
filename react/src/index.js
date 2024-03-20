@@ -77,7 +77,8 @@ Sentry.init({
   integrations: [
     new Sentry.metrics.MetricsAggregator(),
     new Sentry.BrowserProfilingIntegration(),
-    new Sentry.BrowserTracing({
+    Sentry.browserTracingIntegration({
+      enableInp: true,
       tracingOrigins: tracingOrigins,
       tracePropagationTargets: tracingOrigins,
       routingInstrumentation: Sentry.reactRouterV6Instrumentation(
@@ -87,27 +88,24 @@ Sentry.init({
         createRoutesFromChildren,
         matchRoutes
       ),
-      beforeNavigate: (context) => {
-        const { name, op } = context;
+      // beforeNavigate: (context) => {
+      //   const { name, op } = context;
 
-        const { source } = context.metadata;
+      //   const { source } = context.metadata;
 
-        if (source === 'url' && (name === '/' || name === '/checkout')) {
-          context.metadata.source = 'route';
-        }
+      //   if (source === 'url' && (name === '/' || name === '/checkout')) {
+      //     context.metadata.source = 'route';
+      //   }
 
-        return {
-          ...context,
-          // How to parameterize a transaction if not using a Routing library
-          // name: window.location.pathname.replace(/\/employee.*/,'/employee/:id')
-        };
-      },
+      //   return {
+      //     ...context,
+      //     // How to parameterize a transaction if not using a Routing library
+      //     // name: window.location.pathname.replace(/\/employee.*/,'/employee/:id')
+      //   };
+      // },
       _experiments: {
         // This enables tracing on user interactions like clicks
-        //  --> 2/13/24 disabling experimental interactions feature
-        //      because it may be preventing navigation transactions
-        //      from being captured
-        enableInteractions: false,
+        enableInteractions: true,
         // This enables profiling of route transactions in react
         onStartRouteTransaction: Sentry.onProfilingStartRouteTransaction,
       },
