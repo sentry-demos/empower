@@ -74,44 +74,24 @@ Sentry.init({
   profilesSampleRate: 1.0,
   replaysSessionSampleRate: 1.0,
   debug: true,
+  tracePropagationTargets: tracingOrigins,
   integrations: [
     new Sentry.metrics.MetricsAggregator(),
     new Sentry.BrowserProfilingIntegration(),
-    new Sentry.BrowserTracing({
-      tracingOrigins: tracingOrigins,
-      tracePropagationTargets: tracingOrigins,
-      routingInstrumentation: Sentry.reactRouterV6Instrumentation(
-        useEffect,
-        useLocation,
-        useNavigationType,
-        createRoutesFromChildren,
-        matchRoutes
-      ),
-      beforeNavigate: (context) => {
-        const { name, op } = context;
-
-        const { source } = context.metadata;
-
-        if (source === 'url' && (name === '/' || name === '/checkout')) {
-          context.metadata.source = 'route';
-        }
-
-        return {
-          ...context,
-          // How to parameterize a transaction if not using a Routing library
-          // name: window.location.pathname.replace(/\/employee.*/,'/employee/:id')
-        };
-      },
-      _experiments: {
-        // This enables tracing on user interactions like clicks
-        //  --> 2/13/24 disabling experimental interactions feature
-        //      because it may be preventing navigation transactions
-        //      from being captured
-        enableInteractions: false,
-        // This enables profiling of route transactions in react
-        onStartRouteTransaction: Sentry.onProfilingStartRouteTransaction,
-      },
+    Sentry.browserTracingIntegration({
+      enableInp: true,
     }),
+    // Or, if you are using react router, use the appropriate integration
+    // See docs for support for different versions of react router
+    // https://docs.sentry.io/platforms/javascript/guides/react/configuration/integrations/react-router/
+    Sentry.reactRouterV6BrowserTracingIntegration({
+      useEffect: React.useEffect,
+      useLocation,
+      useNavigationType,
+      createRoutesFromChildren,
+      matchRoutes,
+    }),
+
     new Sentry.Replay({
       // Additional configuration goes in here
       // replaysSessionSampleRate and replaysOnErrorSampleRate is now a top-level SDK option
