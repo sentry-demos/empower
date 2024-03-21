@@ -10,6 +10,10 @@ Curently deployed to: https://application-monitoring-react-dot-sales-engineering
 
 https://www.notion.so/sentry/Demo-Data-Requirements-4b918453be6f4e4fbdcfd4b2e3e608e0
 
+## Trigger an error
+
+Add +2 quantity of a single item to Cart and purchase in order to trigger an Error. Visit the routes defined in src/index.js to produce transactions.
+
 ## Query Parameter Options in Demo App
 
 Query params to be added to the demo app. These query parameters can be stacked on top of one another
@@ -101,10 +105,6 @@ NOTE: this will cause crashing errors to be tagged in sentry as handled (`handle
 cd react
 ../env.sh local npm start
 ```
-
-## Trigger an error
-
-Add +2 quantity of a single item to Cart and purchase in order to trigger an Error. Visit the routes defined in src/index.js to produce transactions.
 
 ## Deploy to Prod
 
