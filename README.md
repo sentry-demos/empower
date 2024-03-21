@@ -12,7 +12,7 @@ https://www.notion.so/sentry/Demo-Data-Requirements-4b918453be6f4e4fbdcfd4b2e3e6
 
 ## Trigger an error
 
-Add +2 quantity of a single item to Cart and purchase in order to trigger an Error. Visit the routes defined in src/index.js to produce transactions.
+Add at least 1 item to Cart and purchase in order to trigger an Error. Visit the routes defined in src/index.js to produce transactions.
 
 ## Query Parameter Options in Demo App
 
