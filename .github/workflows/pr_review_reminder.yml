@@ -1,4 +1,4 @@
-name: PRs reviews reminder
+name: pr_review_reminder.yml
 
 on:
   schedule:
