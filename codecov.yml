@@ -41,3 +41,6 @@ flags:
     carryforward: true
     paths:
       - react
+
+ignore:
+  - "react/src" # ignore react src directory
