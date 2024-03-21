@@ -3,7 +3,8 @@
 # Create release and upload sourcemaps to Sentry
 # Must be run within project directory (e.g. './react/')
 
-USAGE="Usage: ./sentry-release.sh ENV RELEASE"
+USAGE="Usage: ./sentry-release.sh ENV RELEASE UPLOAD_SOURCEMAPS \
+  UPLOAD_SOURCEMAPS = false | true"
 
 set -e # exit immediately if any command exits with a non-zero status
 
@@ -12,7 +13,8 @@ echo "$0: Creating release and uploading source maps with sentry-cli..."
 # Parse and validate command-line arguments
 env="$1"
 release="$2"
-if [[ "$env" == "" || "$release" == "" ]]; then
+upload_sourcemaps="$3"
+if [[ "$env" == "" || "$release" == "" || "$upload_sourcemaps" == "" ]]; then
   echo "$0: [error] missing required command-line arguments."
   echo $USAGE
   exit 1
@@ -32,5 +34,7 @@ fi
 sentry-cli releases -o $SENTRY_ORG new -p $sentry_project $release
 sentry-cli releases -o $SENTRY_ORG finalize -p $sentry_project $release
 sentry-cli releases -o $SENTRY_ORG -p $sentry_project set-commits --auto $release --ignore-missing
-sentry-cli releases -o $SENTRY_ORG -p $sentry_project files $release upload-sourcemaps --url-prefix "$sourcemaps_url_prefix" --validate "$sourcemaps_dir"
+if [ "$upload_sourcemaps" == "true" ]; then
+  sentry-cli releases -o $SENTRY_ORG -p $sentry_project files $release upload-sourcemaps --url-prefix "$sourcemaps_url_prefix" --validate "$sourcemaps_dir"
+fi
 sentry-cli deploys -o $SENTRY_ORG new -p $sentry_project -r $release -e $env -n $env

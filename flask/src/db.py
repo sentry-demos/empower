@@ -30,7 +30,7 @@ else:
     print("> CLOUD_SQL_CONNECTION_NAME", CLOUD_SQL_CONNECTION_NAME)
     db = sqlalchemy.create_engine(
         sqlalchemy.engine.url.URL(
-            drivername='postgres+pg8000',
+            drivername='postgresql+pg8000',
             username=USERNAME,
             password=PASSWORD,
             database=DATABASE,
