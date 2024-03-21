@@ -1,4 +1,5 @@
-name: Deploy to Google App Engine upon commit to master branch and on schedule at midnight UTC
+name: auto-deploy.yml
+# Deploys to Google App Engine upon commit to master branch and on schedule at midnight UTC
 run-name: Deployment triggered by ${{ github.event_name }} / ${{ github.actor }}
 
 on:

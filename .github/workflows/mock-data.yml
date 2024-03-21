@@ -1,4 +1,4 @@
-name: mock-data
+name: mock-data.yml
 on:
   push:
     branches: [master, test-me-*]
