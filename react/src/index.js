@@ -75,6 +75,10 @@ Sentry.init({
   replaysSessionSampleRate: 1.0,
   debug: true,
   integrations: [
+    Sentry.feedbackIntegration({
+      // Additional SDK configuration goes in here, for example:
+      colorScheme: 'system',
+    }),
     new Sentry.metrics.MetricsAggregator(),
     new Sentry.BrowserProfilingIntegration(),
     new Sentry.BrowserTracing({
