@@ -6,4 +6,5 @@ laravel
 tda
 postgres
 crons-python
-ruby-on-rails # see https://github.com/sentry-demos/empower/issues/439
+ruby-on-rails 
+# ^ see https://github.com/sentry-demos/empower/issues/439
