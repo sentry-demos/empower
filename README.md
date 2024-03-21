@@ -2,9 +2,36 @@
 
 This is a multi-language/framework project that implements Empower Plant web app. It has one actively maintained frontend, `react`, that can connect to any one of the backend implementations using a query string parameter (e.g. `?backend=express`) and uses `flask` by default.
 
+# Usage
+
+Curently deployed to: https://application-monitoring-react-dot-sales-engineering-sf.appspot.com/
+
 ## Features
 
 https://www.notion.so/sentry/Demo-Data-Requirements-4b918453be6f4e4fbdcfd4b2e3e608e0
+
+## Query Parameter Options in Demo App
+
+Query params to be added to the demo app. These query parameters can be stacked on top of one another
+
+- `?backend=flask` - [sets the backend url](https://github.com/sentry-demos/empower/blob/fce289530f72ce47fe2c7482cdbd9aa8bcc13b6e/react/src/index.js#L175-L177) (we have multiple backends with similar functionality). [Here](https://github.com/sentry-demos/empower/blob/master/react/src/utils/backendrouter.js#L4-L10) are all the options for backends). Additionally recorded in `backendType` tag. **Defaults to**: flask
+- `?userFeedback=true` - displays [(old) user feedback modal](https://github.com/sentry-demos/empower/blob/fce289530f72ce47fe2c7482cdbd9aa8bcc13b6e/react/src/index.js#L208-L212) 5 seconds after checkout crash.
+- `?se=<yourname` - put your name here, for example `?se=chris`, `?se=kosty`, etc. This results in an `se` tag [added to events triggered during the demo](https://github.com/sentry-demos/empower/blob/ea51c3dbce9d50ac32519546e1c772ea5a91722f/react/src/index.js#L191-L198), and [adjust the fingerprint](https://github.com/sentry-demos/empower/blob/ea51c3dbce9d50ac32519546e1c772ea5a91722f/react/src/index.js#L130-L138) to segment issues depending on the SE.
+- `?crash=true` - forces [a crash](https://github.com/sentry-demos/empower/blob/fce289530f72ce47fe2c7482cdbd9aa8bcc13b6e/react/src/utils/errors.js#L41) of one of predefined types, selected randomly.
+- `?crash=true&errnum=3` - forces crash of specific type depending on `errnum` value
+- `?userEmail=someemail@example.com` - lets you [pass in a specific user email](https://github.com/sentry-demos/empower/blob/fce289530f72ce47fe2c7482cdbd9aa8bcc13b6e/react/src/index.js#L218-L219)
+- `?frontendSlowdown=true` - used in the [frontend-only demo flow](https://github.com/sentry-demos/empower/blob/fce289530f72ce47fe2c7482cdbd9aa8bcc13b6e/react/src/index.js#L200-L207), which showcases a frontend slowdown via profiling.
+
+```
+# example
+https://localhost:5000/?se=chris&backend=flask&frontendSlowdown=true
+```
+
+## Query Parameter Options in Sentry.io
+
+While not an Empower React app query param, we also have demo-specific query params to customize Sentry UI experience. Those have to be set in the Sentry app itself.
+
+- `&issueTracking=jira` - only shows 1 issue integration instead of all ~10 (for examples, see [internal documentation](https://www.notion.so/sentry/issueTracking-hack-c8bbae41bcb84c80aed9f3fc0ab29df6))
 
 ## Additional documentation
 
@@ -13,6 +40,8 @@ https://www.notion.so/sentry/Demo-Data-Requirements-4b918453be6f4e4fbdcfd4b2e3e6
 - See [troubleshooting](./troubleshooting.md)
 - **"Checklist for adding new language/framework demo to Empower"** (internal doc)
 - [comment at the top of `deploy.sh` file](https://github.com/sentry-demos/empower/blob/master/deploy.sh#L3-L47).
+
+# Local Setup / Development
 
 ## Setup
 
@@ -72,29 +101,6 @@ NOTE: this will cause crashing errors to be tagged in sentry as handled (`handle
 cd react
 ../env.sh local npm start
 ```
-
-## Query Parameter Options in Demo App
-
-Query params to be added to the demo app. These query parameters can be stacked on top of one another
-
-- `?backend=flask` - [sets the backend url](https://github.com/sentry-demos/empower/blob/fce289530f72ce47fe2c7482cdbd9aa8bcc13b6e/react/src/index.js#L175-L177) (we have multiple backends with similar functionality). [Here](https://github.com/sentry-demos/empower/blob/master/react/src/utils/backendrouter.js#L4-L10) are all the options for backends). Additionally recorded in `backendType` tag. **Defaults to**: flask
-- `?userFeedback=true` - displays [(old) user feedback modal](https://github.com/sentry-demos/empower/blob/fce289530f72ce47fe2c7482cdbd9aa8bcc13b6e/react/src/index.js#L208-L212) 5 seconds after checkout crash.
-- `?se=<yourname` - put your name here, for example `?se=chris`, `?se=kosty`, etc. This results in an `se` tag [added to events triggered during the demo](https://github.com/sentry-demos/empower/blob/ea51c3dbce9d50ac32519546e1c772ea5a91722f/react/src/index.js#L191-L198), and [adjust the fingerprint](https://github.com/sentry-demos/empower/blob/ea51c3dbce9d50ac32519546e1c772ea5a91722f/react/src/index.js#L130-L138) to segment issues depending on the SE.
-- `?crash=true` - forces [a crash](https://github.com/sentry-demos/empower/blob/fce289530f72ce47fe2c7482cdbd9aa8bcc13b6e/react/src/utils/errors.js#L41) of one of predefined types, selected randomly.
-- `?crash=true&errnum=3` - forces crash of specific type depending on `errnum` value
-- `?userEmail=someemail@example.com` - lets you [pass in a specific user email](https://github.com/sentry-demos/empower/blob/fce289530f72ce47fe2c7482cdbd9aa8bcc13b6e/react/src/index.js#L218-L219)
-- `?frontendSlowdown=true` - used in the [frontend-only demo flow](https://github.com/sentry-demos/empower/blob/fce289530f72ce47fe2c7482cdbd9aa8bcc13b6e/react/src/index.js#L200-L207), which showcases a frontend slowdown via profiling.
-
-```
-# example
-https://localhost:5000/?se=chris&backend=flask&frontendSlowdown=true
-```
-
-## Query Parameter Options in Sentry.io
-
-While not an Empower React app query param, we also have demo-specific query params to customize Sentry UI experience. Those have to be set in the Sentry app itself.
-
-- `&issueTracking=jira` - only shows 1 issue integration instead of all ~10 (for examples, see [internal documentation](https://www.notion.so/sentry/issueTracking-hack-c8bbae41bcb84c80aed9f3fc0ab29df6))
 
 ## Trigger an error
 
