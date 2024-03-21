@@ -18,6 +18,7 @@ while IFS= read -r line; do
   if [[ "$line" =~ ^[[:space:]]*$ || "$line" =~ ^# ]]; then
     continue
   fi
+  line=$(echo $line | sed 's/#.*$//') # remove comments on the same line
   exclude_dirs+=("$line")
 done < <(sed -e '$a\' auto-deploy.exclude) # handles missing newline at end of file
 
