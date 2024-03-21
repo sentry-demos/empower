@@ -37,8 +37,10 @@ flags:
     carryforward: true
     paths:
       - flask
+  react:
+    carryforward: true
+    paths:
+      - react
 
 ignore:
-  - "react/src" # ignore react src directory
-  - "flask/src/main.py"
-  - "flask/src/test_util.py"
+  - "empower/react/src/components"
