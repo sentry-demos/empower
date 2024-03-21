@@ -1,7 +1,7 @@
   
 env: standard
 service: <SERVICE>
-runtime: nodejs16
+runtime: nodejs18
 
 handlers:
   - url: /static

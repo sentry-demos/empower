@@ -1,4 +1,5 @@
-name: Deploy to Google App Engine upon commit to master branch and on schedule at midnight UTC
+name: auto-deploy.yml
+# Deploys to Google App Engine upon commit to master branch and on schedule at midnight UTC
 run-name: Deployment triggered by ${{ github.event_name }} / ${{ github.actor }}
 
 on:
@@ -48,7 +49,7 @@ jobs:
       - name: Install Node
         uses: actions/setup-node@v3
         with:
-          node-version: '16'
+          node-version: '18'
           
       - name: Setup Sentry CLI
         uses: mathieu-bour/setup-sentry-cli@v1.3.0

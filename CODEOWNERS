@@ -2,4 +2,5 @@
 /env-config/ @realkosty
 /bin/ @realkosty
 react/src/components @sentry-demos/am-team
+react/src/components @ndmanvar
 flask/ @sentry-demos/am-team

@@ -1,4 +1,4 @@
-name: Cleanup inactive cloud resources
+name: cleanup_inactive_cloud_resources.yml
 run-name: Deployment triggered by ${{ github.event_name }} / ${{ github.actor }}
 
 on:
