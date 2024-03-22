@@ -44,3 +44,4 @@ flags:
 
 ignore:
   - "react/src"
+  - "laravel"
