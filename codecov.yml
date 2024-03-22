@@ -45,5 +45,7 @@ flags:
 ignore:
   - "react/src"
   - "react/build"
+  - "react/node_modules"
   - "react/public"
   - "laravel"
+  - "flask"
