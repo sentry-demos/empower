@@ -43,4 +43,4 @@ flags:
       - react
 
 ignore:
-  - "react/src/components"
+  - "react/src"
