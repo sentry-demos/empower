@@ -44,4 +44,6 @@ flags:
 
 ignore:
   - "react/src"
+  - "react/build"
+  - "react/public"
   - "laravel"
