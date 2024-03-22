@@ -75,6 +75,10 @@ Sentry.init({
   replaysSessionSampleRate: 1.0,
   debug: true,
   integrations: [
+    Sentry.feedbackIntegration({
+      // Additional SDK configuration goes in here, for example:
+      colorScheme: 'system',
+    }),
     new Sentry.metrics.MetricsAggregator(),
     new Sentry.BrowserProfilingIntegration(),
     new Sentry.BrowserTracing({
@@ -111,6 +115,7 @@ Sentry.init({
         // This enables profiling of route transactions in react
         onStartRouteTransaction: Sentry.onProfilingStartRouteTransaction,
       },
+      enableInp: true,
     }),
     new Sentry.Replay({
       // Additional configuration goes in here
@@ -128,12 +133,20 @@ Sentry.init({
     });
 
     if (se) {
+      const seTdaPrefixRegex = /[^-]+-tda-[^-]+-/
+      let seFingerprint = se;
+      let prefix = seTdaPrefixRegex.exec(se);
+      if (prefix) {
+        // Now that TDA puts platform/browser and test path into SE tag we want to prevent
+        // creating separate issues for those. See https://github.com/sentry-demos/empower/pull/332
+        seFingerprint = prefix[0] ;
+      }
       if (se.startsWith('prod-tda-')) {
         // Release Health
-        event.fingerprint = ['{{ default }}', se, RELEASE];
+        event.fingerprint = ['{{ default }}', seFingerprint, RELEASE];
       } else {
         // SE Testing
-        event.fingerprint = ['{{ default }}', se];
+        event.fingerprint = ['{{ default }}', seFingerprint];
       }
     }
 
