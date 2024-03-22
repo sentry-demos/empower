@@ -1,4 +1,5 @@
-name: Run Codecov on PR open or change
+name: codecov.yml
+# Run Codecov on PR open or change
 on: pull_request
 jobs:
   codecov:
