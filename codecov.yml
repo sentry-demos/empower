@@ -43,5 +43,4 @@ flags:
       - react
 
 ignore:
-  - "empower/react/src/components"
   - "react/src/components"
