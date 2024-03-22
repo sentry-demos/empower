@@ -41,5 +41,5 @@ def latest_ios_github_release():
 
 def determine_latest_release_version(platform):
     repo_name = GITHUB_REPOS[platform]
-    react_native_releases = requests.get(f"https://api.github.com/repos/sentry-demos/{repo_name}/releases")
-    return react_native_releases.json()[0]['tag_name']
+    releases = requests.get(f"https://api.github.com/repos/sentry-demos/{repo_name}/releases")
+    return releases.json()[0]['tag_name']
