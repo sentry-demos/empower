@@ -115,6 +115,7 @@ Sentry.init({
         // This enables profiling of route transactions in react
         onStartRouteTransaction: Sentry.onProfilingStartRouteTransaction,
       },
+      enableInp: true,
     }),
     new Sentry.Replay({
       // Additional configuration goes in here
