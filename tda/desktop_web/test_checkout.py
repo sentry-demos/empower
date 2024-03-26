@@ -3,6 +3,10 @@ import sentry_sdk
 from urllib.parse import urlencode
 from selenium.webdriver.common.by import By
 
+# This many clicks to trigger rage click
+# plus some extra for good measure (+ extra rage)
+RAGE_CLICK_TRIGGER_QTY = 10
+
 def test_checkout(desktop_web_driver, endpoints, batch_size, backend, random, sleep_length):
 
     for endpoint in endpoints.react_endpoints:
@@ -61,6 +65,8 @@ def test_checkout(desktop_web_driver, endpoints, batch_size, backend, random, sl
 
                 desktop_web_driver.find_element(By.CSS_SELECTOR, '.complete-checkout-btn').click()
                 time.sleep(sleep_length())
+                for _ in range(RAGE_CLICK_TRIGGER):
+                    desktop_web_driver.find_element(By.CSS_SELECTOR, '#contact-us')
 
             except Exception as err:
                 missedButtons = missedButtons + 1

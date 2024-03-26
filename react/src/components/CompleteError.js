@@ -26,8 +26,11 @@ function CompleteError() {
       <h2>We're having some trouble</h2>
       <p>
         We were unable to process your order but will do everything we can to
-        make it right. Please <Link to="/">reach out to us</Link> if you have
-        been charged or have any questions.
+        make it right. Please{' '}
+        <Link id="contact-us" to="#">
+          reach out to us
+        </Link>{' '}
+        if you have been charged or have any questions.
       </p>
     </div>
   );
