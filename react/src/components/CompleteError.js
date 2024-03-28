@@ -29,7 +29,7 @@ function CompleteError() {
         make it right. Please <Link to="#">reach out to us</Link> if you have
         been charged or have any questions.
       </p>
-      <button id="contact-us"></button>
+      <button id="contact-us">Contact Us</button>
     </div>
   );
 }
