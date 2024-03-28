@@ -3,6 +3,10 @@ import sentry_sdk
 from urllib.parse import urlencode
 from selenium.webdriver.common.by import By
 
+# This many clicks to trigger rage click
+# plus some extra for good measure (+ extra rage)
+RAGE_CLICK_TRIGGER_QTY = 10
+
 def test_checkout(desktop_web_driver, endpoints, batch_size, backend, random, sleep_length):
 
     for endpoint in endpoints.react_endpoints:
@@ -57,11 +61,14 @@ def test_checkout(desktop_web_driver, endpoints, batch_size, backend, random, sl
                 desktop_web_driver.find_element(By.CSS_SELECTOR, 'a[href="/checkout"]').click()
                 time.sleep(sleep_length())
 
-                desktop_web_driver.find_element(By.CSS_SELECTOR, '#email').send_keys("sampleEmail@email.com")
-
                 desktop_web_driver.find_element(By.CSS_SELECTOR, '.complete-checkout-btn').click()
-                time.sleep(sleep_length())
+                time.sleep(2)
 
+                # Rage click
+                contact_us_button = desktop_web_driver.find_element(By.CSS_SELECTOR, '#contact-us')
+                for _ in range(RAGE_CLICK_TRIGGER_QTY):
+                    contact_us_button.click()
+                time.sleep(8) #rageclick currently detected after 7 seconds
             except Exception as err:
                 missedButtons = missedButtons + 1
                 sentry_sdk.set_tag("missedButtons", missedButtons)
