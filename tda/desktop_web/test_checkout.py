@@ -61,13 +61,14 @@ def test_checkout(desktop_web_driver, endpoints, batch_size, backend, random, sl
                 desktop_web_driver.find_element(By.CSS_SELECTOR, 'a[href="/checkout"]').click()
                 time.sleep(sleep_length())
 
-                desktop_web_driver.find_element(By.CSS_SELECTOR, '#email').send_keys("sampleEmail@email.com")
-
                 desktop_web_driver.find_element(By.CSS_SELECTOR, '.complete-checkout-btn').click()
-                time.sleep(sleep_length())
-                for _ in range(RAGE_CLICK_TRIGGER):
-                    desktop_web_driver.find_element(By.CSS_SELECTOR, '#contact-us')
+                time.sleep(2)
 
+                # Rage click
+                contact_us_button = desktop_web_driver.find_element(By.CSS_SELECTOR, '#contact-us')
+                for _ in range(RAGE_CLICK_TRIGGER_QTY):
+                    contact_us_button.click()
+                time.sleep(8)
             except Exception as err:
                 missedButtons = missedButtons + 1
                 sentry_sdk.set_tag("missedButtons", missedButtons)
