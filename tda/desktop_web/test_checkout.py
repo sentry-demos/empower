@@ -68,7 +68,7 @@ def test_checkout(desktop_web_driver, endpoints, batch_size, backend, random, sl
                 contact_us_button = desktop_web_driver.find_element(By.CSS_SELECTOR, '#contact-us')
                 for _ in range(RAGE_CLICK_TRIGGER_QTY):
                     contact_us_button.click()
-                time.sleep(8)
+                time.sleep(8) #rageclick currently detected after 7 seconds
             except Exception as err:
                 missedButtons = missedButtons + 1
                 sentry_sdk.set_tag("missedButtons", missedButtons)
