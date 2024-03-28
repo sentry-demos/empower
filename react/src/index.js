@@ -60,6 +60,7 @@ if (window.location.hostname === 'localhost') {
 
 let BACKEND_URL;
 let FRONTEND_SLOWDOWN;
+let RAGECLICK;
 const DSN = process.env.REACT_APP_DSN;
 const RELEASE = process.env.REACT_APP_RELEASE;
 
@@ -132,13 +133,13 @@ Sentry.init({
     });
 
     if (se) {
-      const seTdaPrefixRegex = /[^-]+-tda-[^-]+-/
+      const seTdaPrefixRegex = /[^-]+-tda-[^-]+-/;
       let seFingerprint = se;
       let prefix = seTdaPrefixRegex.exec(se);
       if (prefix) {
         // Now that TDA puts platform/browser and test path into SE tag we want to prevent
         // creating separate issues for those. See https://github.com/sentry-demos/empower/pull/332
-        seFingerprint = prefix[0] ;
+        seFingerprint = prefix[0];
       }
       if (se.startsWith('prod-tda-')) {
         // Release Health
@@ -217,6 +218,11 @@ class App extends Component {
         console.log('> frontend + backend slowdown');
         scope.setTag('frontendSlowdown', false);
       }
+
+      if (queryParams.get('rageclick') === 'true') {
+        RAGECLICK = true;
+      }
+
       if (queryParams.get('userFeedback')) {
         sessionStorage.setItem('userFeedback', queryParams.get('userFeedback'));
       } else {
@@ -316,7 +322,13 @@ class App extends Component {
               <Route path="/cart" element={<Cart />} />
               <Route
                 path="/checkout"
-                element={<Checkout backend={BACKEND_URL} history={history} />}
+                element={
+                  <Checkout
+                    backend={BACKEND_URL}
+                    rageclick={RAGECLICK}
+                    history={history}
+                  />
+                }
               ></Route>
               <Route path="/complete" element={<Complete />} />
               <Route path="/error" element={<CompleteError />} />
