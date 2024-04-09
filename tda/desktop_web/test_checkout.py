@@ -55,6 +55,7 @@ def test_checkout(desktop_web_driver, endpoints, batch_size, backend, random, sl
                 time.sleep(sleep_length())
                 desktop_web_driver.find_element(By.CSS_SELECTOR, 'a[href="/checkout"]').click()
                 time.sleep(sleep_length())
+                desktop_web_driver.find_element(By.CSS_SELECTOR, '#email').send_keys("sampleEmail@email.com")
 
                 desktop_web_driver.find_element(By.CSS_SELECTOR, '.complete-checkout-btn').click()
                 time.sleep(sleep_length())
