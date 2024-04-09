@@ -75,12 +75,3 @@ def test_rageclick(desktop_web_driver, endpoints, batch_size, backend, random, s
                     sentry_sdk.capture_exception(err)
 
             time.sleep(sleep_length())
-
-
-
-
-
-
-
-
-
