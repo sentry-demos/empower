@@ -6,13 +6,13 @@ import * as Sentry from '@sentry/react';
 import { connect } from 'react-redux';
 import Loader from 'react-loader-spinner';
 
-function Checkout(props) {
+function Checkout({ backend, rageclick, cart }) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   let initialFormValues;
   let se = sessionStorage.getItem('se');
   if (se && se.startsWith('prod-tda-')) {
-    // we want form actually filled out in TDA for a realistic-looking Replay 
+    // we want form actually filled out in TDA for a realistic-looking Replay
     initialFormValues = {
       email: '',
       subscribe: '',
@@ -35,29 +35,35 @@ function Checkout(props) {
       country: 'United States of America',
       state: 'CA',
       zipCode: '94122',
-    }
+    };
   }
   const [form, setForm] = useState(initialFormValues);
 
   async function checkout(cart) {
     Sentry.metrics.increment('checkout.click');
     const stopMeasurement = measureRequestDuration('/checkout');
-    const response = await fetch(props.backend + '/checkout?v2=true', {
+    const response = await fetch(backend + '/checkout?v2=true', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         cart: cart,
         form: form,
       }),
-    }).catch((err) => {
-      Sentry.metrics.increment('checkout.error', 1,  { tags: { status: 500 } });
-      return { ok: false, status: 500 };
-    }).then((res) => {
-      stopMeasurement();
-      return res;
-    });
+    })
+      .catch((err) => {
+        Sentry.metrics.increment('checkout.error', 1, {
+          tags: { status: 500 },
+        });
+        return { ok: false, status: 500 };
+      })
+      .then((res) => {
+        stopMeasurement();
+        return res;
+      });
     if (!response.ok) {
-      Sentry.metrics.increment('checkout.error', 1,  { tags: { status: response.status } });
+      Sentry.metrics.increment('checkout.error', 1, {
+        tags: { status: response.status },
+      });
       throw new Error(
         [response.status, response.statusText || 'Internal Server Error'].join(
           ' - '
@@ -82,7 +88,11 @@ function Checkout(props) {
   async function handleSubmit(event) {
     event.preventDefault();
 
-    const { cart } = props;
+    if (rageclick) {
+      // do nothing. after enough clicks,
+      // Sentry will detect a rageclick
+      return;
+    }
 
     const transaction = Sentry.startTransaction({
       name: 'Submit Checkout Form',

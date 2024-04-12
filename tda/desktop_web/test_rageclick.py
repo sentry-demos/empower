@@ -3,7 +3,12 @@ import sentry_sdk
 from urllib.parse import urlencode
 from selenium.webdriver.common.by import By
 
-def test_checkout(desktop_web_driver, endpoints, batch_size, backend, random, sleep_length):
+# This many clicks to trigger rage click
+# plus some extra for good measure (+ extra rage)
+RAGE_CLICK_TRIGGER_QTY = 10
+
+def test_rageclick(desktop_web_driver, endpoints, batch_size, backend, random, sleep_length):
+
     for endpoint in endpoints.react_endpoints:
         endpoint_products = endpoint + "/products"
         sentry_sdk.set_tag("endpoint", endpoint_products)
@@ -16,7 +21,8 @@ def test_checkout(desktop_web_driver, endpoints, batch_size, backend, random, sl
             # TODO make a query_string builder function for sharing this across tests
             query_string = {
                 # 'ruby' /products /checkout endpoints not available yet
-                'backend': backend(exclude='ruby')
+                'backend': backend(exclude='ruby'),
+                'rageclick': 'true'
             }
             url = endpoint_products + '?' + urlencode(query_string)
 
@@ -55,11 +61,12 @@ def test_checkout(desktop_web_driver, endpoints, batch_size, backend, random, sl
                 time.sleep(sleep_length())
                 desktop_web_driver.find_element(By.CSS_SELECTOR, 'a[href="/checkout"]').click()
                 time.sleep(sleep_length())
-                desktop_web_driver.find_element(By.CSS_SELECTOR, '#email').send_keys("sampleEmail@email.com")
 
-                desktop_web_driver.find_element(By.CSS_SELECTOR, '.complete-checkout-btn').click()
-                time.sleep(sleep_length())
-
+                # Rage click
+                checkout_button = desktop_web_driver.find_element(By.CSS_SELECTOR, '.complete-checkout-btn')
+                for _ in range(RAGE_CLICK_TRIGGER_QTY):
+                    checkout_button.click()
+                time.sleep(8) #rageclick currently detected after 7 seconds
             except Exception as err:
                 missedButtons = missedButtons + 1
                 sentry_sdk.set_tag("missedButtons", missedButtons)
@@ -68,12 +75,3 @@ def test_checkout(desktop_web_driver, endpoints, batch_size, backend, random, sl
                     sentry_sdk.capture_exception(err)
 
             time.sleep(sleep_length())
-
-
-
-
-
-
-
-
-
