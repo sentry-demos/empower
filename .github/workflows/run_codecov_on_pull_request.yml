@@ -22,6 +22,10 @@ jobs:
           npm install
           npm test -- --coverage
         working-directory: ./empower/react
+      - uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: react
 
       - name: Run Python Tests
         run: |
@@ -30,17 +34,7 @@ jobs:
           pip install pytest-codecov
           pytest --cov=. --cov-report=xml
         working-directory: ./empower/flask/src
-
-      ## Must be uploaded separately for flags to work properly
-      - name: Upload React coverage reports to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          flags: react
-
-      ## Must be uploaded separately for flags to work properly
-      - name: Upload Flask coverage reports to Codecov
-        uses: codecov/codecov-action@v3
+      - uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           flags: flask
