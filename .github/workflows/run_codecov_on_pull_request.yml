@@ -31,10 +31,18 @@ jobs:
           pytest --cov=. --cov-report=xml
         working-directory: ./empower/flask/src
 
-      - name: Upload coverage reports to Codecov
+      ## Must be uploaded separately for flags to work properly
+      - name: Upload React coverage reports to Codecov
         uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          flags: react, flask
+          flags: react
+
+      ## Must be uploaded separately for flags to work properly
+      - name: Upload Flask coverage reports to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: react
 
       - run: echo "Job status is ${{ job.status }}."
