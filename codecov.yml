@@ -41,9 +41,3 @@ flags:
     carryforward: true
     paths:
       - react
-
-ignore:
-  - "react/src"
-  - "react/build"
-  - "react/node_modules"
-  - "react/public"
