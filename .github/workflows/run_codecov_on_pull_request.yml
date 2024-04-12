@@ -1,0 +1,42 @@
+name: codecov.yml
+# Run Codecov on PR open or change
+on: pull_request
+jobs:
+  codecov:
+    runs-on: ubuntu-20.04
+
+    steps:
+      - name: Check out this repository code
+        uses: actions/checkout@v3
+        with:
+          path: empower
+          fetch-depth: 0
+
+      - name: Install Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+
+      - name: Run React tests
+        run: |
+          npm install
+          npm test -- --coverage
+        working-directory: ./empower/react
+      - uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: react
+
+      - name: Run Python Tests
+        run: |
+          pip install -U pytest
+          pip install pytz
+          pip install pytest-codecov
+          pytest --cov=. --cov-report=xml
+        working-directory: ./empower/flask/src
+      - uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: flask
+
+      - run: echo "Job status is ${{ job.status }}."
