@@ -50,21 +50,18 @@ While not an Empower React app query param, we also have demo-specific query par
 
 ## Setup
 
-1. Permit your IP address in CloudSQL:
-   1. Go to https://console.cloud.google.com/sql/instances
-   2. You will see 1 instance, under Actions column click "..." -> Edit
-   3. Expand "Connections", under Authorized Networks click "ADD NETWORK"
-   4. Google "my IP address", add it.
-2. Copy `local.env` from [empower-config](https://github.com/sentry-demos/empower-config) into `env-config` directory of your local repo, or, if you don't have access to it, follow `env-config/example.env`.
-3. The `REACT_APP_FLASK_BACKEND` in `env-config/local.env` points to the backend instance deployed to AppEngine, the same one used by the cloud-hosted React web app. Flask is the default backend. If you expect to run other backend types, add values for those in `env-config` in your `local.env` file as well (i.e. `REACT_APP_EXPRESS_BACKEND`).
-4. Confirm [Homebrew](https://brew.sh/) is installed with `brew -v`. If not, install using `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`.
-5. Confirm PostgreSQL is installed with `Postgres -V`. If not, install using `brew install postgresql`.
-6. As the application is compatible with specific versions of `node` and `npm`, install the following to be able to set the specific versions required (below describes how to achieve it using `n` package, but alternatively you can use `nvm`):
-   1. Install compatible `npm` version with `npm install -g npm@XX.XX.XX`. NOTE: may need to use `sudo` with command.
-   2. Install `n` to update `node` version with `npm install -g n`.
-   3. Set the specific `node` version with `n XX.XX.XX`. NOTE: may need to use `sudo` with command.
-7. Configure the `CLI` using [this](https://docs.sentry.io/product/cli/configuration/) document.
-8. Install [gcloud](https://cloud.google.com/sdk/docs/install) in the root of your project to be able to deploy to staging. Initialize the gcloud CLI by running `gcloud init`. When prompted, choose the project `sales-engineering-sf`.
+1. Copy `local.env` from [empower-config](https://github.com/sentry-demos/empower-config) into `env-config` directory of your local repo, or, if you don't have access to it, follow `env-config/example.env`.
+2. The `REACT_APP_FLASK_BACKEND` in `env-config/local.env` points to the backend instance deployed to AppEngine, the same one used by the cloud-hosted React web app. Flask is the default backend. If you expect to run other backend types, add values for those in `env-config` in your `local.env` file as well (i.e. `REACT_APP_EXPRESS_BACKEND`).
+3. Confirm [Homebrew](https://brew.sh/) is installed with `brew -v`. If not, install using `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`.
+4. Confirm PostgreSQL is installed with `Postgres -V`. If not, install using `brew install postgresql`.
+5. ~~As the application is compatible with specific versions of `node` and `npm`, install the following to be able to set the specific versions required (below describes how to achieve it using `n` package, but alternatively you can use `nvm`):~~
+   1. ~~Install compatible `npm` version with `npm install -g npm@XX.XX.XX`. NOTE: may need to use `sudo` with command.~~
+   2. ~~Install `n` to update `node` version with `npm install -g n`.~~
+   3. ~~Set the specific `node` version with `n XX.XX.XX`. NOTE: may need to use `sudo` with command.~~
+> [!NOTE]
+> We are using `volta` now. TODO: add instructions for volta.
+6. Configure the `CLI` using [this](https://docs.sentry.io/product/cli/configuration/) document.
+7. Install [gcloud](https://cloud.google.com/sdk/docs/install) in the root of your project to be able to deploy to staging. Initialize the gcloud CLI by running `gcloud init`. When prompted, choose the project `sales-engineering-sf`.
 
 Following sub-projects might not work with `deploy.sh` at this moment. Consult their README's for how to run and deploy them (and feel free to submit a PR that fixes it):
 
