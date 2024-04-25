@@ -20,6 +20,7 @@ jobs:
       - name: Run React tests
         run: |
           npm install @codecov/webpack-plugin
+          npm install @craco/craco
           npm install
           craco test -- --coverage
         working-directory: ./empower/react
