@@ -22,7 +22,7 @@ jobs:
           npm install @craco/craco
           npm install @codecov/webpack-plugin
           npm install
-          craco test -- --coverage
+          npm test -- --coverage
         working-directory: ./empower/react
       - uses: codecov/codecov-action@v3
         with:
