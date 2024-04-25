@@ -38,6 +38,9 @@ While not an Empower React app query param, we also have demo-specific query par
 
 - `&issueTracking=jira` - only shows 1 issue integration instead of all ~10 (for examples, see [internal documentation](https://www.notion.so/sentry/issueTracking-hack-c8bbae41bcb84c80aed9f3fc0ab29df6))
 
+## User Feedback
+The [user feedback widget](https://docs.sentry.io/platforms/javascript/user-feedback/#user-feedback-widget) is enabled on all pages, in the bottom-left corner. Submit user feedback from any page to have it [show up in Sentry](https://demo.sentry.io/feedback/?project=5808623&statsPeriod=7d).
+
 ## Additional documentation
 
 - project README's in subdirectories (e.g. [react/README.md](./react/README.md)
