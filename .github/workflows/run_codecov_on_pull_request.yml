@@ -22,7 +22,7 @@ jobs:
           npm install @craco/craco
           npm install @codecov/webpack-plugin
           npm install
-          npm test -- --coverage CODECOV_TOKEN=${{ secrets.CODECOV_TOKEN }}
+          CODECOV_TOKEN=${{ secrets.CODECOV_TOKEN }} npm test -- --coverage
         working-directory: ./empower/react
       - uses: codecov/codecov-action@v3
         with:
