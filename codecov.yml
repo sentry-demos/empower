@@ -9,16 +9,16 @@ coverage:
         informational: true
         target: 50%
     patch:
-      react:
+      frontend:
         informational: true
         target: 80%
         flags:
-          - react
-      flask:
+          - frontend
+      api:
         informational: true
         target: 50%
         flags:
-          - flask
+          - api
 
 github_checks:
   annotations: true
