@@ -29,7 +29,7 @@ def parseHeaders(keys, headers):
     return parsedHeaders
 
 def get_subscription_plan(type):
-    'monthly' if type == 'monthly' else 'annual'
+    return 'monthly' if type == 'monthly' else 'annual'
 
 def get_if_else_result():
     if True:
