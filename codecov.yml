@@ -9,35 +9,44 @@ coverage:
         informational: true
         target: 50%
     patch:
-      react:
+      frontend:
         informational: true
         target: 80%
         flags:
-          - react
-      flask:
+          - frontend
+      api:
         informational: true
         target: 50%
         flags:
-          - flask
+          - api
 
 github_checks:
   annotations: true
 
 comment:
   layout: "newheader, diff, flags, files"
-  require_changes: false #if true: only post the comment if coverage changes
-  require_base: false # [yes :: must have a base report to post]
-  require_head: true # [yes :: must have a head report to post]
+  require_changes: false # false :: posts comment regardless of whether coverage changes
+  require_base: false # [false :: doesn't need a base report to post]
+  require_head: true # [true :: must have a head report to post]
   show_carryforward_flags: true
   # show_critical_paths: true # affects labeled critical files -- leaving out for now
   hide_comment_details: true # collapse 'detailed info' for PR comment
 
-flags:
-  flask:
+flag_management:
+  individual_flags:
+    - name: api
+      paths:
+        - flask/
+      statuses:
+        - type: project
+          target: auto
+          threshold: 1%
+    - name: frontend
+      paths:
+        - react/
+      statuses:
+        - type: project
+          target: auto
+          threshold: 1%
+  default_rules:
     carryforward: true
-    paths:
-      - flask
-  react:
-    carryforward: true
-    paths:
-      - react
