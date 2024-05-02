@@ -25,7 +25,7 @@ jobs:
       - uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          flags: react
+          flags: frontend
 
       - name: Run Python Tests
         run: |
@@ -37,6 +37,6 @@ jobs:
       - uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          flags: flask
+          flags: api
 
       - run: echo "Job status is ${{ job.status }}."
