@@ -28,6 +28,15 @@ def parseHeaders(keys, headers):
         parsedHeaders[key] = value
     return parsedHeaders
 
+def get_subscription_plan(type):
+    return type == 'monthly' ? 'monthly' : 'annual'
+
+def get_if_else_result():
+    if True:
+        return True
+    else:
+        return False
+
 def get_iterator(n):
     #fibonacci
     if n < 0:
@@ -44,3 +53,4 @@ def yuval(text):
 
 def chris():
     return ""
+    
