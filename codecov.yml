@@ -24,7 +24,7 @@ github_checks:
   annotations: true
 
 comment:
-  layout: "newheader, diff, flags, files"
+  layout: "newheader, diff, flags, files, components"
   require_changes: false # false :: posts comment regardless of whether coverage changes
   require_base: false # [false :: doesn't need a base report to post]
   require_head: true # [true :: must have a head report to post]
@@ -50,3 +50,18 @@ flag_management:
           threshold: 1%
   default_rules:
     carryforward: true
+
+component_management:
+  default_rules:
+    statuses:
+      - type: project # in this case every component that doens't have a status defined will have a project type one
+        target: auto
+  individual_components:
+    - component_id: python_component
+      name: checkout_module
+      paths:
+        - flask/src/**
+    - component_id: js_component
+      name: product_component
+      paths:
+        - react/src/components/**
