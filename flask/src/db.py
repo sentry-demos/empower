@@ -158,7 +158,8 @@ def get_inventory(cart):
 
     return inventory
 
-
+def decrement_inventory(id, count):
+    pass
 
 def formatArray(ids):
     numbers = ""
