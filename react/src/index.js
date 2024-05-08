@@ -268,7 +268,7 @@ class App extends Component {
         let a = array[Math.floor(Math.random() * array.length)];
         let b = array[Math.floor(Math.random() * array.length)];
         let c = array[Math.floor(Math.random() * array.length)];
-        email = a + b + c + '@gmail.com';
+        email = a + b + c + '@example.com';
       }
       scope.setUser({ email: email });
     });
