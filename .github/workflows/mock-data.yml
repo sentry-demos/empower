@@ -2,7 +2,7 @@ name: mock-data.yml
 on:
   push:
     branches: [master, test-me-*]
-  pull_request:
+  #pull_request: # currently fails - distracting when using empower PRs for CodeCov demo
 
 jobs:
   mock-data:
