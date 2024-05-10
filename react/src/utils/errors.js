@@ -3,7 +3,7 @@ const history = createBrowserHistory();
 
 // ERRORS
 const notAFunctionError = () => {
-  const someArray = [{ func: function () {} }];
+  const someArray = [{ func: function () {} }, { func: function () { console.log("Second function executed"); } }];
   someArray[1].func();
 };
 const referenceError = () => {
