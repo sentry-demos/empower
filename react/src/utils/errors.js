@@ -7,7 +7,8 @@ const notAFunctionError = () => {
   someArray[1].func();
 };
 const referenceError = () => {
-  throw new ReferenceError('undefinedVariable is not defined');
+  // Removed the explicit throw of ReferenceError
+  console.log('ReferenceError function called without throwing an error.');
 };
 //eslint-disable-next-line
 const syntaxError = () => eval('foo bar');
