@@ -300,23 +300,24 @@ class App extends Component {
 
   render() {
     return (
-      <Provider store={store}>
-        <BrowserRouter history={history}>
-          <ScrollToTop />
-          <Nav frontendSlowdown={FRONTEND_SLOWDOWN} />
-          <div id="body-container">
-            <SentryRoutes>
-              <Route
-                path="/"
-                element={
-                  <Home
-                    backend={BACKEND_URL}
-                    frontendSlowdown={FRONTEND_SLOWDOWN}
-                  />
-                }
-              ></Route>
-              <Route
-                path="/about"
+      <ErrorBoundary>
+        <Provider store={store}>
+          <BrowserRouter history={history}>
+            <ScrollToTop />
+            <Nav frontendSlowdown={FRONTEND_SLOWDOWN} />
+            <div id="body-container">
+              <SentryRoutes>
+                <Route
+                  path="/"
+                  element={
+                    <Home
+                      backend={BACKEND_URL}
+                      frontendSlowdown={FRONTEND_SLOWDOWN}
+                    />
+                  }
+                ></Route>
+                <Route
+                  path="/about"
                 element={<About backend={BACKEND_URL} history={history} />}
               ></Route>
               <Route path="/cart" element={<Cart />} />
