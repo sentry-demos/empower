@@ -27,7 +27,7 @@ const randomErrors = [
   referenceError,
   syntaxError,
   rangeError,
-  unhandledError,
+unhandledError,
 ];
 
 const throwErrorNumber = (i) => {
@@ -52,11 +52,12 @@ const crasher = () => {
       const errnum =
         queryParams.get('errnum') ||
         parseInt(Math.random() * randomErrors.length);
-    }
-  }
-};
-      if (crash === 'true' || probability(parseFloat(crash))) {
-        throwErrorNumber(errnum);
+      try {
+        if (crash === 'true' || probability(parseFloat(crash))) {
+          throwErrorNumber(errnum);
+        }
+      } catch (error) {
+        console.error("Error triggered in crasher function:", error);
       }
     }
   } else {
