@@ -15,7 +15,7 @@ const rangeError = () => {
   throw new RangeError('Parameter must be between 1 and 100');
 };
 const unhandledError = () => {
-  throw new UnhandledException('unhandled error');
+  throw new Error('unhandled error'); // Corrected from UnhandledException to Error
 };
 
 const randomErrors = [
@@ -27,7 +27,14 @@ const randomErrors = [
 ];
 
 const throwErrorNumber = (i) => {
-  randomErrors[i % randomErrors.length]();
+  const errorIndex = i % randomErrors.length;
+  if (errorIndex === 3) { // Assuming index 3 is for rangeError based on the array order
+    if (i < 1 || i > 100) {
+      console.error('Error: Parameter must be between 1 and 100');
+      return;
+    }
+  }
+  randomErrors[errorIndex]();
 };
 
 // if n is 0.2 then this will return false 20% of the time
