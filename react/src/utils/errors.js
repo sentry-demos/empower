@@ -7,7 +7,9 @@ const notAFunctionError = () => {
   someArray[1].func();
 };
 const referenceError = () => {
-  throw new ReferenceError('undefinedVariable is not defined');
+  if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
+    throw new ReferenceError('undefinedVariable is not defined');
+  }
 };
 //eslint-disable-next-line
 const syntaxError = () => eval('foo bar');
