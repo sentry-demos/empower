@@ -45,7 +45,12 @@ const crasher = () => {
         queryParams.get('errnum') ||
         parseInt(Math.random() * randomErrors.length);
       if (crash === 'true' || probability(parseFloat(crash))) {
-        throwErrorNumber(errnum);
+        try {
+          throwErrorNumber(errnum);
+        } catch (error) {
+          console.error('Caught an error:', error);
+          // Optionally, integrate with an error monitoring service here
+        }
       }
     }
   } else {
