@@ -27,7 +27,11 @@ const randomErrors = [
 ];
 
 const throwErrorNumber = (i) => {
-  randomErrors[i % randomErrors.length]();
+  if (i >= 0 && i < randomErrors.length) {
+    randomErrors[i % randomErrors.length]();
+  } else {
+    console.error("Index out of bounds: ", i);
+  }
 };
 
 // if n is 0.2 then this will return false 20% of the time
@@ -44,6 +48,9 @@ const crasher = () => {
       const errnum =
         queryParams.get('errnum') ||
         parseInt(Math.random() * (randomErrors.length - 1));
+    }
+  }
+};
       if (crash === 'true' || probability(parseFloat(crash))) {
         throwErrorNumber(errnum);
       }
