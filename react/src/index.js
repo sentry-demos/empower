@@ -14,6 +14,7 @@ import {
   matchRoutes,
 } from 'react-router-dom';
 import { crasher } from './utils/errors';
+import ErrorBoundary from './components/ErrorBoundary';
 import {
   determineBackendType,
   determineBackendUrl,
