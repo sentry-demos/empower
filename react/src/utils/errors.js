@@ -40,16 +40,16 @@ const crasher = () => {
   if (queryParams !== '') {
     const crash = queryParams.get('crash');
     if (crash) {
-      console.log('> crash', crash);
-      const errnum =
-        queryParams.get('errnum') ||
-        parseInt(Math.random() * randomErrors.length);
+      console.log('&gt; crash', crash);
+      const errnumRaw = queryParams.get('errnum');
+      const errnum = errnumRaw ? parseInt(errnumRaw) : parseInt(Math.random() * randomErrors.length);
+      const validErrnum = !isNaN(errnum) && errnum &gt;= 0 && errnum &lt; randomErrors.length ? errnum : 0;
       if (crash === 'true' || probability(parseFloat(crash))) {
-        throwErrorNumber(errnum);
+        throwErrorNumber(validErrnum);
       }
     }
   } else {
-    console.log('> queryParam was', queryParams);
+    console.log('&gt; queryParam was', queryParams);
   }
 };
 
