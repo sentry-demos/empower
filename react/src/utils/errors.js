@@ -4,7 +4,11 @@ const history = createBrowserHistory();
 // ERRORS
 const notAFunctionError = () => {
   const someArray = [{ func: function () {} }];
-  someArray[1].func();
+  if (someArray.length > 1) {
+    someArray[1].func();
+  } else {
+    console.error("Attempted to access an undefined index in someArray.");
+  }
 };
 const referenceError = () => {
   throw new ReferenceError('undefinedVariable is not defined');
