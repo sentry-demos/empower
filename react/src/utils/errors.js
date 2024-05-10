@@ -7,7 +7,9 @@ const notAFunctionError = () => {
   someArray[1].func();
 };
 const referenceError = () => {
-  throw new ReferenceError('undefinedVariable is not defined');
+  if (process.env.NODE_ENV !== 'production') {
+    throw new ReferenceError('undefinedVariable is not defined');
+  }
 };
 //eslint-disable-next-line
 const syntaxError = () => eval('foo bar');
@@ -15,7 +17,7 @@ const rangeError = () => {
   throw new RangeError('Parameter must be between 1 and 100');
 };
 const unhandledError = () => {
-  throw new UnhandledException('unhandled error');
+  throw new Error('unhandled error'); // Corrected UnhandledException to Error
 };
 
 const randomErrors = [
