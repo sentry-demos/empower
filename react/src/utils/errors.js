@@ -15,7 +15,11 @@ const rangeError = () => {
   throw new RangeError('Parameter must be between 1 and 100');
 };
 const unhandledError = () => {
-  throw new UnhandledException('unhandled error');
+  try {
+    throw new UnhandledException('unhandled error');
+  } catch (error) {
+    console.error("Caught an unhandled exception:", error);
+  }
 };
 
 const randomErrors = [
@@ -33,6 +37,7 @@ const throwErrorNumber = (i) => {
 // if n is 0.2 then this will return false 20% of the time
 var probability = function (n) {
   return !!n && Math.random() <= n;
+}
 };
 
 const crasher = () => {
