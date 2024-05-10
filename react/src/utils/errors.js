@@ -4,7 +4,9 @@ const history = createBrowserHistory();
 // ERRORS
 const notAFunctionError = () => {
   const someArray = [{ func: function () {} }];
-  someArray[1].func();
+  if (someArray[1]) {
+    someArray[1].func();
+  }
 };
 const referenceError = () => {
   throw new ReferenceError('undefinedVariable is not defined');
