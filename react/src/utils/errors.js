@@ -42,10 +42,10 @@ const crasher = () => {
     if (crash) {
       console.log('> crash', crash);
       const errnum =
-        queryParams.get('errnum') ||
-        parseInt(Math.random() * randomErrors.length);
+        queryParams.get('errnum') ? parseInt(queryParams.get('errnum')) : parseInt(Math.random() * randomErrors.length);
+      const validErrnum = Math.max(0, Math.min(randomErrors.length - 1, errnum));
       if (crash === 'true' || probability(parseFloat(crash))) {
-        throwErrorNumber(errnum);
+        throwErrorNumber(validErrnum);
       }
     }
   } else {
