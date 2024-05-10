@@ -41,19 +41,15 @@ var probability = function (n) {
 
 const crasher = () => {
   const queryParams = new URLSearchParams(history.location.search);
-  if (queryParams !== '') {
+  if (queryParams.has('crash')) {
     const crash = queryParams.get('crash');
-    if (crash) {
-      console.log('> crash', crash);
-      const errnum =
-        queryParams.get('errnum') ||
-        parseInt(Math.random() * randomErrors.length);
-      if (crash === 'true' || probability(parseFloat(crash))) {
-        throwErrorNumber(errnum);
-      }
+    console.log('&gt; crash', crash);
+    const errnum = queryParams.get('errnum') ? parseInt(queryParams.get('errnum')) : parseInt(Math.random() * randomErrors.length);
+    if (crash === 'true' || probability(parseFloat(crash))) {
+      throwErrorNumber(errnum);
     }
   } else {
-    console.log('> queryParam was', queryParams);
+    console.log('&gt; No crash parameter found');
   }
 };
 
