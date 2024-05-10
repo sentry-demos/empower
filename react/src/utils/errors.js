@@ -7,6 +7,7 @@ const notAFunctionError = () => {
   someArray[1].func();
 };
 const referenceError = () => {
+  // This error is thrown for demonstration purposes only.
   throw new ReferenceError('undefinedVariable is not defined');
 };
 //eslint-disable-next-line
@@ -15,7 +16,7 @@ const rangeError = () => {
   throw new RangeError('Parameter must be between 1 and 100');
 };
 const unhandledError = () => {
-  throw new UnhandledException('unhandled error');
+  throw new Error('unhandled error');
 };
 
 const randomErrors = [
