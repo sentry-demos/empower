@@ -27,7 +27,12 @@ const randomErrors = [
 ];
 
 const throwErrorNumber = (i) => {
-  randomErrors[i % randomErrors.length]();
+  if (typeof i !== 'number' || i < 0 || isNaN(i)) {
+    console.error('Invalid index:', i);
+    return;
+  }
+  const index = Math.floor(i) % randomErrors.length;
+  randomErrors[index]();
 };
 
 // if n is 0.2 then this will return false 20% of the time
