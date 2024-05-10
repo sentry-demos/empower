@@ -39,8 +39,9 @@ const crasher = () => {
   const queryParams = new URLSearchParams(history.location.search);
   if (queryParams !== '') {
     const crash = queryParams.get('crash');
-    if (crash) {
-      console.log('> crash', crash);
+    const env = queryParams.get('env');
+    if (crash && env !== 'production') {
+      console.log('&gt; crash', crash);
       const errnum =
         queryParams.get('errnum') ||
         parseInt(Math.random() * randomErrors.length);
@@ -49,7 +50,7 @@ const crasher = () => {
       }
     }
   } else {
-    console.log('> queryParam was', queryParams);
+    console.log('&gt; queryParam was', queryParams);
   }
 };
 
