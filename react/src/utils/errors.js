@@ -15,7 +15,7 @@ const rangeError = () => {
   throw new RangeError('Parameter must be between 1 and 100');
 };
 const unhandledError = () => {
-  throw new UnhandledException('unhandled error');
+  throw new Error('unhandled error');
 };
 
 const randomErrors = [
@@ -27,7 +27,11 @@ const randomErrors = [
 ];
 
 const throwErrorNumber = (i) => {
-  randomErrors[i % randomErrors.length]();
+  // Ensure the index is within the bounds of the randomErrors array
+  const index = i % randomErrors.length;
+  if (index >= 0 && index < randomErrors.length) {
+    randomErrors[index]();
+  }
 };
 
 // if n is 0.2 then this will return false 20% of the time
