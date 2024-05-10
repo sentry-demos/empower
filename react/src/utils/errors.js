@@ -15,7 +15,7 @@ const rangeError = () => {
   throw new RangeError('Parameter must be between 1 and 100');
 };
 const unhandledError = () => {
-  throw new UnhandledException('unhandled error');
+  throw new Error('unhandled error');
 };
 
 const randomErrors = [
@@ -27,7 +27,11 @@ const randomErrors = [
 ];
 
 const throwErrorNumber = (i) => {
-  randomErrors[i % randomErrors.length]();
+  try {
+    randomErrors[i % randomErrors.length]();
+  } catch (error) {
+    console.error('Caught an error:', error);
+  }
 };
 
 // if n is 0.2 then this will return false 20% of the time
