@@ -41,10 +41,10 @@ const crasher = () => {
     const crash = queryParams.get('crash');
     if (crash) {
       console.log('> crash', crash);
-      const errnum =
-        queryParams.get('errnum') ||
-        parseInt(Math.random() * randomErrors.length);
-      if (crash === 'true' || probability(parseFloat(crash))) {
+      const errnum = parseInt(queryParams.get('errnum') || Math.random() * randomErrors.length);
+      if (isNaN(errnum) || errnum < 0 || errnum >= randomErrors.length) {
+        console.error('Invalid error number:', errnum);
+      } else if (crash === 'true' || probability(parseFloat(crash))) {
         throwErrorNumber(errnum);
       }
     }
