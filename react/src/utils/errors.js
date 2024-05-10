@@ -27,7 +27,7 @@ const randomErrors = [
 ];
 
 const throwErrorNumber = (i) => {
-  randomErrors[i % randomErrors.length]();
+  randomErrors[Math.abs(parseInt(i, 10)) % randomErrors.length]();
 };
 
 // if n is 0.2 then this will return false 20% of the time
