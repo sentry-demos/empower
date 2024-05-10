@@ -24,6 +24,7 @@ const randomErrors = [
   syntaxError,
   rangeError,
   unhandledError,
+  () => { console.log('No operation'); }, // Placeholder function to ensure all indices are populated
 ];
 
 const throwErrorNumber = (i) => {
