@@ -41,9 +41,13 @@ const crasher = () => {
     const crash = queryParams.get('crash');
     if (crash) {
       console.log('> crash', crash);
-      const errnum =
-        queryParams.get('errnum') ||
-        parseInt(Math.random() * randomErrors.length);
+      const errnum = Math.floor(
+        queryParams.get('errnum') ? parseInt(queryParams.get('errnum')) : Math.random() * randomErrors.length
+      );
+      if (errnum < 0 || errnum >= randomErrors.length) {
+        console.error('Error number out of range:', errnum);
+        return;
+      }
       if (crash === 'true' || probability(parseFloat(crash))) {
         throwErrorNumber(errnum);
       }
