@@ -31,13 +31,16 @@ const randomErrors = [
 ];
 
 const throwErrorNumber = (i) => {
-  randomErrors[i % randomErrors.length]();
+  try {
+    randomErrors[i % randomErrors.length]();
+  } catch (error) {
+    console.error("Error occurred in throwErrorNumber:", error);
+  }
 };
 
 // if n is 0.2 then this will return false 20% of the time
 var probability = function (n) {
   return !!n && Math.random() <= n;
-}
 };
 
 const crasher = () => {
@@ -49,6 +52,9 @@ const crasher = () => {
       const errnum =
         queryParams.get('errnum') ||
         parseInt(Math.random() * randomErrors.length);
+    }
+  }
+};
       if (crash === 'true' || probability(parseFloat(crash))) {
         throwErrorNumber(errnum);
       }
