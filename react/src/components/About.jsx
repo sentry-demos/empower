@@ -27,10 +27,10 @@ function About({ backend }) {
     const ldclient = await LDClient.initialize('SECRET', newUser);
     ldclient.on("ready", () => {
       const flagResponse = ldclient.variation('sample-feature',false);
-      if (flagResponse != undefined && flagResponse) {
-        console.log("sample-feature working: " + flagResponse);
-      }else{
-        console.log("sample-feature failed: " + flagResponse);
+      if (flagResponse) {
+        console.log("sample-feature flag is enabled!");
+      } else {
+        console.log("sample-feature flag is disabled :(");
       }
     });
   })();
