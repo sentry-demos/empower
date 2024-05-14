@@ -1,4 +1,5 @@
 import React, { Component, useEffect } from 'react';
+import * as ReactDOMClient from 'react-dom/client';
 import ReactDOM from 'react-dom';
 import './index.css';
 import 'react-loader-spinner/dist/loader/css/react-spinner-loader.css';
@@ -39,6 +40,8 @@ import Product from './components/Product';
 import Products from './components/Products';
 import ProductsJoin from './components/ProductsJoin';
 import Nplusone from './components/nplusone';
+
+import { asyncWithLDProvider } from 'launchdarkly-react-client-sdk';
 
 const tracingOrigins = [
   'localhost',
@@ -167,6 +170,26 @@ const store = createStore(
   rootReducer,
   compose(applyMiddleware(logger), sentryReduxEnhancer)
 );
+
+(async () => {
+  const LDProvider = await asyncWithLDProvider({
+    clientSideID: 'SECRET',
+    context: {
+      kind: 'user',
+      key: 'example-user-key',
+      name: 'Sandy',
+    },
+  });
+
+  const root = ReactDOMClient.createRoot(document.getElementById('root'));
+  root.render(
+    <React.StrictMode>
+      <LDProvider>
+        <App />
+      </LDProvider>
+    </React.StrictMode>,
+  );
+})();
 
 class App extends Component {
   constructor() {

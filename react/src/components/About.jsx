@@ -12,9 +12,15 @@ import Mason from './employees/mason';
 import Emma from './employees/emma';
 import Noah from './employees/noah';
 
+import { useFlags } from 'launchdarkly-react-client-sdk';
+
 const employees = [Jane, Lily, Keith, Mason, Emma, Noah];
 
 function About({ backend }) {
+
+  const sampleFeature = useFlags();
+  console.log("SZ: " + sampleFeature);
+
   useEffect(() => {
     if (!isOddReleaseWeek()) {
       // can't have async sleep in a constructor
@@ -56,6 +62,9 @@ function About({ backend }) {
   return (
     <div className="about-page">
       <div>
+        <header className="App-header" style={{backgroundColor: sampleFeature ? '#00844B' : '#373841'}}>
+          <p>The sampleFeature feature flag evaluates to <b>{sampleFeature ? 'True' : 'False'}</b></p>
+        </header>
         <div className="about-info">
           <h1>About us</h1>
           <p>
