@@ -40,8 +40,6 @@ import Products from './components/Products';
 import ProductsJoin from './components/ProductsJoin';
 import Nplusone from './components/nplusone';
 
-import { asyncWithLDProvider } from 'launchdarkly-react-client-sdk';
-
 const tracingOrigins = [
   'localhost',
   'empowerplant.io',
