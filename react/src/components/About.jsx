@@ -12,14 +12,28 @@ import Mason from './employees/mason';
 import Emma from './employees/emma';
 import Noah from './employees/noah';
 
-import { useFlags } from 'launchdarkly-react-client-sdk';
+import * as LDClient from 'launchdarkly-js-client-sdk';
 
 const employees = [Jane, Lily, Keith, Mason, Emma, Noah];
 
 function About({ backend }) {
 
-  const sampleFeature = useFlags();
-  console.log("SZ: " + sampleFeature);
+  const newUser = {
+      "kind": "user",
+      "key": "example-user-key",
+      "name": "Sandy",
+  };
+  (async () => {
+    const ldclient = await LDClient.initialize('SECRET', newUser);
+    ldclient.on("ready", () => {
+      const flagResponse = ldclient.variation('sample-feature',false);
+      if (flagResponse != undefined && flagResponse) {
+        console.log("sample-feature working: " + flagResponse);
+      }else{
+        console.log("sample-feature failed: " + flagResponse);
+      }
+    });
+  })();
 
   useEffect(() => {
     if (!isOddReleaseWeek()) {
@@ -62,9 +76,9 @@ function About({ backend }) {
   return (
     <div className="about-page">
       <div>
-        <header className="App-header" style={{backgroundColor: sampleFeature ? '#00844B' : '#373841'}}>
-          <p>The sampleFeature feature flag evaluates to <b>{sampleFeature ? 'True' : 'False'}</b></p>
-        </header>
+        {/* <header className="myHeader" style={{backgroundColor: flagResponse ? '#00844B' : '#373841'}}>
+          <p>The flagResponse feature flag evaluates to <b>{flagResponse ? 'True' : 'False'}</b></p>
+        </header> */}
         <div className="about-info">
           <h1>About us</h1>
           <p>
