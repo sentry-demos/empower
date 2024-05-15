@@ -40,6 +40,8 @@ import Products from './components/Products';
 import ProductsJoin from './components/ProductsJoin';
 import Nplusone from './components/nplusone';
 
+import * as LDClient from 'launchdarkly-js-client-sdk';
+
 const tracingOrigins = [
   'localhost',
   'empowerplant.io',
@@ -168,9 +170,12 @@ const store = createStore(
   compose(applyMiddleware(logger), sentryReduxEnhancer)
 );
 
+export const LDContext = React.createContext();
+
 const App = () => {
 
   let queryParams = new URLSearchParams(history.location.search);
+  let email = null;
 
   // Set desired backend
   let backendTypeParam = queryParams.get('backend');
@@ -220,7 +225,6 @@ const App = () => {
 
     scope.setTag('backendType', backendType);
 
-    let email = null;
     if (queryParams.get('userEmail')) {
       email = queryParams.get('userEmail');
     } else {
@@ -285,7 +289,36 @@ const App = () => {
   // Crasher parses query params sent by /tests for triggering crashes for Release Health
   crasher();
 
+
+  //LaunchDarkly settings
+  const [lDFeatureFlag, setLDFeatureFlag] = React.useState(false);
+  const lDUser = {
+    "kind": queryParams.get('se') === null || !queryParams.get('se').match("-tda-") ? "user": "automation",
+    "key": email,
+    "name": queryParams.get('se'),
+  };
+  const ldFlag = 'sample-feature';
+
+  (async () => {
+    const ldclient = await LDClient.initialize(process.env.REACT_APP_LAUNCHDARKLY_ENVKEY, lDUser);
+    ldclient.on("ready", () => {
+      if (ldclient.variation(ldFlag,false)) {
+        setLDFeatureFlag(true);
+        console.log(`LaunchDarkly flag ${ldFlag} is enabled!`);
+      } else {
+        setLDFeatureFlag(false);
+        console.log(`LaunchDarkly flag ${ldFlag} is disabled...`);
+      }
+    });
+  })();
+
   return (
+    <LDContext.Provider
+        value={{
+          lDFeatureFlag: lDFeatureFlag,
+          setLDFeatureFlag: setLDFeatureFlag,
+        }}
+    >
       <Provider store={store}>
         <BrowserRouter history={history}>
           <ScrollToTop />
@@ -344,6 +377,7 @@ const App = () => {
           <Footer />
         </BrowserRouter>
       </Provider>
+    </LDContext.Provider>
   );
 }
 

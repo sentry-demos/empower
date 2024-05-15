@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { Link } from 'react-router-dom';
 import slugify from '../utils/slugify';
 import * as Sentry from '@sentry/react';
@@ -12,29 +13,12 @@ import Mason from './employees/mason';
 import Emma from './employees/emma';
 import Noah from './employees/noah';
 
-import * as LDClient from 'launchdarkly-js-client-sdk';
+import { LDContext } from "../index.js";
 
 const employees = [Jane, Lily, Keith, Mason, Emma, Noah];
 
 function About({ backend }) {
-
-  const newUser = {
-      "kind": "user",
-      "key": "example-user-key",
-      "name": "Sandy",
-  };
-  (async () => {
-    const ldclient = await LDClient.initialize('SECRET', newUser);
-    ldclient.on("ready", () => {
-      const flagResponse = ldclient.variation('sample-feature',false);
-      if (flagResponse) {
-        console.log("sample-feature flag is enabled!");
-      } else {
-        console.log("sample-feature flag is disabled :(");
-      }
-    });
-  })();
-
+  const lDContext = React.useContext(LDContext);
   useEffect(() => {
     if (!isOddReleaseWeek()) {
       // can't have async sleep in a constructor
@@ -71,6 +55,20 @@ function About({ backend }) {
         );
       }
     });
+
+    // throw error if LaunchDarkly Feature Flag is enabled
+    if (lDContext.lDFeatureFlag) {
+      response.forEach((r) => {
+        Sentry.configureScope(function (scope) {
+          Sentry.setContext('response', r);
+        });
+        Sentry.captureException(
+          new Error(
+            r.status + ' - ' + 'Error from Feature Flag (LaunchDarkly)'
+          )
+        );
+      }); 
+    }
   }, []);
 
   return (
