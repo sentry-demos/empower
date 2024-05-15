@@ -74,9 +74,6 @@ function About({ backend }) {
   return (
     <div className="about-page">
       <div>
-        {/* <header className="myHeader" style={{backgroundColor: flagResponse ? '#00844B' : '#373841'}}>
-          <p>The flagResponse feature flag evaluates to <b>{flagResponse ? 'True' : 'False'}</b></p>
-        </header> */}
         <div className="about-info">
           <h1>About us</h1>
           <p>
