@@ -54,7 +54,7 @@ const history = createBrowserHistory();
 
 let ENVIRONMENT;
 if (window.location.hostname === 'localhost') {
-  ENVIRONMENT = 'test';
+  ENVIRONMENT = 'dev';
 } else {
   // App Engine
   ENVIRONMENT = 'production';
@@ -297,7 +297,7 @@ const App = () => {
     "key": email,
     "name": queryParams.get('se'),
   };
-  const ldFlag = 'sample-feature';
+  const ldFlag = 'my-sentry-integration-feature';
 
   (async () => {
     const ldclient = await LDClient.initialize(process.env.REACT_APP_LAUNCHDARKLY_ENVKEY, lDUser);
