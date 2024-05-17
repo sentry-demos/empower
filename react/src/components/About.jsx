@@ -64,7 +64,7 @@ function About({ backend }) {
         });
         Sentry.captureException(
           new Error(
-            r.status + ' - ' + 'Error from Feature Flag (LaunchDarkly)'
+            r.status + ' - Error from Feature Flag (LaunchDarkly)'
           )
         );
       }); 

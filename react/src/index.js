@@ -291,12 +291,19 @@ const App = () => {
 
 
   //LaunchDarkly settings
+  let lDKind = queryParams.get('se') === null || !queryParams.get('se').match("-tda-") ? "user": "automation";
   const [lDFeatureFlag, setLDFeatureFlag] = React.useState(false);
   const lDUser = {
-    "kind": queryParams.get('se') === null || !queryParams.get('se').match("-tda-") ? "user": "automation",
+    "kind": lDKind,
     "key": email,
     "name": queryParams.get('se'),
   };
+
+  Sentry.setContext('launchdarklyContext', {
+    "kind": lDKind,
+    "key": email,
+  });  
+
   const ldFlag = 'my-sentry-integration-feature';
 
   (async () => {
