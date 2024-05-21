@@ -1,4 +1,4 @@
-requests==2.27.1
+requests==2.32.0
 blinker==1.6.2
 flask==3.0.0
 flask-cors==3.0.10
