@@ -82,6 +82,7 @@ function About({ backend }) {
       } else {
         console.log(`LaunchDarkly flag ${ldFlag} is not enabled...`);
       }
+      ldClient.flush()
     } else {
       console.log(`Launchdarkly client is not on the react context`)
   }, []);
