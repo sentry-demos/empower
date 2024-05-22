@@ -67,6 +67,7 @@ function About({ backend }) {
             r.status + ' - Error from Feature Flag (LaunchDarkly)'
           )
         );
+        console.log(`Generated error specific to LaunchDarkly feature flag`);
       }); 
     }
   }, []);
