@@ -319,7 +319,6 @@ const App = () => {
     <LDContext.Provider
         value={{
           lDClient: lDClient,
-          setlDClient: setlDClient,
         }}
     >
       <Provider store={store}>
