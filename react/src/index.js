@@ -292,7 +292,7 @@ const App = () => {
 
   //LaunchDarkly settings
   let lDKind = queryParams.get('se') === null || !queryParams.get('se').match("-tda-") ? "user": "automation";
-  const [lDFeatureFlag, setLDFeatureFlag] = React.useState(false);
+  const [lDClient, setlDClient] = React.useState(false);
   const lDUser = {
     "kind": lDKind,
     "key": email,
@@ -302,28 +302,24 @@ const App = () => {
   Sentry.setContext('launchdarklyContext', {
     "kind": lDKind,
     "key": email,
-  });  
+  });
 
-  const ldFlag = 'my-sentry-integration-feature';
-
-  (async () => {
-    const ldclient = await LDClient.initialize(process.env.REACT_APP_LAUNCHDARKLY_ENVKEY, lDUser);
-    ldclient.on("ready", () => {
-      if (ldclient.variation(ldFlag,false)) {
-        setLDFeatureFlag(true);
-        console.log(`LaunchDarkly flag ${ldFlag} is enabled!`);
-      } else {
-        setLDFeatureFlag(false);
-        console.log(`LaunchDarkly flag ${ldFlag} is disabled...`);
-      }
-    });
-  })();
+  useEffect(() => {
+    const initializeLDClient = async () => {
+      const client = LDClient.initialize(process.env.REACT_APP_LAUNCHDARKLY_ENVKEY, lDUser); // see console: [LaunchDarkly] LaunchDarkly client initialized
+      client.waitUntilReady().then(() => {
+        setlDClient(client);
+      });
+    }
+  
+    initializeLDClient();
+  }, []);
 
   return (
     <LDContext.Provider
         value={{
-          lDFeatureFlag: lDFeatureFlag,
-          setLDFeatureFlag: setLDFeatureFlag,
+          lDClient: lDClient,
+          setlDClient: setlDClient,
         }}
     >
       <Provider store={store}>
