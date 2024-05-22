@@ -299,11 +299,6 @@ const App = () => {
     "name": queryParams.get('se'),
   };
 
-  Sentry.setContext('launchdarklyContext', {
-    "kind": lDKind,
-    "key": email,
-  });
-
   useEffect(() => {
     const initializeLDClient = async () => {
       const client = LDClient.initialize(process.env.REACT_APP_LAUNCHDARKLY_ENVKEY, lDUser); // see console: [LaunchDarkly] LaunchDarkly client initialized
