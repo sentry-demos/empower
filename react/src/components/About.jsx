@@ -68,17 +68,15 @@ function About({ backend }) {
       const ldFlag = 'my-sentry-integration-feature';
       if (ldClient.variation(ldFlag, false)) {
         console.log(`LaunchDarkly flag ${ldFlag} is enabled!`);
-        response.forEach((r) => {
-          Sentry.configureScope(function (scope) {
-            Sentry.setContext('response', r);
-          });
-          Sentry.captureException(
-            new Error(
-              r.status + ' - Error from Feature Flag (LaunchDarkly)'
-            )
-          );
-          console.log(`Generated error specific to LaunchDarkly feature flag`);
+        Sentry.configureScope(function (scope) {
+          Sentry.setContext('response', request1);
         });
+        Sentry.captureException(
+          new Error(
+            request1.status + ' - Error from Feature Flag (LaunchDarkly)'
+          )
+        );
+        console.log(`Generated error specific to LaunchDarkly feature flag`);
       } else {
         console.log(`LaunchDarkly flag ${ldFlag} is not enabled...`);
       }
