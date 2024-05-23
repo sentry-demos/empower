@@ -57,7 +57,7 @@ function About({ backend }) {
     });
 
     if(lDContext.lDClient) {
-      const ldClient = LDContext.lDClient;
+      const ldClient = lDContext.lDClient;
       const ldContext = ldClient.getContext();
       Sentry.setContext('launchdarklyContext', {
         "kind": ldContext.kind,
@@ -82,7 +82,7 @@ function About({ backend }) {
       } else {
         console.log(`LaunchDarkly flag ${ldFlag} is not enabled...`);
       }
-      ldClient.flush()
+      ldClient.flush();
     } else {
       console.log(`Launchdarkly client is not on the react context`);
     }
