@@ -59,24 +59,23 @@ function About({ backend }) {
     if(lDContext.lDClient) {
       const ldClient = lDContext.lDClient;
       const ldContext = ldClient.getContext();
-      Sentry.setContext('launchdarklyContext', {
-        "kind": ldContext.kind,
-        "key": ldContext.key,
-      });
-
       // throw error if LaunchDarkly Feature Flag is enabled
       const ldFlag = 'my-sentry-integration-feature';
       if (ldClient.variation(ldFlag, false)) {
         console.log(`LaunchDarkly flag ${ldFlag} is enabled!`);
-        Sentry.configureScope(function (scope) {
-          Sentry.setContext('response', request1);
+        Sentry.withScope(function (scope) {
+          scope.setContext('response', request1);
+          scope.setContext('launchdarklyContext', {
+            "kind": ldContext.kind,
+            "key": ldContext.key,
+          });
+          Sentry.captureException(
+            new Error(
+              request1.status + ' - Error from Feature Flag (LaunchDarkly)'
+            )
+          );
+          console.log(`Generated error specific to LaunchDarkly feature flag`);
         });
-        Sentry.captureException(
-          new Error(
-            request1.status + ' - Error from Feature Flag (LaunchDarkly)'
-          )
-        );
-        console.log(`Generated error specific to LaunchDarkly feature flag`);
       } else {
         console.log(`LaunchDarkly flag ${ldFlag} is not enabled...`);
       }
