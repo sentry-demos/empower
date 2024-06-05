@@ -34,21 +34,9 @@ public class ProductsController : ControllerBase
             .Include(e => e.Reviews)
             .ToListAsync();
 
-        CloseDbConnectionSpan();
-        
         span?.Finish();
         
         return products;
-    }
-
-    private static void CloseDbConnectionSpan()
-    {
-        // Workaround for https://github.com/getsentry/sentry-dotnet/issues/2372
-        var span = SentrySdk.GetSpan();
-        if (span?.Operation == "db.connection")
-        {
-            span.Finish();
-        }
     }
 
     private async Task CallHttpApiAsync()
