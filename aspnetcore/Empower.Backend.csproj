@@ -9,12 +9,12 @@
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
   </PropertyGroup>
   
-<!--  <PropertyGroup>-->
-<!--    <SentryOrg>$(SENTRY_ORG)</SentryOrg>-->
-<!--    <SentryProject>$(ASPNETCORE_SENTRY_PROJECT)</SentryProject>-->
-<!--    <SentryUploadSymbols>true</SentryUploadSymbols>-->
-<!--    <SentryUploadSources>true</SentryUploadSources>-->
-<!--  </PropertyGroup>-->
+  <PropertyGroup>
+    <SentryOrg>$(SENTRY_ORG)</SentryOrg>
+    <SentryProject>$(ASPNETCORE_SENTRY_PROJECT)</SentryProject>
+    <SentryUploadSymbols>true</SentryUploadSymbols>
+    <SentryUploadSources>true</SentryUploadSources>
+  </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="7.0.4" />
