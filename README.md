@@ -7,7 +7,7 @@ This is a multi-language/framework project that implements Empower Plant web app
 
 # Usage
 
-Curently deployed to: https://application-monitoring-react-dot-sales-engineering-sf.appspot.com/
+Currently deployed to: https://application-monitoring-react-dot-sales-engineering-sf.appspot.com/
 
 ## Features
 
