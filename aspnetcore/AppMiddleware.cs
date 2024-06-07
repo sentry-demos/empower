@@ -39,7 +39,7 @@ public class AppMiddleware
 
             if (email is not null)
             {
-                scope.User = new SentryUser
+                scope.User = new User
                 {
                     Email = email
                 };
