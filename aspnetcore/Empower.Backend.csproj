@@ -16,7 +16,7 @@
     <SentryUploadSources>true</SentryUploadSources>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+  <PropertyGroup Condition="'$(CODEQL_ANALYSIS)' == 'true'">
     <UseSentryCLI>false</UseSentryCLI>
   </PropertyGroup>
 
