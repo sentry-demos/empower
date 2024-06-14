@@ -40,6 +40,8 @@ import Products from './components/Products';
 import ProductsJoin from './components/ProductsJoin';
 import Nplusone from './components/nplusone';
 
+import * as LDClient from 'launchdarkly-js-client-sdk';
+
 const tracingOrigins = [
   'localhost',
   'empowerplant.io',
@@ -52,7 +54,7 @@ const history = createBrowserHistory();
 
 let ENVIRONMENT;
 if (window.location.hostname === 'localhost') {
-  ENVIRONMENT = 'test';
+  ENVIRONMENT = 'dev';
 } else {
   // App Engine
   ENVIRONMENT = 'production';
@@ -168,138 +170,152 @@ const store = createStore(
   compose(applyMiddleware(logger), sentryReduxEnhancer)
 );
 
-class App extends Component {
-  constructor() {
-    super();
-    this.state = {
-      cart: {
-        items: [],
-        quantities: {},
-        total: 0,
-      },
-      products: {
-        response: [],
-      },
-    };
+export const LDContext = React.createContext();
 
-    let queryParams = new URLSearchParams(history.location.search);
+const App = () => {
 
-    // Set desired backend
-    let backendTypeParam = queryParams.get('backend');
-    const backendType = determineBackendType(backendTypeParam);
-    BACKEND_URL = determineBackendUrl(backendType, ENVIRONMENT);
+  let queryParams = new URLSearchParams(history.location.search);
+  let email = null;
 
-    console.log(`> backendType: ${backendType} | backendUrl: ${BACKEND_URL}`);
+  // Set desired backend
+  let backendTypeParam = queryParams.get('backend');
+  const backendType = determineBackendType(backendTypeParam);
+  BACKEND_URL = determineBackendUrl(backendType, ENVIRONMENT);
 
-    // These also get passed via request headers (see window.fetch below)
-    Sentry.configureScope((scope) => {
-      const customerType = [
-        'medium-plan',
-        'large-plan',
-        'small-plan',
-        'enterprise',
-      ][Math.floor(Math.random() * 4)];
-      scope.setTag('customerType', customerType);
+  console.log(`> backendType: ${backendType} | backendUrl: ${BACKEND_URL}`);
 
-      if (queryParams.get('se')) {
-        // Route components (navigation changes) will now have 'se' tag on scope
-        console.log('> src/index.js se', queryParams.get('se'));
-        scope.setTag('se', queryParams.get('se'));
-        // for use in Checkout.js when deciding whether to pre-fill form
-        // lasts for as long as the tab is open
-        sessionStorage.setItem('se', queryParams.get('se'));
-      }
+  // These also get passed via request headers (see window.fetch below)
+  Sentry.configureScope((scope) => {
+    const customerType = [
+      'medium-plan',
+      'large-plan',
+      'small-plan',
+      'enterprise',
+    ][Math.floor(Math.random() * 4)];
+    scope.setTag('customerType', customerType);
 
-      if (queryParams.get('frontendSlowdown') === 'true') {
-        console.log('> frontend-only slowdown: true');
-        FRONTEND_SLOWDOWN = true;
-        scope.setTag('frontendSlowdown', true);
-      } else {
-        console.log('> frontend + backend slowdown');
-        scope.setTag('frontendSlowdown', false);
-      }
+    if (queryParams.get('se')) {
+      // Route components (navigation changes) will now have 'se' tag on scope
+      console.log('> src/index.js se', queryParams.get('se'));
+      scope.setTag('se', queryParams.get('se'));
+      // for use in Checkout.js when deciding whether to pre-fill form
+      // lasts for as long as the tab is open
+      sessionStorage.setItem('se', queryParams.get('se'));
+    }
 
-      if (queryParams.get('rageclick') === 'true') {
-        RAGECLICK = true;
-      }
+    if (queryParams.get('frontendSlowdown') === 'true') {
+      console.log('> frontend-only slowdown: true');
+      FRONTEND_SLOWDOWN = true;
+      scope.setTag('frontendSlowdown', true);
+    } else {
+      console.log('> frontend + backend slowdown');
+      scope.setTag('frontendSlowdown', false);
+    }
 
-      if (queryParams.get('userFeedback')) {
-        sessionStorage.setItem('userFeedback', queryParams.get('userFeedback'));
-      } else {
-        sessionStorage.setItem('userFeedback', 'false');
-      }
-      sessionStorage.removeItem('lastErrorEventId');
+    if (queryParams.get('rageclick') === 'true') {
+      RAGECLICK = true;
+    }
 
-      scope.setTag('backendType', backendType);
+    if (queryParams.get('userFeedback')) {
+      sessionStorage.setItem('userFeedback', queryParams.get('userFeedback'));
+    } else {
+      sessionStorage.setItem('userFeedback', 'false');
+    }
+    sessionStorage.removeItem('lastErrorEventId');
 
-      let email = null;
-      if (queryParams.get('userEmail')) {
-        email = queryParams.get('userEmail');
-      } else {
-        // making fewer emails so event and user counts for an Issue are not the same
-        let array = [
-          'a',
-          'b',
-          'c',
-          'd',
-          'e',
-          'f',
-          'g',
-          'h',
-          'i',
-          'j',
-          'k',
-          'l',
-          'm',
-          'n',
-          'o',
-          'p',
-          'q',
-          'r',
-          's',
-          't',
-          'u',
-          'v',
-          'w',
-          'x',
-          'y',
-          'z',
-        ];
-        let a = array[Math.floor(Math.random() * array.length)];
-        let b = array[Math.floor(Math.random() * array.length)];
-        let c = array[Math.floor(Math.random() * array.length)];
-        email = a + b + c + '@example.com';
-      }
-      scope.setUser({ email: email });
-    });
+    scope.setTag('backendType', backendType);
 
-    // Automatically append `se`, `customerType` and `userEmail` query params to all requests
-    // (except for requests to Sentry)
-    const nativeFetch = window.fetch;
-    window.fetch = function (...args) {
-      let url = args[0];
-      // When TDA is run in 'mock' mode inside Docker mini-relay will be ingesting on port 9989, see:
-      // https://github.com/sentry-demos/empower/blob/79bed0b78fb3d40dff30411ef26c31dc7d4838dc/mini-relay/Dockerfile#L9
-      let ignore_match = url.match(
-        /^http[s]:\/\/([^.]+\.ingest\.sentry\.io\/|localhost:9989|127.0.0.1:9989).*/
-      );
-      if (!ignore_match) {
-        Sentry.withScope(function (scope) {
-          let se, customerType, email;
-          [se, customerType] = [scope._tags.se, scope._tags.customerType];
-          email = scope._user.email;
-          args[1].headers = { ...args[1].headers, se, customerType, email };
-        });
-      }
-      return nativeFetch.apply(window, args);
-    };
+    if (queryParams.get('userEmail')) {
+      email = queryParams.get('userEmail');
+    } else {
+      // making fewer emails so event and user counts for an Issue are not the same
+      let array = [
+        'a',
+        'b',
+        'c',
+        'd',
+        'e',
+        'f',
+        'g',
+        'h',
+        'i',
+        'j',
+        'k',
+        'l',
+        'm',
+        'n',
+        'o',
+        'p',
+        'q',
+        'r',
+        's',
+        't',
+        'u',
+        'v',
+        'w',
+        'x',
+        'y',
+        'z',
+      ];
+      let a = array[Math.floor(Math.random() * array.length)];
+      let b = array[Math.floor(Math.random() * array.length)];
+      let c = array[Math.floor(Math.random() * array.length)];
+      email = a + b + c + '@example.com';
+    }
+    scope.setUser({ email: email });
+  });
 
-    // Crasher parses query params sent by /tests for triggering crashes for Release Health
-    crasher();
-  }
+  // Automatically append `se`, `customerType` and `userEmail` query params to all requests
+  // (except for requests to Sentry)
+  const nativeFetch = window.fetch;
+  window.fetch = function (...args) {
+    let url = args[0];
+    // When TDA is run in 'mock' mode inside Docker mini-relay will be ingesting on port 9989, see:
+    // https://github.com/sentry-demos/empower/blob/79bed0b78fb3d40dff30411ef26c31dc7d4838dc/mini-relay/Dockerfile#L9
+    let ignore_match = url.match(
+      /^http[s]:\/\/([^.]+\.ingest\.sentry\.io\/|localhost:9989|127.0.0.1:9989).*/
+    );
+    if (!ignore_match) {
+      Sentry.withScope(function (scope) {
+        let se, customerType, email;
+        [se, customerType] = [scope._tags.se, scope._tags.customerType];
+        email = scope._user.email;
+        args[1].headers = { ...args[1].headers, se, customerType, email };
+      });
+    }
+    return nativeFetch.apply(window, args);
+  };
 
-  render() {
-    return (
+  // Crasher parses query params sent by /tests for triggering crashes for Release Health
+  crasher();
+
+
+  //LaunchDarkly settings
+  let lDKind = queryParams.get('se') === null || !queryParams.get('se').match("-tda-") ? "user": "automation";
+  const [lDClient, setlDClient] = React.useState(false);
+  const lDUser = {
+    "kind": lDKind,
+    "key": email,
+    "name": queryParams.get('se'),
+  };
+
+  useEffect(() => {
+    const initializeLDClient = async () => {
+      const client = LDClient.initialize(process.env.REACT_APP_LAUNCHDARKLY_ENVKEY, lDUser); // see console: [LaunchDarkly] LaunchDarkly client initialized
+      client.waitUntilReady().then(() => {
+        setlDClient(client);
+      });
+    }
+  
+    initializeLDClient();
+  }, []);
+
+  return (
+    <LDContext.Provider
+        value={{
+          lDClient: lDClient,
+        }}
+    >
       <Provider store={store}>
         <BrowserRouter history={history}>
           <ScrollToTop />
@@ -358,8 +374,8 @@ class App extends Component {
           <Footer />
         </BrowserRouter>
       </Provider>
-    );
-  }
+    </LDContext.Provider>
+  );
 }
 
 // React-router in use here https://reactrouter.com/web/guides/quick-start

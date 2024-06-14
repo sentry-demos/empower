@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { Link } from 'react-router-dom';
 import slugify from '../utils/slugify';
 import * as Sentry from '@sentry/react';
@@ -12,9 +13,12 @@ import Mason from './employees/mason';
 import Emma from './employees/emma';
 import Noah from './employees/noah';
 
+import { LDContext } from "../index.js";
+
 const employees = [Jane, Lily, Keith, Mason, Emma, Noah];
 
 function About({ backend }) {
+  const lDContext = React.useContext(LDContext);
   useEffect(() => {
     if (!isOddReleaseWeek()) {
       // can't have async sleep in a constructor
@@ -51,6 +55,34 @@ function About({ backend }) {
         );
       }
     });
+
+    if(lDContext.lDClient) {
+      const ldClient = lDContext.lDClient;
+      const ldContext = ldClient.getContext();
+      // throw error if LaunchDarkly Feature Flag is enabled
+      const ldFlag = 'my-sentry-integration-feature';
+      if (ldClient.variation(ldFlag, false)) {
+        console.log(`LaunchDarkly flag ${ldFlag} is enabled!`);
+        Sentry.withScope(function (scope) {
+          scope.setContext('response', request1);
+          scope.setContext('launchdarklyContext', {
+            "kind": ldContext.kind,
+            "key": ldContext.key,
+          });
+          Sentry.captureException(
+            new Error(
+              request1.status + ' - Error from Feature Flag (LaunchDarkly)'
+            )
+          );
+          console.log(`Generated error specific to LaunchDarkly feature flag`);
+        });
+      } else {
+        console.log(`LaunchDarkly flag ${ldFlag} is not enabled...`);
+      }
+      ldClient.flush();
+    } else {
+      console.log(`Launchdarkly client is not on the react context`);
+    }
   }, []);
 
   return (
