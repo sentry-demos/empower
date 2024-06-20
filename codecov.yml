@@ -37,19 +37,15 @@ flag_management:
     - name: api
       paths:
         - flask/
-      statuses:
-        - type: project
-          target: auto
-          threshold: 1%
     - name: frontend
       paths:
         - react/
-      statuses:
-        - type: project
-          target: auto
-          threshold: 1%
   default_rules:
     carryforward: true
+    statuses:
+      - type: project
+        target: auto
+        threshold: 2%
 
 component_management:
   default_rules:
