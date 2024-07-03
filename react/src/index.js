@@ -80,44 +80,18 @@ Sentry.init({
       // Additional SDK configuration goes in here, for example:
       colorScheme: 'system',
     }),
-    new Sentry.metrics.MetricsAggregator(),
-    new Sentry.BrowserProfilingIntegration(),
-    new Sentry.BrowserTracing({
+    Sentry.metrics.metricsAggregatorIntegration(),
+    Sentry.browserProfilingIntegration(),
+    Sentry.reactRouterV6BrowserTracingIntegration({
       tracingOrigins: tracingOrigins,
       tracePropagationTargets: tracingOrigins,
-      routingInstrumentation: Sentry.reactRouterV6Instrumentation(
         useEffect,
         useLocation,
         useNavigationType,
         createRoutesFromChildren,
-        matchRoutes
-      ),
-      beforeNavigate: (context) => {
-        const { name, op } = context;
-
-        const { source } = context.metadata;
-
-        if (source === 'url' && (name === '/' || name === '/checkout')) {
-          context.metadata.source = 'route';
-        }
-
-        return {
-          ...context,
-          // How to parameterize a transaction if not using a Routing library
-          // name: window.location.pathname.replace(/\/employee.*/,'/employee/:id')
-        };
-      },
-      _experiments: {
-        // This enables tracing on user interactions like clicks
-        //  --> 2/13/24 disabling experimental interactions feature
-        //      because it may be preventing navigation transactions
-        //      from being captured
-        enableInteractions: false,
-        // This enables profiling of route transactions in react
-        onStartRouteTransaction: Sentry.onProfilingStartRouteTransaction,
-      },
+        matchRoutes,
     }),
-    new Sentry.Replay({
+    Sentry.replayIntegration({
       // Additional configuration goes in here
       // replaysSessionSampleRate and replaysOnErrorSampleRate is now a top-level SDK option
       blockAllMedia: false,
