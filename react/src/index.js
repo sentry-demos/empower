@@ -72,7 +72,6 @@ Sentry.init({
   release: RELEASE,
   environment: ENVIRONMENT,
   tracesSampleRate: 1.0,
-  tracingOrigins: tracingOrigins,
   tracePropagationTargets: tracingOrigins,
   profilesSampleRate: 1.0,
   replaysSessionSampleRate: 1.0,
