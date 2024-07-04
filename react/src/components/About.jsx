@@ -41,12 +41,14 @@ function About({ backend }) {
     // Error Handling
     response.forEach((r) => {
       if (!r.ok) {
-        Sentry.getCurrentScope().setContext('response', r);
-        Sentry.captureException(
-          new Error(
-            r.status + ' - ' + (response.statusText || 'Server Error for API')
-          )
-        );
+        Sentry.withScope((scope) => {
+          scope.setContext('response', r);
+          Sentry.captureException(
+              new Error(
+                  r.status + ' - ' + (response.statusText || 'Server Error for API')
+              )
+          );
+        });
       }
     });
   }, []);

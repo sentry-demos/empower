@@ -16,7 +16,7 @@ function ProductsJoin({ backend }) {
     })
       .then((result) => {
         if (!result.ok) {
-          Sentry.getCurrentScope().setContext('err', {
+          Sentry.setContext('err', {
             status: result.status,
             statusText: result.statusText,
           });

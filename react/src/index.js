@@ -164,19 +164,18 @@ class App extends Component {
     console.log(`> backendType: ${backendType} | backendUrl: ${BACKEND_URL}`);
 
     // These also get passed via request headers (see window.fetch below)
-    const scope = Sentry.getCurrentScope();
     const customerType = [
       'medium-plan',
       'large-plan',
       'small-plan',
       'enterprise',
     ][Math.floor(Math.random() * 4)];
-    scope.setTag('customerType', customerType);
+    Sentry.setTag('customerType', customerType);
 
     if (queryParams.get('se')) {
       // Route components (navigation changes) will now have 'se' tag on scope
       console.log('> src/index.js se', queryParams.get('se'));
-      scope.setTag('se', queryParams.get('se'));
+      Sentry.setTag('se', queryParams.get('se'));
       // for use in Checkout.js when deciding whether to pre-fill form
       // lasts for as long as the tab is open
       sessionStorage.setItem('se', queryParams.get('se'));
@@ -185,10 +184,10 @@ class App extends Component {
     if (queryParams.get('frontendSlowdown') === 'true') {
       console.log('> frontend-only slowdown: true');
       FRONTEND_SLOWDOWN = true;
-      scope.setTag('frontendSlowdown', true);
+      Sentry.setTag('frontendSlowdown', true);
     } else {
       console.log('> frontend + backend slowdown');
-      scope.setTag('frontendSlowdown', false);
+      Sentry.setTag('frontendSlowdown', false);
     }
 
     if (queryParams.get('rageclick') === 'true') {
@@ -202,7 +201,7 @@ class App extends Component {
     }
     sessionStorage.removeItem('lastErrorEventId');
 
-    scope.setTag('backendType', backendType);
+    Sentry.setTag('backendType', backendType);
 
     let email = null;
     if (queryParams.get('userEmail')) {
@@ -242,7 +241,7 @@ class App extends Component {
       let c = array[Math.floor(Math.random() * array.length)];
       email = a + b + c + '@example.com';
     }
-    scope.setUser({ email: email });
+    Sentry.setUser({ email: email });
 
     // Automatically append `se`, `customerType` and `userEmail` query params to all requests
     // (except for requests to Sentry)
