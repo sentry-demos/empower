@@ -41,9 +41,7 @@ function About({ backend }) {
     // Error Handling
     response.forEach((r) => {
       if (!r.ok) {
-        Sentry.configureScope(function (scope) {
-          Sentry.setContext('response', r);
-        });
+        Sentry.getCurrentScope().setContext('response', r);
         Sentry.captureException(
           new Error(
             r.status + ' - ' + (response.statusText || 'Server Error for API')

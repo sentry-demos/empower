@@ -94,34 +94,33 @@ function Checkout({ backend, rageclick, cart }) {
       return;
     }
 
-    const transaction = Sentry.startTransaction({
+    Sentry.startSpan({
       name: 'Submit Checkout Form',
-    });
-    // Do this or the trace won't include the backend transaction
-    Sentry.configureScope((scope) => scope.setSpan(transaction));
+      forceTransaction: true,
+    }, async (span) => {
+      let hadError = false;
 
-    window.scrollTo({
-      top: 0,
-      behavior: 'auto',
-    });
+      window.scrollTo({
+        top: 0,
+        behavior: 'auto',
+      });
 
-    setLoading(true);
+      setLoading(true);
 
-    let hadError = false;
-    try {
-      await checkout(cart);
-    } catch (error) {
-      Sentry.captureException(error);
-      hadError = true;
-    }
-    setLoading(false);
-    transaction.finish();
+      try {
+        await checkout(cart);
+      } catch (error) {
+        Sentry.captureException(error);
+        hadError = true;
+      }
+      setLoading(false);
 
-    if (hadError) {
-      navigate('/error');
-    } else {
-      navigate('/complete');
-    }
+      if (hadError) {
+        navigate('/error');
+      } else {
+        navigate('/complete');
+      }
+    })
   }
 
   return (
