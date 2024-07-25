@@ -65,8 +65,8 @@ function Checkout({ backend, rageclick, cart }) {
         tags: { status: response.status },
       });
       throw new Error(
-        [response.status, response.statusText || 'Internal Server Error'].join(
-          ' - '
+        [response.status, response.statusText || ' Internal Server Error'].join(
+          ' -'
         )
       );
     }
