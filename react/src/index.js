@@ -72,6 +72,7 @@ Sentry.init({
   release: RELEASE,
   environment: ENVIRONMENT,
   tracesSampleRate: 1.0,
+  tracePropagationTargets: tracingOrigins,
   profilesSampleRate: 1.0,
   replaysSessionSampleRate: 1.0,
   debug: true,
@@ -80,44 +81,15 @@ Sentry.init({
       // Additional SDK configuration goes in here, for example:
       colorScheme: 'system',
     }),
-    new Sentry.metrics.MetricsAggregator(),
-    new Sentry.BrowserProfilingIntegration(),
-    new Sentry.BrowserTracing({
-      tracingOrigins: tracingOrigins,
-      tracePropagationTargets: tracingOrigins,
-      routingInstrumentation: Sentry.reactRouterV6Instrumentation(
-        useEffect,
-        useLocation,
-        useNavigationType,
-        createRoutesFromChildren,
-        matchRoutes
-      ),
-      beforeNavigate: (context) => {
-        const { name, op } = context;
-
-        const { source } = context.metadata;
-
-        if (source === 'url' && (name === '/' || name === '/checkout')) {
-          context.metadata.source = 'route';
-        }
-
-        return {
-          ...context,
-          // How to parameterize a transaction if not using a Routing library
-          // name: window.location.pathname.replace(/\/employee.*/,'/employee/:id')
-        };
-      },
-      _experiments: {
-        // This enables tracing on user interactions like clicks
-        //  --> 2/13/24 disabling experimental interactions feature
-        //      because it may be preventing navigation transactions
-        //      from being captured
-        enableInteractions: false,
-        // This enables profiling of route transactions in react
-        onStartRouteTransaction: Sentry.onProfilingStartRouteTransaction,
-      },
+    Sentry.browserProfilingIntegration(),
+    Sentry.reactRouterV6BrowserTracingIntegration({
+      useEffect,
+      useLocation,
+      useNavigationType,
+      createRoutesFromChildren,
+      matchRoutes,
     }),
-    new Sentry.Replay({
+    Sentry.replayIntegration({
       // Additional configuration goes in here
       // replaysSessionSampleRate and replaysOnErrorSampleRate is now a top-level SDK option
       blockAllMedia: false,
@@ -192,86 +164,84 @@ class App extends Component {
     console.log(`> backendType: ${backendType} | backendUrl: ${BACKEND_URL}`);
 
     // These also get passed via request headers (see window.fetch below)
-    Sentry.configureScope((scope) => {
-      const customerType = [
-        'medium-plan',
-        'large-plan',
-        'small-plan',
-        'enterprise',
-      ][Math.floor(Math.random() * 4)];
-      scope.setTag('customerType', customerType);
+    const customerType = [
+      'medium-plan',
+      'large-plan',
+      'small-plan',
+      'enterprise',
+    ][Math.floor(Math.random() * 4)];
+    Sentry.setTag('customerType', customerType);
 
-      if (queryParams.get('se')) {
-        // Route components (navigation changes) will now have 'se' tag on scope
-        console.log('> src/index.js se', queryParams.get('se'));
-        scope.setTag('se', queryParams.get('se'));
-        // for use in Checkout.js when deciding whether to pre-fill form
-        // lasts for as long as the tab is open
-        sessionStorage.setItem('se', queryParams.get('se'));
-      }
+    if (queryParams.get('se')) {
+      // Route components (navigation changes) will now have 'se' tag on scope
+      console.log('> src/index.js se', queryParams.get('se'));
+      Sentry.setTag('se', queryParams.get('se'));
+      // for use in Checkout.js when deciding whether to pre-fill form
+      // lasts for as long as the tab is open
+      sessionStorage.setItem('se', queryParams.get('se'));
+    }
 
-      if (queryParams.get('frontendSlowdown') === 'true') {
-        console.log('> frontend-only slowdown: true');
-        FRONTEND_SLOWDOWN = true;
-        scope.setTag('frontendSlowdown', true);
-      } else {
-        console.log('> frontend + backend slowdown');
-        scope.setTag('frontendSlowdown', false);
-      }
+    if (queryParams.get('frontendSlowdown') === 'true') {
+      console.log('> frontend-only slowdown: true');
+      FRONTEND_SLOWDOWN = true;
+      Sentry.setTag('frontendSlowdown', true);
+    } else {
+      console.log('> frontend + backend slowdown');
+      Sentry.setTag('frontendSlowdown', false);
+    }
 
-      if (queryParams.get('rageclick') === 'true') {
-        RAGECLICK = true;
-      }
+    if (queryParams.get('rageclick') === 'true') {
+      RAGECLICK = true;
+    }
 
-      if (queryParams.get('userFeedback')) {
-        sessionStorage.setItem('userFeedback', queryParams.get('userFeedback'));
-      } else {
-        sessionStorage.setItem('userFeedback', 'false');
-      }
-      sessionStorage.removeItem('lastErrorEventId');
+    if (queryParams.get('userFeedback')) {
+      sessionStorage.setItem('userFeedback', queryParams.get('userFeedback'));
+    } else {
+      sessionStorage.setItem('userFeedback', 'false');
+    }
+    sessionStorage.removeItem('lastErrorEventId');
 
-      scope.setTag('backendType', backendType);
+    Sentry.setTag('backendType', backendType);
 
-      let email = null;
-      if (queryParams.get('userEmail')) {
-        email = queryParams.get('userEmail');
-      } else {
-        // making fewer emails so event and user counts for an Issue are not the same
-        let array = [
-          'a',
-          'b',
-          'c',
-          'd',
-          'e',
-          'f',
-          'g',
-          'h',
-          'i',
-          'j',
-          'k',
-          'l',
-          'm',
-          'n',
-          'o',
-          'p',
-          'q',
-          'r',
-          's',
-          't',
-          'u',
-          'v',
-          'w',
-          'x',
-          'y',
-          'z',
-        ];
-        let a = array[Math.floor(Math.random() * array.length)];
-        let b = array[Math.floor(Math.random() * array.length)];
-        let c = array[Math.floor(Math.random() * array.length)];
-        email = a + b + c + '@example.com';
-      }
-      scope.setUser({ email: email });
-    });
+    let email = null;
+    if (queryParams.get('userEmail')) {
+      email = queryParams.get('userEmail');
+    } else {
+      // making fewer emails so event and user counts for an Issue are not the same
+      let array = [
+        'a',
+        'b',
+        'c',
+        'd',
+        'e',
+        'f',
+        'g',
+        'h',
+        'i',
+        'j',
+        'k',
+        'l',
+        'm',
+        'n',
+        'o',
+        'p',
+        'q',
+        'r',
+        's',
+        't',
+        'u',
+        'v',
+        'w',
+        'x',
+        'y',
+        'z',
+      ];
+      let a = array[Math.floor(Math.random() * array.length)];
+      let b = array[Math.floor(Math.random() * array.length)];
+      let c = array[Math.floor(Math.random() * array.length)];
+      email = a + b + c + '@example.com';
+    }
+    Sentry.setUser({ email: email });
 
     // Automatically append `se`, `customerType` and `userEmail` query params to all requests
     // (except for requests to Sentry)

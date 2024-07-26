@@ -16,11 +16,9 @@ function ProductsJoin({ backend }) {
     })
       .then((result) => {
         if (!result.ok) {
-          Sentry.configureScope(function (scope) {
-            Sentry.setContext('err', {
-              status: result.status,
-              statusText: result.statusText,
-            });
+          Sentry.setContext('err', {
+            status: result.status,
+            statusText: result.statusText,
           });
           return Promise.reject();
         } else {

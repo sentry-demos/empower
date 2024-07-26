@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@sentry/react": "~7.99.0",
+    "@sentry/react": "~8.15.0",
     "@testing-library/jest-dom": "~5.11.4",
     "@testing-library/react": "~11.1.0",
     "@testing-library/user-event": "~12.1.10",
@@ -54,7 +54,7 @@
   },
   "devDependencies": {
     "@acemarke/react-prod-sourcemaps": "^0.2.1",
-    "@sentry/webpack-plugin": "~2.16.0",
+    "@sentry/webpack-plugin": "^2.20.1",
     "react-app-rewired": "~2.2.1"
   },
   "volta": {
