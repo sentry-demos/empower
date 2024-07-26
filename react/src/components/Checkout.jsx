@@ -73,7 +73,7 @@ function Checkout({ backend, rageclick, cart }) {
     Sentry.metrics.increment('checkout.success');
     Sentry.metrics.distribution('checkout.order.total', cart.total);
     return response;
-  }
+  } 
   function generateUrl(product_id) {
     return product_id;
   }
