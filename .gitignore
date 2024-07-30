@@ -83,7 +83,7 @@ env-config/*
 !env-config/example.env
 
 **/local.env
-tests/env
+tda/env
 
 # .NET
 aspnetcore/bin
