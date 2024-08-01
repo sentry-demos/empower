@@ -166,91 +166,92 @@ class App extends Component {
     // These also get passed via request headers (see window.fetch below)
 
     // NOTE: because the demo extracts tags from the scope in order to pass them
-    // as headers to the backend, we need to make sure we are calling `setTag()`
-    // on the current scope. We don't want to call Sentry.setTag() as is usually
+    // as headers to the backend, we need to make sure we are calling `scope.setTag()`
+    // on the current scope (https://docs.sentry.io/platforms/javascript/enriching-events/scopes/#current-scope). 
+    // We don't want to call Sentry.setTag() directly as is usually
     // recommended (https://docs.sentry.io/platforms/javascript/enriching-events/scopes/#isolation-scope),
     // because that would set the tag on the isolation scope, and make it inaccessible
     // when it's time to set the headers.
-    let currentScope = Sentry.getCurrentScope()
+    Sentry.withScope((scope) => {
+      const customerType = [
+        'medium-plan',
+        'large-plan',
+        'small-plan',
+        'enterprise',
+      ][Math.floor(Math.random() * 4)];
+      scope.setTag('customerType', customerType);
 
-    const customerType = [
-      'medium-plan',
-      'large-plan',
-      'small-plan',
-      'enterprise',
-    ][Math.floor(Math.random() * 4)];
-    currentScope.setTag('customerType', customerType);
+      if (queryParams.get('se')) {
+        // Route components (navigation changes) will now have 'se' tag on scope
+        console.log('> src/index.js se', queryParams.get('se'));
+        scope.setTag('se', queryParams.get('se'));
+        // for use in Checkout.js when deciding whether to pre-fill form
+        // lasts for as long as the tab is open
+        sessionStorage.setItem('se', queryParams.get('se'));
+      }
 
-    if (queryParams.get('se')) {
-      // Route components (navigation changes) will now have 'se' tag on scope
-      console.log('> src/index.js se', queryParams.get('se'));
-      currentScope.setTag('se', queryParams.get('se'));
-      // for use in Checkout.js when deciding whether to pre-fill form
-      // lasts for as long as the tab is open
-      sessionStorage.setItem('se', queryParams.get('se'));
-    }
+      if (queryParams.get('frontendSlowdown') === 'true') {
+        console.log('> frontend-only slowdown: true');
+        FRONTEND_SLOWDOWN = true;
+        scope.setTag('frontendSlowdown', true);
+      } else {
+        console.log('> frontend + backend slowdown');
+        scope.setTag('frontendSlowdown', false);
+      }
 
-    if (queryParams.get('frontendSlowdown') === 'true') {
-      console.log('> frontend-only slowdown: true');
-      FRONTEND_SLOWDOWN = true;
-      currentScope.setTag('frontendSlowdown', true);
-    } else {
-      console.log('> frontend + backend slowdown');
-      currentScope.setTag('frontendSlowdown', false);
-    }
+      if (queryParams.get('rageclick') === 'true') {
+        RAGECLICK = true;
+      }
 
-    if (queryParams.get('rageclick') === 'true') {
-      RAGECLICK = true;
-    }
+      if (queryParams.get('userFeedback')) {
+        sessionStorage.setItem('userFeedback', queryParams.get('userFeedback'));
+      } else {
+        sessionStorage.setItem('userFeedback', 'false');
+      }
+      sessionStorage.removeItem('lastErrorEventId');
 
-    if (queryParams.get('userFeedback')) {
-      sessionStorage.setItem('userFeedback', queryParams.get('userFeedback'));
-    } else {
-      sessionStorage.setItem('userFeedback', 'false');
-    }
-    sessionStorage.removeItem('lastErrorEventId');
+      scope.setTag('backendType', backendType);
 
-    currentScope.setTag('backendType', backendType);
-
-    let email = null;
-    if (queryParams.get('userEmail')) {
-      email = queryParams.get('userEmail');
-    } else {
-      // making fewer emails so event and user counts for an Issue are not the same
-      let array = [
-        'a',
-        'b',
-        'c',
-        'd',
-        'e',
-        'f',
-        'g',
-        'h',
-        'i',
-        'j',
-        'k',
-        'l',
-        'm',
-        'n',
-        'o',
-        'p',
-        'q',
-        'r',
-        's',
-        't',
-        'u',
-        'v',
-        'w',
-        'x',
-        'y',
-        'z',
-      ];
-      let a = array[Math.floor(Math.random() * array.length)];
-      let b = array[Math.floor(Math.random() * array.length)];
-      let c = array[Math.floor(Math.random() * array.length)];
-      email = a + b + c + '@example.com';
-    }
-    currentScope.setUser({ email: email });
+      let email = null;
+      if (queryParams.get('userEmail')) {
+        email = queryParams.get('userEmail');
+      } else {
+        // making fewer emails so event and user counts for an Issue are not the same
+        let array = [
+          'a',
+          'b',
+          'c',
+          'd',
+          'e',
+          'f',
+          'g',
+          'h',
+          'i',
+          'j',
+          'k',
+          'l',
+          'm',
+          'n',
+          'o',
+          'p',
+          'q',
+          'r',
+          's',
+          't',
+          'u',
+          'v',
+          'w',
+          'x',
+          'y',
+          'z',
+        ];
+        let a = array[Math.floor(Math.random() * array.length)];
+        let b = array[Math.floor(Math.random() * array.length)];
+        let c = array[Math.floor(Math.random() * array.length)];
+        email = a + b + c + '@example.com';
+      }
+      scope.setUser({ email: email });
+    });
 
     // Automatically append `se`, `customerType` and `userEmail` query params to all requests
     // (except for requests to Sentry)
