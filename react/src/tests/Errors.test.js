@@ -20,6 +20,11 @@ describe('Errors module', () => {
     jest.spyOn(URLSearchParams.prototype, 'get').mockImplementation((key) => obj[key]);
   };
 
+  test('should throw a notAFunctionError when "crash" is true and errnum is 0', () => {
+    setQueryParams({ crash: 'true', errnum: '0' });
+    expect(() => crasher()).toThrow(TypeError);
+  });
+  
   test('should throw a ReferenceError when "crash" is true and errnum is 1', () => {
     setQueryParams({ crash: 'true', errnum: '1' });
     expect(() => crasher()).toThrow(ReferenceError);
