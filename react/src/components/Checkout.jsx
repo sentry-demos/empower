@@ -26,11 +26,11 @@ function Checkout({ backend, rageclick, cart }) {
     };
   } else {
     initialFormValues = {
-      email: 'plant.lover@gardening.com',
+      email: 'plant.lover@example.com',
       subscribe: '',
       firstName: 'Jane',
       lastName: 'Greenthumb',
-      address: '1199 9th Ave',
+      address: '123 Main Street',
       city: 'San Francisco',
       country: 'United States of America',
       state: 'CA',
