@@ -453,7 +453,7 @@ def ios_react_native_sim_driver(request, selenium_endpoint, se_prefix):
             'appium:platformVersion': '14.5',
 
             'sauce:options': {
-                'appiumVersion': '1.21.0',
+                'appiumVersion': '2.0.0',
                 'build': 'RDC-iOS-Python-Best-Practice',
                 'name': request.node.name,
             },
