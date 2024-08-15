@@ -1,4 +1,4 @@
-# Troubleshooting.
+# Troubleshooting..
 Troubleshooting steps and knowledge for different parts of the software and Sentry
 
 ## Database problems
