@@ -2,24 +2,17 @@ name: mock-data.yml
 on:
   push:
     branches: [master, test-me-*]
-  #pull_request: # currently fails - distracting when using empower PRs for CodeCov demo
+  pull_request:
 
 jobs:
   mock-data:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    - run: docker compose up --wait
-    - run: while ! curl --fail --silent http://localhost:3000; do sleep .5; done
-      timeout-minutes: 1
+    - run: docker compose build
     - uses: actions/setup-python@v4
       with:
         python-version: 3.12
     - run: pip install -r tda/requirements.txt
-    - run: |
-        SLEEP_LENGTH=0 BACKENDS=flask RUN_ID=${{ github.run_id }}_flask TDA_CONFIG=tda/config.local.yaml pytest tda/desktop_web
-    - run: |
-        echo 'waiting for eventual consistency...'
-        sleep 10
-        python3 mini-relay/classify_data.py mini-relay/data out
-        tree out
+    - run: python3 -uS mini-relay/run_tests.py
+    - run: tree mini-relay/classified
