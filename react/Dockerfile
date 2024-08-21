@@ -1,4 +1,12 @@
-FROM node:16-buster-slim
+FROM node:18-buster-slim
+
+RUN : \
+    && apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        # for envsusbst
+        gettext \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN npm install -g serve
 
@@ -19,6 +27,6 @@ RUN \
     REACT_APP_RUBYONRAILS_BACKEND=http://localhost:5000 \
     REACT_APP_RUBY_BACKEND=http://localhost:4567 \
     REACT_APP_SPRINGBOOT_BACKEND=http://localhost:8090 \
-        npm run build
+        ./build.sh
 
 CMD ["serve", "-s", "build"]
