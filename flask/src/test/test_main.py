@@ -13,7 +13,7 @@ from flask import json
 class TestMain(unittest.TestCase):
 
     # @patch('..main.get_inventory')
-    # @patch('..main.sentry_sdk')
+    # @patch('..main. sentry_sdk')
     def test_checkout_success(self):
         # mock_get_inventory.return_value = [{'count': 10, 'productId': 1}]
         
