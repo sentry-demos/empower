@@ -1,3 +1,6 @@
+### Couldn't get this test to work. Leaving commented out for now.
+### Requires more packages to be installed, as well as proper/more mocking
+
 # import unittest
 # from unittest.mock import patch, MagicMock
 # import json
@@ -10,8 +13,6 @@
 # os.environ['FLASK_ENV'] = 'test'
 
 # from ..db import get_products, get_products_join, get_inventory, formatArray, DatabaseConnectionError
-
-
 
 # class TestDBFunctions(unittest.TestCase):
 
