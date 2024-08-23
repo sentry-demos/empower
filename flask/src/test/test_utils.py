@@ -2,7 +2,7 @@
 
 import unittest
 from unittest.mock import patch, Mock
-from ..utils import weighter, parseHeaders, get_iterator, yuval, chris
+from ..utils import weighter, parseHeaders, get_iterator, yuval, chris, get_subscription_plan
 from datetime import datetime
 from pytz import timezone
 
@@ -41,6 +41,11 @@ class TestFunctions(unittest.TestCase):
         expected = {'Authorization': 'Bearer token', 'Content-Type': None}
         
         self.assertEqual(result, expected)
+
+    def test_get_subscription_plan():
+        assert get_subscription_plan('monthly') == 'monthly'
+        assert get_subscription_plan('annual') == 'annual'
+        assert get_subscription_plan('nonexistent_plan') == 'annual'
 
     def test_get_iterator_negative(self):
         result = get_iterator(-1)
