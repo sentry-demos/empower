@@ -6,16 +6,13 @@ coverage:
   status:
     project:
       default:
-        informational: true
-        target: 50%
+        target: 35%
     patch:
       frontend:
-        informational: true
         target: 80%
         flags:
           - frontend
       api:
-        informational: true
         target: 50%
         flags:
           - api
