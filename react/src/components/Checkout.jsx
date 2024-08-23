@@ -26,11 +26,11 @@ function Checkout({ backend, rageclick, cart }) {
     };
   } else {
     initialFormValues = {
-      email: 'plant.lover@gardening.com',
+      email: 'plant.lover@example.com',
       subscribe: '',
       firstName: 'Jane',
       lastName: 'Greenthumb',
-      address: '1199 9th Ave',
+      address: '123 Main Street',
       city: 'San Francisco',
       country: 'United States of America',
       state: 'CA',
@@ -65,15 +65,15 @@ function Checkout({ backend, rageclick, cart }) {
         tags: { status: response.status },
       });
       throw new Error(
-        [response.status, response.statusText || 'Internal Server Error'].join(
-          ' - '
+        [response.status, response.statusText || ' Internal Server Error'].join(
+          ' -'
         )
       );
     }
     Sentry.metrics.increment('checkout.success');
     Sentry.metrics.distribution('checkout.order.total', cart.total);
     return response;
-  }
+  } 
   function generateUrl(product_id) {
     return product_id;
   }
@@ -94,34 +94,33 @@ function Checkout({ backend, rageclick, cart }) {
       return;
     }
 
-    const transaction = Sentry.startTransaction({
+    Sentry.startSpan({
       name: 'Submit Checkout Form',
-    });
-    // Do this or the trace won't include the backend transaction
-    Sentry.configureScope((scope) => scope.setSpan(transaction));
+      forceTransaction: true,
+    }, async (span) => {
+      let hadError = false;
 
-    window.scrollTo({
-      top: 0,
-      behavior: 'auto',
-    });
+      window.scrollTo({
+        top: 0,
+        behavior: 'auto',
+      });
 
-    setLoading(true);
+      setLoading(true);
 
-    let hadError = false;
-    try {
-      await checkout(cart);
-    } catch (error) {
-      Sentry.captureException(error);
-      hadError = true;
-    }
-    setLoading(false);
-    transaction.finish();
+      try {
+        await checkout(cart);
+      } catch (error) {
+        Sentry.captureException(error);
+        hadError = true;
+      }
+      setLoading(false);
 
-    if (hadError) {
-      navigate('/error');
-    } else {
-      navigate('/complete');
-    }
+      if (hadError) {
+        navigate('/error');
+      } else {
+        navigate('/complete');
+      }
+    })
   }
 
   return (

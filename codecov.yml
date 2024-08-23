@@ -21,7 +21,7 @@ github_checks:
   annotations: true
 
 comment:
-  layout: "newheader, diff, flags, files, components"
+  layout: "newheader, diff, flags, components, files"
   require_changes: false # false :: posts comment regardless of whether coverage changes
   require_base: false # [false :: doesn't need a base report to post]
   require_head: true # [true :: must have a head report to post]
