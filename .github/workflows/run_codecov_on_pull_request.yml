@@ -32,6 +32,8 @@ jobs:
           pip install -U pytest
           pip install pytz
           pip install pytest-codecov
+          pip install sentry_sdk
+          pip install flask
           pytest --cov=. --cov-report=xml
         working-directory: ./empower/flask/src
       - uses: codecov/codecov-action@v3
