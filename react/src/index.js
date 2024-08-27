@@ -95,6 +95,7 @@ Sentry.init({
       blockAllMedia: false,
       // https://docs.sentry.io/platforms/javascript/session-replay/configuration/#network-details
       networkDetailAllowUrls: ['/checkout', '/products'],
+      unmask: [".sentry-unmask"],
     }),
   ],
   beforeSend(event, hint) {
