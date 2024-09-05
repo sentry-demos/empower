@@ -59,7 +59,7 @@ The [user feedback widget](https://docs.sentry.io/platforms/javascript/user-feed
 1. Permit your IP address in CloudSQL:
    1. Go to https://console.cloud.google.com/sql/instances
    2. You will see 1 instance, under Actions column click "..." -> Edit
-   3. Expand "Connections", under Authorized Networks click "ADD NETWORK"
+   3. Expand "Connections". By default you'll be in the Summary tab. Navigate to the Networking tab. under Authorized Networks click "ADD NETWORK"
    4. Google "my IP address", add it.
 2. Copy `local.env` from [empower-config](https://github.com/sentry-demos/empower-config) into `env-config` directory of your local repo, or, if you don't have access to it, follow `env-config/example.env`.
 3. The `REACT_APP_FLASK_BACKEND` in `env-config/local.env` points to the backend instance deployed to AppEngine, the same one used by the cloud-hosted React web app. Flask is the default backend. If you expect to run other backend types, add values for those in `env-config` in your `local.env` file as well (i.e. `REACT_APP_EXPRESS_BACKEND`).
