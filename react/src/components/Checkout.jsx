@@ -39,8 +39,8 @@ function Checkout({ backend, rageclick, cart }) {
   }
   const [form, setForm] = useState(initialFormValues);
 
-  async function checkout(cart) {
-    Sentry.metrics.increment('checkout.click');
+  async function checkout(cart, checkout_span) {
+    checkout_span.setAttribute("checkout.click.span", 1);
     const stopMeasurement = measureRequestDuration('/checkout');
     const response = await fetch(backend + '/checkout?v2=true', {
       method: 'POST',
@@ -50,28 +50,32 @@ function Checkout({ backend, rageclick, cart }) {
         form: form,
       }),
     })
-      .catch((err) => {
-        Sentry.metrics.increment('checkout.error', 1, {
-          tags: { status: 500 },
-        });
-        return { ok: false, status: 500 };
+    .catch((err) => {
+      checkout_span.setAttributes({
+        "checkout.error": 1,
+        "status": 500
       })
-      .then((res) => {
-        stopMeasurement();
-        return res;
-      });
+      return { ok: false, status: 500 };
+    })
+    .then((res) => {
+      stopMeasurement();
+      return res;
+    });
     if (!response.ok) {
-      Sentry.metrics.increment('checkout.error', 1, {
-        tags: { status: response.status },
-      });
+      checkout_span.setAttributes({
+        "checkout.error": 1,
+        "status": response.status
+      })
+
       throw new Error(
         [response.status, response.statusText || ' Internal Server Error'].join(
           ' -'
         )
       );
     }
-    Sentry.metrics.increment('checkout.success');
-    Sentry.metrics.distribution('checkout.order.total', cart.total);
+    checkout_span.setAttribute("checkout.success", 1)
+    checkout_span.setAttribute("checkout.order.total", cart.total);
+
     return response;
   } 
   function generateUrl(product_id) {
@@ -108,7 +112,7 @@ function Checkout({ backend, rageclick, cart }) {
       setLoading(true);
 
       try {
-        await checkout(cart);
+        await checkout(cart, span);
       } catch (error) {
         Sentry.captureException(error);
         hadError = true;

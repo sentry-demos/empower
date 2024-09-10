@@ -6,16 +6,19 @@ import * as Sentry from '@sentry/react';
  * @param {string} endpoint the endpoint that was called
  * @returns {() => void} a function to stop the measurement
  */
-export default function measureRequestDuration(endpoint) {
+export default function measureRequestDuration(endpoint, requestSpan) {
   const start = Date.now();
   
   function stopMeasurement() {
     const end = Date.now();
     const duration = end - start;
-    Sentry.metrics.distribution('request.duration', duration, {
-      unit: 'millisecond',
-      tags: { endpoint }
-    });
+    if (requestSpan !== undefined) {
+      requestSpan.setAttributes({
+        "request.duration": duration,
+        "unit": "milisecond",
+        "endpoint": endpoint
+      })
+    }
   }
 
   return stopMeasurement;
