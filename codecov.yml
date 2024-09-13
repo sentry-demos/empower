@@ -75,4 +75,4 @@ component_management:
 # in that location. this is not a big deal, but in case anyone asks this is why
 # it is showing up.
 ignore:
-  - "flask/src/test/test_utils.py"
+  - "flask/src/test/"
