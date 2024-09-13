@@ -63,16 +63,16 @@ component_management:
       name: product_component
       paths:
         - react/src/components/**
-      
+
 # Vlad said--
-# i just checked the file. the test_utils.py is purely a test file, 
-# just assertions and tests, so in theory it shouldn't be counted 
-# towards the overall coverage of the repo or "production code". 
-# i'm not sure why some tools include the tests as part of the coverage report, 
-# but it can be mitigated by excluding them via codecov.yaml or --source setting 
-# in the pytest, but the issue is that the test directory is also under the 
-# /src/  so it looks like it is instrumenting the code for all the python files 
-# in that location. this is not a big deal, but in case anyone asks this is why 
+# i just checked the file. the test_utils.py is purely a test file,
+# just assertions and tests, so in theory it shouldn't be counted
+# towards the overall coverage of the repo or "production code".
+# i'm not sure why some tools include the tests as part of the coverage report,
+# but it can be mitigated by excluding them via codecov.yaml or --source setting
+# in the pytest, but the issue is that the test directory is also under the
+# /src/  so it looks like it is instrumenting the code for all the python files
+# in that location. this is not a big deal, but in case anyone asks this is why
 # it is showing up.
 ignore:
   - "flask/src/test/test_utils.py"
