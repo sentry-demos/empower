@@ -1,9 +1,9 @@
 name: pr_review_reminder.yml
 
 on:
-  schedule:
+  #schedule:
     # Every Wednesday after lunch PDT
-    - cron: "0 20 * * WED"
+  #  - cron: "0 20 * * WED"
   workflow_dispatch:
 
 jobs:
