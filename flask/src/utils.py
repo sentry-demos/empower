@@ -28,6 +28,13 @@ def parseHeaders(keys, headers):
         parsedHeaders[key] = value
     return parsedHeaders
 
+def test_rounding_codecov(keys, headers):
+    parsedHeaders = {}
+    for key in keys:
+        value = headers.get(key) if headers.get(key) != "undefined" else None
+        parsedHeaders[key] = value
+    return parsedHeaders
+
 def get_iterator(n):
     #fibonacci
     if n < 0:
