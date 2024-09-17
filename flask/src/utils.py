@@ -31,6 +31,7 @@ def parseHeaders(keys, headers):
 def get_subscription_plan(type):
     return 'monthly' if type == 'monthly' else 'annual'
 
+# TODO
 def get_if_else_result():
     if True:
         return True
