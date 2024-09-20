@@ -1,5 +1,4 @@
-import datetime
-import operator
+import re
 import os
 import random
 import requests
@@ -32,10 +31,18 @@ def before_send(event, hint):
         se = event['tags']['se']
 
     if se not in [None, "undefined"]:
+        se_tda_prefix_regex = r"[^-]+-tda-[^-]+-"
+        se_fingerprint = se
+        prefix = re.findall(se_tda_prefix_regex, se)
+        if prefix:
+            # Now that TDA puts platform/browser and test path into SE tag we want to prevent
+            # creating separate issues for those. See https://github.com/sentry-demos/empower/pull/332
+            se_fingerprint = prefix[0]
+            
         if se.startswith('prod-tda-'):
-            event['fingerprint'] = ['{{ default }}', se, RELEASE]
+            event['fingerprint'] = ['{{ default }}', se_fingerprint, RELEASE]
         else:
-            event['fingerprint'] = ['{{ default }}', se]
+            event['fingerprint'] = ['{{ default }}', se_fingerprint]
 
     return event
 
