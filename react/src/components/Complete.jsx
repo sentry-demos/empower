@@ -2,8 +2,14 @@ import { Link } from 'react-router-dom';
 import './complete.css';
 import { useSelector } from 'react-redux';
 
-function Complete(props) {
+function Complete({cart, resetCart}) {
   const cart = useSelector((state) => state.cart);
+
+  useEffect(() => {
+    window.setTimeout(() => {
+      Sentry.getReplay().flush();
+    }, 1000);
+  });
 
   const RandomNumber = Math.floor(Math.random() * 99999) + 10000;
 

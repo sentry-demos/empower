@@ -5,6 +5,11 @@ import { useEffect } from 'react';
 
 function CompleteError() {
   useEffect(() => {
+    
+    window.setTimeout(() => {
+      Sentry.getReplay().flush();
+    }, 1000);
+
     window.setTimeout(() => {
       if (sessionStorage.getItem('userFeedback') === 'true') {
         sessionStorage.removeItem('userFeedback');
