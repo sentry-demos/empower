@@ -50,7 +50,7 @@ def test_homepage_vue(desktop_web_driver, endpoints, random, batch_size, sleep_l
             except Exception as err:
                 missedButtons = missedButtons + 1
                 sentry_sdk.set_tag("missedButtons", missedButtons)
-                sentry_sdk.set_tag("seleniumSessionId", desktop_web_driver.session_id)
+                sentry_sdk.set_tag("sauceLabsUrl", desktop_web_driver.session_id)
 
                 if err:
                     sentry_sdk.capture_exception(err)
