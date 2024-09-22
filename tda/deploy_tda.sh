@@ -1,7 +1,14 @@
 #!/bin/bash
 
 HOST=empower-tda-and-crons.us-central1-a.sales-engineering-sf
+
 DIR=/home/kosty/empower-tda
+TDA_CONFIG=config.yaml
+
+if [ "$1" == "staging" ]; then
+  DIR=/home/kosty/empower-tda-staging
+  TDA_CONFIG=config.staging.yaml
+fi
 
 function cleanup {
   echo "NOTE: if ssh check hangs, re-run 'gcloud compute config-ssh; ssh $HOST exit' to fix"
@@ -66,7 +73,7 @@ echo Killing any currently running TDA processes...
 ssh $HOST 'cd '$DIR' && ./stop.sh'
 
 echo "Starting TDA..."
-ssh $HOST 'cd '$DIR' && ./run.sh'
+ssh $HOST 'cd '$DIR' && TDA_CONFIG='$TDA_CONFIG' ./run.sh'
 if [ $? != 0 ]; then
   echo "[ERROR] failed to start TDA"
   exit 1

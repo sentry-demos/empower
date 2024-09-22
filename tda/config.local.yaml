@@ -1,5 +1,7 @@
 mode: mock # events captured by mini-relay as to be used as templates for streaming events later
 
+environment: production
+
 browsers:
 - remote: false
   browserName: chrome

@@ -1,5 +1,7 @@
 mode: direct # events ingested directly into demo.sentry.io
 
+environment: production
+
 browsers:
 - remote: true
   browserName: chrome
