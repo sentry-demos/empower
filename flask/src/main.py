@@ -7,7 +7,7 @@ from flask import Flask, json, request, make_response, send_from_directory
 from flask_cors import CORS
 import dotenv
 from .db import get_products, get_products_join, get_inventory
-from .utils import parseHeaders, get_iterator
+from .utils import parseHeaders, get_iterator, apply_timeout, TimeoutError
 import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
 from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
@@ -160,33 +160,27 @@ def products():
     timeout_seconds = (EXTREMELY_SLOW_PROFILE if fetch_promotions else NORMAL_SLOW_PROFILE)
     in_stock_only = request.args.get('in_stock_only')
 
+    # get_iterator(38) takes between 13 and 55 seconds when running on a F1 instance 
+    # (384 MB @ 600 MHz, default in Google App Engine). Runtime can be estimated using
+    # the golden ratio (incrementing n by 1 should slow it down by a factor of 1.618)
+    MIN_FIBONACCI_N = 40 # get_iterator(40) should be > 30 seconds most of the time in GCP F1 instance
+    # ^ may need to adjust if need to test `extremely_slow` locally on MacBook Pro
+
     try:
         with sentry_sdk.start_span(op="/products.get_products", description="function"):
             with sentry_sdk.metrics.timing(key="products.get_products.execution_time"):
                 rows = get_products()
 
             if RUN_SLOW_PROFILE:
-                start_time = time.time()
-                productsJSON = json.loads(rows)
-                descriptions = [product["description"] for product in productsJSON]
                 with sentry_sdk.start_span(op="/get_iterator", description="function"):
-                    with sentry_sdk.metrics.timing(key="products.get_iterator.execution_time"):
-                        loop = get_iterator(len(descriptions) * 6 + (2 if fetch_promotions else -1))
+                    get_iterator_with_timeout = apply_timeout(get_iterator, timeout_seconds)
+                    with sentry_sdk.metrics.timing(key="products.get_iterator.execution_time", 
+                                                   tags={"es": "true" if fetch_promotions else "false"}): 
+                        try:
+                            get_iterator_with_timeout(MIN_FIBONACCI_N)
+                        except TimeoutError:
+                            pass
 
-                    for i in range(loop * 10):
-                        time_delta = time.time() - start_time
-                        if time_delta > timeout_seconds:
-                            break
-
-                        for i, description in enumerate(descriptions):
-                            for pest in pests:
-                                if in_stock_only and productsJSON[i] not in product_inventory:
-                                    continue
-                                if pest in description:
-                                    try:
-                                        del productsJSON[i:i + 1]
-                                    except:
-                                        productsJSON = json.loads(rows)
     except Exception as err:
         sentry_sdk.capture_exception(err)
         raise (err)

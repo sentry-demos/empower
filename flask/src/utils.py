@@ -1,7 +1,8 @@
 from datetime import datetime
 #import numpy
 from pytz import timezone
-import time
+import threading
+import functools
 from random import choices
 
 # https://www.postgresql.org/docs/9.0/functions-datetime.html
@@ -28,6 +29,45 @@ def parseHeaders(keys, headers):
         parsedHeaders[key] = value
     return parsedHeaders
 
+class TimeoutError(Exception):
+    pass
+
+import signal
+import functools
+import time
+
+class TimeoutError(Exception):
+    pass
+
+def apply_timeout(func, seconds):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        # Container to hold the result
+        result = [None]
+        exception = [None]
+
+        def target():
+            try:
+                result[0] = func(*args, **kwargs)
+            except Exception as e:
+                exception[0] = e
+
+        # Create a thread to run the function
+        thread = threading.Thread(target=target)
+        thread.start()
+        thread.join(timeout=seconds)  # Timeout after specified seconds
+
+        if thread.is_alive():
+            raise TimeoutError(f"Function '{func.__name__}' timed out after {seconds} seconds")
+
+        if exception[0]:
+            raise exception[0]  # Re-raise the exception if one occurred inside the thread
+
+        return result[0]
+
+    return wrapper
+
+
 def get_iterator(n):
     #fibonacci
     if n < 0:
@@ -38,6 +78,7 @@ def get_iterator(n):
         return 1
     else:
         return get_iterator(n-1) + get_iterator(n-2)
+
 
 def yuval(text):
     return ""
