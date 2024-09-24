@@ -407,6 +407,7 @@ def _sauce_browser(request, selenium_endpoint, se):
 
             # send to Sentry empower-tda, look for tags: se, sauceLabsUrl
             sentry_sdk.capture_message("Selenium Session Done")
+            sentry_sdk.flush()
 
     except Exception as err:
         sentry_sdk.capture_exception(err)
