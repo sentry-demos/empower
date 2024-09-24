@@ -259,8 +259,9 @@ def cexp(random):
         #else:
         #    return 3 + now.minute // 30
 
-        # change every hour (cycle = 5 hours)
-        return now.hour % 5
+        # change every hour, except for segment #4 that's 2 hours long (cycle = 6 hours)
+        mod5 = now.hour % 6 
+        return 4 if mod5 == 5 else mod5
 
     # array length must match number of possible time segments
     probabilities = {       # segments    0    1    2    3    4 
