@@ -16,6 +16,12 @@ function Complete({cart, resetCart}) {
     }, 1000);
   }, [resetCart]);
 
+  useEffect(() => {
+    window.setTimeout(() => {
+      Sentry.getReplay().flush();
+    }, 1000);
+  });
+
   const RandomNumber = Math.floor(Math.random() * 99999) + 10000;
 
   return (
