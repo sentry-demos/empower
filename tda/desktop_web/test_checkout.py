@@ -7,6 +7,7 @@ def test_checkout(desktop_web_driver, endpoints, batch_size, backend, random, sl
     for endpoint in endpoints.react_endpoints:
         endpoint_products = endpoint + "/products"
         sentry_sdk.set_tag("endpoint", endpoint_products)
+        sentry_sdk.set_tag("batch_size", batch_size)
 
         missedButtons = 0
 
@@ -19,6 +20,8 @@ def test_checkout(desktop_web_driver, endpoints, batch_size, backend, random, sl
                 'backend': backend(exclude='ruby')
             }
             url = endpoint_products + '?' + urlencode(query_string)
+            
+            sentry_sdk.metrics.incr(key="test_checkout.iteration.started", value=1, tags=query_string)
 
             # Buttons are not available if products didn't load before selection, so handle this
             try:
@@ -60,12 +63,16 @@ def test_checkout(desktop_web_driver, endpoints, batch_size, backend, random, sl
                 desktop_web_driver.find_element(By.CSS_SELECTOR, '.complete-checkout-btn').click()
                 time.sleep(sleep_length())
 
+                sentry_sdk.metrics.incr(key="test_checkout.iteration.completed", value=1, tags=query_string)
+
             except Exception as err:
                 missedButtons = missedButtons + 1
                 sentry_sdk.set_tag("missedButtons", missedButtons)
 
+                sentry_sdk.metrics.incr(key="test_checkout.iteration.abandoned", value=1, tags=query_string)
                 if err:
                     sentry_sdk.capture_exception(err)
+
 
             time.sleep(sleep_length())
 
