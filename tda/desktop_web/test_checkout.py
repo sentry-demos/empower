@@ -39,7 +39,7 @@ def test_checkout(desktop_web_driver, endpoints, batch_size, backend, random, sl
                     for i in range(random.randrange(4) + 1):
                         add_to_cart_btn.click()
                 except Exception as err:
-                    sentry_sdk.metrics.incr(key="test_checkout.iteration.abandoned", value=1, tags=dict(query_string, reason="no_add_to_cart_btn({err.__class__.__name__})"))
+                    sentry_sdk.metrics.incr(key="test_checkout.iteration.abandoned", value=1, tags=dict(query_string, reason=f"no_add_to_cart_btn({err.__class__.__name__})"))
                     continue
 
                 # Add 2 second sleep between the initial /products pageload
@@ -54,7 +54,7 @@ def test_checkout(desktop_web_driver, endpoints, batch_size, backend, random, sl
                 try:
                     desktop_web_driver.find_element(By.CSS_SELECTOR, 'a[href="/checkout"]').click()
                 except Exception as err:
-                    sentry_sdk.metrics.incr(key="test_checkout.iteration.abandoned", value=1, tags=dict(query_string, reason="no_proceed_to_checkout_btn({err.__class__.__name__})"))
+                    sentry_sdk.metrics.incr(key="test_checkout.iteration.abandoned", value=1, tags=dict(query_string, reason=f"no_proceed_to_checkout_btn({err.__class__.__name__})"))
                     continue
 
                 time.sleep(sleep_length())
