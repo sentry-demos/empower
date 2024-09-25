@@ -8,11 +8,17 @@ import Loader from 'react-loader-spinner';
 import ProductCard from './ProductCard';
 import { useState, useEffect } from 'react';
 
-function Products({ frontendSlowdown, backend }) {
+function Products({ frontendSlowdown, backend, productsExtremelySlow, productsBeError, addToCartJsError }) {
   const [products, setProducts] = useState([]);
 
   function determineProductsEndpoint() {
-    return frontendSlowdown ? '/products-join' : '/products';
+    if (productsExtremelySlow) {
+      return '/products?fetch_promotions=true';
+    } else if (productsBeError) {
+      return '/products?in_stock_only=1';
+    } else {
+      return frontendSlowdown ? '/products-join' : '/products';
+    }
   }
 
   function fetchUncompressedAsset() {
@@ -150,7 +156,7 @@ function Products({ frontendSlowdown, backend }) {
           });
 
           return (
-            <ProductCard key={i} product={product} stars={stars}></ProductCard>
+            <ProductCard key={i} product={product} stars={stars} addToCartJsError={addToCartJsError}></ProductCard>
           );
         })}
       </ul>

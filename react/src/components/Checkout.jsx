@@ -6,7 +6,7 @@ import * as Sentry from '@sentry/react';
 import { connect } from 'react-redux';
 import Loader from 'react-loader-spinner';
 
-function Checkout({ backend, rageclick, cart }) {
+function Checkout({ backend, rageclick, checkout_success, cart }) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   let initialFormValues;
@@ -49,6 +49,7 @@ function Checkout({ backend, rageclick, cart }) {
       body: JSON.stringify({
         cart: cart,
         form: form,
+        validate_inventory: checkout_success ? "false" : "true",
       }),
     })
       .catch((err) => {

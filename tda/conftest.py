@@ -217,6 +217,70 @@ def backend(random):
         return random.sample(backends, 1)[0]
     return random_backend
 
+
+# returns number of "release weeks" since 2022-01-01 (???)
+# see react/src/utils/time.js
+def get_release_week():
+    release = subprocess.run(['../bin/release.sh'], stdout=subprocess.PIPE).stdout.decode().strip()
+    year, month, week = map(int, release.split('.'))
+    past_years = (year - 22) * 59 - (year - 21) // 4
+    return past_years + (month - 1) * 5 + (-1 if month > 2 and year % 4 != 0 else 0) + week
+
+class CExp:
+    STANDARD_CHECKOUT_FAIL  = "standard_checkout_fail"
+    PRODUCTS_EXTREMELY_SLOW = "products_extremely_slow"
+    PRODUCTS_BE_ERROR       = "products_be_error"
+    ADD_TO_CART_JS_ERROR    = "add_to_cart_js_error"
+    CHECKOUT_SUCCESS        = "checkout_success" 
+
+
+# Simulate critical experiences (cexp) in user journey
+@pytest.fixture
+def cexp(random):
+
+    # 1, 2, 3, ... each has it's own probablitiy of certain types of failures
+    def time_segment():
+        now = datetime.now()
+
+        # ideally these are correlated with release timestamps (vertical bars in graphs):
+        #return get_release_week() % 2
+
+        # OR, for testing cycle through 4 segements every hour (15 minutes each)
+        #return now().minute // 15
+
+        # testing cycle through 5 segements every 2 hours (15/30 minutes each)
+        #if now.hour % 2 == 0:
+        #    if now.minute < 30: 
+        #        return 0
+        #    elif now.minute < 45:
+        #        return 1
+        #    else:
+        #        return 2
+        #else:
+        #    return 3 + now.minute // 30
+
+        # change every hour, except for segment #4 that's 2 hours long (cycle = 6 hours)
+        mod5 = now.hour % 6 
+        return 4 if mod5 == 5 else mod5
+
+    # array length must match number of possible time segments
+    probabilities = {       # segments    0    1    2    3    4 
+        CExp.STANDARD_CHECKOUT_FAIL:    [1.0, 0.0, 0.0, 0.0, 0.0],
+        CExp.PRODUCTS_EXTREMELY_SLOW:   [0.0, 1.0, 0.0, 0.0, 0.0],
+        CExp.PRODUCTS_BE_ERROR:         [0.0, 0.0, 1.0, 0.0, 0.0],
+        CExp.ADD_TO_CART_JS_ERROR:      [0.0, 0.0, 0.0, 1.0, 0.0],
+        CExp.CHECKOUT_SUCCESS:          [0.0, 0.0, 0.0, 0.0, 1.0],
+    }
+    
+    def random_cexp():
+        return random.choices(
+            list(probabilities.keys()),
+            weights=list(probabilities.values())[time_segment()],
+            k=1)[0]
+
+    return random_cexp
+
+
 @pytest.fixture
 def endpoints():
     return CONFIG
@@ -316,7 +380,7 @@ def _sauce_browser(request, selenium_endpoint, se):
             extra_params=urlencode({'se': se})
         )
 
-        browser.implicitly_wait(10)
+        browser.implicitly_wait(20)
 
         sentry_sdk.set_tag("sauceLabsUrl", f"https://app.saucelabs.com/tests/{browser.session_id}")
 
@@ -344,6 +408,7 @@ def _sauce_browser(request, selenium_endpoint, se):
 
             # send to Sentry empower-tda, look for tags: se, sauceLabsUrl
             sentry_sdk.capture_message("Selenium Session Done")
+            sentry_sdk.flush()
 
     except Exception as err:
         sentry_sdk.capture_exception(err)

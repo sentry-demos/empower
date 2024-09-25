@@ -5,10 +5,19 @@ import { connect } from 'react-redux';
 import { setProducts, addProduct, setFlag } from '../actions';
 
 function ProductCard(props) {
+  let inventory = [3, 4, 5, 6]
+  if (props.addToCartJsError) {
+    inventory = undefined
+  }
+
   const navigate = useNavigate();
   const product = props.product;
   const itemLink = '/product/' + product.id;
   const stars = props.stars;
+
+  function validate_inventory(product) {
+    return product && inventory.includes(product.id)
+  }
 
   return (
     <li key={product.id}>
@@ -27,7 +36,14 @@ function ProductCard(props) {
           <h2>{product.title}</h2>
           <p className="product-description">{product.description}</p>
         </div>
-        <button id="addToCart" onClick={() => props.addProduct(product)}>
+        <button
+          id="addToCart"
+          onClick={() => {
+            if (validate_inventory(product)) {
+              props.addProduct(product);
+            }
+          }}
+        >
           <span className="sentry-unmask">Add to cart — $</span>
           {product.price}.00
         </button>

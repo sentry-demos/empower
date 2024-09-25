@@ -22,6 +22,9 @@ ENVIRONMENT = None
 RUBY_BACKEND = None
 RUN_SLOW_PROFILE = None
 
+NORMAL_SLOW_PROFILE = 2 # seconds
+EXTREMELY_SLOW_PROFILE = 24
+
 
 def before_send(event, hint):
     # 'se' tag may have been set in app.before_request
@@ -105,6 +108,7 @@ def checkout():
     order = json.loads(request.data)
     cart = order["cart"]
     form = order["form"]
+    validate_inventory = order["validate_inventory"] == "true"
 
     inventory = []
     try:
@@ -115,13 +119,14 @@ def checkout():
         raise (err)
 
     print("> /checkout inventory", inventory)
+    print("> validate_inventory", validate_inventory)
 
     with sentry_sdk.start_span(op="process_order", description="function"):
         quantities = cart['quantities']
         for cartItem in quantities:
             for inventoryItem in inventory:
                 print("> inventoryItem.count", inventoryItem['count'])
-                if (inventoryItem.count < quantities[cartItem] or quantities[cartItem] >= inventoryItem.count):
+                if (validate_inventory and (inventoryItem.count < quantities[cartItem] or quantities[cartItem] >= inventoryItem.count)):
                     sentry_sdk.metrics.incr(key="checkout.failed")
                     raise Exception("Not enough inventory for product")
         if len(inventory) == 0 or len(quantities) == 0:
@@ -149,6 +154,11 @@ def products():
         value=1,
         tags={"endpoint": "/products", "method": "GET"},
     )
+    
+    product_inventory = None
+    fetch_promotions = request.args.get('fetch_promotions')
+    timeout_seconds = (EXTREMELY_SLOW_PROFILE if fetch_promotions else NORMAL_SLOW_PROFILE)
+    in_stock_only = request.args.get('in_stock_only')
 
     try:
         with sentry_sdk.start_span(op="/products.get_products", description="function"):
@@ -161,15 +171,17 @@ def products():
                 descriptions = [product["description"] for product in productsJSON]
                 with sentry_sdk.start_span(op="/get_iterator", description="function"):
                     with sentry_sdk.metrics.timing(key="products.get_iterator.execution_time"):
-                        loop = get_iterator(len(descriptions) * 6 - 1)
+                        loop = get_iterator(len(descriptions) * 6 + (2 if fetch_promotions else -1))
 
-                    for i in range(loop):
+                    for i in range(loop * 10):
                         time_delta = time.time() - start_time
-                        if time_delta > 2:
+                        if time_delta > timeout_seconds:
                             break
 
                         for i, description in enumerate(descriptions):
                             for pest in pests:
+                                if in_stock_only and productsJSON[i] not in product_inventory:
+                                    continue
                                 if pest in description:
                                     try:
                                         del productsJSON[i:i + 1]
