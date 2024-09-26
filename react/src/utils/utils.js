@@ -1,10 +1,7 @@
-import configureScope from '@sentry/react';
+import * as Sentry from '@sentry/react';
 
 function getTag(tag) {
-    configureScope((scope) => {
-        const tags = scope._tags; // _tags contains the current tags set
-        return tags[tag]
-    });
+    return Sentry.getCurrentScope()._tags[tag]
 }
 
 function itemsInCart(cart) {
