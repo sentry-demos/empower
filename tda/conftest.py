@@ -380,7 +380,7 @@ def _sauce_browser(request, selenium_endpoint, se):
             extra_params=urlencode({'se': se})
         )
 
-        browser.implicitly_wait(20)
+        browser.implicitly_wait(10)
 
         sentry_sdk.set_tag("sauceLabsUrl", f"https://app.saucelabs.com/tests/{browser.session_id}")
 
