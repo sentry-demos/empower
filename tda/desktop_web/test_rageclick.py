@@ -2,6 +2,7 @@ import time
 import sentry_sdk
 from urllib.parse import urlencode
 from selenium.webdriver.common.by import By
+from selenium.common.exceptions import TimeoutException
 
 # This many clicks to trigger rage click
 # plus some extra for good measure (+ extra rage)
@@ -30,48 +31,23 @@ def test_rageclick(desktop_web_driver, endpoints, batch_size, backend, random, s
             try:
                 desktop_web_driver.get(url)
 
-                # Optional - use the time.sleep here so button can rinish rendering before the desktop_web_driver tries to click it
-                # Solution - handle gracefully when the desktop_web_driver clicks a button that's not rendered yet, and then time.sleep(1) and try again
-                # time.sleep(5)
+                # Wait up to 2 implicit waits (should be 20 seconds)
+                try:
+                    desktop_web_driver.find_element(By.CSS_SELECTOR, '.products-list button').click()
+                except TimeoutException as err:
+                    desktop_web_driver.find_element(By.CSS_SELECTOR, '.products-list button').click()
 
-                buttonRendered = False
-                skips=0
-                while buttonRendered==False:
-                    try:
-                        if skips > 10:
-                            sentry_sdk.capture_message("missed button more than 10 skips")
-                            buttonRendered=True
-                        add_to_cart_btn = desktop_web_driver.find_element(By.CSS_SELECTOR, '.products-list button')
-                        time.sleep(2)
-                        for i in range(random.randrange(4) + 1):
-                            add_to_cart_btn.click()
-                        buttonRendered=True
-                    except Exception as err:
-                        skips = skips + 1
-                        sentry_sdk.capture_message("missed button handling %s skips gracefully" % (skips))
-                        time.sleep(1)
-                        pass
-
-                # Add 2 second sleep between the initial /products pageload
-                #   and the navigation to the checkout cart
-                #   to solve for web vitals issue as transaction may not be resolving
-                time.sleep(2)
 
                 desktop_web_driver.find_element(By.CSS_SELECTOR, '.show-desktop #top-right-links a[href="/cart"]').click()
-                time.sleep(sleep_length())
                 desktop_web_driver.find_element(By.CSS_SELECTOR, 'a[href="/checkout"]').click()
-                time.sleep(sleep_length())
 
                 # Rage click
                 checkout_button = desktop_web_driver.find_element(By.CSS_SELECTOR, '.complete-checkout-btn')
                 for _ in range(RAGE_CLICK_TRIGGER_QTY):
                     checkout_button.click()
                 time.sleep(8) #rageclick currently detected after 7 seconds
-            except Exception as err:
-                missedButtons = missedButtons + 1
-                sentry_sdk.set_tag("missedButtons", missedButtons)
 
-                if err:
-                    sentry_sdk.capture_exception(err)
+            except Exception as err:
+                sentry_sdk.capture_exception(err)
 
             time.sleep(sleep_length())
