@@ -11,11 +11,13 @@ browsers:
   browserVersion: latest
   platformName: Windows 10
   param_display: firefox_windows
-- remote: true
-  browserName: safari
-  browserVersion: latest-1
-  platformName: OS X 10.13
-  param_display: safari_osx
+# # commenting out safari for now as it's not loading up empower-app as expected
+# # see `sauceLabsUrl`s in https://demo.sentry.io/issues/5275523263/?project=5390094
+# - remote: true
+#   browserName: safari
+#   browserVersion: latest-1
+#   platformName: OS X 10.13
+#   param_display: safari_osx
 - remote: true
   browserName: chrome
   browserVersion: latest
