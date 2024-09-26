@@ -51,20 +51,21 @@ def test_checkout(desktop_web_driver, endpoints, batch_size, backend, random, sl
 
                 time.sleep(sleep_length())
 
-                try:
-                    desktop_web_driver.find_element(By.CSS_SELECTOR, 'a[href="/checkout"]').click()
-                except Exception as err:
-                    sentry_sdk.metrics.incr(key="test_checkout.iteration.abandoned", value=1, tags=dict(query_string, reason=f"no_proceed_to_checkout_btn({err.__class__.__name__})"))
-                    continue
+                if (ce != CExp.ADD_TO_CART_JS_ERROR):
+                    try:
+                        desktop_web_driver.find_element(By.CSS_SELECTOR, 'a[href="/checkout"]').click()
+                    except Exception as err:
+                        sentry_sdk.metrics.incr(key="test_checkout.iteration.abandoned", value=1, tags=dict(query_string, reason=f"no_proceed_to_checkout_btn({err.__class__.__name__})"))
+                        continue
 
-                time.sleep(sleep_length())
-                
-                desktop_web_driver.find_element(By.CSS_SELECTOR, '#email').send_keys("sampleEmail@email.com")
+                    time.sleep(sleep_length())
+                    
+                    desktop_web_driver.find_element(By.CSS_SELECTOR, '#email').send_keys("sampleEmail@email.com")
 
-                desktop_web_driver.find_element(By.CSS_SELECTOR, '.complete-checkout-btn').click()
-                time.sleep(sleep_length())
+                    desktop_web_driver.find_element(By.CSS_SELECTOR, '.complete-checkout-btn').click()
+                    time.sleep(sleep_length())
 
-                sentry_sdk.metrics.incr(key="test_checkout.iteration.completed", value=1, tags=query_string)
+                    sentry_sdk.metrics.incr(key="test_checkout.iteration.completed", value=1, tags=query_string)
 
             except Exception as err:
                 sentry_sdk.metrics.incr(key="test_checkout.iteration.abandoned", value=1, tags=dict(query_string, reason=f"other({err.__class__.__name__})"))
