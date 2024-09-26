@@ -3,6 +3,8 @@ import sentry_sdk
 from urllib.parse import urlencode
 from conftest import CExp
 from selenium.webdriver.common.by import By
+from selenium.common.exceptions import TimeoutException
+
 
 def test_checkout(desktop_web_driver, endpoints, batch_size, backend, random, sleep_length, cexp):
     for endpoint in endpoints.react_endpoints:
@@ -35,10 +37,15 @@ def test_checkout(desktop_web_driver, endpoints, batch_size, backend, random, sl
                 desktop_web_driver.get(url)
 
                 try:
-                    add_to_cart_btn = desktop_web_driver.find_element(By.CSS_SELECTOR, '.products-list button')
+                    # Wait up to 2 implicit waits (should be 20 seconds)
+                    try:
+                        add_to_cart_btn = desktop_web_driver.find_element(By.CSS_SELECTOR, '.products-list button')
+                    except TimeoutException as err:
+                        add_to_cart_btn = desktop_web_driver.find_element(By.CSS_SELECTOR, '.products-list button')
+
                     for i in range(random.randrange(4) + 1):
                         add_to_cart_btn.click()
-                except Exception as err:
+                except TimeoutException as err:
                     sentry_sdk.metrics.incr(key="test_checkout.iteration.abandoned", value=1, tags=dict(query_string, reason=f"no_add_to_cart_btn({err.__class__.__name__})"))
                     continue
 
@@ -54,7 +61,7 @@ def test_checkout(desktop_web_driver, endpoints, batch_size, backend, random, sl
                 if (ce != CExp.ADD_TO_CART_JS_ERROR):
                     try:
                         desktop_web_driver.find_element(By.CSS_SELECTOR, 'a[href="/checkout"]').click()
-                    except Exception as err:
+                    except TimeoutException as err:
                         sentry_sdk.metrics.incr(key="test_checkout.iteration.abandoned", value=1, tags=dict(query_string, reason=f"no_proceed_to_checkout_btn({err.__class__.__name__})"))
                         continue
 
