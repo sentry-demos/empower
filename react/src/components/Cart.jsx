@@ -4,8 +4,13 @@ import * as Sentry from '@sentry/react';
 import Button from './ButtonLink';
 import { connect } from 'react-redux';
 import { setProducts, addProduct, removeProduct } from '../actions';
+import { getTag, itemsInCart } from '../utils/utils';
 
 function Cart({ cart, removeProduct, addProduct }) {
+
+  let tags = { 'backendType': getTag('backendType'), 'cexp': getTag('cexp') }
+  Sentry.metrics.increment('checkout.items_added_to_cart', itemsInCart(cart), { tags });
+
   return (
     <div className="cart-container">
       <h2 className="sentry-unmask">Cart</h2>
