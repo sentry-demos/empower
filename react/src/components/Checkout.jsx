@@ -5,6 +5,7 @@ import './checkout.css';
 import * as Sentry from '@sentry/react';
 import { connect } from 'react-redux';
 import Loader from 'react-loader-spinner';
+import { getTag, itemsInCart } from '../utils/utils';
 
 function Checkout({ backend, rageclick, checkout_success, cart }) {
   const navigate = useNavigate();
@@ -40,8 +41,11 @@ function Checkout({ backend, rageclick, checkout_success, cart }) {
   }
   const [form, setForm] = useState(initialFormValues);
 
+  let tags = { 'backendType': getTag('backendType'), 'cexp': getTag('cexp') }
+
   async function checkout(cart) {
-    Sentry.metrics.increment('checkout.click');
+    Sentry.metrics.increment('checkout.click', 1, { tags });
+    Sentry.metrics.increment('checkout.items_in_cart', itemsInCart(cart), { tags });
     const stopMeasurement = measureRequestDuration('/checkout');
     const response = await fetch(backend + '/checkout?v2=true', {
       method: 'POST',
@@ -64,7 +68,7 @@ function Checkout({ backend, rageclick, checkout_success, cart }) {
       });
     if (!response.ok) {
       Sentry.metrics.increment('checkout.error', 1, {
-        tags: { status: response.status },
+        tags: { status: response.status, ...tags },
       });
       throw new Error(
         [response.status, response.statusText || ' Internal Server Error'].join(
@@ -72,7 +76,7 @@ function Checkout({ backend, rageclick, checkout_success, cart }) {
         )
       );
     }
-    Sentry.metrics.increment('checkout.success');
+    Sentry.metrics.increment('checkout.success', 1, { tags });
     Sentry.metrics.distribution('checkout.order.total', cart.total);
     return response;
   } 
