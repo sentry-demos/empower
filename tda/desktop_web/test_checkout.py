@@ -3,7 +3,7 @@ import sentry_sdk
 from urllib.parse import urlencode
 from conftest import CExp
 from selenium.webdriver.common.by import By
-from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import NoSuchElementException
 
 
 def test_checkout(desktop_web_driver, endpoints, batch_size, backend, random, sleep_length, cexp):
@@ -40,13 +40,13 @@ def test_checkout(desktop_web_driver, endpoints, batch_size, backend, random, sl
                     # Wait up to 2 implicit waits (should be 20 seconds)
                     try:
                         add_to_cart_btn = desktop_web_driver.find_element(By.CSS_SELECTOR, '.products-list button')
-                    except TimeoutException as err:
+                    except NoSuchElementException as err:
                         add_to_cart_btn = desktop_web_driver.find_element(By.CSS_SELECTOR, '.products-list button')
 
                     for i in range(random.randrange(4) + 1):
                         add_to_cart_btn.click()
-                except TimeoutException as err:
-                    sentry_sdk.metrics.incr(key="test_checkout.iteration.abandoned", value=1, tags=dict(query_string, reason=f"no_add_to_cart_btn({err.__class__.__name__})"))
+                except NoSuchElementException as err:
+                    sentry_sdk.metrics.incr(key="test_checkout.iteration.abandoned", value=1, tags=dict(query_string, reason="no_add_to_cart_btn"))
                     continue
 
                 # Add 2 second sleep between the initial /products pageload
@@ -61,8 +61,8 @@ def test_checkout(desktop_web_driver, endpoints, batch_size, backend, random, sl
                 if (ce != CExp.ADD_TO_CART_JS_ERROR):
                     try:
                         desktop_web_driver.find_element(By.CSS_SELECTOR, 'a[href="/checkout"]').click()
-                    except TimeoutException as err:
-                        sentry_sdk.metrics.incr(key="test_checkout.iteration.abandoned", value=1, tags=dict(query_string, reason=f"no_proceed_to_checkout_btn({err.__class__.__name__})"))
+                    except NoSuchElementException as err:
+                        sentry_sdk.metrics.incr(key="test_checkout.iteration.abandoned", value=1, tags=dict(query_string, reason="no_proceed_to_checkout_btn"))
                         continue
 
                     time.sleep(sleep_length())
@@ -79,12 +79,3 @@ def test_checkout(desktop_web_driver, endpoints, batch_size, backend, random, sl
                 sentry_sdk.capture_exception(err)
 
             time.sleep(sleep_length())
-
-
-
-
-
-
-
-
-
