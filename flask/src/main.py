@@ -108,7 +108,7 @@ def checkout():
     order = json.loads(request.data)
     cart = order["cart"]
     form = order["form"]
-    validate_inventory = "validate_inventory" in order and order["validate_inventory"] == "true"
+    validate_inventory = True if "validate_inventory" not in order else order["validate_inventory"] == "true"
 
     inventory = []
     try:
