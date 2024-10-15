@@ -22,21 +22,28 @@ jobs:
           npm install
           npm test -- --coverage
         working-directory: ./empower/react
-      - uses: codecov/codecov-action@v3
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           flags: frontend
+      - name: Upload test results to Codecov
+      	if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Run Python Tests
         run: |
           pip install -U pytest
           pip install pytz
           pip install pytest-codecov
-          pytest --cov=. --cov-report=xml
+          pytest --cov=. --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
         working-directory: ./empower/flask/src
       - uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           flags: api
+      
 
       - run: echo "Job status is ${{ job.status }}."
