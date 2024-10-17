@@ -63,9 +63,15 @@ if ! [[ $proj =~ ^(crons|tda)- ]]; then
         export RELEASE="$release"
     fi
 fi
-if [ "$proj" == "react" ]; then
+if [[ "$proj" == "react" ]]; then
     echo "REACT_APP_RELEASE=$RELEASE" >> .env
 fi
+
+
+if [[ "$proj" == "next" ]]; then
+    echo "NEXT_PUBLIC_RELEASE=$RELEASE" >> .env
+fi
+
 
 validate_dotenv.sh
 
