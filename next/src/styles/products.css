@@ -1,0 +1,39 @@
+.products-list {
+  list-style: none;
+  padding: 0 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.products-list li {
+  flex-basis: 100%;
+  margin-bottom: 2rem;
+}
+
+@media screen and (min-width: 600px) {
+  .products-list li {
+    flex-basis: calc(50% - 1rem);
+  }
+}
+
+.products-list li > div {
+  background-color: #fffff9;
+  padding: 1.5rem;
+  border-radius: 0.25rem;
+  box-shadow:
+    0 4px 8px 0 rgba(0, 0, 0, 0.07),
+    0 6px 20px 0 rgba(0, 0, 0, 0.05);
+}
+
+.products-list li img {
+  width: 100%;
+}
+
+.products-list li a {
+  text-decoration: none;
+}
+
+.loader-container {
+  text-align: center;
+}
