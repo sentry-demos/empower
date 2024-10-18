@@ -18,7 +18,7 @@ module.exports = function override(config, env) {
       ignoreFile: '.sentrycliignore',
       ignore: ['webpack.config.js'],
       configFile: 'sentry.properties',
-      reactComponentAnnotation: { enabled: true },
+      reactComponentAnnotation: {enabled:true},
     })
   );
   return config;

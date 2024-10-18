@@ -132,6 +132,7 @@ class MyApp extends App {
     if (appContext.ctx.req) {
       const host = appContext.ctx.req.headers.host;
       const { query } = appContext.ctx;
+      console.log(query);
       const environment = host.includes('localhost') ? 'test' : 'production';
 
       // Initialize Sentry here with the detected host
@@ -152,8 +153,8 @@ class MyApp extends App {
   componentDidMount() {
     console.log('componentDidMount called');
     const { query } = this.props.pageProps;
-    const backendType = determineBackendType('');
-    BACKEND_URL = determineBackendUrl(backendType, ENVIRONMENT);
+    const backendType = determineBackendType(query?.backend);
+    BACKEND_URL = determineBackendUrl(backendType);
     console.log(`> backendType: ${backendType} | backendUrl: ${BACKEND_URL}`);
 
     // These also get passed via request headers (see window.fetch below)
