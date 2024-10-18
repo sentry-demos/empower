@@ -1,0 +1,20 @@
+.product-layout {
+  display: flex;
+  padding-top: 2rem;
+}
+.product-layout > div {
+  flex: 1;
+}
+
+.product-layout img {
+  width: 100%;
+}
+
+.product-info {
+  margin-left: 2rem;
+  border-top: 1px solid;
+}
+
+.product-info h1 {
+  margin-top: 0.5rem;
+}

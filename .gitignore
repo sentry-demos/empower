@@ -3,6 +3,8 @@
 # dependencies
 /node_modules
 react/node_modules
+next/.next
+next/node_modules
 express/node_modules
 /.pnp
 .pnp.js
@@ -13,6 +15,8 @@ express/node_modules
 # production
 /build
 react/build
+next/dist
+
 
 # misc
 .idea
@@ -84,6 +88,8 @@ env-config/*
 
 **/local.env
 tda/env
+
+next/.env.sentry-build-plugin
 
 # .NET
 aspnetcore/bin
