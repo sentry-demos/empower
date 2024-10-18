@@ -89,6 +89,8 @@ env-config/*
 **/local.env
 tda/env
 
+next/.env.sentry-build-plugin
+
 # .NET
 aspnetcore/bin
 aspnetcore/obj
