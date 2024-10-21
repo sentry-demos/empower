@@ -131,7 +131,6 @@ class MyApp extends App {
     if (appContext.ctx.req) {
       const host = appContext.ctx.req.headers.host;
       const { query } = appContext.ctx;
-      console.log(query);
       const environment = host.includes('localhost') ? 'test' : 'production';
 
       // Initialize Sentry here with the detected host

@@ -176,7 +176,7 @@ for proj in $projects; do # bash only
     else
       upload_sourcemaps="true"
     fi
-    # sentry-release.sh $env $RELEASE $upload_sourcemaps
+    sentry-release.sh $env $RELEASE $upload_sourcemaps
     # NOTE: Sentry may create releases from events even without this step
   fi
 
