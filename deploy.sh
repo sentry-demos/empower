@@ -171,12 +171,12 @@ for proj in $projects; do # bash only
   ./build.sh
 
   if [[ "$fe_projects" = *"$proj "* ]]; then # project is frontend
-    if [[ "$proj" == "react" ]]; then
+    if [[ "$proj" == "react" || "$proj" == "next" ]]; then
       upload_sourcemaps="false" # using webpack plugin
     else
       upload_sourcemaps="true"
     fi
-    sentry-release.sh $env $RELEASE $upload_sourcemaps
+    # sentry-release.sh $env $RELEASE $upload_sourcemaps
     # NOTE: Sentry may create releases from events even without this step
   fi
 

@@ -21,7 +21,6 @@ import {
 } from '../utils/backendrouter';
 
 import { Provider } from 'react-redux';
-//import store from './utils/store';
 import { createStore, applyMiddleware, compose } from 'redux';
 import logger from 'redux-logger';
 import rootReducer from '../reducers';
