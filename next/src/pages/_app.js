@@ -153,7 +153,7 @@ class MyApp extends App {
   componentDidMount() {
     console.log('componentDidMount called');
     const { query } = this.props.pageProps;
-    const backendType = determineBackendType(query?.backend);
+    const backendType = determineBackendType(query.backend);
     BACKEND_URL = determineBackendUrl(backendType);
     console.log(`> backendType: ${backendType} | backendUrl: ${BACKEND_URL}`);
 
@@ -246,7 +246,7 @@ class MyApp extends App {
     }
     currentScope.setUser({ email: email });
 
-    // TODO: Figure out why this is forcing a rerender on initial "Browse products" button click
+    // TODO: Figure out why this is forcing a rerender on initial "Browse products" button click, or add tags to idnvidual network calls
     // // Automatically append `se`, `customerType` and `userEmail` query params to all requests
     // // (except for requests to Sentry)
     // const nativeFetch = window.fetch;

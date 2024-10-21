@@ -12,12 +12,11 @@ import {
 
 function Checkout({ rageclick, cart }) {
   const router = useRouter();
-  const { backend, frontendSlowdown } = router.query;
+  const { backend, frontendSlowdown, se } = router.query;
   const backendType = determineBackendType(backend);
   const backendUrl = determineBackendUrl(backendType);
   const [loading, setLoading] = useState(false);
   let initialFormValues;
-  let se = sessionStorage.getItem('se');
   if (se && se.startsWith('prod-tda-')) {
     // we want form actually filled out in TDA for a realistic-looking Replay
     initialFormValues = {
@@ -51,7 +50,7 @@ function Checkout({ rageclick, cart }) {
     const stopMeasurement = measureRequestDuration('/checkout');
     const response = await fetch(backendUrl + '/checkout?v2=true', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Se': 'se' },
       body: JSON.stringify({
         cart: cart,
         form: form,

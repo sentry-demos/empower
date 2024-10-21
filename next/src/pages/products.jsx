@@ -13,7 +13,8 @@ import {
 
 function Products(props) {
   console.log(props);
-  const { backend, frontendSlowdown } = useRouter().query;
+  const { backend, frontendSlowdown, se } = useRouter().query;
+  console.log('se is ' + se);
   const backendType = determineBackendType(backend);
   const backendUrl = determineBackendUrl(backendType);
   const [products, setProducts] = useState([]);
@@ -104,7 +105,7 @@ function Products(props) {
       [('/api', '/connect', '/organization')].forEach((endpoint) => {
         fetch(backendUrl + endpoint, {
           method: 'GET',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'Se': se },
         }).catch((err) => {
           // If there's an error, it won't stop the Products http request and page from loading
           Sentry.captureException(err);
@@ -118,7 +119,7 @@ function Products(props) {
       const stopMeasurement = measureRequestDuration(productsEndpoint);
       fetch(backendUrl + productsEndpoint, {
         method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Se': se},
       })
         .then((result) => {
           if (!result.ok) {
