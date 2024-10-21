@@ -11,8 +11,14 @@ import {
   determineBackendUrl,
 } from '../utils/backendrouter';
 
-function Products(props) {
-  console.log(props);
+export const getServerSideProps = (async () => {
+  const res = await fetch('https://application-monitoring-flask-dot-sales-engineering-sf.appspot.com/products')
+  const ssrProducts = await res.json()
+  return {props: {ssrProducts}}
+})
+
+function Products({ssrProducts}) {
+  // console.log(props);
   const { backend, frontendSlowdown } = useRouter().query;
   const backendType = determineBackendType(backend);
   const backendUrl = determineBackendUrl(backendType);
@@ -98,56 +104,56 @@ function Products(props) {
     related to the async keyword + babel transform, hence why it probably got
     fixed with hooks (no transform on that class method anymore)"
   */
-  useEffect(() => {
-    // getProducts handles error responses differently, depending on the browser used
-    function getProducts(frontendSlowdown) {
-      [('/api', '/connect', '/organization')].forEach((endpoint) => {
-        fetch(backendUrl + endpoint, {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' },
-        }).catch((err) => {
-          // If there's an error, it won't stop the Products http request and page from loading
-          Sentry.captureException(err);
-        });
-      });
+  // useEffect(() => {
+  //   // getProducts handles error responses differently, depending on the browser used
+  //   function getProducts(frontendSlowdown) {
+  //     [('/api', '/connect', '/organization')].forEach((endpoint) => {
+  //       fetch(backendUrl + endpoint, {
+  //         method: 'GET',
+  //         headers: { 'Content-Type': 'application/json' },
+  //       }).catch((err) => {
+  //         // If there's an error, it won't stop the Products http request and page from loading
+  //         Sentry.captureException(err);
+  //       });
+  //     });
 
-      // When triggering a frontend-only slowdown, use the products-join endpoint
-      // because it returns product data with a fast backend response.
-      // Otherwise use the /products endpoint, which provides a slow backend response.
-      const productsEndpoint = determineProductsEndpoint();
-      const stopMeasurement = measureRequestDuration(productsEndpoint);
-      fetch(backendUrl + productsEndpoint, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-      })
-        .then((result) => {
-          if (!result.ok) {
-            Sentry.setContext('err', {
-              status: result.status,
-              statusText: result.statusText,
-            });
-            return Promise.reject();
-          } else {
-            return result.json();
-          }
-        })
-        .then(renderProducts)
-        .catch((err) => {
-          return { ok: false, status: 500 };
-        })
-        .then((res) => {
-          stopMeasurement();
-          return res;
-        });
-    }
+  //     // When triggering a frontend-only slowdown, use the products-join endpoint
+  //     // because it returns product data with a fast backend response.
+  //     // Otherwise use the /products endpoint, which provides a slow backend response.
+  //     const productsEndpoint = determineProductsEndpoint();
+  //     const stopMeasurement = measureRequestDuration(productsEndpoint);
+  //     fetch(backendUrl + productsEndpoint, {
+  //       method: 'GET',
+  //       headers: { 'Content-Type': 'application/json' },
+  //     })
+  //       .then((result) => {
+  //         if (!result.ok) {
+  //           Sentry.setContext('err', {
+  //             status: result.status,
+  //             statusText: result.statusText,
+  //           });
+  //           return Promise.reject();
+  //         } else {
+  //           return result.json();
+  //         }
+  //       })
+  //       .then(renderProducts)
+  //       .catch((err) => {
+  //         return { ok: false, status: 500 };
+  //       })
+  //       .then((res) => {
+  //         stopMeasurement();
+  //         return res;
+  //       });
+  //   }
 
-    getProducts(frontendSlowdown);
-  }, []);
+  //   getProducts(frontendSlowdown);
+  // }, []);
 
-  return products.length > 0 ? (
+  return ssrProducts.length > 0 ? (
     <div>
       <ul className="products-list">
-        {products.map((product, i) => {
+        {ssrProducts.map((product, i) => {
           const averageRating = (
             product.reviews.reduce((a, b) => a + (b['rating'] || 0), 0) /
             product.reviews.length
@@ -190,5 +196,5 @@ const mapStateToProps = (state, ownProps) => {
 };
 
 export default connect(mapStateToProps, { setProducts, addProduct })(
-  Sentry.withProfiler(Products, { name: 'Products' })
+Products
 );
