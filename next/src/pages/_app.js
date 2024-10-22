@@ -39,21 +39,10 @@ const tracingOrigins = [
   /^\//,
 ];
 
-let ENVIRONMENT;
-// if (window.location.hostname === 'localhost') {
-//   ENVIRONMENT = 'test';
-// } else {
-//   // App Engine
-//   ENVIRONMENT = 'production';
-// }
-
 let BACKEND_URL;
-let FRONTEND_SLOWDOWN;
-let RAGECLICK;
 const DSN = process.env.NEXT_PUBLIC_DSN;
 const RELEASE = process.env.NEXT_PUBLIC_RELEASE;
 
-console.log('ENVIRONMENT', ENVIRONMENT);
 console.log('RELEASE', RELEASE);
 
 function initSentry(environment) {
@@ -65,9 +54,6 @@ function initSentry(environment) {
     tracePropagationTargets: tracingOrigins,
     profilesSampleRate: 1.0,
     replaysSessionSampleRate: 1.0,
-    debug: true,
-    defaultIntegrations: false,
-    integrations: [],
     beforeSend(event, hint) {
       // Parse from tags because src/index.js already set it there. Once there are React route changes, it is no longer in the URL bar
       let se;

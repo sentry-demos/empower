@@ -5,7 +5,7 @@
 import * as Sentry from '@sentry/nextjs';
 
 Sentry.init({
-  dsn: 'https://b9943feb5e210fbd4de6a8871d9f1db4@o4508021432844288.ingest.us.sentry.io/4508135114014720',
+  dsn: process.env.NEXT_PUBLIC_DSN,
 
   // Add optional integrations for additional features
   integrations: [Sentry.replayIntegration(), Sentry.browserTracingIntegration()],
@@ -22,5 +22,5 @@ Sentry.init({
   replaysOnErrorSampleRate: 1.0,
 
   // Setting this option to true will print useful information to the console while you're setting up Sentry.
-  debug: true,
+  debug: false,
 });
