@@ -172,15 +172,10 @@ class MyApp extends App {
 
     if (query.frontendSlowdown === 'true') {
       console.log('> frontend-only slowdown: true');
-      FRONTEND_SLOWDOWN = true;
       currentScope.setTag('frontendSlowdown', true);
     } else {
       console.log('> frontend + backend slowdown');
       currentScope.setTag('frontendSlowdown', false);
-    }
-
-    if (query.rageclick === 'true') {
-      RAGECLICK = true;
     }
 
     if (query.userFeedback) {
