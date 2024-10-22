@@ -1,13 +1,14 @@
 // import { Link } from 'react-router-dom';
 import Link from 'next/link';
-
-import * as Sentry from '@sentry/react';
+import { useRouter } from 'next/router';
 import Button from './../components/ButtonLink';
 import { connect } from 'react-redux';
 import { setProducts, addProduct, removeProduct } from '../actions';
 
 function Cart({ cart, removeProduct, addProduct }) {
-  console.log(cart);
+  console.log('here before crash');
+  const { query } = useRouter();
+  console.log('made it past useRouter');
   return (
     <div className="cart-container">
       <h2 className="sentry-unmask">Cart</h2>
@@ -17,7 +18,7 @@ function Cart({ cart, removeProduct, addProduct }) {
             {cart.items.map((item) => {
               const quantity = cart.quantities[item.id];
               const itemLink = {
-                pathname: '/product/',
+                pathname: '/product',
                 query: { product: item.id },
               }; // Should this be item and not item.id?
 
@@ -64,7 +65,7 @@ function Cart({ cart, removeProduct, addProduct }) {
             <span className="sentry-unmask">Cart Subtotal: $</span>
             {cart.total}.00
           </h3>
-          <Button to="/checkout" className="sentry-unmask">
+          <Button to={'/checkout'} params={query} className="sentry-unmask">
             Proceed to checkout
           </Button>
         </>
@@ -86,4 +87,4 @@ export default connect(mapStateToProps, {
   setProducts,
   addProduct,
   removeProduct,
-})(Sentry.withProfiler(Cart, { name: 'Cart' }));
+})(Cart);

@@ -1,13 +1,13 @@
 import Link from 'next/link';
-import * as Sentry from '@sentry/react';
+import { useRouter } from 'next/router';
 import Image from 'next/image';
-
 import { connect } from 'react-redux';
 import { resetCart, addProduct, setProducts } from '../actions';
 
 import EPlogo from '../../public/empowerplant-logo.svg';
 
-function Nav({ cart, frontendSlowdown }) {
+function Nav({ cart }) {
+  const { query } = useRouter();
   return (
     <>
       <nav id="top-nav" className="show-mobile">
@@ -20,10 +20,13 @@ function Nav({ cart, frontendSlowdown }) {
             <Link href="/about" className="sentry-unmask">
               About
             </Link>
-            <Link href="/products" className="sentry-unmask">
+            <Link
+              href={{ pathname: '/products', query }}
+              className="sentry-unmask"
+            >
               Products
             </Link>
-            <Link href="/cart" className="sentry-unmask">
+            <Link href={{ pathname: '/cart', query }} className="sentry-unmask">
               Cart
               {cart.items.length > 0 ? (
                 <span>
@@ -51,12 +54,12 @@ function Nav({ cart, frontendSlowdown }) {
               About
             </Link>
             <Link
-              href={frontendSlowdown ? '/products-fes' : '/products'}
+              href={{ pathname: '/products', query }}
               className="sentry-unmask"
             >
               Products
             </Link>
-            <Link href="/cart">
+            <Link href={{ pathname: '/cart', query }}>
               <span className="sentry-unmask">Cart</span>
               {cart.items.length > 0 ? (
                 <span>
@@ -83,5 +86,5 @@ const mapStateToProps = (state, ownProps) => {
 };
 
 export default connect(mapStateToProps, { resetCart, addProduct, setProducts })(
-  Sentry.withProfiler(Nav, { name: 'Nav' })
+  Nav
 );

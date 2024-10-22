@@ -11,25 +11,26 @@ import {
   determineBackendUrl,
 } from '../utils/backendrouter';
 
-function Products(props) {
-  console.log(props);
-  const { backend, frontendSlowdown } = useRouter().query;
+function Products() {
+  const {
+    backend,
+    frontendSlowdown,
+    se,
+    productsExtremelySlow,
+    productsBeError,
+  } = useRouter().query;
   const backendType = determineBackendType(backend);
   const backendUrl = determineBackendUrl(backendType);
   const [products, setProducts] = useState([]);
 
-  // TODO Reimplement routing options with query params
-  // function determineProductsEndpoint() {
-  //   if (productsExtremelySlow) {
-  //     return '/products?fetch_promotions=true';
-  //   } else if (productsBeError) {
-  //     return '/products?in_stock_only=1';
-  //   } else {
-  //     return frontendSlowdown ? '/products-join' : '/products';
-  //   }
-  // }
   function determineProductsEndpoint() {
-    return frontendSlowdown ? '/products-join' : '/products';
+    if (productsExtremelySlow) {
+      return '/products?fetch_promotions=true';
+    } else if (productsBeError) {
+      return '/products?in_stock_only=1';
+    } else {
+      return frontendSlowdown ? '/productsJoin' : '/products';
+    }
   }
 
   function fetchUncompressedAsset() {
@@ -100,11 +101,11 @@ function Products(props) {
   */
   useEffect(() => {
     // getProducts handles error responses differently, depending on the browser used
-    function getProducts(frontendSlowdown) {
+    function getProducts() {
       [('/api', '/connect', '/organization')].forEach((endpoint) => {
         fetch(backendUrl + endpoint, {
           method: 'GET',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', Se: se },
         }).catch((err) => {
           // If there's an error, it won't stop the Products http request and page from loading
           Sentry.captureException(err);
@@ -118,7 +119,7 @@ function Products(props) {
       const stopMeasurement = measureRequestDuration(productsEndpoint);
       fetch(backendUrl + productsEndpoint, {
         method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Se: se },
       })
         .then((result) => {
           if (!result.ok) {
@@ -141,7 +142,7 @@ function Products(props) {
         });
     }
 
-    getProducts(frontendSlowdown);
+    getProducts();
   }, []);
 
   return products.length > 0 ? (
@@ -189,6 +190,4 @@ const mapStateToProps = (state, ownProps) => {
   };
 };
 
-export default connect(mapStateToProps, { setProducts, addProduct })(
-  Sentry.withProfiler(Products, { name: 'Products' })
-);
+export default connect(mapStateToProps, { setProducts, addProduct })(Products);

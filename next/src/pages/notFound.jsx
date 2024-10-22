@@ -1,4 +1,3 @@
-import '../styles/complete.css';
 import Link from 'next/link';
 
 function NotFound() {

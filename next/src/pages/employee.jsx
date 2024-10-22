@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
 import Link from 'next/link';
-import '../styles/employee.css';
-import * as Sentry from '@sentry/nextjs';
+import { useParams } from 'react-router-dom';
 
 function Employee() {
   const [employee, setEmployee] = useState();
+  // TODO this wont work with next routing
   const { id } = useParams();
 
   useEffect(() => {
@@ -33,4 +32,4 @@ function Employee() {
   );
 }
 
-export default Sentry.withProfiler(Employee, { name: 'Employee' });
+export default Employee;

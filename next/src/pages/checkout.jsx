@@ -10,14 +10,14 @@ import {
   determineBackendUrl,
 } from '../utils/backendrouter';
 
-function Checkout({ rageclick, cart }) {
+function Checkout({ cart }) {
   const router = useRouter();
-  const { backend, frontendSlowdown } = router.query;
+  const { query } = router;
+  const { backend, se, rageclick } = query;
   const backendType = determineBackendType(backend);
   const backendUrl = determineBackendUrl(backendType);
   const [loading, setLoading] = useState(false);
   let initialFormValues;
-  let se = sessionStorage.getItem('se');
   if (se && se.startsWith('prod-tda-')) {
     // we want form actually filled out in TDA for a realistic-looking Replay
     initialFormValues = {
@@ -51,7 +51,7 @@ function Checkout({ rageclick, cart }) {
     const stopMeasurement = measureRequestDuration('/checkout');
     const response = await fetch(backendUrl + '/checkout?v2=true', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', Se: se },
       body: JSON.stringify({
         cart: cart,
         form: form,
@@ -126,9 +126,9 @@ function Checkout({ rageclick, cart }) {
         setLoading(false);
 
         if (hadError) {
-          router.push('/completeError');
+          router.push({ pathname: '/completeError', query });
         } else {
-          router.push('/complete');
+          router.push({ pathname: '/complete', query });
         }
       }
     );
@@ -264,7 +264,7 @@ function Checkout({ rageclick, cart }) {
               defaultValue="Complete order"
             />
           </form>
-          <Link href="/cart" className="sentry-unmask">
+          <Link href={{ pathname: '/cart', query }} className="sentry-unmask">
             Back to cart
           </Link>
         </>
@@ -280,7 +280,4 @@ const mapStateToProps = (state, ownProps) => {
   };
 };
 
-export default connect(
-  mapStateToProps,
-  {}
-)(Sentry.withProfiler(Checkout, { name: 'Checkout' }));
+export default connect(mapStateToProps, {})(Checkout);

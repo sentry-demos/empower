@@ -7,7 +7,6 @@ function ProductCard(props) {
   const router = useRouter();
   const { query } = router;
   const product = props.product;
-  console.log(product);
   const itemLink = '/product';
   const stars = props.stars;
 
@@ -53,5 +52,5 @@ const mapStateToProps = (state, ownProps) => {
 };
 
 export default connect(mapStateToProps, { setProducts, addProduct, setFlag })(
-  Sentry.withProfiler(ProductCard, { name: 'ProductCard' })
+  ProductCard
 );

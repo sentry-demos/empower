@@ -4,14 +4,26 @@
 
 import * as Sentry from '@sentry/nextjs';
 
+const tracingOrigins = [
+  'localhost',
+  'empowerplant.io',
+  'run.app',
+  'appspot.com',
+  /^\//,
+];
+
 Sentry.init({
-  dsn: 'https://b9943feb5e210fbd4de6a8871d9f1db4@o4508021432844288.ingest.us.sentry.io/4508135114014720',
+  dsn: process.env.NEXT_PUBLIC_DSN,
 
   // Add optional integrations for additional features
-  integrations: [Sentry.replayIntegration()],
+  integrations: [
+    Sentry.replayIntegration(),
+    Sentry.browserTracingIntegration(),
+  ],
 
   // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
   tracesSampleRate: 1,
+  tracePropagationTargets: tracingOrigins,
 
   // Define how likely Replay events are sampled.
   // This sets the sample rate to be 10%. You may want this to be 100% while
@@ -20,6 +32,7 @@ Sentry.init({
 
   // Define how likely Replay events are sampled when an error occurs.
   replaysOnErrorSampleRate: 1.0,
+  profilesSampleRate: 1.0,
 
   // Setting this option to true will print useful information to the console while you're setting up Sentry.
   debug: false,

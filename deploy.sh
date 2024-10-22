@@ -142,7 +142,12 @@ for proj in $projects; do # bash only
     # Point to local backend http://host:port instead of cloud endpoints for all _built_ BE projects
     # If no backend projects specified in CLI args, keep using cloud (production or staging) BE endpoints.
     for be_proj in $be_projects; do
-      backend_var=$(var_name.sh %s_APP_%s_BACKEND $proj $be_proj)
+      if  [ "$proj" == "next" ]; then
+        # Next env variables need to start with NEXT_PUBLIC_*
+        backend_var=$(var_name.sh NEXT_PUBLIC_%s_BACKEND $be_proj)
+      else 
+        backend_var=$(var_name.sh %s_APP_%s_BACKEND $proj $be_proj)
+      fi
       . get_proj_var.sh "%s_LOCAL_PORT" $be_proj # sets $local_port
       echo "" >> .env # in case no newline
       backend_local="http://localhost:$local_port"
@@ -166,7 +171,7 @@ for proj in $projects; do # bash only
   ./build.sh
 
   if [[ "$fe_projects" = *"$proj "* ]]; then # project is frontend
-    if [[ "$proj" == "react" ]]; then
+    if [[ "$proj" == "react" || "$proj" == "next" ]]; then
       upload_sourcemaps="false" # using webpack plugin
     else
       upload_sourcemaps="true"

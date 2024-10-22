@@ -1,4 +1,3 @@
-import '../styles/products.css';
 import * as Sentry from '@sentry/react';
 import { connect } from 'react-redux';
 import { setProducts, addProduct } from '../actions';
@@ -77,5 +76,5 @@ const mapStateToProps = (state, ownProps) => {
 };
 
 export default connect(mapStateToProps, { setProducts, addProduct })(
-  Sentry.withProfiler(ProductsJoin, { name: 'ProductsJoin' })
+  ProductsJoin
 );

@@ -14,10 +14,9 @@ const divStyle = {
 
 function Home() {
   const { query } = useRouter();
-  const { backend, frontendSlowdown } = query;
+  const { backend } = query;
   const backendType = determineBackendType(backend);
   const backendUrl = determineBackendUrl(backendType);
-  console.log('backend is ' + backendUrl);
 
   useEffect(() => {
     try {

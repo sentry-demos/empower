@@ -10,18 +10,19 @@ import '../styles/cart.css';
 import '../styles/checkout.css';
 import '../styles/complete.css';
 import '../styles/product.css';
+import '../styles/employee.css';
 
 import 'react-loader-spinner/dist/loader/css/react-spinner-loader.css';
 import * as Sentry from '@sentry/nextjs';
 
 import { crasher } from '../utils/errors';
+
 import {
   determineBackendType,
   determineBackendUrl,
 } from '../utils/backendrouter';
 
 import { Provider } from 'react-redux';
-//import store from './utils/store';
 import { createStore, applyMiddleware, compose } from 'redux';
 import logger from 'redux-logger';
 import rootReducer from '../reducers';
@@ -30,43 +31,15 @@ import ScrollToTop from '../components/ScrollToTop';
 import Footer from '../components/Footer';
 import Nav from '../components/Nav';
 
-const tracingOrigins = [
-  'localhost',
-  'empowerplant.io',
-  'run.app',
-  'appspot.com',
-  /^\//,
-];
-
-let ENVIRONMENT;
-// if (window.location.hostname === 'localhost') {
-//   ENVIRONMENT = 'test';
-// } else {
-//   // App Engine
-//   ENVIRONMENT = 'production';
-// }
-
 let BACKEND_URL;
-let FRONTEND_SLOWDOWN;
-let RAGECLICK;
-const DSN = process.env.NEXT_PUBLIC_DSN;
 const RELEASE = process.env.NEXT_PUBLIC_RELEASE;
 
-console.log('ENVIRONMENT', ENVIRONMENT);
 console.log('RELEASE', RELEASE);
 
 function initSentry(environment) {
   Sentry.init({
-    dsn: DSN,
     release: RELEASE,
     environment: environment,
-    tracesSampleRate: 1.0,
-    tracePropagationTargets: tracingOrigins,
-    profilesSampleRate: 1.0,
-    replaysSessionSampleRate: 1.0,
-    debug: true,
-    defaultIntegrations: false,
-    integrations: [],
     beforeSend(event, hint) {
       // Parse from tags because src/index.js already set it there. Once there are React route changes, it is no longer in the URL bar
       let se;
@@ -125,7 +98,6 @@ class MyApp extends App {
 
   static async getInitialProps(appContext) {
     // Call the parent class's getInitialProps to get pageProps
-    console.log('in get initial props');
 
     const appProps = await App.getInitialProps(appContext);
     // Get hostname from the request headers (only available server-side)
@@ -150,10 +122,9 @@ class MyApp extends App {
   }
 
   componentDidMount() {
-    console.log('componentDidMount called');
     const { query } = this.props.pageProps;
-    const backendType = determineBackendType('');
-    BACKEND_URL = determineBackendUrl(backendType, ENVIRONMENT);
+    const backendType = determineBackendType(query.backend);
+    BACKEND_URL = determineBackendUrl(backendType);
     console.log(`> backendType: ${backendType} | backendUrl: ${BACKEND_URL}`);
 
     // These also get passed via request headers (see window.fetch below)
@@ -185,15 +156,10 @@ class MyApp extends App {
 
     if (query.frontendSlowdown === 'true') {
       console.log('> frontend-only slowdown: true');
-      FRONTEND_SLOWDOWN = true;
       currentScope.setTag('frontendSlowdown', true);
     } else {
       console.log('> frontend + backend slowdown');
       currentScope.setTag('frontendSlowdown', false);
-    }
-
-    if (query.rageclick === 'true') {
-      RAGECLICK = true;
     }
 
     if (query.userFeedback) {
@@ -246,6 +212,7 @@ class MyApp extends App {
     currentScope.setUser({ email: email });
 
     // TODO: Figure out why this is forcing a rerender on initial "Browse products" button click
+    // TODO: Currently adding SE tags only to indiviudal network calls for demo
     // // Automatically append `se`, `customerType` and `userEmail` query params to all requests
     // // (except for requests to Sentry)
     // const nativeFetch = window.fetch;
@@ -285,69 +252,6 @@ class MyApp extends App {
       </Provider>
     );
   }
-
-  // render() {
-  //   return (
-  //     <Provider store={store}>
-  //       <BrowserRouter history={history}>
-  //         <ScrollToTop />
-  //         <Nav frontendSlowdown={FRONTEND_SLOWDOWN} />
-  //         <div id="body-container">
-  //           <SentryRoutes>
-  //             <Route
-  //               path="/"
-  //               element={
-  //                 <Home
-  //                   backend={BACKEND_URL}
-  //                   frontendSlowdown={FRONTEND_SLOWDOWN}
-  //                 />
-  //               }
-  //             ></Route>
-  //             <Route
-  //               path="/about"
-  //               element={<About backend={BACKEND_URL} history={history} />}
-  //             ></Route>
-  //             <Route path="/cart" element={<Cart />} />
-  //             <Route
-  //               path="/checkout"
-  //               element={
-  //                 <Checkout
-  //                   backend={BACKEND_URL}
-  //                   rageclick={RAGECLICK}
-  //                   history={history}
-  //                 />
-  //               }
-  //             ></Route>
-  //             <Route path="/complete" element={<Complete />} />
-  //             <Route path="/error" element={<CompleteError />} />
-  //             <Route path="/employee/:id" element={<Employee />}></Route>
-  //             <Route path="/product/:id" element={<Product />}></Route>
-  //             <Route
-  //               path="/products"
-  //               element={<Products backend={BACKEND_URL} />}
-  //             ></Route>
-  //             <Route
-  //               path="/products-fes" // fes = frontend slowdown (only frontend)
-  //               element={
-  //                 <Products backend={BACKEND_URL} frontendSlowdown={true} />
-  //               }
-  //             ></Route>
-  //             <Route
-  //               path="/nplusone"
-  //               element={<Nplusone backend={BACKEND_URL} />}
-  //             />
-  //             <Route
-  //               path="/products-join"
-  //               element={<ProductsJoin backend={BACKEND_URL} />}
-  //             ></Route>
-  //             <Route path="*" element={<NotFound />} />
-  //           </SentryRoutes>
-  //         </div>
-  //         <Footer />
-  //       </BrowserRouter>
-  //     </Provider>
-  //   );
-  // }
 }
 
 export default MyApp;
