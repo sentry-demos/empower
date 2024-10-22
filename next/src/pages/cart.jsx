@@ -1,13 +1,12 @@
 // import { Link } from 'react-router-dom';
 import Link from 'next/link';
-
-import * as Sentry from '@sentry/react';
+import { useRouter } from 'next/router';
 import Button from './../components/ButtonLink';
 import { connect } from 'react-redux';
 import { setProducts, addProduct, removeProduct } from '../actions';
 
 function Cart({ cart, removeProduct, addProduct }) {
-  console.log(cart);
+  const { query } = useRouter();
   return (
     <div className="cart-container">
       <h2 className="sentry-unmask">Cart</h2>
@@ -64,7 +63,10 @@ function Cart({ cart, removeProduct, addProduct }) {
             <span className="sentry-unmask">Cart Subtotal: $</span>
             {cart.total}.00
           </h3>
-          <Button to="/checkout" className="sentry-unmask">
+          <Button
+            to={{ pathname: '/checkout', query }}
+            className="sentry-unmask"
+          >
             Proceed to checkout
           </Button>
         </>

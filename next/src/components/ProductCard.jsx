@@ -52,4 +52,6 @@ const mapStateToProps = (state, ownProps) => {
   };
 };
 
-export default connect(mapStateToProps, { setProducts, addProduct, setFlag })(ProductCard);
+export default connect(mapStateToProps, { setProducts, addProduct, setFlag })(
+  ProductCard
+);

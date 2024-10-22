@@ -12,7 +12,7 @@ import {
 
 function Checkout({ rageclick, cart }) {
   const router = useRouter();
-  const { backend, frontendSlowdown, se } = router.query;
+  const { backend, se } = router.query;
   const backendType = determineBackendType(backend);
   const backendUrl = determineBackendUrl(backendType);
   const [loading, setLoading] = useState(false);
@@ -50,7 +50,7 @@ function Checkout({ rageclick, cart }) {
     const stopMeasurement = measureRequestDuration('/checkout');
     const response = await fetch(backendUrl + '/checkout?v2=true', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Se': 'se' },
+      headers: { 'Content-Type': 'application/json', Se: se },
       body: JSON.stringify({
         cart: cart,
         form: form,
@@ -279,7 +279,4 @@ const mapStateToProps = (state, ownProps) => {
   };
 };
 
-export default connect(
-  mapStateToProps,
-  {}
-)(Checkout);
+export default connect(mapStateToProps, {})(Checkout);

@@ -75,4 +75,6 @@ const mapStateToProps = (state, ownProps) => {
   };
 };
 
-export default connect(mapStateToProps, { setProducts, addProduct })(ProductsJoin);
+export default connect(mapStateToProps, { setProducts, addProduct })(
+  ProductsJoin
+);
