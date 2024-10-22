@@ -31,29 +31,15 @@ import ScrollToTop from '../components/ScrollToTop';
 import Footer from '../components/Footer';
 import Nav from '../components/Nav';
 
-const tracingOrigins = [
-  'localhost',
-  'empowerplant.io',
-  'run.app',
-  'appspot.com',
-  /^\//,
-];
-
 let BACKEND_URL;
-const DSN = process.env.NEXT_PUBLIC_DSN;
 const RELEASE = process.env.NEXT_PUBLIC_RELEASE;
 
 console.log('RELEASE', RELEASE);
 
 function initSentry(environment) {
   Sentry.init({
-    dsn: DSN,
     release: RELEASE,
     environment: environment,
-    tracesSampleRate: 1.0,
-    tracePropagationTargets: tracingOrigins,
-    profilesSampleRate: 1.0,
-    replaysSessionSampleRate: 1.0,
     beforeSend(event, hint) {
       // Parse from tags because src/index.js already set it there. Once there are React route changes, it is no longer in the URL bar
       let se;
