@@ -11,7 +11,8 @@ import {
 } from '../utils/backendrouter';
 
 function Checkout({ cart }) {
-  const { query } = useRouter();
+  const router = useRouter();
+  const { query } = router;
   const { backend, se, rageclick } = query;
   const backendType = determineBackendType(backend);
   const backendUrl = determineBackendUrl(backendType);
