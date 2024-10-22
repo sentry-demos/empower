@@ -82,6 +82,4 @@ const mapStateToProps = (state, ownProps) => {
   };
 };
 
-export default connect(mapStateToProps, { resetCart, addProduct, setProducts })(
-  Sentry.withProfiler(Nav, { name: 'Nav' })
-);
+export default connect(mapStateToProps, { resetCart, addProduct, setProducts })(Nav);

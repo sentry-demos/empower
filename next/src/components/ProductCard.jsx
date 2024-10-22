@@ -52,6 +52,4 @@ const mapStateToProps = (state, ownProps) => {
   };
 };
 
-export default connect(mapStateToProps, { setProducts, addProduct, setFlag })(
-  Sentry.withProfiler(ProductCard, { name: 'ProductCard' })
-);
+export default connect(mapStateToProps, { setProducts, addProduct, setFlag })(ProductCard);

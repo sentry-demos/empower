@@ -10,6 +10,8 @@ import '../styles/cart.css';
 import '../styles/checkout.css';
 import '../styles/complete.css';
 import '../styles/product.css';
+import '../styles/employee.css';
+
 
 import 'react-loader-spinner/dist/loader/css/react-spinner-loader.css';
 import * as Sentry from '@sentry/nextjs';

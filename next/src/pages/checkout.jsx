@@ -282,4 +282,4 @@ const mapStateToProps = (state, ownProps) => {
 export default connect(
   mapStateToProps,
   {}
-)(Sentry.withProfiler(Checkout, { name: 'Checkout' }));
+)(Checkout);

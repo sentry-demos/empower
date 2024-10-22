@@ -12,9 +12,7 @@ import {
 } from '../utils/backendrouter';
 
 function Products(props) {
-  console.log(props);
   const { backend, frontendSlowdown, se } = useRouter().query;
-  console.log('se is ' + se);
   const backendType = determineBackendType(backend);
   const backendUrl = determineBackendUrl(backendType);
   const [products, setProducts] = useState([]);
@@ -190,6 +188,4 @@ const mapStateToProps = (state, ownProps) => {
   };
 };
 
-export default connect(mapStateToProps, { setProducts, addProduct })(
-  Sentry.withProfiler(Products, { name: 'Products' })
-);
+export default connect(mapStateToProps, { setProducts, addProduct })(Products);

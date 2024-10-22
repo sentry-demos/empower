@@ -86,4 +86,4 @@ export default connect(mapStateToProps, {
   setProducts,
   addProduct,
   removeProduct,
-})(Sentry.withProfiler(Cart, { name: 'Cart' }));
+})(Cart);
