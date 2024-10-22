@@ -16,6 +16,7 @@ import 'react-loader-spinner/dist/loader/css/react-spinner-loader.css';
 import * as Sentry from '@sentry/nextjs';
 
 import { crasher } from '../utils/errors';
+
 import {
   determineBackendType,
   determineBackendUrl,
@@ -97,7 +98,6 @@ class MyApp extends App {
 
   static async getInitialProps(appContext) {
     // Call the parent class's getInitialProps to get pageProps
-    console.log('in get initial props');
 
     const appProps = await App.getInitialProps(appContext);
     // Get hostname from the request headers (only available server-side)
@@ -122,7 +122,6 @@ class MyApp extends App {
   }
 
   componentDidMount() {
-    console.log('componentDidMount called');
     const { query } = this.props.pageProps;
     const backendType = determineBackendType(query.backend);
     BACKEND_URL = determineBackendUrl(backendType);
@@ -212,7 +211,8 @@ class MyApp extends App {
     }
     currentScope.setUser({ email: email });
 
-    // TODO: Figure out why this is forcing a rerender on initial "Browse products" button click, or add tags to idnvidual network calls
+    // TODO: Figure out why this is forcing a rerender on initial "Browse products" button click
+    // TODO: Currently adding SE tags only to indiviudal network calls for demo
     // // Automatically append `se`, `customerType` and `userEmail` query params to all requests
     // // (except for requests to Sentry)
     // const nativeFetch = window.fetch;
@@ -252,69 +252,6 @@ class MyApp extends App {
       </Provider>
     );
   }
-
-  // render() {
-  //   return (
-  //     <Provider store={store}>
-  //       <BrowserRouter history={history}>
-  //         <ScrollToTop />
-  //         <Nav frontendSlowdown={FRONTEND_SLOWDOWN} />
-  //         <div id="body-container">
-  //           <SentryRoutes>
-  //             <Route
-  //               path="/"
-  //               element={
-  //                 <Home
-  //                   backend={BACKEND_URL}
-  //                   frontendSlowdown={FRONTEND_SLOWDOWN}
-  //                 />
-  //               }
-  //             ></Route>
-  //             <Route
-  //               path="/about"
-  //               element={<About backend={BACKEND_URL} history={history} />}
-  //             ></Route>
-  //             <Route path="/cart" element={<Cart />} />
-  //             <Route
-  //               path="/checkout"
-  //               element={
-  //                 <Checkout
-  //                   backend={BACKEND_URL}
-  //                   rageclick={RAGECLICK}
-  //                   history={history}
-  //                 />
-  //               }
-  //             ></Route>
-  //             <Route path="/complete" element={<Complete />} />
-  //             <Route path="/error" element={<CompleteError />} />
-  //             <Route path="/employee/:id" element={<Employee />}></Route>
-  //             <Route path="/product/:id" element={<Product />}></Route>
-  //             <Route
-  //               path="/products"
-  //               element={<Products backend={BACKEND_URL} />}
-  //             ></Route>
-  //             <Route
-  //               path="/products-fes" // fes = frontend slowdown (only frontend)
-  //               element={
-  //                 <Products backend={BACKEND_URL} frontendSlowdown={true} />
-  //               }
-  //             ></Route>
-  //             <Route
-  //               path="/nplusone"
-  //               element={<Nplusone backend={BACKEND_URL} />}
-  //             />
-  //             <Route
-  //               path="/products-join"
-  //               element={<ProductsJoin backend={BACKEND_URL} />}
-  //             ></Route>
-  //             <Route path="*" element={<NotFound />} />
-  //           </SentryRoutes>
-  //         </div>
-  //         <Footer />
-  //       </BrowserRouter>
-  //     </Provider>
-  //   );
-  // }
 }
 
 export default MyApp;

@@ -10,9 +10,9 @@ import {
   determineBackendUrl,
 } from '../utils/backendrouter';
 
-function Checkout({ rageclick, cart }) {
-  const router = useRouter();
-  const { backend, se } = router.query;
+function Checkout({ cart }) {
+  const { query } = useRouter();
+  const { backend, se, rageclick } = query;
   const backendType = determineBackendType(backend);
   const backendUrl = determineBackendUrl(backendType);
   const [loading, setLoading] = useState(false);
@@ -125,9 +125,9 @@ function Checkout({ rageclick, cart }) {
         setLoading(false);
 
         if (hadError) {
-          router.push('/completeError');
+          router.push({ pathname: '/completeError', query });
         } else {
-          router.push('/complete');
+          router.push({ pathname: '/complete', query });
         }
       }
     );
@@ -263,7 +263,7 @@ function Checkout({ rageclick, cart }) {
               defaultValue="Complete order"
             />
           </form>
-          <Link href="/cart" className="sentry-unmask">
+          <Link href={{ pathname: '/cart', query }} className="sentry-unmask">
             Back to cart
           </Link>
         </>

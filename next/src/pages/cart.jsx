@@ -6,7 +6,9 @@ import { connect } from 'react-redux';
 import { setProducts, addProduct, removeProduct } from '../actions';
 
 function Cart({ cart, removeProduct, addProduct }) {
+  console.log('here before crash');
   const { query } = useRouter();
+  console.log('made it past useRouter');
   return (
     <div className="cart-container">
       <h2 className="sentry-unmask">Cart</h2>
@@ -16,7 +18,7 @@ function Cart({ cart, removeProduct, addProduct }) {
             {cart.items.map((item) => {
               const quantity = cart.quantities[item.id];
               const itemLink = {
-                pathname: '/product/',
+                pathname: '/product',
                 query: { product: item.id },
               }; // Should this be item and not item.id?
 
@@ -63,10 +65,7 @@ function Cart({ cart, removeProduct, addProduct }) {
             <span className="sentry-unmask">Cart Subtotal: $</span>
             {cart.total}.00
           </h3>
-          <Button
-            to={{ pathname: '/checkout', query }}
-            className="sentry-unmask"
-          >
+          <Button to={'/checkout'} params={query} className="sentry-unmask">
             Proceed to checkout
           </Button>
         </>

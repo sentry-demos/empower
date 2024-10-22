@@ -11,24 +11,26 @@ import {
   determineBackendUrl,
 } from '../utils/backendrouter';
 
-function Products(props) {
-  const { backend, frontendSlowdown, se } = useRouter().query;
+function Products() {
+  const {
+    backend,
+    frontendSlowdown,
+    se,
+    productsExtremelySlow,
+    productsBeError,
+  } = useRouter().query;
   const backendType = determineBackendType(backend);
   const backendUrl = determineBackendUrl(backendType);
   const [products, setProducts] = useState([]);
 
-  // TODO Reimplement routing options with query params
-  // function determineProductsEndpoint() {
-  //   if (productsExtremelySlow) {
-  //     return '/products?fetch_promotions=true';
-  //   } else if (productsBeError) {
-  //     return '/products?in_stock_only=1';
-  //   } else {
-  //     return frontendSlowdown ? '/products-join' : '/products';
-  //   }
-  // }
   function determineProductsEndpoint() {
-    return frontendSlowdown ? '/products-join' : '/products';
+    if (productsExtremelySlow) {
+      return '/products?fetch_promotions=true';
+    } else if (productsBeError) {
+      return '/products?in_stock_only=1';
+    } else {
+      return frontendSlowdown ? '/productsJoin' : '/products';
+    }
   }
 
   function fetchUncompressedAsset() {
@@ -99,7 +101,7 @@ function Products(props) {
   */
   useEffect(() => {
     // getProducts handles error responses differently, depending on the browser used
-    function getProducts(frontendSlowdown) {
+    function getProducts() {
       [('/api', '/connect', '/organization')].forEach((endpoint) => {
         fetch(backendUrl + endpoint, {
           method: 'GET',
@@ -140,7 +142,7 @@ function Products(props) {
         });
     }
 
-    getProducts(frontendSlowdown);
+    getProducts();
   }, []);
 
   return products.length > 0 ? (

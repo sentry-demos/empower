@@ -6,7 +6,7 @@ import { resetCart, addProduct, setProducts } from '../actions';
 
 import EPlogo from '../../public/empowerplant-logo.svg';
 
-function Nav({ cart, frontendSlowdown }) {
+function Nav({ cart }) {
   const { query } = useRouter();
   return (
     <>
@@ -54,12 +54,12 @@ function Nav({ cart, frontendSlowdown }) {
               About
             </Link>
             <Link
-              href={frontendSlowdown ? '/products-fes' : '/products'}
+              href={{ pathname: '/products', query }}
               className="sentry-unmask"
             >
               Products
             </Link>
-            <Link href="/cart">
+            <Link href={{ pathname: '/cart', query }}>
               <span className="sentry-unmask">Cart</span>
               {cart.items.length > 0 ? (
                 <span>
