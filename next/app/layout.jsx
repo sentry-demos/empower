@@ -38,8 +38,6 @@ export default function RootLayout({
   // This will be populated with nested layouts or pages
   children,
 }) {
-  console.log('app router root layout');
-
   return (
       <html lang="en">
         <body id="body-container">

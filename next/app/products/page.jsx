@@ -15,7 +15,7 @@ import {
 
 function Products(props) {
   console.log(props);
-  const {  backend,
+  const { backend,
     frontendSlowdown,
     se,
     productsExtremelySlow,
@@ -33,7 +33,7 @@ function Products(props) {
       return frontendSlowdown ? '/products-join' : '/products';
     }
   }
-  
+
   function determineProductsEndpoint() {
     return frontendSlowdown ? '/products-join' : '/products';
   }
@@ -149,7 +149,7 @@ function Products(props) {
 
     getProducts(frontendSlowdown);
   }, []);
-
+  console.log(products);
   return products.length > 0 ? (
     <div>
       <ul className="products-list">
