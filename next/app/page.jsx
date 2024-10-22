@@ -1,22 +1,31 @@
+'use client'
+
 import * as Sentry from '@sentry/react';
-import plantsBackground from '../../public/plants-background-img.jpg';
-import Button from './../components/ButtonLink';
+import plantsBackground from '/public/plants-background-img.jpg';
+import ButtonLink from '/src/components/ButtonLink';
+import { useSearchParams } from 'next/navigation';
+
 import { useEffect } from 'react';
-import { useRouter } from 'next/router';
+import { useRouter } from 'next/navigation';
 import {
   determineBackendType,
   determineBackendUrl,
-} from '../utils/backendrouter';
+} from '/src/utils/backendrouter';
 
 const divStyle = {
   backgroundImage: 'url(' + plantsBackground.src + ')',
 };
 
-function Home() {
-  const { query } = useRouter();
-  const { backend } = query;
+
+export default function Page() {
+  console.log("in home page");
+  const router = useRouter();
+  const { backend, frontendSlowdown } = useSearchParams();
   const backendType = determineBackendType(backend);
   const backendUrl = determineBackendUrl(backendType);
+  console.log('backend is ' + backendUrl);
+
+
 
   useEffect(() => {
     try {
@@ -38,11 +47,10 @@ function Home() {
       <div className="hero-content">
         <h1>Empower your plants</h1>
         <p>Keep your houseplants happy.</p>
-        <Button to={'/products'} params={query}>
+        <ButtonLink to={'/products'} params={router.query}>
           Browse products
-        </Button>
+        </ButtonLink>
       </div>
     </div>
   );
 }
-export default Home;
