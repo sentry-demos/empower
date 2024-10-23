@@ -5,6 +5,8 @@ import { crasher } from '/src/utils/errors';
 
 import { useSearchParams } from 'next/navigation';
 import * as Sentry from '@sentry/nextjs';
+
+
 import {
   determineBackendType,
   determineBackendUrl,

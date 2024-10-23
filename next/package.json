@@ -3,15 +3,17 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@prisma/client": "^5.21.1",
     "@reduxjs/toolkit": "^2.2.8",
     "@sentry/nextjs": "^8.34.0",
-    "@sentry/react": "~8.20.0",
+    "@sentry/utils": "^8.35.0",
     "@testing-library/jest-dom": "~5.11.4",
     "@testing-library/react": "~11.1.0",
     "@testing-library/user-event": "~12.1.10",
     "@vercel/postgres": "^0.10.0",
     "history": "~5.3.0",
     "next": "^14.1.1",
+    "prisma": "^5.21.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-loader-spinner": "~4.0.0",
@@ -25,7 +27,7 @@
   "scripts": {
     "dev": "next dev",
     "start": "next start",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "lint": "next lint",
     "format": "prettier --check --ignore-path .prettierignore .",
     "format:fix": "prettier --write --ignore-path .prettierignore ."

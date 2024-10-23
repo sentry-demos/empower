@@ -3,7 +3,7 @@
 import Link from 'next/link';
 
 import slugify from '/src/utils/slugify';
-import * as Sentry from '@sentry/react';
+import * as Sentry from '@sentry/nextjs';
 import { isOddReleaseWeek, busy_sleep } from '/src/utils/time';
 import { useEffect } from 'react';
 

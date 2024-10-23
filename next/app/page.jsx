@@ -1,6 +1,6 @@
 'use client'
 
-import * as Sentry from '@sentry/react';
+import * as Sentry from '@sentry/nextjs';
 import plantsBackground from '/public/plants-background-img.jpg';
 import ButtonLink from '/src/components/ButtonLink';
 import { useSearchParams } from 'next/navigation';
