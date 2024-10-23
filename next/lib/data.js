@@ -1,4 +1,6 @@
 import { sql } from "@vercel/postgres";
+import * as Sentry from '@sentry/nextjs';
+
 
 // export type Product = {
 //   id: number;
@@ -22,12 +24,19 @@ import { sql } from "@vercel/postgres";
 
 export default async function getProducts() {
   try {
+    let products;
+            await Sentry.startSpan({
+              name: 'db span',
+              op: 'test'
+            }, async () => {
+              await new Promise((resolve) => setTimeout(resolve, 2000));
+
+              const data = await sql`SELECT * from products`;
+              products = data.rows;
+            });
     console.log("Fetching products...");
     // Artificial slowdown for demoing
-    await new Promise((resolve) => setTimeout(resolve, 2000));
 
-    const data = await sql`SELECT * from products`;
-    const products = data.rows;
 
     for (let i = 0; i < products.length; ++i) {
       const product_reviews = await getReview(i);
