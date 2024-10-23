@@ -14,21 +14,22 @@ function Nav({ cart }) {
     <>
       <nav id="top-nav" className="show-mobile">
         <div className="nav-contents">
-          <Link href="/" id="home-link">
+          <Link href="/" id="home-link" prefetch={false}>
             <Image src={EPlogo} className="logo sentry-unmask" alt="logo" />
           </Link>
 
           <div id="top-right-links">
-            <Link href="/about" className="sentry-unmask">
+            <Link href="/about" className="sentry-unmask" prefetch={false}>
               About
             </Link>
             <Link
               href={{ pathname: '/products-sc', query }}
               className="sentry-unmask"
+              prefetch={false}
             >
               Products
             </Link>
-            <Link href={{ pathname: '/cart', query }} className="sentry-unmask">
+            <Link href={{ pathname: '/cart', query }} className="sentry-unmask" prefetch={false}>
               Cart
               {cart.items.length > 0 ? (
                 <span>
@@ -46,22 +47,23 @@ function Nav({ cart }) {
 
       <nav id="top-nav" className="show-desktop">
         <div className="nav-contents">
-          <Link href="/" id="home-link" className="sentry-unmask">
+          <Link href="/" id="home-link" className="sentry-unmask" prefetch={false}>
             <Image src={EPlogo} className="logo sentry-unmask" alt="logo" />
             Empower Plant
           </Link>
 
           <div id="top-right-links">
-            <Link href="/about" className="sentry-unmask">
+            <Link href="/about" className="sentry-unmask" prefetch={false}>
               About
             </Link>
             <Link
               href={{ pathname: '/products-sc', query }}
               className="sentry-unmask"
+              prefetch={false}
             >
               Products
             </Link>
-            <Link href={{ pathname: '/cart', query }}>
+            <Link href={{ pathname: '/cart', query }} prefetch={false}>
               <span className="sentry-unmask">Cart</span>
               {cart.items.length > 0 ? (
                 <span>
