@@ -9,7 +9,7 @@ const tracingOrigins = [
   'empowerplant.io',
   'run.app',
   'appspot.com',
-  'vercel.app'
+  'vercel.app',
   /^\//,
 ];
 
