@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import * as Sentry from '@sentry/react';
+import * as Sentry from '@sentry/nextjs';
 import { useEffect } from 'react';
 
 function CompleteError() {

@@ -1,5 +1,7 @@
+'use client'
+
 import Link from 'next/link';
-import { useRouter } from 'next/router';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { connect } from 'react-redux';
 import { resetCart, addProduct, setProducts } from '../actions';
@@ -21,7 +23,7 @@ function Nav({ cart }) {
               About
             </Link>
             <Link
-              href={{ pathname: '/products', query }}
+              href={{ pathname: '/products-sc', query }}
               className="sentry-unmask"
             >
               Products
@@ -54,7 +56,7 @@ function Nav({ cart }) {
               About
             </Link>
             <Link
-              href={{ pathname: '/products', query }}
+              href={{ pathname: '/products-sc', query }}
               className="sentry-unmask"
             >
               Products

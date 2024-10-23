@@ -3,10 +3,14 @@ export async function sleep(milliseconds) {
   await new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
+// TODO: need to update ../env.sh to populate this value on deployment
+export const NEXT_APP_RELEASE = '2024.10.1';
+
 // Consistent with "weeks" as defined in release.sh for calendar version so that
 // in Trends improved/regressed change time matches release.
 export function isOddReleaseWeek() {
-  return getReleaseWeek(process.env.REACT_APP_RELEASE) % 2 == 1;
+  return getReleaseWeek(NEXT_APP_RELEASE) % 2 == 1;
+  // return getReleaseWeek(process.env.REACT_APP_RELEASE) % 2 == 1;
 }
 
 function getReleaseWeek(release) {

@@ -1,4 +1,4 @@
-import * as Sentry from '@sentry/react';
+import * as Sentry from '@sentry/nextjs';
 import { connect } from 'react-redux';
 import { setProducts, addProduct } from '../actions';
 import Loader from 'react-loader-spinner';
