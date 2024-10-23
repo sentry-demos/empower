@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import About from '../components/About';
-import * as Sentry from '@sentry/react';
+import * as Sentry from '@sentry/nextjs';
 import slugify from '../utils/slugify';
 import { isOddReleaseWeek, busy_sleep } from '../utils/time';
 

@@ -5,11 +5,7 @@
 import * as Sentry from '@sentry/nextjs';
 
 const tracingOrigins = [
-  'localhost',
-  'empowerplant.io',
-  'run.app',
-  'appspot.com',
-  /^\//,
+  /.*/,
 ];
 
 Sentry.init({

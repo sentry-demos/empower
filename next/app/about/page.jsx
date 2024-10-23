@@ -1,21 +1,22 @@
-//import { Link } from 'react-router-dom';
+'use client'
+
 import Link from 'next/link';
 
-import slugify from '../utils/slugify';
+import slugify from '/src/utils/slugify';
 import * as Sentry from '@sentry/react';
-import { isOddReleaseWeek, busy_sleep } from '../utils/time';
+import { isOddReleaseWeek, busy_sleep } from '/src/utils/time';
 import { useEffect } from 'react';
 
-import Jane from '../components/employees/jane';
-import Lily from '../components/employees/lily';
-import Keith from '../components/employees/keith';
-import Mason from '../components/employees/mason';
-import Emma from '../components/employees/emma';
-import Noah from '../components/employees/noah';
+import Jane from '/src/components/employees/jane';
+import Lily from '/src/components/employees/lily';
+import Keith from '/src/components/employees/keith';
+import Mason from '/src/components/employees/mason';
+import Emma from '/src/components/employees/emma';
+import Noah from '/src/components/employees/noah';
 
 const employees = [Jane, Lily, Keith, Mason, Emma, Noah];
 
-function About({ backend }) {
+export default function About({ backend }) {
   useEffect(() => {
     if (!isOddReleaseWeek()) {
       // can't have async sleep in a constructor
@@ -99,4 +100,4 @@ function About({ backend }) {
   );
 }
 
-export default Sentry.withProfiler(About, { name: 'About' });
+// export default Sentry.withProfiler(About, { name: 'About' });
