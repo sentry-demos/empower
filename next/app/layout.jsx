@@ -6,7 +6,7 @@ import { createStore, applyMiddleware, compose } from 'redux';
 import logger from 'redux-logger';
 import rootReducer from '/src/reducers';
 import { Provider } from 'react-redux';
-//import ScrollToTop from '/src/components/ScrollToTop';
+import ScrollToTop from '/src/components/ScrollToTop';
 import Nav from '/src/components/Nav';
 
 
@@ -19,7 +19,7 @@ import '/src/styles/cart.css';
 import '/src/styles/checkout.css';
 import '/src/styles/complete.css';
 import '/src/styles/product.css';
-//import Footer from "/src/components/Footer";
+import Footer from "/src/components/Footer";
 import SentryQueryInitializer from "../ui/sentry-query-initializer";
 
 
@@ -41,9 +41,11 @@ export default function RootLayout({
         <body id="body-container">
         <SentryQueryInitializer />
           <Provider store={store}>
+            <ScrollToTop />
             <Nav />
             {children}
           </Provider>
+          <Footer />
         </body>
       </html>
   )

@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import * as Sentry from '@sentry/react';
 import { Fragment } from 'react';
