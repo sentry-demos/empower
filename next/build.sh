@@ -10,5 +10,5 @@ rm -rf build
 # npm ci does not update minor versions ->
 # (1) less chance of breaking (2) less noise in PR from package-lock.json
 npm ci
-npm run dev # defined in 'scripts' in package.json
+npm run build # defined in 'scripts' in package.json
   

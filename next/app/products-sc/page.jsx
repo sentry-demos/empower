@@ -4,8 +4,7 @@ import ProductCatalog from '/ui/product-catalog';
 import { Suspense } from 'react';
 
 
-export default function Products(props) {
-  console.log(props);
+export default function Products() {
   return (
     <Suspense fallback={<ThreeDotLoader />}>
       <ProductCatalog />
