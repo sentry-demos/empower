@@ -1,6 +1,6 @@
 "use client"
 
-import * as Sentry from '@sentry/react';
+import * as Sentry from '@sentry/nextjs';
 import { Fragment } from 'react';
 import Link from 'next/link';
 import { useState } from 'react';

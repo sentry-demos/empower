@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation';
-import * as Sentry from '@sentry/react';
+import * as Sentry from '@sentry/nextjs';
 import { connect } from 'react-redux';
 import { setProducts, addProduct, setFlag } from '../actions';
 
