@@ -1,3 +1,5 @@
+"use client"
+
 import * as Sentry from '@sentry/react';
 import { Fragment } from 'react';
 import Link from 'next/link';
