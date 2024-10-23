@@ -99,4 +99,4 @@ function About({ backend }) {
   );
 }
 
-export default Sentry.withProfiler(About, { name: 'About' });
+export default About;
