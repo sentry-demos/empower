@@ -13,7 +13,7 @@ import {
 // Why does this component exist?
 // Layouts do not recieve searchParams: https://nextjs.org/docs/app/api-reference/file-conventions/layout#layouts-do-not-receive-searchparams
 // However, empower plant app requires these params to initialize sentry, setup the backend, etc.
-// This component is a workaround to pull the params into the root layout.jsx
+// This component is a workaround to pull the params into the root layout.jsx so the instances exist on all pages
 
 const inDevEnvironment = !!process && process.env.NODE_ENV === 'development';
 
@@ -40,8 +40,6 @@ export default function SentryQueryInitializer() {
   const DSN = process.env.NEXT_PUBLIC_DSN;
   const RELEASE = process.env.NEXT_PUBLIC_RELEASE;
 
-  console.log('ENVIRONMENT', ENVIRONMENT);
-  console.log('RELEASE', RELEASE);
 
   function initSentry(environment) {
     Sentry.init({

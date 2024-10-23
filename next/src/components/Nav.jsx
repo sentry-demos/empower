@@ -23,7 +23,7 @@ function Nav({ cart }) {
               About
             </Link>
             <Link
-              href={{ pathname: '/products', query }}
+              href={{ pathname: '/products-sc', query }}
               className="sentry-unmask"
             >
               Products
@@ -56,7 +56,7 @@ function Nav({ cart }) {
               About
             </Link>
             <Link
-              href={{ pathname: '/products', query }}
+              href={{ pathname: '/products-sc', query }}
               className="sentry-unmask"
             >
               Products
