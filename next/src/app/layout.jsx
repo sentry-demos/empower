@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 
 import { Suspense } from 'react';
 
@@ -12,9 +12,8 @@ import '/src/styles/checkout.css';
 import '/src/styles/complete.css';
 import '/src/styles/product.css';
 
-import SentryQueryInitializer from "../ui/sentry-query-initializer";
-import HomeContent from "../ui/home-content";
-
+import SentryQueryInitializer from '../../ui/sentry-query-initializer';
+import HomeContent from '../../ui/home-content';
 
 export default function RootLayout({
   // Layouts must accept a children prop.
@@ -28,12 +27,9 @@ export default function RootLayout({
           <SentryQueryInitializer />
         </Suspense>
         <Suspense>
-          <HomeContent>
-            {children}
-          </HomeContent>
+          <HomeContent>{children}</HomeContent>
         </Suspense>
-
       </body>
     </html>
-  )
+  );
 }
