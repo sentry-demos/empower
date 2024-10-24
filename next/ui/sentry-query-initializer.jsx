@@ -92,7 +92,9 @@ export default function SentryQueryInitializer() {
 
   globalScope.setUser({ email: email });
 
-  crasher();
+  // TODO Determine if we need below
+  // commenting out because its breaking the server component 
+  //crasher();
 
   return <></>;
 }
