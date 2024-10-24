@@ -13,8 +13,7 @@ import {
   determineBackendUrl,
 } from '/src/utils/backendrouter';
 
-function Products(props) {
-  console.log(props);
+function Products() {
   const { backend,
     frontendSlowdown,
     se,
@@ -39,10 +38,6 @@ function Products(props) {
   }
 
   function fetchUncompressedAsset() {
-    let se; // `se` is automatically added to all fetch requests, but need to do manually for script tags
-    Sentry.withScope(function (scope) {
-      se = scope._tags.se;
-    });
 
     let uc_small_script = document.createElement('script');
     uc_small_script.async = false;
