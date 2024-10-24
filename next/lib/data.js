@@ -1,5 +1,9 @@
 import { sql } from "@vercel/postgres";
 
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
+
 // export type Product = {
 //   id: number;
 //   description: string;
@@ -26,14 +30,18 @@ export default async function getProducts() {
     // Artificial slowdown for demoing
     await new Promise((resolve) => setTimeout(resolve, 2000));
 
-    const data = await sql`SELECT * from products`;
-    const products = data.rows;
+    const products = await prisma.products.findMany();
+    // const products = data.rows;
 
     for (let i = 0; i < products.length; ++i) {
-      const product_reviews = await getReview(i);
+
+      const product_reviews = await prisma.reviews.findMany({
+        where: { id: i },
+      });
+
       products[i].reviews = product_reviews;
     }
-    console.log(products);
+    console.log("products: ", products);
     return products;
   } catch (error) {
     console.error("Database Error:", error)
@@ -50,4 +58,9 @@ export default async function getProducts() {
       console.error("Db error", error);
     }
   }
+}
+
+export async function getProductsPrisma() {
+  const products = await prisma.products.findMany();
+  console.log("prisma", products);
 }

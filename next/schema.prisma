@@ -1,0 +1,45 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["tracing"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("POSTGRES_PRISMA_URL")
+  directUrl = env("POSTGRES_URL_NON_POOLING")
+}
+
+model inventory {
+  id        Int    @id @default(autoincrement())
+  sku       String @db.VarChar
+  count     Int
+  productid Int?
+}
+
+model products {
+  id              Int    @id @default(autoincrement())
+  title           String @unique @db.VarChar(255)
+  description     String
+  descriptionfull String
+  price           Int
+  img             String
+  imgcropped      String
+}
+
+model reviews {
+  id          Int       @id @default(autoincrement())
+  productid   Int
+  rating      Int
+  customerid  Int?
+  description String?
+  created     DateTime? @default(now()) @db.Timestamp(6)
+}
+
+model tools {
+  id    Int    @id @default(autoincrement())
+  name  String @db.VarChar
+  type  String @db.VarChar
+  sku   String @db.VarChar
+  image String @db.VarChar
+  price Int
+}
