@@ -28,7 +28,10 @@ export default function SentryQueryInitializer() {
     globalScope.setTag('se', query.se);
     // for use in Checkout.js when deciding whether to pre-fill form
     // lasts for as long as the tab is open
-    sessionStorage.setItem('se', query.se);
+
+    // TODO Determine if we need below
+    // commenting out because its breaking the server component 
+    //sessionStorage.setItem('se', query.se);
   }
 
   if (query.frontendSlowdown === 'true') {
@@ -39,12 +42,14 @@ export default function SentryQueryInitializer() {
     globalScope.setTag('frontendSlowdown', false);
   }
 
-  if (query.userFeedback) {
-    sessionStorage.setItem('userFeedback', query.userFeedback);
-  } else {
-    sessionStorage.setItem('userFeedback', 'false');
-  }
-  sessionStorage.removeItem('lastErrorEventId');
+  // TODO Determine if we need below
+  // commenting out because its breaking the server component 
+  // if (query.userFeedback) {
+  //   sessionStorage.setItem('userFeedback', query.userFeedback);
+  // } else {
+  //   sessionStorage.setItem('userFeedback', 'false');
+  // }
+  // sessionStorage.removeItem('lastErrorEventId');
 
   let email = null;
   if (query.userEmail) {
