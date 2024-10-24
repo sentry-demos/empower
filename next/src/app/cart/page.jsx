@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 
-import * as Sentry from '@sentry/nextjs';
 import Button from '/src/components/ButtonLink';
 import { connect } from 'react-redux';
 import { setProducts, addProduct, removeProduct } from '/src/actions';
