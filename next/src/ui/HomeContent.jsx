@@ -10,6 +10,17 @@ import { Provider } from 'react-redux';
 import ScrollToTop from '/src/components/ScrollToTop';
 import Nav from '/src/components/Nav';
 
+import '/src/styles/index.css';
+import '/src/styles/footer.css';
+import '/src/styles/nav.css';
+import '/src/styles/products.css';
+import '/src/styles/about.css';
+import '/src/styles/cart.css';
+import '/src/styles/checkout.css';
+import '/src/styles/complete.css';
+import '/src/styles/product.css';
+
+
 const sentryReduxEnhancer = Sentry.createReduxEnhancer({});
 
 const store = createStore(
@@ -24,7 +35,9 @@ export default function HomeContent({children}) {
       <Provider store={store}>
         <ScrollToTop />
         <Nav />
+        <div id="body-container">
         {children}
+        </div>
       </Provider>
       <Footer />
     </>

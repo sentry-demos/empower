@@ -4,7 +4,7 @@ import * as Sentry from '@sentry/nextjs';
 import { connect } from 'react-redux';
 import { setProducts, addProduct } from '/src/actions';
 import measureRequestDuration from '/src/utils/measureRequestDuration';
-import Loader from 'react-loader-spinner';
+import ThreeDotLoader from '/src/ui/ThreeDotLoader'
 import ProductCard from '/src/components/ProductCard';
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -149,7 +149,6 @@ function Products(props) {
 
     getProducts(frontendSlowdown);
   }, []);
-  console.log(products);
   return products.length > 0 ? (
     <div>
       <ul className="products-list">
@@ -182,9 +181,7 @@ function Products(props) {
       </ul>
     </div>
   ) : (
-    <div className="loader-container">
-      <Loader type="ThreeDots" color="#f6cfb2" height={150} width={150} />
-    </div>
+    <ThreeDotLoader />
   );
 }
 

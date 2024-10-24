@@ -12,8 +12,8 @@ import '/src/styles/checkout.css';
 import '/src/styles/complete.css';
 import '/src/styles/product.css';
 
-import SentryQueryInitializer from '../ui/SentryQueryInitializer';
-import HomeContent from '../ui/HomeContent';
+import SentryQueryInitializer from '/src/ui/SentryQueryInitializer';
+import HomeContent from '/src/ui/HomeContent';
 
 export default function RootLayout({
   // Layouts must accept a children prop.
@@ -22,7 +22,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body id="body-container">
+      <body>
         <Suspense>
           <SentryQueryInitializer />
         </Suspense>
