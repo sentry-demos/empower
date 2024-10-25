@@ -1,5 +1,4 @@
-import datetime
-import operator
+import re
 import os
 import random
 import requests
@@ -10,7 +9,6 @@ import dotenv
 from .db import get_products, get_products_join, get_inventory
 from .utils import parseHeaders, get_iterator
 import sentry_sdk
-from sentry_sdk import metrics
 from sentry_sdk.integrations.flask import FlaskIntegration
 from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 
@@ -24,6 +22,9 @@ ENVIRONMENT = None
 RUBY_BACKEND = None
 RUN_SLOW_PROFILE = None
 
+NORMAL_SLOW_PROFILE = 2 # seconds
+EXTREMELY_SLOW_PROFILE = 24
+
 
 def before_send(event, hint):
     # 'se' tag may have been set in app.before_request
@@ -32,10 +33,18 @@ def before_send(event, hint):
         se = event['tags']['se']
 
     if se not in [None, "undefined"]:
+        se_tda_prefix_regex = r"[^-]+-tda-[^-]+-"
+        se_fingerprint = se
+        prefix = re.findall(se_tda_prefix_regex, se)
+        if prefix:
+            # Now that TDA puts platform/browser and test path into SE tag we want to prevent
+            # creating separate issues for those. See https://github.com/sentry-demos/empower/pull/332
+            se_fingerprint = prefix[0]
+            
         if se.startswith('prod-tda-'):
-            event['fingerprint'] = ['{{ default }}', se, RELEASE]
+            event['fingerprint'] = ['{{ default }}', se_fingerprint, RELEASE]
         else:
-            event['fingerprint'] = ['{{ default }}', se]
+            event['fingerprint'] = ['{{ default }}', se_fingerprint]
 
     return event
 
@@ -99,6 +108,7 @@ def checkout():
     order = json.loads(request.data)
     cart = order["cart"]
     form = order["form"]
+    validate_inventory = True if "validate_inventory" not in order else order["validate_inventory"] == "true"
 
     inventory = []
     try:
@@ -109,13 +119,14 @@ def checkout():
         raise (err)
 
     print("> /checkout inventory", inventory)
+    print("> validate_inventory", validate_inventory)
 
     with sentry_sdk.start_span(op="process_order", description="function"):
         quantities = cart['quantities']
         for cartItem in quantities:
             for inventoryItem in inventory:
                 print("> inventoryItem.count", inventoryItem['count'])
-                if (inventoryItem.count < quantities[cartItem] or quantities[cartItem] >= inventoryItem.count):
+                if (validate_inventory and (inventoryItem.count < quantities[cartItem] or quantities[cartItem] >= inventoryItem.count)):
                     sentry_sdk.metrics.incr(key="checkout.failed")
                     raise Exception("Not enough inventory for product")
         if len(inventory) == 0 or len(quantities) == 0:
@@ -143,6 +154,11 @@ def products():
         value=1,
         tags={"endpoint": "/products", "method": "GET"},
     )
+    
+    product_inventory = None
+    fetch_promotions = request.args.get('fetch_promotions')
+    timeout_seconds = (EXTREMELY_SLOW_PROFILE if fetch_promotions else NORMAL_SLOW_PROFILE)
+    in_stock_only = request.args.get('in_stock_only')
 
     try:
         with sentry_sdk.start_span(op="/products.get_products", description="function"):
@@ -155,15 +171,17 @@ def products():
                 descriptions = [product["description"] for product in productsJSON]
                 with sentry_sdk.start_span(op="/get_iterator", description="function"):
                     with sentry_sdk.metrics.timing(key="products.get_iterator.execution_time"):
-                        loop = get_iterator(len(descriptions) * 6 - 1)
+                        loop = get_iterator(len(descriptions) * 6 + (2 if fetch_promotions else -1))
 
-                    for i in range(loop):
+                    for i in range(loop * 10):
                         time_delta = time.time() - start_time
-                        if time_delta > 2:
+                        if time_delta > timeout_seconds:
                             break
 
                         for i, description in enumerate(descriptions):
                             for pest in pests:
+                                if in_stock_only and productsJSON[i] not in product_inventory:
+                                    continue
                                 if pest in description:
                                     try:
                                         del productsJSON[i:i + 1]

@@ -61,6 +61,10 @@ if (window.location.hostname === 'localhost') {
 let BACKEND_URL;
 let FRONTEND_SLOWDOWN;
 let RAGECLICK;
+let PRODUCTS_EXTREMELY_SLOW;
+let PRODUCTS_BE_ERROR;
+let ADD_TO_CART_JS_ERROR;
+let CHECKOUT_SUCCESS;
 const DSN = process.env.REACT_APP_DSN;
 const RELEASE = process.env.REACT_APP_RELEASE;
 
@@ -182,13 +186,29 @@ class App extends Component {
     ][Math.floor(Math.random() * 4)];
     currentScope.setTag('customerType', customerType);
 
-    if (queryParams.get('se')) {
+    let se = queryParams.get('se');
+    if (se) {
       // Route components (navigation changes) will now have 'se' tag on scope
-      console.log('> src/index.js se', queryParams.get('se'));
-      currentScope.setTag('se', queryParams.get('se'));
+      currentScope.setTag('se', se);
       // for use in Checkout.js when deciding whether to pre-fill form
       // lasts for as long as the tab is open
-      sessionStorage.setItem('se', queryParams.get('se'));
+      sessionStorage.setItem('se', se);
+    }
+
+    // see `cexp` fixture in tda/conftest.py
+    let cexp = queryParams.get('cexp')
+    if (cexp) {
+      currentScope.setTag('cexp', cexp);
+
+      if (cexp === 'products_extremely_slow') {
+        PRODUCTS_EXTREMELY_SLOW = true;
+      } else if (cexp === 'products_be_error') {
+        PRODUCTS_BE_ERROR = true;
+      } else if (cexp === 'add_to_cart_js_error') {
+        ADD_TO_CART_JS_ERROR = true;
+      } else if (cexp === 'checkout_success') {
+        CHECKOUT_SUCCESS = true;
+      }
     }
 
     if (queryParams.get('frontendSlowdown') === 'true') {
@@ -306,6 +326,7 @@ class App extends Component {
                   <Checkout
                     backend={BACKEND_URL}
                     rageclick={RAGECLICK}
+                    checkout_success={CHECKOUT_SUCCESS}
                     history={history}
                   />
                 }
@@ -316,7 +337,14 @@ class App extends Component {
               <Route path="/product/:id" element={<Product />}></Route>
               <Route
                 path="/products"
-                element={<Products backend={BACKEND_URL} />}
+                element={
+                  <Products backend={BACKEND_URL} 
+                    frontendSlowdown={false}
+                    productsExtremelySlow={PRODUCTS_EXTREMELY_SLOW}
+                    productsBeError={PRODUCTS_BE_ERROR}
+                    addToCartJsError={ADD_TO_CART_JS_ERROR}
+                  />
+                }
               ></Route>
               <Route
                 path="/products-fes" // fes = frontend slowdown (only frontend)

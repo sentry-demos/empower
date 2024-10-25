@@ -5,17 +5,25 @@ browsers:
   browserName: chrome
   browserVersion: latest
   platformName: Windows 10
-  param_display: chrome_windows 
+  param_display: chrome_windows
 - remote: true
   browserName: firefox
   browserVersion: latest
   platformName: Windows 10
   param_display: firefox_windows
+## commenting out safari for now as it's not loading up empower-app as expected
+## see `sauceLabsUrl`s in https://demo.sentry.io/issues/5275523263/?project=5390094
+# - remote: true
+#   browserName: safari
+#   browserVersion: latest-1
+#   platformName: OS X 10.13
+#   param_display: safari_osx
+## Adding in Chrome in place of safari just to produce more/enough data
 - remote: true
-  browserName: safari
-  browserVersion: latest-1
-  platformName: OS X 10.13
-  param_display: safari_osx
+  browserName: chrome
+  browserVersion: latest
+  platformName: Windows 10
+  param_display: chrome_windows_2 
 - remote: true
   browserName: chrome
   browserVersion: latest

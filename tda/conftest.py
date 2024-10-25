@@ -115,13 +115,26 @@ BACKENDS = (os.getenv("BACKENDS") or "flask,express,springboot,ruby,laravel,rail
 import urllib3
 urllib3.disable_warnings()
 
+
+def get_environment():
+    hostname = subprocess.check_output(['hostname']).strip().decode()
+    host_to_env = {
+        'empower-tda-and-crons': 'production',
+        'empower-tda-and-crons-staging': 'staging',
+    }
+    if hostname in host_to_env:
+        return host_to_env[hostname]
+    else:
+        return 'local'
+
+
 sentry_sdk.init(
     dsn=CONFIG.dsn,
     traces_sample_rate=0,
     # we don't really use environment for anything, as we'd have to propagate it to all
     # the other services, so instead out of laziness we effectively just encode it as the
     # first part of SE tag ("prod-", or system $USER when running locally).
-    environment="production",
+    environment=get_environment()
 )
 
 _browser2class = {
@@ -160,7 +173,7 @@ def sleep_length(random):
     def random_sleep_length():
         if SLEEP_LENGTH.startswith("random_"):
             spl = SLEEP_LENGTH.split('_')
-            r = random.randrange(float(spl[1]))
+            r = random.randrange(int(spl[1]))
             if len(spl) == 3:
                 r += float(spl[2])
             return r
@@ -203,6 +216,70 @@ def backend(random):
             backends += ['flask'] # make flask 2x more likely than others
         return random.sample(backends, 1)[0]
     return random_backend
+
+
+# returns number of "release weeks" since 2022-01-01 (???)
+# see react/src/utils/time.js
+def get_release_week():
+    release = subprocess.run(['../bin/release.sh'], stdout=subprocess.PIPE).stdout.decode().strip()
+    year, month, week = map(int, release.split('.'))
+    past_years = (year - 22) * 59 - (year - 21) // 4
+    return past_years + (month - 1) * 5 + (-1 if month > 2 and year % 4 != 0 else 0) + week
+
+class CExp:
+    STANDARD_CHECKOUT_FAIL  = "standard_checkout_fail"
+    PRODUCTS_EXTREMELY_SLOW = "products_extremely_slow"
+    PRODUCTS_BE_ERROR       = "products_be_error"
+    ADD_TO_CART_JS_ERROR    = "add_to_cart_js_error"
+    CHECKOUT_SUCCESS        = "checkout_success" 
+
+
+# Simulate critical experiences (cexp) in user journey
+@pytest.fixture
+def cexp(random):
+
+    # 1, 2, 3, ... each has it's own probablitiy of certain types of failures
+    def time_segment():
+        now = datetime.now()
+
+        # ideally these are correlated with release timestamps (vertical bars in graphs):
+        #return get_release_week() % 2
+
+        # OR, for testing cycle through 4 segements every hour (15 minutes each)
+        #return now().minute // 15
+
+        # testing cycle through 5 segements every 2 hours (15/30 minutes each)
+        #if now.hour % 2 == 0:
+        #    if now.minute < 30: 
+        #        return 0
+        #    elif now.minute < 45:
+        #        return 1
+        #    else:
+        #        return 2
+        #else:
+        #    return 3 + now.minute // 30
+
+        # change every hour, except for segment #4 that's 2 hours long (cycle = 6 hours)
+        mod5 = now.hour % 6 
+        return 4 if mod5 == 5 else mod5
+
+    # array length must match number of possible time segments
+    probabilities = {       # segments    0    1    2    3    4 
+        CExp.STANDARD_CHECKOUT_FAIL:    [1.0, 0.0, 0.0, 0.0, 0.0],
+        CExp.PRODUCTS_EXTREMELY_SLOW:   [0.0, 1.0, 0.0, 0.0, 0.0],
+        CExp.PRODUCTS_BE_ERROR:         [0.0, 0.0, 1.0, 0.0, 0.0],
+        CExp.ADD_TO_CART_JS_ERROR:      [0.0, 0.0, 0.0, 1.0, 0.0],
+        CExp.CHECKOUT_SUCCESS:          [0.0, 0.0, 0.0, 0.0, 1.0],
+    }
+    
+    def random_cexp():
+        return random.choices(
+            list(probabilities.keys()),
+            weights=list(probabilities.values())[time_segment()],
+            k=1)[0]
+
+    return random_cexp
+
 
 @pytest.fixture
 def endpoints():
@@ -305,7 +382,7 @@ def _sauce_browser(request, selenium_endpoint, se):
 
         browser.implicitly_wait(10)
 
-        sentry_sdk.set_tag("seleniumSessionId", browser.session_id)
+        sentry_sdk.set_tag("sauceLabsUrl", f"https://app.saucelabs.com/tests/{browser.session_id}")
 
         # This is specifically for SauceLabs plugin.
         # In case test fails after selenium session creation having this here will help track it down.
@@ -329,8 +406,9 @@ def _sauce_browser(request, selenium_endpoint, se):
             browser.execute_script("sauce:job-result={}".format(sauce_result))
             browser.quit()
 
-            # desktop_web tests finished, send to Sentry empower-tda, look for tags pytestName, pytestPlatform, seleniumSessionId
+            # send to Sentry empower-tda, look for tags: se, sauceLabsUrl
             sentry_sdk.capture_message("Selenium Session Done")
+            sentry_sdk.flush()
 
     except Exception as err:
         sentry_sdk.capture_exception(err)
@@ -388,14 +466,14 @@ def android_react_native_emu_driver(request, selenium_endpoint, se_prefix):
         driver = appiumdriver.Remote(selenium_endpoint, options=options)
         driver.implicitly_wait(20)
 
-        sentry_sdk.set_tag("seleniumSessionId", driver.session_id)
+        sentry_sdk.set_tag("sauceLabsUrl", f"https://app.saucelabs.com/tests/{driver.session_id}")
 
         yield driver
         sauce_result = "failed" if request.node.rep_call.failed else "passed"
         driver.execute_script("sauce:job-result={}".format(sauce_result))
         driver.quit()
 
-        # android_react_native tests finished, send to Sentry empower-tda, look for tags pytestName, pytestPlatform, seleniumSessionId
+        # send to Sentry empower-tda, look for tags: se, sauceLabsUrl
         sentry_sdk.capture_message("Selenium Session Done")
 
     except Exception as err:
@@ -425,14 +503,14 @@ def android_emu_driver(request, selenium_endpoint, se_prefix):
         driver = appiumdriver.Remote(selenium_endpoint, options=options)
         driver.implicitly_wait(20)
 
-        sentry_sdk.set_tag("seleniumSessionId", driver.session_id)
+        sentry_sdk.set_tag("sauceLabsUrl", f"https://app.saucelabs.com/tests/{driver.session_id}")
 
         yield driver
         sauce_result = "failed" if request.node.rep_call.failed else "passed"
         driver.execute_script("sauce:job-result={}".format(sauce_result))
         driver.quit()
 
-        # android tests finished, send to Sentry empower-tda, look for tags pytestName, pytestPlatform, seleniumSessionId
+        # send to Sentry empower-tda, look for tags: se, sauceLabsUrl
         sentry_sdk.capture_message("Selenium Session Done")
 
     except Exception as err:
@@ -463,14 +541,14 @@ def ios_react_native_sim_driver(request, selenium_endpoint, se_prefix):
         driver = appiumdriver.Remote(selenium_endpoint, options=options)
         driver.implicitly_wait(20)
 
-        sentry_sdk.set_tag("seleniumSessionId", driver.session_id)
+        sentry_sdk.set_tag("sauceLabsUrl", f"https://app.saucelabs.com/tests/{driver.session_id}")
 
         yield driver
         sauce_result = "failed" if request.node.rep_call.failed else "passed"
         driver.execute_script("sauce:job-result={}".format(sauce_result))
         driver.quit()
 
-        # ios_react_native tests finished, send to Sentry empower-tda, look for tags pytestName, pytestPlatform, seleniumSessionId
+        # send to Sentry empower-tda, look for tags: se, sauceLabsUrl
         sentry_sdk.capture_message("Selenium Session Done")
 
     except Exception as err:
@@ -500,14 +578,14 @@ def ios_sim_driver(request, selenium_endpoint, se_prefix):
         driver = appiumdriver.Remote(selenium_endpoint, options=options)
         driver.implicitly_wait(20)
 
-        sentry_sdk.set_tag("seleniumSessionId", driver.session_id)
+        sentry_sdk.set_tag("sauceLabsUrl", f"https://app.saucelabs.com/tests/{driver.session_id}")
 
         yield driver
         sauce_result = "failed" if request.node.rep_call.failed else "passed"
         driver.execute_script("sauce:job-result={}".format(sauce_result))
         driver.quit()
 
-        # ios tests finished, send to Sentry empower-tda, look for tags pytestName, pytestPlatform, seleniumSessionId
+        # send to Sentry empower-tda, look for tags: se, sauceLabsUrl
         sentry_sdk.capture_message("Selenium Session Done")
 
     except Exception as err:
@@ -533,6 +611,6 @@ if CONFIG.mode == 'direct':
         project = CONFIG.dsn.split('/')[-1]
         print()
         print(f'GENERATED errors: https://demo.sentry.io/issues/?query=se%3A{se_base_tag()}%2A+%21project%3Aempower-tda&start={start}&end={end}')
-        print(f'OWN errors:       https://demo.sentry.io/issues/?project={project}&query=se%3A{se_base_tag()}%2A&start={start}&end={end}')
+        print(f'OWN errors:       https://demo.sentry.io/discover/results/?end={end}&field=title&field=se&field=sauceLabsUrl&field=cexp&field=timestamp&project={project}&query=se%3A{se_base_tag()}%2A&queryDataset=error-events&sort=-timestamp&start={start}&yAxis=count%28%29A')
 
     atexit.register(final_report)

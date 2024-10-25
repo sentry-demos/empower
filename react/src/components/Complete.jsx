@@ -1,9 +1,26 @@
 import { Link } from 'react-router-dom';
 import './complete.css';
-import { useSelector } from 'react-redux';
+import { useEffect, useState } from 'react';
+import { connect } from 'react-redux';
+import * as Sentry from '@sentry/react';
+import { resetCart } from '../actions';
 
-function Complete(props) {
-  const cart = useSelector((state) => state.cart);
+function Complete({cart, resetCart}) {
+  const [orderedCart] = useState(cart);
+
+  useEffect(() => {
+    resetCart();
+    
+    window.setTimeout(() => {
+      Sentry.getReplay().flush();
+    }, 1000);
+  }, [resetCart]);
+
+  useEffect(() => {
+    window.setTimeout(() => {
+      Sentry.getReplay().flush();
+    }, 1000);
+  });
 
   const RandomNumber = Math.floor(Math.random() * 99999) + 10000;
 
@@ -11,7 +28,7 @@ function Complete(props) {
     <div className="checkout-container-complete">
       <h2>Checkout complete</h2>
       <h4>
-        Order No: {RandomNumber} — Total: ${cart.total}.00
+        Order No: {RandomNumber} — Total: ${orderedCart.total}.00
       </h4>
       <p>A confirmation email has been sent to the address you provided.</p>
       <p>
@@ -23,4 +40,13 @@ function Complete(props) {
   );
 }
 
-export default Complete;
+const mapStateToProps = (state, ownProps) => {
+  return {
+    cart: state.cart,
+    products: state.products,
+  };
+};
+
+export default connect(mapStateToProps, { resetCart })(
+  Sentry.withProfiler(Complete, { name: 'Complete' })
+);
