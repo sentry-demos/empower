@@ -3,7 +3,9 @@
 
 html {
   font-size: 100%;
-} /*16px*/
+}
+
+/*16px*/
 
 body {
   margin: 0;
@@ -94,6 +96,7 @@ input[type='submit']:hover {
   background-color: #dddc4e;
   color: #002626;
 }
+
 button:active,
 a.btn:active,
 input[type='submit']:active {
@@ -119,7 +122,7 @@ input[type='text'] {
 
 #top-nav .nav-contents,
 #body-container,
-#footer > div {
+#footer>div {
   max-width: 1200px;
   margin: 0 auto;
 }
@@ -153,6 +156,24 @@ input[type='text'] {
 
 .hero-content a.btn {
   margin-top: 0.5rem;
+}
+
+.city-input {
+  width: 200px;
+}
+
+.fade-in {
+  animation: fadeIn 1s;
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 1;
+  }
 }
 
 .star {

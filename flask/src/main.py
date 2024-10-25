@@ -3,14 +3,16 @@ import os
 import random
 import requests
 import time
-from flask import Flask, json, request, make_response, send_from_directory
+from flask import Flask, json, request, make_response, send_from_directory, jsonify
 from flask_cors import CORS
+from openai import OpenAI
 import dotenv
 from .db import get_products, get_products_join, get_inventory
 from .utils import parseHeaders, get_iterator
 import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
 from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
+from sentry_sdk.ai.monitoring import ai_track
 
 RUBY_CUSTOM_HEADERS = ['se', 'customerType', 'email']
 pests = ["aphids", "thrips", "spider mites", "lead miners", "scale", "whiteflies", "earwigs", "cutworms", "mealybugs",
@@ -40,7 +42,7 @@ def before_send(event, hint):
             # Now that TDA puts platform/browser and test path into SE tag we want to prevent
             # creating separate issues for those. See https://github.com/sentry-demos/empower/pull/332
             se_fingerprint = prefix[0]
-            
+
         if se.startswith('prod-tda-'):
             event['fingerprint'] = ['{{ default }}', se_fingerprint, RELEASE]
         else:
@@ -50,8 +52,10 @@ def before_send(event, hint):
 
 
 def traces_sampler(sampling_context):
+    print(sampling_context)
     sentry_sdk.set_context("sampling_context", sampling_context)
-    REQUEST_METHOD = sampling_context['wsgi_environ']['REQUEST_METHOD']
+    wsgi_environ = sampling_context.get('wsgi_environ', {})
+    REQUEST_METHOD = wsgi_environ.get('REQUEST_METHOD', 'GET')
     if REQUEST_METHOD == 'OPTIONS':
         return 0.0
     else:
@@ -95,6 +99,38 @@ class MyFlask(Flask):
 
 app = MyFlask(__name__)
 CORS(app)
+
+client = OpenAI(api_key= os.environ["OPENAI_API_KEY"])
+
+@app.route('/suggestion', methods=['GET'])
+def suggestion():
+  sentry_sdk.metrics.incr(
+        key="endpoint_call",
+        value=1,
+        tags={"endpoint": "/suggestion", "method": "GET"},
+    )
+
+  catalog = request.args.get('catalog')
+  prompt = f'''You are witty plant salesman. Here is your catalog of plants: {catalog}.
+    Provide a suggestion based on the user\'s location. Pick one plant from the catalog provided.
+    Keep your response short and concise. Try to incorporate the weather and current season.'''
+  geo = request.args.get('geo')
+
+  @ai_track("Suggestion Pipeline")
+  def suggestion_pipeline():
+    with sentry_sdk.start_transaction(op="Suggestion AI", description="Suggestion ai pipeline"):
+      response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=
+        [
+          { "role" : "system", "content": prompt },
+          { "role": "user", "content": geo }
+        ]).choices[0].message.content
+      return response
+
+  response = suggestion_pipeline()
+  return jsonify({"suggestion": response}), 200
+
 
 
 @app.route('/checkout', methods=['POST'])
@@ -154,7 +190,7 @@ def products():
         value=1,
         tags={"endpoint": "/products", "method": "GET"},
     )
-    
+
     product_inventory = None
     fetch_promotions = request.args.get('fetch_promotions')
     timeout_seconds = (EXTREMELY_SLOW_PROFILE if fetch_promotions else NORMAL_SLOW_PROFILE)

@@ -75,19 +75,14 @@ function Checkout({ cart }) {
       Sentry.metrics.increment('checkout.error', 1, {
         tags: { status: response.status },
       });
-      throw new Error(
-        [response.status, response.statusText || ' Internal Server Error'].join(
-          ' -'
-        )
+      throw new Error([response.status, response.statusText || ' Internal Server Error'].join(' -')
       );
     }
     Sentry.metrics.increment('checkout.success');
     Sentry.metrics.distribution('checkout.order.total', cart.total);
     return response;
   }
-  function generateUrl(product_id) {
-    return product_id;
-  }
+
 
   function handleInputChange(event) {
     const target = event.target;

@@ -5,7 +5,7 @@ import plantsBackground from '/public/plants-background-img.jpg';
 import ButtonLink from '/src/components/ButtonLink';
 import { useSearchParams } from 'next/navigation';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   determineBackendType,
@@ -24,8 +24,29 @@ export default function Page() {
   const backendType = determineBackendType(backend);
   const backendUrl = determineBackendUrl(backendType);
   console.log('backend is ' + backendUrl);
+  const [suggestion, setSuggestion] = useState("");
+  const [city, setCity] = useState("");
 
+  const handleInputChange = (e) => {
+    setCity(e.target.value);
+  }
 
+  const getSuggestion = async () => {
+    console.log("Fetching suggestion...")
+    try {
+      const geo = "New York City";
+      let resp = await fetch(`/api/suggestion?geo=${city}`);
+      console.log(resp);
+      let data = await resp.json();
+      setSuggestion(data.suggestion);
+      console.log(data.suggestion);
+      const ele = document.getElementById('hero-suggestion');
+      ele.classList.add("fade-in");
+
+    } catch (err) {
+      console.error("Error fetching suggestion", err);
+    }
+  }
 
   useEffect(() => {
     try {
@@ -50,6 +71,21 @@ export default function Page() {
         <ButtonLink to={'/products'} params={router.query}>
           Browse products
         </ButtonLink>
+        <div>
+          <button onClick={getSuggestion}>
+            Get Suggestion
+          </button>
+          {!suggestion &&
+            <input
+              className="city-input"
+              name="city"
+              placeholder="Your City"
+              onChange={handleInputChange}
+            />}
+            <div id="hero-suggestion">
+              <p>{suggestion}</p>
+            </div>
+        </div>
       </div>
     </div>
   );

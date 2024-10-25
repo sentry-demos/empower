@@ -8,6 +8,7 @@ import { setProducts, addProduct, removeProduct } from '/src/actions';
 
 function Cart({ cart, removeProduct, addProduct }) {
   console.log(cart);
+
   return (
     <div className="cart-container">
       <h2 className="sentry-unmask">Cart</h2>
@@ -87,7 +88,7 @@ export default connect(mapStateToProps, {
   addProduct,
   removeProduct,
 })(
-    // Disable profiling for vercel deploy
+  // Disable profiling for vercel deploy
   // Sentry.withProfiler(Cart, { name: 'Cart' })
   Cart
 );

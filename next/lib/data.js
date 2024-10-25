@@ -1,9 +1,9 @@
-import { sql } from "@vercel/postgres";
-
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+
+// Types if we ever migrate to typescript
 // export type Product = {
 //   id: number;
 //   description: string;
@@ -41,26 +41,28 @@ export default async function getProducts() {
 
       products[i].reviews = product_reviews;
     }
-    console.log("products: ", products);
+    // console.log("products: ", products);
     return products;
   } catch (error) {
     console.error("Database Error:", error)
     // do sentry stuff
   }
+}
+
+export async function getProductsOnly() {
+  try {
+    console.log("Fetching products...");
+    // Artificial slowdown for demoing
+
+    const products = await prisma.products.findMany();
+    // const products = data.rows;
 
 
-  async function getReview(i) {
-    try {
-      const data = await sql`SELECT * from reviews WHERE productId=${i}`;
-      console.log(data.rows);
-      return data.rows;
-    } catch (error) {
-      console.error("Db error", error);
-    }
+    // console.log("products: ", products);
+    return products;
+  } catch (error) {
+    console.error("Database Error:", error)
+    // do sentry stuff
   }
 }
 
-export async function getProductsPrisma() {
-  const products = await prisma.products.findMany();
-  console.log("prisma", products);
-}
