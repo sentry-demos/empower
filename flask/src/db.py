@@ -6,6 +6,7 @@ import sqlalchemy
 from sqlalchemy import create_engine, text
 from .utils import weighter
 from dotenv import load_dotenv
+from sqlalchemy.orm import joinedload
 load_dotenv()
 
 HOST = os.environ["DB_HOST"]
@@ -39,6 +40,17 @@ else:
             }
         )
     )
+def get_products_with_reviews_and_bundles(session):
+    Product = ""
+    try:
+        products = session.query(Product).options(
+            joinedload(Product.reviews),
+            joinedload(Product.product_bundles)
+        ).all()
+        return products
+    except Exception as e:
+        raise DatabaseConnectionError(f"Error fetching products: {str(e)}")
+
 
 # N+1 because a sql query for every product n
 def get_products():
