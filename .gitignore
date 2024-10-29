@@ -8,6 +8,7 @@ next/node_modules
 express/node_modules
 /.pnp
 .pnp.js
+.vercel
 
 # testing
 /coverage

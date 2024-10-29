@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import * as Sentry from '@sentry/react';
 import { useRouter } from 'next/router';
 import { connect } from 'react-redux';
 import { addProduct } from '../actions';

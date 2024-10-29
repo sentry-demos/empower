@@ -31,9 +31,10 @@ services:
     ports: [9989:9989]
     volumes: [./mini-relay/data:/data:rw]
   postgres:
-    image: 'postgres:alpine'
+    image: "postgres:alpine"
     environment:
       - POSTGRES_PASSWORD=postgres
     init: true
+    ports: [5432:5432]
     volumes:
       - ./postgres/data/empowerplant.sql:/docker-entrypoint-initdb.d/empowerplant.sql:ro
