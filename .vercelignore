@@ -1,0 +1,17 @@
+.github
+.aspnetcore
+bin
+crons-python
+env-config
+express
+flask
+laravel
+mini-relay
+node_modules
+postgres
+react
+ruby
+ruby-on-rails
+spring-boot
+tda
+vue
