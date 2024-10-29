@@ -38,6 +38,8 @@ function About({ backend }) {
 
     const response = [request1, request2, request3];
 
+
+    
     // Error Handling
     response.forEach((r) => {
       if (!r.ok) {
