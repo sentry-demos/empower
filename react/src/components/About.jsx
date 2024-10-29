@@ -37,7 +37,10 @@ function About({ backend }) {
     // let response = await Promise.allSettled([request1, request2, request3])
 
     const response = [request1, request2, request3];
+   
 
+
+    
     // Error Handling
     response.forEach((r) => {
       if (!r.ok) {
