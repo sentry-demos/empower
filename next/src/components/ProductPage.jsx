@@ -1,20 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import * as Sentry from '@sentry/react';
-import { useRouter } from 'next/router';
+'use client'
+
+import React from 'react';
 import { connect } from 'react-redux';
 import { addProduct } from '../actions';
 
 function Product(props) {
-  const [product, setProduct] = useState();
-
-  const router = useRouter();
-  //const location = useLocation();
-
-  useEffect(() => {
-    const { product } = router.query;
-    //const product = location.state;
-    setProduct(product);
-  }, [product]);
+  const product = props.product;
 
   let averageRating;
   if (product) {
