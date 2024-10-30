@@ -25,7 +25,6 @@ RUN_SLOW_PROFILE = None
 NORMAL_SLOW_PROFILE = 2 # seconds
 EXTREMELY_SLOW_PROFILE = 24
 
-
 def before_send(event, hint):
     # 'se' tag may have been set in app.before_request
     se = None
