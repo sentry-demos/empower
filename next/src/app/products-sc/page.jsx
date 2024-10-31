@@ -1,5 +1,5 @@
-import ThreeDotLoader from '/src/ui/ThreeDotLoader';
-import ProductCatalog from '/src/ui/ProductCatalog';
+import ThreeDotLoader from '/src/components/ThreeDotLoader';
+import ProductCatalog from '/src/components/ProductCatalog';
 import { Suspense } from 'react';
 
 export const dynamic = 'force-dynamic';

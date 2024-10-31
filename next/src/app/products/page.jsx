@@ -4,7 +4,7 @@ import * as Sentry from '@sentry/nextjs';
 import { connect } from 'react-redux';
 import { setProducts, addProduct } from '/src/actions';
 import measureRequestDuration from '/src/utils/measureRequestDuration';
-import ThreeDotLoader from '/src/ui/ThreeDotLoader'
+import ThreeDotLoader from '/src/components/ThreeDotLoader'
 import ProductCard from '/src/components/ProductCard';
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -144,7 +144,7 @@ function Products() {
 
     getProducts(frontendSlowdown);
   }, []);
-  return products.length > 0 ? (
+  return false ? (
     <div>
       <ul className="products-list">
         {products.map((product, i) => {
