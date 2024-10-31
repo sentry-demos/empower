@@ -7,6 +7,7 @@ export const fetchCache = 'force-no-store';
 
 
 export default function Products() {
+  // ToDo: figure out why three dot animation is frozen when rendering ThreeDotLoader or replace it
   return (
     <Suspense fallback={<ThreeDotLoader />}>
       <ProductCatalog />
