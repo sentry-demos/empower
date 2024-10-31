@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import * as Sentry from '@sentry/nextjs';
 import { connect } from 'react-redux';
-import { setProducts, addProduct, setFlag } from '../actions';
+import { setProducts, addProduct, setFlag } from '@/src/actions';
 
 function ProductCard(props) {
   const router = useRouter();

@@ -1,17 +1,17 @@
 //import { Link } from 'react-router-dom';
 import Link from 'next/link';
 
-import slugify from '../utils/slugify';
+import slugify from '@/src/utils/slugify';
 import * as Sentry from '@sentry/nextjs';
-import { isOddReleaseWeek, busy_sleep } from '../utils/time';
+import { isOddReleaseWeek, busy_sleep } from '@/src/utils/time';
 import { useEffect } from 'react';
 
-import Jane from '../components/employees/jane';
-import Lily from '../components/employees/lily';
-import Keith from '../components/employees/keith';
-import Mason from '../components/employees/mason';
-import Emma from '../components/employees/emma';
-import Noah from '../components/employees/noah';
+import Jane from '@/public/employees/jane';
+import Lily from '@/public/employees/lily';
+import Keith from '@/public/employees/keith';
+import Mason from '@/public/employees/mason';
+import Emma from '@/public/employees/emma';
+import Noah from '@/public/employees/noah';
 
 const employees = [Jane, Lily, Keith, Mason, Emma, Noah];
 

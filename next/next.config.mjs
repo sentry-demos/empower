@@ -3,11 +3,6 @@ import { withSentryConfig } from '@sentry/nextjs';
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   distDir: './dist', // Changes the build output directory to `./dist/`.
-  // This should be removed during a refactor, following these directions:
-  // https://nextjs.org/docs/messages/missing-suspense-with-csr-bailout
-  experimental: {
-    missingSuspenseWithCSRBailout: false,
-  },
 };
 
 export default withSentryConfig(nextConfig, {

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { connect } from 'react-redux';
-import { addProduct } from '../actions';
+import { addProduct } from '@/src/actions';
 
 function Product(props) {
   const product = props.product;

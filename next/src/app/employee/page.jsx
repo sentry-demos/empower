@@ -1,20 +1,21 @@
+'use client'
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useParams } from 'react-router-dom';
+// import { useParams } from 'react-router-dom';
 
 function Employee() {
   const [employee, setEmployee] = useState();
   // TODO this wont work with next routing
-  const { id } = useParams();
+  // const { id } = useParams();
 
-  useEffect(() => {
-    const fetchData = async () => {
-      const promise = await import(`../components/employees/${id}`);
-      setEmployee(promise.default);
-    };
+  // useEffect(() => {
+  //   const fetchData = async () => {
+  //     const promise = await import(`@/src/components/employees/${id}`);
+  //     setEmployee(promise.default);
+  //   };
 
-    fetchData();
-  }, [employee, id]);
+  //   fetchData();
+  // }, [employee, id]);
 
   return employee ? (
     <div className="employee-page">

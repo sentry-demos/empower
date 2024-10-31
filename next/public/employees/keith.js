@@ -1,4 +1,4 @@
-import img from '../../assets/keith-ryan.jpg';
+import img from '@/public/assets/keith-ryan.jpg';
 
 const Keith = {
   name: 'Keith Ryan',

@@ -1,9 +1,9 @@
 // import { Link } from 'react-router-dom';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import Button from './../components/ButtonLink';
+import Button from '@/src/components/ButtonLink';
 import { connect } from 'react-redux';
-import { setProducts, addProduct, removeProduct } from '../actions';
+import { setProducts, addProduct, removeProduct } from '@/src/actions';
 
 function Cart({ cart, removeProduct, addProduct }) {
   console.log('here before crash');

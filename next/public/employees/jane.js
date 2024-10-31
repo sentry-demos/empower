@@ -1,4 +1,4 @@
-import img from '../../assets/jane-schmidt.jpg';
+import img from '@/public/assets/jane-schmidt.jpg';
 
 const Jane = {
   name: 'Jane Schmidt',

@@ -1,9 +1,10 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/router';
+import { useRouter } from 'next/navigation';
 import { connect } from 'react-redux';
-import { addProduct } from '../actions';
+import { addProduct } from '@/src/actions';
+import DOMPurify from 'dompurify';
 
 function Product(props) {
   const [product, setProduct] = useState();
@@ -28,7 +29,7 @@ function Product(props) {
   return product ? (
     <div className="product-layout">
       <div>
-        <img src={product.imgcropped} alt="product" />
+        <img src={DOMPurify.sanitize(product.imgcropped)} alt="product" />
       </div>
       <div className="product-info">
         <h1>{product.title}</h1>

@@ -130,7 +130,7 @@ function Checkout({ cart }) {
         setLoading(false);
 
         if (hadError) {
-          router.push('/completeError');
+          router.push('/complete/error');
         } else {
           router.push('/complete');
         }
