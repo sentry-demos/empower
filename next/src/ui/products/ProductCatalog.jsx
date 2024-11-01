@@ -1,6 +1,6 @@
 
 import React from 'react';
-import ProductCard from '@/src/components/ProductCard';
+import ProductCard from '@/src/ui/products/ProductCard';
 import getProducts from '@/lib/data.js';
 
 export default async function ProductCatalog(props) {

@@ -3,12 +3,12 @@
 import * as Sentry from '@sentry/nextjs';
 import { createStore, applyMiddleware, compose } from 'redux';
 import logger from 'redux-logger';
-import rootReducer from '/src/reducers';
+import rootReducer from '@/src/reducers';
 
-import Footer from "@/src/components/Footer";
+import Footer from "@/src/ui/Footer";
 import { Provider } from 'react-redux';
-import ScrollToTop from '@/src/components/ScrollToTop';
-import Nav from '@/src/components/Nav';
+import ScrollToTop from '@/src/ui/ScrollToTop';
+import Nav from '@/src/ui/Nav';
 
 import '@/src/styles/index.css';
 import '@/src/styles/footer.css';
@@ -29,14 +29,14 @@ const store = createStore(
 );
 
 
-export default function HomeContent({children}) {
+export default function HomeContent({ children }) {
   return (
     <>
       <Provider store={store}>
         <ScrollToTop />
         <Nav />
         <div id="body-container">
-        {children}
+          {children}
         </div>
       </Provider>
       <Footer />
