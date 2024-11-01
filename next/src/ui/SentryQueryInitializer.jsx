@@ -29,7 +29,7 @@ export default function SentryQueryInitializer() {
     // lasts for as long as the tab is open
 
     // TODO Determine if we need below
-    // commenting out because its breaking the server component 
+    // commenting out because its breaking the server component
     //sessionStorage.setItem('se', query.se);
   }
 
@@ -42,7 +42,7 @@ export default function SentryQueryInitializer() {
   }
 
   // TODO Determine if we need below
-  // commenting out because its breaking the server component 
+  // commenting out because its breaking the server component
   // if (query.userFeedback) {
   //   sessionStorage.setItem('userFeedback', query.userFeedback);
   // } else {
@@ -92,7 +92,7 @@ export default function SentryQueryInitializer() {
   globalScope.setUser({ email: email });
 
   // TODO Determine if we need below
-  // commenting out because its breaking the server component 
+  // commenting out because its breaking the server component
   //crasher();
 
   return <></>;

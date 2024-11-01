@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 
-import Button from '/src/components/ButtonLink';
+import Button from '@/src/ui/ButtonLink';
 import { connect } from 'react-redux';
 import { setProducts, addProduct, removeProduct } from '/src/actions';
 
@@ -87,7 +87,7 @@ export default connect(mapStateToProps, {
   addProduct,
   removeProduct,
 })(
-    // Disable profiling for vercel deploy
+  // Disable profiling for vercel deploy
   // Sentry.withProfiler(Cart, { name: 'Cart' })
   Cart
 );

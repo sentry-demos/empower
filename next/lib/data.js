@@ -1,3 +1,4 @@
+'use server'
 import { PrismaClient } from '@prisma/client';
 import { determineBackendUrl } from '@/src/utils/backendrouter';
 import { isOddReleaseWeek, busy_sleep } from '@/src/utils/time';
@@ -51,19 +52,54 @@ export async function getProduct(index) {
   }
 }
 
+export async function checkoutAction(cart) {
+  console.log("cart ", cart);
+  const inventory = await getInventory(cart);
 
-export async function getOrganization() {
-  if (Math.random() < 0.01) {
-    getProducts();
+  console.log("> /checkout inventory", inventory)
+
+
+  if (inventory.length === 0 || cart.quantities.length === 0) {
+    throw new Error ("Not enough inventory for product")
   }
-  return "server /organization"
+
+  for (let inventoryItem of inventory) {
+    let id = inventoryItem.id;
+    console.log(inventoryItem.count, cart.quantities[id]);
+    if (inventoryItem.count < cart.quantities[id] || cart.quantities[id] >= inventoryItem.count) {
+      throw new Error("Not enough inventory for product")
+    }
+  }
+
+  return {status : 200, message: "success"}
+}
+
+
+export async function getInventory(cart) {
+  console.log("> getInventory");
+
+  const quantities = cart['quantities'];
+  console.log("> quantities", quantities);
+
+  let productIds = []
+
+  Object.entries(quantities).forEach(([key, value]) => productIds.push(Number(key)));
+  console.log("> product ids", productIds);
+  let inventory;
+  try {
+    inventory = await prisma.inventory.findMany({
+      where: { id : { in : productIds } }
+    });
+  } catch (error) {
+    console.log("Database Error:", error);
+  }
+  console.log("inventory: ", inventory);
+  return inventory;
 }
 
 
 
 export async function getAbout(backend) {
-  
-
   if (!isOddReleaseWeek()) {
     // can't have async sleep in a constructor
     busy_sleep(Math.random(25) + 100);
