@@ -78,12 +78,13 @@ export default {
     return { 
       employees: employees,
       renderedTestimonials: renderedTestimonials,
-      loading: true 
+      loading: false 
     };
   },
   beforeCreate() {
     try {
     // Do this or the trace won't include the backend transaction
+    /*
     const transaction = Sentry.getCurrentHub().getScope().getTransaction();
     let span = {};
     if (transaction) {
@@ -113,7 +114,7 @@ export default {
       span.finish();
       transaction.finish();
     }, 5000)
-
+*/
     } catch (ex) {
       console.log(ex);
     }

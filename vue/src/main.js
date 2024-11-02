@@ -1,6 +1,5 @@
 import { createApp } from "vue";
 import * as Sentry from "@sentry/vue";
-import { BrowserTracing } from "@sentry/tracing";
 import { createPinia } from "pinia";
 // import { Debug as DebugIntegration } from "@sentry/integrations";
 
@@ -11,33 +10,31 @@ const app = createApp(App);
 app.use(createPinia());  
 app.use(router);
 
-const RELEASE = process.env.RELEASE
+//const RELEASE = process.env.RELEASE
+
+const tracingOrigins = [
+  'localhost',
+  'empowerplant.io',
+  'run.app',
+  'appspot.com',
+  /^\//,
+];
 
 Sentry.init({
     app,
     dsn: import.meta.env.VITE_APP_DSN,
-    release: RELEASE,
-    integrations: [
-      new BrowserTracing({
-        routingInstrumentation: Sentry.vueRouterInstrumentation(router),
-        tracingOrigins: ["localhost", "my-site-url.com", /^\//],
-      }),
-    //   new DebugIntegration(
-    //     {
-    //       // trigger DevTools debugger instead of using console.log
-    //       debugger: true,
-    
-    //       // stringify event before passing it to console.log
-    //       stringify: true,
-    //     }
-    //   )
+    release: "1.0",
+    tracePropagationTargets: tracingOrigins,
+    integrations:[
+      Sentry.browserTracingIntegration(),
+      Sentry.replayIntegration()
     ],
-    // Set tracesSampleRate to 1.0 to capture 100%
-    // of transactions for performance monitoring.
-    // We recommend adjusting this value in production
+    ignoreErrors: ["Missing Translation Key"],
     tracesSampleRate: 1.0,
     autoSessionTracking: true,
     trackComponents: true,
+    replaysSessionSampleRate: 1.0,
+    replaysOnErrorSampleRate: 1.0,
   });
 
 app.mount("#app");

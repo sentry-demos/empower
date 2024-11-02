@@ -23,7 +23,49 @@ export default {
     checkout: function () {
       this.disabledStatus = true;
       let internalTagSE = this.SE;
+      let success = null;
       console.log("checkout", this.SE);
+      try {
+          throw TypeError("Missing Translation Key")
+      } catch (error) {
+        Sentry.captureException(error)
+      }
+
+      Sentry.startSpan({ name: "Checkout" }, () => {
+        var raw =
+        '{"cart":{"items":[{"id":4,"title":"Botana Voice","description":"Lets plants speak for themselves.","descriptionfull":"Now we don\'t want him to get lonely, so we\'ll give him a little friend. Let your imagination just wonder around when you\'re doing these things. Let your imagination be your guide. Nature is so fantastic, enjoy it. Let it make you happy.","price":175,"img":"https://storage.googleapis.com/application-monitoring/plant-to-text.jpg","imgcropped":"https://storage.googleapis.com/application-monitoring/plant-to-text-cropped.jpg","pg_sleep":"","reviews":[{"id":4,"productid":4,"rating":4,"customerid":null,"description":null,"created":"2021-06-04 00:12:33.553939","pg_sleep":""},{"id":5,"productid":4,"rating":3,"customerid":null,"description":null,"created":"2021-06-04 00:12:45.558259","pg_sleep":""},{"id":6,"productid":4,"rating":2,"customerid":null,"description":null,"created":"2021-06-04 00:12:50.510322","pg_sleep":""},{"id":13,"productid":4,"rating":3,"customerid":null,"description":null,"created":"2021-07-01 00:12:43.312186","pg_sleep":""},{"id":14,"productid":4,"rating":3,"customerid":null,"description":null,"created":"2021-07-01 00:12:54.719873","pg_sleep":""},{"id":15,"productid":4,"rating":3,"customerid":null,"description":null,"created":"2021-07-01 00:12:57.760686","pg_sleep":""},{"id":16,"productid":4,"rating":3,"customerid":null,"description":null,"created":"2021-07-01 00:13:00.140407","pg_sleep":""},{"id":17,"productid":4,"rating":3,"customerid":null,"description":null,"created":"2021-07-01 00:13:00.971730","pg_sleep":""},{"id":18,"productid":4,"rating":3,"customerid":null,"description":null,"created":"2021-07-01 00:13:01.665798","pg_sleep":""},{"id":19,"productid":4,"rating":3,"customerid":null,"description":null,"created":"2021-07-01 00:13:02.278934","pg_sleep":""}]}],"quantities":{"4":2},"total":350},"form":{"loading":false}}';
+        var requestOptions = {
+          method: "POST",
+          headers: {
+            "Content-Type": "text/plain",
+          },
+          body: raw,
+          redirect: "follow",
+        };
+
+        fetch(
+          "http://localhost:8088/checkout",
+          requestOptions
+        ).then(function (response) {
+          if (!response.ok) {
+            const err = new Error(
+              response.status +
+                " -- " +
+                (response.statusText || "Internal Server Error")
+            );
+            success = false;
+            Sentry.captureException(err);
+            console.error(err);
+          } else {
+            success = true;
+          }
+        });
+      })
+
+      if (!success) {
+        this.$router.push("/error");
+      }
+      /*
       const transaction = Sentry.startTransaction({ name: "checkout-cart" });
       // Do this or the trace won't include the backend transaction
       Sentry.getCurrentHub().configureScope((scope) => {
@@ -128,23 +170,20 @@ export default {
           scope.setTag("SE", internalTagSE);
         });
         this.$router.push("/error");
-      }, 1000);
+      }, 1000);*/
     },
 
     addToCartPrice: function () {
       const store = useCounterStore();
       this.checkoutCartPrice = store.counter;
       this.checkoutCart = store.cart;
-      console.log("price", this.checkoutCartPrice);
-      console.log("this is cart bruhh", this.checkoutCart);
-      // console.log("this is store bruhhh", store);
     },
   },
 
   mounted() {
     try {
       // Do this or the trace won't include the backend transaction
-      const transaction = Sentry.getCurrentHub().getScope().getTransaction();
+      /*const transaction = Sentry.getCurrentHub().getScope().getTransaction();
       let span = {};
       if (transaction) {
         span = transaction.startChild({
@@ -165,25 +204,24 @@ export default {
           "sentry-trace": traceAndSpanID,
         },
         redirect: "follow",
-      };
+      };*/
 
       fetch(
-        "https://application-monitoring-flask-dot-sales-engineering-sf.appspot.com/products",
-        requestOptions
+        "http://localhost:8088/products"
       )
         .then((response) => response.text())
         .then((result) => {
           this.products = JSON.parse(result);
           this.loading = false;
-          span.finish();
+          /*span.finish();
           transaction.finish();
           // Generating Undefined error
-          transactionComplete = true;
+          transactionComplete = true;*/
         })
         .catch((error) => {
           console.log("error", error);
         });
-      console.log(span);
+      //console.log(span);
     } catch (ex) {
       console.log(ex);
     }

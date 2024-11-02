@@ -17,6 +17,7 @@ import * as Sentry from "@sentry/vue";
 import isEmail from 'validator/lib/isEmail';
 
 // Generating Type error
+/*
 let num = 11;
 try {
     num.toUpperCase()
@@ -31,7 +32,7 @@ try {
 } catch (err) {
     console.error(err)
     Sentry.captureException(err)
-}
+}*/
 
 export default {
   name: "app",
