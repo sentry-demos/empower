@@ -27,7 +27,10 @@ Sentry.init({
     tracePropagationTargets: tracingOrigins,
     integrations:[
       Sentry.browserTracingIntegration(),
-      Sentry.replayIntegration()
+      Sentry.replayIntegration({
+        blockAllMedia: false,
+        networkDetailAllowUrls: ['/checkout', '/products'],
+      })
     ],
     ignoreErrors: ["Missing Translation Key"],
     tracesSampleRate: 1.0,
