@@ -20,18 +20,30 @@ export default {
   },
 
   methods: {
+    makeCheckoutRequest: function(requestOptions) {
+      return fetch(
+          "http://localhost:8088/checkout",
+          requestOptions
+        ).then(function (response) {
+          if (!response.ok) {
+            const err = new Error(
+              response.status +
+                " -- " +
+                (response.statusText || "Internal Server Error")
+            );
+            Sentry.captureException(err);
+            return false;
+          } else {
+            return true;
+          }
+        });
+    },
     checkout: function () {
       this.disabledStatus = true;
       let internalTagSE = this.SE;
       let success = null;
-      console.log("checkout", this.SE);
-      try {
-          throw TypeError("Missing Translation Key")
-      } catch (error) {
-        Sentry.captureException(error)
-      }
 
-      Sentry.startSpan({ name: "Checkout" }, () => {
+      Sentry.startSpan({ name: "Checkout", forceTransaction: true}, async () => {
         var raw =
         '{"cart":{"items":[{"id":4,"title":"Botana Voice","description":"Lets plants speak for themselves.","descriptionfull":"Now we don\'t want him to get lonely, so we\'ll give him a little friend. Let your imagination just wonder around when you\'re doing these things. Let your imagination be your guide. Nature is so fantastic, enjoy it. Let it make you happy.","price":175,"img":"https://storage.googleapis.com/application-monitoring/plant-to-text.jpg","imgcropped":"https://storage.googleapis.com/application-monitoring/plant-to-text-cropped.jpg","pg_sleep":"","reviews":[{"id":4,"productid":4,"rating":4,"customerid":null,"description":null,"created":"2021-06-04 00:12:33.553939","pg_sleep":""},{"id":5,"productid":4,"rating":3,"customerid":null,"description":null,"created":"2021-06-04 00:12:45.558259","pg_sleep":""},{"id":6,"productid":4,"rating":2,"customerid":null,"description":null,"created":"2021-06-04 00:12:50.510322","pg_sleep":""},{"id":13,"productid":4,"rating":3,"customerid":null,"description":null,"created":"2021-07-01 00:12:43.312186","pg_sleep":""},{"id":14,"productid":4,"rating":3,"customerid":null,"description":null,"created":"2021-07-01 00:12:54.719873","pg_sleep":""},{"id":15,"productid":4,"rating":3,"customerid":null,"description":null,"created":"2021-07-01 00:12:57.760686","pg_sleep":""},{"id":16,"productid":4,"rating":3,"customerid":null,"description":null,"created":"2021-07-01 00:13:00.140407","pg_sleep":""},{"id":17,"productid":4,"rating":3,"customerid":null,"description":null,"created":"2021-07-01 00:13:00.971730","pg_sleep":""},{"id":18,"productid":4,"rating":3,"customerid":null,"description":null,"created":"2021-07-01 00:13:01.665798","pg_sleep":""},{"id":19,"productid":4,"rating":3,"customerid":null,"description":null,"created":"2021-07-01 00:13:02.278934","pg_sleep":""}]}],"quantities":{"4":2},"total":350},"form":{"loading":false}}';
         var requestOptions = {
@@ -43,134 +55,13 @@ export default {
           redirect: "follow",
         };
 
-        fetch(
-          "http://localhost:8088/checkout",
-          requestOptions
-        ).then(function (response) {
-          if (!response.ok) {
-            const err = new Error(
-              response.status +
-                " -- " +
-                (response.statusText || "Internal Server Error")
-            );
-            success = false;
-            Sentry.captureException(err);
-            console.error(err);
-          } else {
-            success = true;
-          }
-        });
+        success = await this.makeCheckoutRequest(requestOptions);
+        return success;
       })
 
       if (!success) {
         this.$router.push("/error");
       }
-      /*
-      const transaction = Sentry.startTransaction({ name: "checkout-cart" });
-      // Do this or the trace won't include the backend transaction
-      Sentry.getCurrentHub().configureScope((scope) => {
-        // setting se query parameter as a tag
-        scope.setTag("SE", internalTagSE);
-
-        // setting email address of user
-        // making fewer emails so event and user counts for an Issue are not the same
-        let array = [
-          "a",
-          "b",
-          "c",
-          "d",
-          "e",
-          "f",
-          "g",
-          "h",
-          "i",
-          "j",
-          "k",
-          "l",
-          "m",
-          "n",
-          "o",
-          "p",
-          "q",
-          "r",
-          "s",
-          "t",
-          "u",
-          "v",
-          "w",
-          "x",
-          "y",
-          "z",
-        ];
-
-        let a = array[Math.floor(Math.random() * array.length)];
-        let b = array[Math.floor(Math.random() * array.length)];
-        let c = array[Math.floor(Math.random() * array.length)];
-
-        let email = a + b + c + "@gmail.com";
-        scope.setUser({ email: email });
-
-        // setting customerType as tag
-        const customerType = [
-          "medium-plan",
-          "large-plan",
-          "small-plan",
-          "enterprise",
-        ][Math.floor(Math.random() * 4)];
-        scope.setTag("customerType", customerType);
-        scope.setSpan(transaction);
-      });
-      console.log("checkout...");
-      console.log(transaction);
-      const traceAndSpanID = transaction.traceId + "-" + transaction.spanId;
-
-      var raw =
-        '{"cart":{"items":[{"id":4,"title":"Botana Voice","description":"Lets plants speak for themselves.","descriptionfull":"Now we don\'t want him to get lonely, so we\'ll give him a little friend. Let your imagination just wonder around when you\'re doing these things. Let your imagination be your guide. Nature is so fantastic, enjoy it. Let it make you happy.","price":175,"img":"https://storage.googleapis.com/application-monitoring/plant-to-text.jpg","imgcropped":"https://storage.googleapis.com/application-monitoring/plant-to-text-cropped.jpg","pg_sleep":"","reviews":[{"id":4,"productid":4,"rating":4,"customerid":null,"description":null,"created":"2021-06-04 00:12:33.553939","pg_sleep":""},{"id":5,"productid":4,"rating":3,"customerid":null,"description":null,"created":"2021-06-04 00:12:45.558259","pg_sleep":""},{"id":6,"productid":4,"rating":2,"customerid":null,"description":null,"created":"2021-06-04 00:12:50.510322","pg_sleep":""},{"id":13,"productid":4,"rating":3,"customerid":null,"description":null,"created":"2021-07-01 00:12:43.312186","pg_sleep":""},{"id":14,"productid":4,"rating":3,"customerid":null,"description":null,"created":"2021-07-01 00:12:54.719873","pg_sleep":""},{"id":15,"productid":4,"rating":3,"customerid":null,"description":null,"created":"2021-07-01 00:12:57.760686","pg_sleep":""},{"id":16,"productid":4,"rating":3,"customerid":null,"description":null,"created":"2021-07-01 00:13:00.140407","pg_sleep":""},{"id":17,"productid":4,"rating":3,"customerid":null,"description":null,"created":"2021-07-01 00:13:00.971730","pg_sleep":""},{"id":18,"productid":4,"rating":3,"customerid":null,"description":null,"created":"2021-07-01 00:13:01.665798","pg_sleep":""},{"id":19,"productid":4,"rating":3,"customerid":null,"description":null,"created":"2021-07-01 00:13:02.278934","pg_sleep":""}]}],"quantities":{"4":2},"total":350},"form":{"loading":false}}';
-
-      // let raw = {
-      //   cart: {
-      //     items: this.checkoutCart,
-      //   },
-      // };
-
-      console.log(raw);
-
-      var requestOptions = {
-        method: "POST",
-        headers: {
-          "Content-Type": "text/plain",
-          "sentry-trace": traceAndSpanID,
-        },
-        body: raw,
-        redirect: "follow",
-      };
-
-      fetch(
-        "https://application-monitoring-flask-dot-sales-engineering-sf.appspot.com/checkout",
-        requestOptions
-      ).then(function (response) {
-        if (!response.ok) {
-          const err = new Error(
-            response.status +
-              " -- " +
-              (response.statusText || "Internal Server Error")
-          );
-          Sentry.captureException(err);
-          console.error(err);
-        }
-        console.log("transaction.finish");
-        transaction.finish();
-        // introduces an unhandled error
-        transactionComplete = true;
-      });
-
-      // The delay has been added to complete the transaction
-      setTimeout(() => {
-        Sentry.configureScope(function (scope) {
-          scope.setTag("SE", internalTagSE);
-        });
-        this.$router.push("/error");
-      }, 1000);*/
     },
 
     addToCartPrice: function () {
@@ -182,30 +73,6 @@ export default {
 
   mounted() {
     try {
-      // Do this or the trace won't include the backend transaction
-      /*const transaction = Sentry.getCurrentHub().getScope().getTransaction();
-      let span = {};
-      if (transaction) {
-        span = transaction.startChild({
-          op: "http_request",
-          description: "load_products",
-        });
-      }
-      console.log("transaction", transaction);
-      console.log("traceid", transaction.traceId);
-      console.log("spanID", transaction.spanId);
-      const traceAndSpanID = transaction.traceId + "-" + transaction.spanId;
-
-      console.log("getProducts...");
-      var requestOptions = {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "sentry-trace": traceAndSpanID,
-        },
-        redirect: "follow",
-      };*/
-
       fetch(
         "http://localhost:8088/products"
       )
@@ -213,22 +80,13 @@ export default {
         .then((result) => {
           this.products = JSON.parse(result);
           this.loading = false;
-          /*span.finish();
-          transaction.finish();
-          // Generating Undefined error
-          transactionComplete = true;*/
         })
         .catch((error) => {
           console.log("error", error);
         });
-      //console.log(span);
     } catch (ex) {
       console.log(ex);
     }
-    // finally {
-    // span.finish();
-    // transaction.finish();
-    // }
 
     if ("se" in this.$route.query) {
       this.SE = this.$route.query.se;
@@ -252,12 +110,6 @@ export default {
       <!-- <button @click="store.increment()">Increment</button>
     <h3>Count: {{store.counter}}</h3> -->
       <div id="app">
-        <div id="product-list">
-          <div :onClick="addToCartPrice">
-            <!-- <ProductSummary :products="products" :onClick="addToCartPrice"/> -->
-            <ProductSummary :products="products" />
-          </div>
-        </div>
         <div class="button-container">
           <button
             v-if="!loading"
@@ -268,6 +120,13 @@ export default {
             Checkout your cart ($ {{ checkoutCartPrice }})
           </button>
         </div>
+        <div id="product-list">
+          <div :onClick="addToCartPrice">
+            <!-- <ProductSummary :products="products" :onClick="addToCartPrice"/> -->
+            <ProductSummary :products="products" />
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
@@ -340,6 +199,7 @@ export default {
     display: flex;
     justify-content: center;
     align-items: center;
+    margin-bottom: 50px;
   }
 
   .loading-container {
