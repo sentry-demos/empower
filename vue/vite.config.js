@@ -13,7 +13,7 @@ export default defineConfig(({ command, mode}) => {
   return {
     plugins: [vue(), vueJsx(), sentryVitePlugin({
       org: env.SENTRY_ORG,
-      project: env.VITE_SENTRY_PROJECT,
+      project: env.VUE_SENTRY_PROJECT,
       authToken: env.VITE_RELEASE_TOKEN
     })],
     resolve: {

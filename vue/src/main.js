@@ -10,7 +10,7 @@ const app = createApp(App);
 app.use(createPinia());  
 app.use(router);
 
-const RELEASE = import.meta.env.RELEASE ?? "1.0";
+const RELEASE = import.meta.env.RELEASE;
 
 const tracingOrigins = [
   'localhost',
