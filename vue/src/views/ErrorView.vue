@@ -13,7 +13,7 @@
   </div>
 </template>
 
-<style>
+<style scoped>
 @media (min-width: 1px) {
   .subscribe {
     width: 100%;
