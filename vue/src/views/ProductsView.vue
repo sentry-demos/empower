@@ -22,7 +22,7 @@ export default {
   methods: {
     makeCheckoutRequest: function(requestOptions) {
       return fetch(
-          "http://localhost:8088/checkout",
+          "https://application-monitoring-flask-dot-sales-engineering-sf.appspot.com/checkout",
           requestOptions
         ).then(function (response) {
           if (!response.ok) {
@@ -74,7 +74,7 @@ export default {
   mounted() {
     try {
       fetch(
-        "http://localhost:8088/products"
+        "https://application-monitoring-flask-dot-sales-engineering-sf.appspot.com/products"
       )
         .then((response) => response.text())
         .then((result) => {
