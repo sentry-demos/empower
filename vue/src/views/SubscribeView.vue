@@ -1,11 +1,14 @@
 <template>
   <div class="subscribe">
-    <div id="app">
+    <div id="app" class="subscribe-content">
     <h1 class="subscribe-header">Sign up for plant tech news</h1>
     <div class="email-div">
         <p class="subscribe-error-message">{{emailError}}</p>
         <input class="subscribe-email-input" placeholder="Enter your email address" v-model="userEmail"/>
         <button class="subscribe-button" v-on:click="submitEmail">Submit</button>
+    </div>
+    <div v-if="emailError !== ''">
+      <p>Something went wrong! Could not complete request</p>
     </div>
     </div>
   </div>
@@ -17,7 +20,7 @@ import * as Sentry from "@sentry/vue";
 import isEmail from 'validator/lib/isEmail';
 
 // Generating Type error
-/*
+
 let num = 11;
 try {
     num.toUpperCase()
@@ -32,7 +35,7 @@ try {
 } catch (err) {
     console.error(err)
     Sentry.captureException(err)
-}*/
+}
 
 export default {
   name: "app",
@@ -48,34 +51,35 @@ export default {
 
   methods: {
     submitEmail: function() {
-      Sentry.configureScope(scope => {
-        scope.setUser({ email: this.userEmail });
-      });
         try {
-        if (isEmail(this.userEmail) === true) {
+          if (isEmail(this.userEmail) === true) {
             throw new Error('Invalid Email Format');
-        }
+          }
         } catch (err){
             Sentry.captureException(err);
-            console.log(err)
-            this.emailError = 'Email format is invalid'
-        }
+        } 
+        this.emailError = 'Email format is invalid'
+        console.log(this.emailError)
         this.userEmail = ''
         setTimeout(() => {
             this.emailError = ''
-        }, 3000)
+        }, 5000)
     },
   },
 }
 
 </script>
 
-<style>
+<style scoped>
 @media (min-width: 1px) {
   .subscribe {
     min-height: 50vh;
     display: flex;
-    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+  .subscribe-content {
+    align-content: center;
   }
   .email-div {
       margin-top: 2rem;
