@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import * as Sentry from '@sentry/nextjs';
 import { useRouter, redirect } from 'next/navigation';
 import { connect } from 'react-redux';
-import Loader from 'react-loader-spinner';
+import { ThreeDots } from 'react-loader-spinner';
 import { Router } from 'react-router-dom';
 
 
@@ -75,8 +75,7 @@ export function CheckoutForm({ cart, checkoutAction }) {
     <>
     {
       loading ? (
-        <Loader
-        type="ThreeDots"
+        <ThreeDots
         color="#f6cfb2"
         className="sentry-unmask"
         height={150}
