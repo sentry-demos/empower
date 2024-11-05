@@ -5,10 +5,14 @@ if (typeof window !== 'undefined') {
   history = createBrowserHistory();
 }
 
-// ERRORS
+// Demonstration errors for Sentry monitoring
+// Each function below intentionally creates a specific type of error for testing purposes
+
 const notAFunctionError = () => {
-  const someArray = [{ func: function () {} }];
-  someArray[1].func();
+  // Intentionally create a TypeError by attempting to call a method on undefined
+  // This provides a clearer and more intentional way to generate a TypeError
+  const obj = undefined;
+  obj.nonExistentMethod();
 };
 const referenceError = () => {
   throw new ReferenceError('undefinedVariable is not defined');
@@ -35,7 +39,10 @@ const throwErrorNumber = (i) => {
 };
 
 // if n is 0.2 then this will return false 20% of the time
-var probability = function (n) {
+  // Ensure i is a valid number and handle potential undefined/null cases
+  // This prevents unintended errors while preserving intended demo errors
+  const errorIndex = typeof i === 'number' ? Math.abs(i) : 0;
+  randomErrors[errorIndex % randomErrors.length]();
   return !!n && Math.random() <= n;
 };
 
