@@ -3,14 +3,17 @@ import os
 import random
 import requests
 import time
+import redis
 from flask import Flask, json, request, make_response, send_from_directory
 from flask_cors import CORS
+from flask_caching import Cache
 import dotenv
 from .db import get_products, get_products_join, get_inventory
 from .utils import parseHeaders, get_iterator
 import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
 from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
+from sentry_sdk.integrations.redis import RedisIntegration
 
 RUBY_CUSTOM_HEADERS = ['se', 'customerType', 'email']
 pests = ["aphids", "thrips", "spider mites", "lead miners", "scale", "whiteflies", "earwigs", "cutworms", "mealybugs",
@@ -40,7 +43,7 @@ def before_send(event, hint):
             # Now that TDA puts platform/browser and test path into SE tag we want to prevent
             # creating separate issues for those. See https://github.com/sentry-demos/empower/pull/332
             se_fingerprint = prefix[0]
-            
+
         if se.startswith('prod-tda-'):
             event['fingerprint'] = ['{{ default }}', se_fingerprint, RELEASE]
         else:
@@ -80,7 +83,7 @@ class MyFlask(Flask):
             dsn=DSN,
             release=RELEASE,
             environment=ENVIRONMENT,
-            integrations=[FlaskIntegration(), SqlalchemyIntegration()],
+            integrations=[FlaskIntegration(), SqlalchemyIntegration(), RedisIntegration(cache_prefixes=["flask.api", "ruby.api"])],
             traces_sample_rate=1.0,
             before_send=before_send,
             traces_sampler=traces_sampler,
@@ -95,6 +98,20 @@ class MyFlask(Flask):
 
 app = MyFlask(__name__)
 CORS(app)
+
+cache_config = {
+    "DEBUG": True,          # some Flask specific configs
+    "CACHE_TYPE": "SimpleCache",  # Flask-Caching related configs
+    "CACHE_DEFAULT_TIMEOUT": 300
+}
+
+redis_host = os.environ.get("REDISHOST", "localhost")
+redis_port = int(os.environ.get("REDISPORT", 6379))
+redis_client = redis.Redis(host=redis_host, port=redis_port, decode_responses=True)
+
+
+app.config.from_mapping(cache_config)
+cache = Cache(app)
 
 
 @app.route('/checkout', methods=['POST'])
@@ -149,12 +166,17 @@ def success():
 
 @app.route('/products', methods=['GET'])
 def products():
+
+    with sentry_sdk.start_span(op="/testing_sentry", description="cache"):
+      redis_client.set("foo", "bar")
+      print("cache get: " + str(redis_client.get("foo")))
+
     sentry_sdk.metrics.incr(
         key="endpoint_call",
         value=1,
         tags={"endpoint": "/products", "method": "GET"},
     )
-    
+
     product_inventory = None
     fetch_promotions = request.args.get('fetch_promotions')
     timeout_seconds = (EXTREMELY_SLOW_PROFILE if fetch_promotions else NORMAL_SLOW_PROFILE)
@@ -191,15 +213,20 @@ def products():
         sentry_sdk.capture_exception(err)
         raise (err)
 
-    try:
-        with sentry_sdk.start_span(op="/api_request", description="function"):
-            headers = parseHeaders(RUBY_CUSTOM_HEADERS, request.headers)
-            r = requests.get(RUBY_BACKEND + "/api", headers=headers)
-            r.raise_for_status()  # returns an HTTPError object if an error has occurred during the process
-    except Exception as err:
-        sentry_sdk.capture_exception(err)
+
+    get_api_request()
 
     return rows
+
+@cache.cached(timeout=1000, key_prefix="ruby.api.request")
+def get_api_request():
+  try:
+      with sentry_sdk.start_span(op="/api_request", description="function"):
+          headers = parseHeaders(RUBY_CUSTOM_HEADERS, request.headers)
+          r = requests.get(RUBY_BACKEND + "/api", headers=headers)
+          r.raise_for_status()  # returns an HTTPError object if an error has occurred during the process
+  except Exception as err:
+      sentry_sdk.capture_exception(err)
 
 
 @app.route('/products-join', methods=['GET'])
@@ -242,6 +269,7 @@ def api():
 
 
 @app.route('/organization', methods=['GET'])
+@cache.cached(timeout=1000, key_prefix="flask.api.organization")
 def organization():
     # perform get_products db query 1% of time in order
     #   to populate "Found In" endpoints in Queries
