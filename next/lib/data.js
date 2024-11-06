@@ -67,7 +67,9 @@ export async function checkoutAction(cart) {
     let id = inventoryItem.id;
     console.log(inventoryItem.count, cart.quantities[id]);
     if (inventoryItem.count < cart.quantities[id] || cart.quantities[id] >= inventoryItem.count) {
-      throw new Error("Not enough inventory for product")
+      const error = new Error("Not enough inventory for product")
+      Sentry.captureException(error);
+      throw error;
     }
   }
 
