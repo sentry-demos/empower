@@ -108,6 +108,19 @@ cd react
 ../env.sh local npm start
 ```
 
+## Run Caching Locally
+
+To run caching locally, you will need to setup port forwarding from you local machine to GCP redis instance.
+1. gcloud auth login
+2. gcloud compute ssh redis-relay --zone=us-central1-a -- -N -L 6379:10.251.35.179:6379
+
+You should now be authenticated and have the relay running. Use redis-cli ping to check.
+
+3. If you have REDISHOST in your .env, comment it out. We want flask to point to localhost.
+4. Run flask server
+
+
+
 ## Deploy to Prod
 
 This script deploys the flagship apps React + Flask. For deploying a single app to App Engine, check each platform's README for specific instructions. Make sure you don't have any local changes to `env-config/production.env`.
