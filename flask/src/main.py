@@ -4,7 +4,7 @@ import random
 import requests
 import time
 import redis
-from flask import Flask, json, request, make_response, send_from_directory
+from flask import Flask, json, jsonify, request, make_response, send_from_directory
 from flask_cors import CORS
 from flask_caching import Cache
 import dotenv
@@ -83,7 +83,7 @@ class MyFlask(Flask):
             dsn=DSN,
             release=RELEASE,
             environment=ENVIRONMENT,
-            integrations=[FlaskIntegration(), SqlalchemyIntegration(), RedisIntegration(cache_prefixes=["flask.api", "ruby.api"])],
+            integrations=[FlaskIntegration(), SqlalchemyIntegration(), RedisIntegration(cache_prefixes=["flask.", "ruby."])],
             traces_sample_rate=1.0,
             before_send=before_send,
             traces_sampler=traces_sampler,
@@ -101,7 +101,7 @@ CORS(app)
 
 cache_config = {
     "DEBUG": True,          # some Flask specific configs
-    "CACHE_TYPE": "SimpleCache",  # Flask-Caching related configs
+    "CACHE_TYPE": "RedisCache",  # Flask-Caching related configs
     "CACHE_DEFAULT_TIMEOUT": 300
 }
 
@@ -166,20 +166,23 @@ def success():
 
 @app.route('/products', methods=['GET'])
 def products():
-
-    with sentry_sdk.start_span(op="/testing_sentry", description="cache"):
-      redis_client.set("foo", "bar")
-      print("cache get: " + str(redis_client.get("foo")))
-
     sentry_sdk.metrics.incr(
         key="endpoint_call",
         value=1,
         tags={"endpoint": "/products", "method": "GET"},
     )
-
+    cache_key = str(random.randrange(100))
     product_inventory = None
     fetch_promotions = request.args.get('fetch_promotions')
     timeout_seconds = (EXTREMELY_SLOW_PROFILE if fetch_promotions else NORMAL_SLOW_PROFILE)
+
+    # Adding 0.5 seconds to the ruby /api_request in order to show caching
+    # However, we want to keep the total trace time the same to preserve web vitals (+ other) functionality in sentry
+    # Cache hits should keep the current delay, while cache misses will move 0.5 over to the ruby span
+    ruby_delay_time = 0
+    if (cache_key != "7"):
+        timeout_seconds -= 0.5
+        ruby_delay_time = 0.5
     in_stock_only = request.args.get('in_stock_only')
 
     try:
@@ -214,19 +217,42 @@ def products():
         raise (err)
 
 
-    get_api_request()
+    print("cache_key: " + str(cache_key))
+    get_api_request(cache_key, ruby_delay_time)
 
     return rows
 
-@cache.cached(timeout=1000, key_prefix="ruby.api.request")
-def get_api_request():
-  try:
-      with sentry_sdk.start_span(op="/api_request", description="function"):
-          headers = parseHeaders(RUBY_CUSTOM_HEADERS, request.headers)
-          r = requests.get(RUBY_BACKEND + "/api", headers=headers)
-          r.raise_for_status()  # returns an HTTPError object if an error has occurred during the process
-  except Exception as err:
-      sentry_sdk.capture_exception(err)
+
+def get_api_request(key, delay):
+    start_time = time.time()
+    with sentry_sdk.start_span(op="/ruby_cached_api_request", description="function"):
+      cached_response = redis_client.get("ruby.api.cache:" + str(key))
+
+      if cached_response is not None:
+          print("> cache hit: " + str(key))
+          return cached_response
+
+      print("> cache miss: " + str(key))
+
+      try:
+          with sentry_sdk.start_span(op="/api_request", description="function"):
+              headers = parseHeaders(RUBY_CUSTOM_HEADERS, request.headers)
+              r = requests.get(RUBY_BACKEND + "/api", headers=headers)
+              r.raise_for_status()  # returns an HTTPError object if an error has occurred during the process
+
+              time_delta = time.time() - start_time
+              sleep_time = delay - time_delta
+              if time_delta > 0:
+                time.sleep(sleep_time)
+
+              # For demo show we want to show cache misses so only save 1 / 100
+              if key == 7:
+                redis_client.set("ruby.api.cache:" + str(key), key)
+
+      except Exception as err:
+          sentry_sdk.capture_exception(err)
+
+      return key
 
 
 @app.route('/products-join', methods=['GET'])
@@ -269,7 +295,7 @@ def api():
 
 
 @app.route('/organization', methods=['GET'])
-@cache.cached(timeout=1000, key_prefix="flask.api.organization")
+@cache.cached(timeout=1000, key_prefix="flask.cache.organization")
 def organization():
     # perform get_products db query 1% of time in order
     #   to populate "Found In" endpoints in Queries
