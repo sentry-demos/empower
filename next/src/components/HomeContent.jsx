@@ -21,6 +21,7 @@ import '/src/styles/complete.css';
 import '/src/styles/product.css';
 
 
+
 const sentryReduxEnhancer = Sentry.createReduxEnhancer({});
 
 const store = createStore(
