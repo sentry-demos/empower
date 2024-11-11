@@ -46,7 +46,13 @@ export function CheckoutForm({ cart, checkoutAction }) {
           behavior: 'auto',
         });
 
-        try {
+        Sentry.metrics.increment('checkout.click');
+        console.log("> cart", cart);
+        "use server"
+        const error = await checkoutAction(cart);
+        Sentry.captureException(error);
+        hadError = true;
+        /*try {
           Sentry.metrics.increment('checkout.click');
           console.log("> cart", cart);
           // Server Action within a client component
@@ -54,20 +60,20 @@ export function CheckoutForm({ cart, checkoutAction }) {
           "use server"
           await checkoutAction(cart);
 
-          /*return await Sentry.withServerActionInstrumentation(
+          return await Sentry.withServerActionInstrumentation(
             "checkout", // The name you want to associate this Server Action with in Sentry
             {
             },
             async () => {
               await checkoutAction(cart);
                   },
-          );*/
+          );
           
         } catch (error) {
           console.log('had error');
           Sentry.captureException(error);
           hadError = true;
-        }
+        }*/
 
         setLoading(false);
 
