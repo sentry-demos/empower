@@ -48,7 +48,6 @@ export function CheckoutForm({ cart, checkoutAction }) {
 
         Sentry.metrics.increment('checkout.click');
         console.log("> cart", cart);
-        "use server"
         const error = await checkoutAction(cart);
         Sentry.captureException(error);
         hadError = true;
