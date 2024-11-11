@@ -12,7 +12,6 @@ import {
   determineBackendUrl,
 } from '/src/utils/backendrouter';
 
-
 function Checkout({ cart }) {
   console.log("cart: ", cart);
   const router = useRouter();
