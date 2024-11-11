@@ -29,7 +29,6 @@ export function CheckoutForm({ cart, checkoutAction }) {
     const name = target.name;
     setForm({ ...form, [name]: value });
   }
-
   async function handleSubmit(event) {
     event.preventDefault();
 
@@ -53,14 +52,16 @@ export function CheckoutForm({ cart, checkoutAction }) {
           // Server Action within a client component
           // Reference: https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions-and-mutations
           "use server"
-          return await Sentry.withServerActionInstrumentation(
+          await checkoutAction(cart);
+
+          /*return await Sentry.withServerActionInstrumentation(
             "checkout", // The name you want to associate this Server Action with in Sentry
             {
             },
             async () => {
               await checkoutAction(cart);
                   },
-          );
+          );*/
           
         } catch (error) {
           console.log('had error');

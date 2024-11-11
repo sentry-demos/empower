@@ -2,6 +2,7 @@
 import { PrismaClient } from '@prisma/client';
 import { determineBackendUrl } from '@/src/utils/backendrouter';
 import { isOddReleaseWeek, busy_sleep } from '@/src/utils/time';
+import { ServerActionError, createServerAction } from '@/src/utils/serverActionError';
 import * as Sentry from '@sentry/nextjs';
 
 const prisma = new PrismaClient();
@@ -69,9 +70,11 @@ export async function checkoutAction(cart) {
     let id = inventoryItem.id;
     console.log(inventoryItem.count, cart.quantities[id]);
     if (inventoryItem.count < cart.quantities[id] || cart.quantities[id] >= inventoryItem.count) {
-      const error = new Error("Not enough inventory for product")
-      Sentry.captureException(error);
-      throw error;
+      throw new ServerActionError("Not enough inventory for product");
+    //   const error = new Error("Not enough inventory for product")
+
+    //   Sentry.captureException(error);
+    //   throw error;
     }
   }
 
