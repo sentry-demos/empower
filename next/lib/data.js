@@ -74,7 +74,7 @@ export async function checkoutAction(cart) {
 
     // Sentry.captureException(error);
     //   throw error;
-    return error;
+    return {status : 500, message: "Not enough inventory for product"};
     }
   }
 

@@ -48,9 +48,12 @@ export function CheckoutForm({ cart, checkoutAction }) {
 
         Sentry.metrics.increment('checkout.click');
         console.log("> cart", cart);
-        const error = await checkoutAction(cart);
-        Sentry.captureException(error);
-        hadError = true;
+        const response = await checkoutAction(cart);
+        if(response.status === 500) {
+          Sentry.captureException(new Error(response.message));
+          hadError = true;
+
+        }
         /*try {
           Sentry.metrics.increment('checkout.click');
           console.log("> cart", cart);
