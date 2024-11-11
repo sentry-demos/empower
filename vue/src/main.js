@@ -1,6 +1,5 @@
 import { createApp } from "vue";
 import * as Sentry from "@sentry/vue";
-import { BrowserTracing } from "@sentry/tracing";
 import { createPinia } from "pinia";
 // import { Debug as DebugIntegration } from "@sentry/integrations";
 
@@ -11,33 +10,48 @@ const app = createApp(App);
 app.use(createPinia());  
 app.use(router);
 
-const RELEASE = process.env.RELEASE
+const RELEASE = import.meta.env.RELEASE;
+
+const tracingOrigins = [
+  'localhost',
+  'empowerplant.io',
+  'run.app',
+  'appspot.com',
+  /^\//,
+];
 
 Sentry.init({
     app,
     dsn: import.meta.env.VITE_APP_DSN,
     release: RELEASE,
-    integrations: [
-      new BrowserTracing({
-        routingInstrumentation: Sentry.vueRouterInstrumentation(router),
-        tracingOrigins: ["localhost", "my-site-url.com", /^\//],
+    tracePropagationTargets: tracingOrigins,
+    integrations:[
+      Sentry.browserTracingIntegration(),
+      Sentry.replayIntegration({
+        blockAllMedia: false,
+        networkDetailAllowUrls: ['/checkout', '/products'],
       }),
-    //   new DebugIntegration(
-    //     {
-    //       // trigger DevTools debugger instead of using console.log
-    //       debugger: true,
-    
-    //       // stringify event before passing it to console.log
-    //       stringify: true,
-    //     }
-    //   )
+      Sentry.feedbackIntegration({
+        colorScheme: 'system',
+      }),
     ],
-    // Set tracesSampleRate to 1.0 to capture 100%
-    // of transactions for performance monitoring.
-    // We recommend adjusting this value in production
+    beforeSend(event, hint) {
+      if (event.exception && event.event_id
+        && event.exception.values[0].value.includes("Internal Server Error")
+      ) {
+        setTimeout(() => {
+          Sentry.showReportDialog({ eventId: event.event_id });
+        }, 2000);
+      }
+      return event;
+    },
+    ignoreErrors: ["Missing Translation Key"],
     tracesSampleRate: 1.0,
     autoSessionTracking: true,
     trackComponents: true,
+    replaysSessionSampleRate: 1.0,
+    replaysOnErrorSampleRate: 1.0,
+    profilesSampleRate: 1.0
   });
 
 app.mount("#app");
