@@ -4,9 +4,9 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { connect } from 'react-redux';
-import { resetCart, addProduct, setProducts } from '../actions';
+import { resetCart, addProduct, setProducts } from '@/src/actions';
 
-import EPlogo from '../../public/empowerplant-logo.svg';
+import EPlogo from '@/public/empowerplant-logo.svg';
 
 function Nav({ cart }) {
   const { query } = useRouter();
@@ -23,7 +23,7 @@ function Nav({ cart }) {
               About
             </Link>
             <Link
-              href={{ pathname: '/products-sc', query }}
+              href={{ pathname: '/products', query }}
               className="sentry-unmask"
             >
               Products
@@ -56,7 +56,7 @@ function Nav({ cart }) {
               About
             </Link>
             <Link
-              href={{ pathname: '/products-sc', query }}
+              href={{ pathname: '/products', query }}
               className="sentry-unmask"
             >
               Products

@@ -12,7 +12,6 @@ const tracingOrigins = [
   /^\//,
   window.location.host,
 ];
-
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_DSN,
   tracesSampleRate: 1.0,

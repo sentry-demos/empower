@@ -2,8 +2,8 @@ import React from 'react';
 
 import { Suspense } from 'react';
 
-import SentryQueryInitializer from '/src/ui/SentryQueryInitializer';
-import HomeContent from '/src/ui/HomeContent';
+import SentryQueryInitializer from '@/src/ui/SentryQueryInitializer';
+import HomeContent from '@/src/ui/HomeContent';
 
 export default function RootLayout({
   // Layouts must accept a children prop.
