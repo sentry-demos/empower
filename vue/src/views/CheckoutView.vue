@@ -123,7 +123,6 @@ import { useCounterStore } from "../stores/cart";
       Sentry.startSpan({ name: "Checkout" }, async () => {
         let cartJson = JSON.stringify({ cart: this.cartItems, form: {
           email,
-          subscribe,
           firstName,
           lastName,
           address,
