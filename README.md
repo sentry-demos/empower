@@ -175,3 +175,14 @@ gcloud config list, to display current account
 ```
 
 `gcloud app deploy` does not support `--update-env-vars RELEASE=$RELEASE` like `gcloud run deploy` does with Cloud Run
+
+## Local Run with AI Suggestions
+
+1. Add your OPENAI_API_KEY= to flask .env (personal one ATM)
+2. Start flask locally (./deploy.sh --env=local flask)
+3. Take note of where it's running (likey http://127.0.0.1:8080)
+4. Change NEXT_PUBLIC_FLASK_BACKEND to the url from Step 3
+5. Run the next server (npm run dev)
+6. Get suggestion should show. Clicking it will go next client -> next server -> flask
+
+On main page load, next will check with flask if it has the OPEN_API_KEY and conditionally show the get suggestion input.
