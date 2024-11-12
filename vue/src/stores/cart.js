@@ -10,6 +10,20 @@ export const useCounterStore = defineStore({
     updatePrice(val = 1) {
       this.counter += val;
     },
+    getQuantities(){
+      let quantities = {}
+      for (let item in this.cart) {
+        quantities[this.cart[item].id] = this.cart[item].count
+      }
+      return quantities;
+    },
+    getTotalPrice(){
+      let total = 0;
+      for (let item in this.cart) {
+        total += this.cart[item].totalPrice
+      }
+      return total;
+    },
     updateCart(product) {
       let index = this.cart.findIndex( item => item.id === product.id);
       if (index === -1) {

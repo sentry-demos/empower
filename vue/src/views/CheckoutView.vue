@@ -87,7 +87,22 @@ import { useCounterStore } from "../stores/cart";
       return this.store.getCartItems();
     },
     cartTotal() {
-      return this.store.cartTotal; // example if you have a cart total in the store
+      return this.store.getTotalPrice(); // example if you have a cart total in the store
+    },
+    cartQuantities(){
+      return this.store.getQuantities()
+    },
+    contactForm(){
+      return {
+        email,
+        firstName,
+        lastName,
+        address,
+        city,
+        country,
+        state,
+        zipCode
+      }
     }
   },
   methods: {
@@ -120,35 +135,37 @@ import { useCounterStore } from "../stores/cart";
     handleSubmit() {
       let success = null;
 
-      Sentry.startSpan({ name: "Checkout" }, async () => {
-        let cartJson = JSON.stringify({ cart: this.cartItems, form: {
-          email,
-          firstName,
-          lastName,
-          address,
-          city,
-          country,
-          state,
-          zipCode
-        }})
-        var requestOptions = {
-          method: "POST",
-          headers: {
-            "Content-Type": "text/plain",
-          },
-          body: cartJson,
-          redirect: "follow",
-        };
+      Sentry.startNewTrace(() => {
+        Sentry.startSpan({ name: "Checkout" }, async (span) => {
+          const payload = {
+            cart: {
+              items: this.cartItems,
+              quantities: this.cartQuantities,
+              total: this.cartTotal,
+            },
+            form: this.contactForm,          
+          }
+          var requestOptions = {
+            method: "POST",
+            headers: {
+              "Content-Type": "text/plain",
+            },
+            body: JSON.stringify(payload),
+            redirect: "follow",
+          };
 
-        try {
-          success = await this.makeCheckoutRequest(requestOptions);
-        } catch (error) {
-          Sentry.captureException(error);
-          this.$router.push("/error");
+          try {
+            success = await this.makeCheckoutRequest(requestOptions);
+          } catch (error) {
+            Sentry.withActiveSpan(span, async () => {
+              Sentry.captureException(error);
+            })
+            this.$router.push("/error");
 
-        }
+          }
 
-        return success;
+          return success;
+        })
       })
 
       if (!success) {
