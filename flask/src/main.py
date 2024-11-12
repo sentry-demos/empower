@@ -99,7 +99,7 @@ class MyFlask(Flask):
 app = MyFlask(__name__)
 CORS(app)
 
-client = OpenAI(api_key= os.getenv["OPENAI_API_KEY"])
+client = OpenAI(api_key= os.getenv("OPENAI_API_KEY"))
 
 
 @app.route('/suggestion', methods=['GET'])
@@ -293,7 +293,7 @@ def connect():
 
 @app.route('/showSuggestion', methods=['GET'])
 def showSuggestion():
-  return jsonify({"response":os.getenv["OPENAI_API_KEY"] is not None}), 200
+  return jsonify({"response":os.getenv("OPENAI_API_KEY") is not None}), 200
 
 @app.route('/product/0/info', methods=['GET'])
 def product_info():
