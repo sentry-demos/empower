@@ -121,14 +121,13 @@ import { useCounterStore } from "../stores/cart";
       let success = null;
 
       Sentry.startSpan({ name: "Checkout" }, async () => {
-        var raw =
-        '{"cart":{"items":[{"id":4,"title":"Botana Voice","description":"Lets plants speak for themselves.","descriptionfull":"Now we don\'t want him to get lonely, so we\'ll give him a little friend. Let your imagination just wonder around when you\'re doing these things. Let your imagination be your guide. Nature is so fantastic, enjoy it. Let it make you happy.","price":175,"img":"https://storage.googleapis.com/application-monitoring/plant-to-text.jpg","imgcropped":"https://storage.googleapis.com/application-monitoring/plant-to-text-cropped.jpg","pg_sleep":"","reviews":[{"id":4,"productid":4,"rating":4,"customerid":null,"description":null,"created":"2021-06-04 00:12:33.553939","pg_sleep":""},{"id":5,"productid":4,"rating":3,"customerid":null,"description":null,"created":"2021-06-04 00:12:45.558259","pg_sleep":""},{"id":6,"productid":4,"rating":2,"customerid":null,"description":null,"created":"2021-06-04 00:12:50.510322","pg_sleep":""},{"id":13,"productid":4,"rating":3,"customerid":null,"description":null,"created":"2021-07-01 00:12:43.312186","pg_sleep":""},{"id":14,"productid":4,"rating":3,"customerid":null,"description":null,"created":"2021-07-01 00:12:54.719873","pg_sleep":""},{"id":15,"productid":4,"rating":3,"customerid":null,"description":null,"created":"2021-07-01 00:12:57.760686","pg_sleep":""},{"id":16,"productid":4,"rating":3,"customerid":null,"description":null,"created":"2021-07-01 00:13:00.140407","pg_sleep":""},{"id":17,"productid":4,"rating":3,"customerid":null,"description":null,"created":"2021-07-01 00:13:00.971730","pg_sleep":""},{"id":18,"productid":4,"rating":3,"customerid":null,"description":null,"created":"2021-07-01 00:13:01.665798","pg_sleep":""},{"id":19,"productid":4,"rating":3,"customerid":null,"description":null,"created":"2021-07-01 00:13:02.278934","pg_sleep":""}]}],"quantities":{"4":2},"total":350},"form":{"loading":false}}';
+        let cartJson = JSON.stringify({ cart: this.cartItems})
         var requestOptions = {
           method: "POST",
           headers: {
             "Content-Type": "text/plain",
           },
-          body: raw,
+          body: cartJson,
           redirect: "follow",
         };
 
