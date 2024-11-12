@@ -99,12 +99,12 @@ class MyFlask(Flask):
 app = MyFlask(__name__)
 CORS(app)
 
-client = OpenAI(api_key= os.getenv("OPENAI_API_KEY"))
 
 
 @app.route('/suggestion', methods=['GET'])
 def suggestion():
-  print("got request")
+  print("got suggestion request")
+  client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
   sentry_sdk.metrics.incr(
         key="endpoint_call",
         value=1,
