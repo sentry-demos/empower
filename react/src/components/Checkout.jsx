@@ -7,6 +7,15 @@ import { connect } from 'react-redux';
 import Loader from 'react-loader-spinner';
 import { getTag, itemsInCart } from '../utils/utils';
 
+class CheckoutError extends Error {
+  constructor(type, message, status) {
+    super(message);
+    this.name = 'CheckoutError';
+    this.type = type;
+    this.status = status;
+  }
+}
+
 function Checkout({ backend, rageclick, checkout_success, cart }) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -58,22 +67,51 @@ function Checkout({ backend, rageclick, checkout_success, cart }) {
     })
       .catch((err) => {
         Sentry.metrics.increment('checkout.error', 1, {
-          tags: { status: 500 },
+          tags: { status: 500, error_type: 'network_error', ...tags },
         });
-        return { ok: false, status: 500 };
+        throw new CheckoutError('network_error', 'Network connection error', 500);
       })
       .then((res) => {
         stopMeasurement();
         return res;
       });
+
     if (!response.ok) {
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch (e) {
+        errorData = { type: 'unknown', message: 'Unknown error occurred' };
+      }
+
       Sentry.metrics.increment('checkout.error', 1, {
-        tags: { status: response.status, ...tags },
+        tags: { 
+          status: response.status,
+          error_type: errorData.type || 'unknown',
+          ...tags 
+        },
       });
-      throw new Error(
-        [response.status, response.statusText || ' Internal Server Error'].join(
-          ' -'
-        )
+
+      if (response.status === 400 && errorData.type === 'inventory_error') {
+        throw new CheckoutError(
+          'inventory_error',
+          'Some items in your cart are no longer available',
+          response.status
+        );
+      }
+
+      if (response.status === 422 && errorData.type === 'validation_error') {
+        throw new CheckoutError(
+          'validation_error',
+          'Please check your shipping information',
+          response.status
+        );
+      }
+
+      throw new CheckoutError(
+        'server_error',
+        errorData.message || 'An unexpected error occurred',
+        response.status
       );
     }
     Sentry.metrics.increment('checkout.success', 1, { tags });
@@ -104,7 +142,7 @@ function Checkout({ backend, rageclick, checkout_success, cart }) {
       name: 'Submit Checkout Form',
       forceTransaction: true,
     }, async (span) => {
-      let hadError = false;
+      let error = null;
 
       window.scrollTo({
         top: 0,
@@ -116,13 +154,31 @@ function Checkout({ backend, rageclick, checkout_success, cart }) {
       try {
         await checkout(cart);
       } catch (error) {
-        Sentry.captureException(error);
-        hadError = true;
+        error = error;
+        Sentry.captureException(error, {
+          tags: {
+            error_type: error.type || 'unknown',
+            status: error.status || 500,
+            ...tags
+          }
+        });
       }
       setLoading(false);
 
-      if (hadError) {
-        navigate('/error');
+      if (error) {
+        switch(error.type) {
+          case 'inventory_error':
+            navigate('/cart', { 
+              state: { error: 'Some items in your cart are no longer available' }
+            });
+            break;
+          case 'validation_error':
+            break;
+          default:
+            navigate('/error', { 
+              state: { message: error.message || 'An unexpected error occurred' }
+            });
+        }
       } else {
         navigate('/complete');
       }
