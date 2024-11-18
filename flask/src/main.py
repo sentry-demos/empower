@@ -121,14 +121,40 @@ def checkout():
     print("> /checkout inventory", inventory)
     print("> validate_inventory", validate_inventory)
 
+    # Check for empty cart or inventory
+    if len(inventory) == 0 or len(quantities) == 0:
+        sentry_sdk.metrics.incr(key="checkout.failed")
+        response = make_response(json.dumps({
+            "error": "Invalid cart state - no items found"
+        }), 400)
+        return response
+
     with sentry_sdk.start_span(op="process_order", description="function"):
-        quantities = cart['quantities']
-        for cartItem in quantities:
-            for inventoryItem in inventory:
-                print("> inventoryItem.count", inventoryItem['count'])
-                if (validate_inventory and (inventoryItem.count < quantities[cartItem] or quantities[cartItem] >= inventoryItem.count)):
+        # Create inventory map for O(1) lookups
+        inventory_map = {item['id']: item['count'] for item in inventory}
+        
+        # Validate each item in cart
+        for product_id, requested_quantity in quantities.items():
+            # Check if product exists in inventory
+            if product_id not in inventory_map:
+                sentry_sdk.metrics.incr(key="checkout.failed")
+                response = make_response(json.dumps({
+                    "error": f"Product {product_id} not found in inventory",
+                    "product_id": product_id
+                }), 404)
+                return response
+            
+            if validate_inventory:
+                available_quantity = inventory_map[product_id]
+                if requested_quantity > available_quantity:
                     sentry_sdk.metrics.incr(key="checkout.failed")
-                    raise Exception("Not enough inventory for product")
+                    response = make_response(json.dumps({
+                        "error": "Insufficient inventory",
+                        "product_id": product_id,
+                        "requested": requested_quantity,
+                        "available": available_quantity
+                    }), 400)
+                    return response
         if len(inventory) == 0 or len(quantities) == 0:
             raise Exception("Not enough inventory for product")
 
