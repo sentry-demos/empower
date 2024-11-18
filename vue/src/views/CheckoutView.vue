@@ -148,23 +148,42 @@ import { useCounterStore } from "../stores/cart";
           var requestOptions = {
             method: "POST",
             headers: {
-              "Content-Type": "text/plain",
+              "Content-Type": "application/json",
             },
             body: JSON.stringify(payload),
             redirect: "follow",
           };
 
           try {
-            success = await this.makeCheckoutRequest(requestOptions);
+            checkoutResult = await this.makeCheckoutRequest(requestOptions);
           } catch (error) {
             Sentry.withActiveSpan(span, async () => {
               Sentry.captureException(error);
+              Sentry.setContext("checkout_attempt", {
+                cartItems: this.cartItems.length,
+                error_details: error.details || {},
+                status: error.status
+              });
             })
-            this.$router.push("/error");
-
+            
+            // Handle specific error cases
+            if (error.details?.error === "Insufficient inventory") {
+              const productId = error.details.product_id;
+              const item = this.cartItems.find(i => i.id === productId);
+              this.$store.dispatch('showError', {
+                message: `Sorry, only ${error.details.available} units available for ${item?.name || 'this item'}`,
+                type: 'inventory'
+              });
+            } else {
+              this.$store.dispatch('showError', {
+                message: error.message || 'An error occurred during checkout',
+                type: 'general'
+              });
+            }
+            return false;
           }
 
-          return success;
+          return checkoutResult;
         })
       })
 
