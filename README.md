@@ -175,3 +175,11 @@ gcloud config list, to display current account
 ```
 
 `gcloud app deploy` does not support `--update-env-vars RELEASE=$RELEASE` like `gcloud run deploy` does with Cloud Run
+
+## Local Run with AI Suggestions
+
+1. Add your OPENAI_API_KEY= to local.env
+2. Run next and flask (./deploy.sh --env=local next flask)
+3. Get suggestion button should show automatically 
+
+On main page load, next will check with flask if it has the OPEN_API_KEY and conditionally show the get suggestion input.
