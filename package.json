@@ -1,5 +1,9 @@
 {
   "dependencies": {
+    "react-icons": "^5.4.0",
     "react-loader-spinner": "^6.1.6"
+  },
+  "devDependencies": {
+    "@codecov/webpack-plugin": "^1.5.0"
   }
 }

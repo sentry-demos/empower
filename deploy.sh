@@ -185,7 +185,7 @@ for proj in $projects; do # bash only
   # but that will not work when deploying to staging or production.
   if command -v gcloud &> /dev/null ; then
     export SENTRY_AUTH_TOKEN=$(gcloud secrets versions access latest --secret="SENTRY_AUTH_TOKEN")
-    export CODECOV_TOKEN=$(gcloud secrets versions access latest --secret="CODECOV_TOKEN")
+    #export CODECOV_TOKEN2=$(gcloud secrets versions access latest --secret="CODECOV_TOKEN")
   fi
 
   # *** DEPLOY OR RUN ***
