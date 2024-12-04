@@ -14,8 +14,8 @@ module.exports = function override(config, env) {
     SentryWebpackPlugin.sentryWebpackPlugin({
       authToken: process.env.SENTRY_AUTH_TOKEN,
       include: '.',
-      org: '${SENTRY_ORG}',
-      project: '${REACT_SENTRY_PROJECT}',
+      org: 'demo',
+      project: 'react',
       ignoreFile: '.sentrycliignore',
       ignore: ['webpack.config.js'],
       configFile: 'sentry.properties',
