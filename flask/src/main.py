@@ -105,8 +105,8 @@ cache_config = {
     "CACHE_DEFAULT_TIMEOUT": 300
 }
 
-redis_host = os.environ.get("REDISHOST", "localhost")
-redis_port = int(os.environ.get("REDISPORT", 6379))
+redis_host = os.environ.get("REDISHOST")
+redis_port = int(os.environ.get("REDISPORT"))
 redis_client = redis.Redis(host=redis_host, port=redis_port, decode_responses=True)
 
 
