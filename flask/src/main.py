@@ -118,20 +118,47 @@ def checkout():
     except Exception as err:
         raise (err)
 
-    print("> /checkout inventory", inventory)
-    print("> validate_inventory", validate_inventory)
+    if not inventory or not quantities:
+        sentry_sdk.metrics.incr(key="checkout.failed")
+        raise Exception("No inventory found for requested products")
 
     with sentry_sdk.start_span(op="process_order", description="function"):
+        # Create lookup map for efficient inventory checks
+        inventory_map = {str(item['productId']): item for item in inventory}
         quantities = cart['quantities']
-        for cartItem in quantities:
-            for inventoryItem in inventory:
-                print("> inventoryItem.count", inventoryItem['count'])
-                if (validate_inventory and (inventoryItem.count < quantities[cartItem] or quantities[cartItem] >= inventoryItem.count)):
-                    sentry_sdk.metrics.incr(key="checkout.failed")
-                    raise Exception("Not enough inventory for product")
-        if len(inventory) == 0 or len(quantities) == 0:
-            raise Exception("Not enough inventory for product")
 
+        if validate_inventory:
+            # Validate all quantities before updating anything
+            for product_id, requested_quantity in quantities.items():
+                if str(product_id) not in inventory_map:
+                    sentry_sdk.metrics.incr(key="checkout.failed")
+                    raise Exception(f"Product {product_id} not found in inventory")
+
+                inventory_item = inventory_map[str(product_id)]
+                available_quantity = inventory_item['count']
+                requested_quantity = int(requested_quantity)
+
+                if requested_quantity <= 0:
+                    sentry_sdk.metrics.incr(key="checkout.failed")
+                    raise Exception("Invalid quantity requested")
+
+                if requested_quantity > available_quantity:
+                    sentry_sdk.metrics.incr(key="checkout.failed")
+                    raise Exception(
+                        f"Not enough inventory for product {product_id}. "
+                        f"Requested: {requested_quantity}, Available: {available_quantity}"
+                    )
+
+            # Update inventory atomically
+            try:
+                connection = db.connect()
+                for product_id, requested_quantity in quantities.items():
+                    new_count = update_inventory_quantity(product_id, int(requested_quantity), connection)
+                    if new_count is None:
+                        raise Exception(f"Failed to update inventory for product {product_id}")
+            except Exception as err:
+                sentry_sdk.metrics.incr(key="checkout.failed")
+                raise Exception("Failed to update inventory: " + str(err))
     response = make_response("success")
     return response
 
