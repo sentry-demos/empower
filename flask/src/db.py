@@ -127,25 +127,20 @@ def get_products_join():
 
 def get_inventory(cart):
     print("> get_inventory")
-
     quantities = cart['quantities']
-
     print("> quantities", quantities)
-
-    productIds = []
-    for productId in quantities:
-        productIds.append(productId)
-
-    productIds = formatArray(productIds)
-    print("> productIds", productIds)
-
     try:
+        productIds = list(quantities.keys())
+
         with sentry_sdk.start_span(op="get_inventory", description="db.connect"):
             connection = db.connect()
         with sentry_sdk.start_span(op="get_inventory", description="db.query") as span:
+            query = text("SELECT id, productId, count FROM inventory WHERE productId = ANY(:product_ids)")
             inventory = connection.execute(
-                "SELECT * FROM inventory WHERE productId in %s" % (productIds)
+                query,
+                {"product_ids": productIds}
             ).fetchall()
+            inventory = [dict(row) for row in inventory]
             span.set_data("inventory",inventory)
     except BrokenPipeError as err:
         raise DatabaseConnectionError('get_inventory')
@@ -157,6 +152,26 @@ def get_inventory(cart):
             raise(err)
 
     return inventory
+
+def update_inventory_quantity(product_id, requested_quantity, connection=None):
+    """Updates inventory count atomically after successful checkout."""
+    should_close = False
+    try:
+        if not connection:
+            connection = db.connect()
+            should_close = True
+
+        query = text("""
+            UPDATE inventory 
+            SET count = count - :quantity 
+            WHERE productId = :product_id AND count >= :quantity
+            RETURNING count""")
+        
+        result = connection.execute(query, {"product_id": product_id, "quantity": requested_quantity}).fetchone()
+        return result[0] if result else None
+    finally:
+        if should_close and connection:
+            connection.close()
 
 
 
