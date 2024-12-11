@@ -102,20 +102,22 @@ class MyFlask(Flask):
 app = MyFlask(__name__)
 CORS(app)
 
-cache_config = {
-    "DEBUG": True,          # some Flask specific configs
-    "CACHE_TYPE": "RedisCache",  # Flask-Caching related configs
-    "CACHE_DEFAULT_TIMEOUT": 300
-}
 
 redis_host = os.environ.get("REDISHOST")
 redis_port = int(os.environ.get("REDISPORT"))
-redis_client = redis.Redis(host=redis_host, port=redis_port, decode_responses=True)
 
+cache_config = {
+    "DEBUG": True,          # some Flask specific configs
+    "CACHE_TYPE": "RedisCache",  # Flask-Caching related configs
+    "CACHE_DEFAULT_TIMEOUT": 300,
+    "CACHE_REDIS_HOST": redis_host,
+    "CACHE_REDIS_PORT": redis_port
+}
 
 app.config.from_mapping(cache_config)
 cache = Cache(app)
 
+redis_client = redis.Redis(host=redis_host, port=redis_port, decode_responses=True)
 
 
 @app.route('/suggestion', methods=['GET'])
