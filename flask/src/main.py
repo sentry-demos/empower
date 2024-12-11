@@ -281,7 +281,7 @@ def get_api_request(key, delay):
 
               time_delta = time.time() - start_time
               sleep_time = delay - time_delta
-              if time_delta > 0:
+              if sleep_time > 0:
                 time.sleep(sleep_time)
 
               # For demo show we want to show cache misses so only save 1 / 100
