@@ -7,6 +7,7 @@ import measureRequestDuration from '../utils/measureRequestDuration';
 import Loader from 'react-loader-spinner';
 import ProductCard from './ProductCard';
 import { useState, useEffect } from 'react';
+import { LuWheatOff, LuSalad } from "react-icons/lu";
 
 function Products({ frontendSlowdown, backend, productsExtremelySlow, productsBeError, addToCartJsError }) {
   const [products, setProducts] = useState([]);
