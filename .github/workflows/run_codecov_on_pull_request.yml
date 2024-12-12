@@ -20,7 +20,7 @@ jobs:
       - name: Run React tests
         run: |
           npm install
-          npm test -- --coverage --reporters=jest-junit
+          npm test -- --coverage --reporters=jest-junit --debug
         working-directory: ./empower/react
       - uses: codecov/codecov-action@v3
         with:
