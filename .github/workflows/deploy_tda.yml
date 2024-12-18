@@ -1,0 +1,62 @@
+name: deploy_tda.yml
+on:
+  workflow_dispatch: 
+
+# Only run 1 workflow at a time. If new one starts abort any that are already running.
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  default-job:
+    if: github.repository_owner == 'sentry-demos' # don't run in forks
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+    runs-on: ubuntu-22.04
+    
+    steps:
+      - run: echo "Triggered by ${{ github.event_name }} event."
+      - run: echo "Branch is ${{ github.ref }}"
+      
+      - name: Check out this repository code
+        uses: actions/checkout@v3
+        with:
+          path: empower
+          fetch-depth: 0
+
+      - name: Check out `empower-config` to get GCP identity provider and account name
+        uses: actions/checkout@v3
+        with:
+          repository: sentry-demos/empower-config
+          path: empower-config
+          token: ${{ secrets.KOSTY_PERSONAL_ACCESS_TOKEN_FOR_SYNC_DEPLOY_FORK }}
+          # See https://github.com/actions/checkout/issues/347#issuecomment-963586784
+          # and https://chat.openai.com/share/6f45c9e9-8e96-4ac4-adde-a65061a41de4
+
+      - name: Get GCP_ env variables from empower-config/.gcloudrc
+        run: |
+          source empower-config/.gcloudrc 
+          echo "GCP_WORKLOAD_IDENTITY_PROVIDER=$GCP_WORKLOAD_IDENTITY_PROVIDER" >> $GITHUB_OUTPUT
+          echo "GCP_SERVICE_ACCOUNT=$GCP_SERVICE_ACCOUNT" >> $GITHUB_OUTPUT 
+        id: gcloudrc
+      
+      - name: Copy .sauce_credentials from empower-config repo
+        run: cp empower-config/.sauce_credentials empower/tda/
+        
+      - id: 'auth'
+        name: 'Authenticate Google Cloud'
+        uses: 'google-github-actions/auth@v2'
+        with:
+          workload_identity_provider: ${{ steps.gcloudrc.outputs.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ steps.gcloudrc.outputs.GCP_SERVICE_ACCOUNT }}
+
+      - name: 'Set up Google Cloud SDK'
+        uses: 'google-github-actions/setup-gcloud@v2'
+        
+      - name: Run deploy_tda.sh
+        run: gcloud compute config-ssh && ./deploy_tda.sh
+        working-directory: ./empower/tda
+          
+      - run: echo "Job status is ${{ job.status }}."
+      
