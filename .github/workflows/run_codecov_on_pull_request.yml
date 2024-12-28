@@ -1,0 +1,48 @@
+name: codecov.yml
+# Run Codecov on PR open or change
+on: pull_request
+jobs:
+  codecov:
+    runs-on: ubuntu-20.04
+
+    steps:
+      - name: Check out this repository code
+        uses: actions/checkout@v3
+        with:
+          path: empower-flaky-tests
+          fetch-depth: 0
+
+      - name: Install Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+
+      - name: Run React tests
+        run: |
+          npm install
+          npm test -- --coverage --reporters=jest-junit
+        working-directory: ./empower-flaky-tests/react
+      - uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: frontend
+
+      - name: Run Python Tests
+        run: |
+          pip install -U pytest
+          pip install pytz
+          pip install pytest-codecov
+          pytest --cov=. --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
+        working-directory: ./empower-flaky-tests/flask/src
+      - name: Upload coverage results to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: api
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - run: echo "Job status is ${{ job.status }}."
