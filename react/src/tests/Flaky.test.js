@@ -1,7 +1,7 @@
 describe("Flaky Test Example", () => {
     test("sometimes passes, sometimes fails", () => {
       // Simulating a function that sometimes returns true and sometimes false
-      const result = Math.random() > 0.25;
+      const result = Math.random() > 0.0;
       
       // Adding a small delay to make it even flakier
       return new Promise((resolve) => {
