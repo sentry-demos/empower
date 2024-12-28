@@ -183,7 +183,3 @@ gcloud config list, to display current account
 3. Get suggestion button should show automatically 
 
 On main page load, next will check with flask if it has the OPEN_API_KEY and conditionally show the get suggestion input.
-
-
-## Neil+Kosty: will delete this later
-TODO
