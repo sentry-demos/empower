@@ -1,6 +1,6 @@
 const SentryWebpackPlugin = require('@sentry/webpack-plugin');
 const reactsourceMapPlugin = require('@acemarke/react-prod-sourcemaps');
-const CodecovWebpackPlugin = require("@codecov/webpack-plugin");
+const { codecovWebpackPlugin } = require('@codecov/webpack-plugin');
 
 module.exports = function override(config, env) {
   //do stuff with the webpack config...
@@ -23,7 +23,7 @@ module.exports = function override(config, env) {
     })
   );
   config.plugins.push(
-    CodecovWebpackPlugin.codecovWebpackPlugin({
+    codecovWebpackPlugin({
       enableBundleAnalysis: process.env.CODECOV_TOKEN !== undefined,
       bundleName: "example-webpack-bundle",
       uploadToken: process.env.CODECOV_TOKEN,
