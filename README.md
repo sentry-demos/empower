@@ -66,7 +66,7 @@ The [user feedback widget](https://docs.sentry.io/platforms/javascript/user-feed
    3. Set the specific `node` version with `n XX.XX.XX`. NOTE: may need to use `sudo` with command.
 6. Configure the `CLI` using [this](https://docs.sentry.io/product/cli/configuration/) document.
 7. Install [gcloud](https://cloud.google.com/sdk/docs/install) in the root of your project to be able to deploy to staging. Initialize the gcloud CLI by running `gcloud init`. When prompted, choose the project `sales-engineering-sf`.
--test
+
 Following sub-projects might not work with `deploy.sh` at this moment. Consult their README's for how to run and deploy them (and feel free to submit a PR that fixes it):
 
 - vue
