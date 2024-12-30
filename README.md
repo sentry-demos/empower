@@ -54,6 +54,9 @@ The [user feedback widget](https://docs.sentry.io/platforms/javascript/user-feed
 
 # Local Setup / Development
 
+> **Warning**
+> Don't try take shortcuts and run these with `npm run` etc, please use the build system (`deploy.sh`) that's documented in detail below.
+
 ## Setup
 
 1. Copy `local.env` from [empower-config](https://github.com/sentry-demos/empower-config) into `env-config` directory of your local repo, or, if you don't have access to it, follow `env-config/example.env`.
