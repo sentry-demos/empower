@@ -16,8 +16,10 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: "18"
-
+          
       - name: Run React tests
+        env:
+            CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         run: |
           npm install
           ./build.sh
