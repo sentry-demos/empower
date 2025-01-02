@@ -1,4 +1,5 @@
 import img from '../../assets/emma-garcia.jpg';
+import img from '../../assets/cat.jpg';
 
 const Emma = {
   name: 'Emma Garcia',

@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import './employee.css';
-import './products.css';
 import * as Sentry from '@sentry/react';
 
 function Employee() {
