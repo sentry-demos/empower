@@ -16,7 +16,7 @@ class Api::V1::ProductsController < ApplicationController
       span_products_slow_db = transaction.start_child(op: "custom.reviews_slow_db_call")
       prod_slow["pg_sleep"] = ""
       prod_slow["reviews"] = []
-      prod_slow["reviews"] = Reviews.select("id, productid, rating, customerid, description, created, Null as pg_sleep").where("productid="+prod_slow.id.to_s)
+      prod_slow["reviews"] = Reviews.select("id, productid, rating, customerid, description, created, Null as pg_sleep").where("productid="+prod_slow.id.to_s).to_a
       span_products_slow_db.finish
     end
 
