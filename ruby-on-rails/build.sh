@@ -1,3 +1,3 @@
 #!/bin/bash
 
-# Nothing to do
+bundle install
