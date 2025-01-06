@@ -54,13 +54,16 @@ The [user feedback widget](https://docs.sentry.io/platforms/javascript/user-feed
 
 # Local Setup / Development
 
+> [!WARNING]
+> Don't simply use `npm run` etc directly, please use the build system (`deploy.sh`) that's documented in detail below. It's not meant to be run directly.
+
 ## Setup
 
 1. Copy `local.env` from [empower-config](https://github.com/sentry-demos/empower-config) into `env-config` directory of your local repo, or, if you don't have access to it, follow `env-config/example.env`.
 2. The `REACT_APP_FLASK_BACKEND` in `env-config/local.env` points to the backend instance deployed to AppEngine, the same one used by the cloud-hosted React web app. Flask is the default backend. If you expect to run other backend types, add values for those in `env-config` in your `local.env` file as well (i.e. `REACT_APP_EXPRESS_BACKEND`).
 3. Confirm [Homebrew](https://brew.sh/) is installed with `brew -v`. If not, install using `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`.
 4. Confirm PostgreSQL is installed with `Postgres -V`. If not, install using `brew install postgresql`.
-5. As the application is compatible with specific versions of `node` and `npm`, install the following to be able to set the specific versions required (below describes how to achieve it using `n` package, but alternatively you can use `nvm`):
+5. As the application is compatible with specific versions of `node` and `npm`, install the following to be able to set the specific versions required (below describes how to achieve it using `n` package, but  you can use `nvm`):
    1. Install compatible `npm` version with `npm install -g npm@XX.XX.XX`. NOTE: may need to use `sudo` with command.
    2. Install `n` to update `node` version with `npm install -g n`.
    3. Set the specific `node` version with `n XX.XX.XX`. NOTE: may need to use `sudo` with command.
