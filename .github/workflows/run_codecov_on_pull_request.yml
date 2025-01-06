@@ -21,7 +21,7 @@ jobs:
         env:
             CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         run: |
-          ./build.sh
+          CI=false ./build.sh
           npm test -- --coverage --reporters=jest-junit
         working-directory: ./empower/react
       - uses: codecov/codecov-action@v3
