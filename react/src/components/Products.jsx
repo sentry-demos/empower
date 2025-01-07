@@ -134,11 +134,13 @@ function Products({ frontendSlowdown, backend, productsExtremelySlow, productsBe
     <div>
       <ul className="products-list">
         {products.map((product, i) => {
+          // Ensure reviews is an array and handle edge cases
+          const reviews = Array.isArray(product.reviews) ? product.reviews : [];
           const averageRating = (
-            product.reviews.reduce((a, b) => a + (b['rating'] || 0), 0) /
-            product.reviews.length
+            reviews.length > 0
+              ? reviews.reduce((a, b) => a + (b['rating'] || 0), 0) / reviews.length
+              : 0
           ).toFixed(1);
-
           let stars = [1, 2, 3, 4, 5].map((index) => {
             if (index <= averageRating) {
               return (
