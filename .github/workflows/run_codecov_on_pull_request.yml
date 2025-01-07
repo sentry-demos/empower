@@ -18,8 +18,10 @@ jobs:
           node-version: "18"
 
       - name: Run React tests
+        env:
+            CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         run: |
-          npm install
+          CI=false ./build.sh
           npm test -- --coverage --reporters=jest-junit
         working-directory: ./empower/react
       - uses: codecov/codecov-action@v3
