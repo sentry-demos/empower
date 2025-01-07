@@ -16,7 +16,7 @@ class Api::V1::ProductsController < ApplicationController
       span_products_slow_db = transaction.start_child(op: "custom.reviews_slow_db_call")
       prod_slow["pg_sleep"] = ""
       prod_slow["reviews"] = []
-      prod_slow["reviews"] = Reviews.select("id, productid, rating, customerid, description, created, Null as pg_sleep").where("productid="+prod_slow.id.to_s).to_a
+      prod_slow["reviews"] = Reviews.select("id, productid, rating, customerid, description, created, Null as pg_sleep").where("productid="+prod_slow.id.to_s)
       span_products_slow_db.finish
     end
 
@@ -40,7 +40,7 @@ class Api::V1::ProductsController < ApplicationController
     # end
     # span_response.finish
 
-    render json: products, status: 200
+    render json: products.to_a, status: 200
   end
 
   # sent here if unexpected route was enterered
