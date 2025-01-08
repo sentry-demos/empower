@@ -40,7 +40,7 @@ class Api::V1::ProductsController < ApplicationController
     # end
     # span_response.finish
 
-    render json: products, each_serializer: ProductSerializer, status: 200
+    render json: products, status: 200
   end
 
   # sent here if unexpected route was enterered

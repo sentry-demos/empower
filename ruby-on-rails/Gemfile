@@ -18,8 +18,6 @@ gem 'nokogiri', '~>1.17.2'
 # Use Rack CORS for handling Cross-Origin Resource Sharing (CORS), making cross-origin AJAX possible
 gem 'rack-cors'
 gem 'pg'
-# Add serializer for proper JSON handling
-gem 'active_model_serializers', '~> 0.10.13'
 
 gem "stackprof"
 gem "sentry-ruby"
