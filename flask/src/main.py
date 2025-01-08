@@ -165,30 +165,52 @@ def checkout():
     form = order["form"]
     validate_inventory = True if "validate_inventory" not in order else order["validate_inventory"] == "true"
 
-    inventory = []
     try:
-        with sentry_sdk.start_span(op="/checkout.get_inventory", description="function"):
-            with sentry_sdk.metrics.timing(key="checkout.get_inventory.execution_time"):
-                inventory = get_inventory(cart)
+        with sentry_sdk.start_transaction(name="checkout", op="checkout") as transaction:
+            inventory = []
+            try:
+                with sentry_sdk.start_span(op="/checkout.get_inventory", description="function"):
+                    with sentry_sdk.metrics.timing(key="checkout.get_inventory.execution_time"):
+                        inventory = get_inventory(cart)
+            except Exception as err:
+                sentry_sdk.metrics.incr(key="checkout.failed", tags={"reason": "inventory_fetch_failed"})
+                raise err
+
+            print("> /checkout inventory", inventory)
+            print("> validate_inventory", validate_inventory)
+
+            with sentry_sdk.start_span(op="process_order", description="function"):
+                quantities = cart['quantities']
+                inventory_map = {str(item['productId']): item for item in inventory}
+                
+                # Validate all quantities against inventory
+                insufficient_items = []
+                for product_id, requested_qty in quantities.items():
+                    requested_qty = int(requested_qty)
+                    if product_id not in inventory_map:
+                        insufficient_items.append({"id": product_id, "reason": "not_found"})
+                        continue
+                        
+                    available_qty = inventory_map[product_id]['count']
+                    if validate_inventory and (available_qty < requested_qty):
+                        insufficient_items.append({
+                            "id": product_id,
+                            "reason": "insufficient_stock",
+                            "requested": requested_qty,
+                            "available": available_qty
+                        })
+                
+                if insufficient_items:
+                    sentry_sdk.metrics.incr(key="checkout.failed", tags={"reason": "insufficient_stock"})
+                    return jsonify({
+                        "error": "Inventory check failed",
+                        "details": insufficient_items
+                    }), 400
+
+                response = make_response("success")
+                return response
     except Exception as err:
         raise (err)
-
-    print("> /checkout inventory", inventory)
-    print("> validate_inventory", validate_inventory)
-
-    with sentry_sdk.start_span(op="process_order", description="function"):
-        quantities = cart['quantities']
-        for cartItem in quantities:
-            for inventoryItem in inventory:
-                print("> inventoryItem.count", inventoryItem['count'])
-                if (validate_inventory and (inventoryItem.count < quantities[cartItem] or quantities[cartItem] >= inventoryItem.count)):
-                    sentry_sdk.metrics.incr(key="checkout.failed")
-                    raise Exception("Not enough inventory for product")
-        if len(inventory) == 0 or len(quantities) == 0:
-            raise Exception("Not enough inventory for product")
-
-    response = make_response("success")
-    return response
 
 
 @app.route('/success', methods=['GET'])
