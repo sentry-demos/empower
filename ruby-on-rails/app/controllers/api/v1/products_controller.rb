@@ -12,12 +12,14 @@ class Api::V1::ProductsController < ApplicationController
     span_products_db.finish
     
     # n+1 to db if done this way
-    products.each do |prod_slow|
+    products = products.map do |prod|
       span_products_slow_db = transaction.start_child(op: "custom.reviews_slow_db_call")
-      prod_slow["pg_sleep"] = ""
-      prod_slow["reviews"] = []
-      prod_slow["reviews"] = Reviews.select("id, productid, rating, customerid, description, created, Null as pg_sleep").where("productid="+prod_slow.id.to_s)
+      prod_attrs = prod.attributes
+      prod_attrs["pg_sleep"] = ""
+      prod_attrs["reviews"] = []
+      prod_attrs["reviews"] = Reviews.select("id, productid, rating, customerid, description, created, Null as pg_sleep").where("productid="+prod.id.to_s).as_json
       span_products_slow_db.finish
+      prod_attrs
     end
 
     # fewer db calls this way -- done in products-join
@@ -40,7 +42,7 @@ class Api::V1::ProductsController < ApplicationController
     # end
     # span_response.finish
 
-    render json: products, each_serializer: ProductSerializer, status: 200
+    render json: products, status: 200
   end
 
   # sent here if unexpected route was enterered
