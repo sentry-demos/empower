@@ -14,6 +14,9 @@ const syntaxError = () => eval('foo bar');
 const rangeError = () => {
   throw new RangeError('Parameter must be between 1 and 100');
 };
+const smallRangeError = () => {
+  throw new RangeError('Parameter must be between 1 and 10');
+};
 const unhandledError = () => {
   throw new UnhandledException('unhandled error');
 };
@@ -26,6 +29,7 @@ const randomErrors = [
   referenceError,
   syntaxError,
   rangeError,
+  smallRangeError,
   unhandledError,
   inventoryError,
 ];
