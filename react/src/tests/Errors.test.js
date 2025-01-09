@@ -40,9 +40,19 @@ describe('Errors module', () => {
     expect(() => crasher()).toThrow(RangeError);
   });
 
-  test('should throw an UnhandledException when "crash" is true and errnum is 4', () => {
+  test('should throw a RangeError when "crash" is true and errnum is 4', () => {
     setQueryParams({ crash: 'true', errnum: '4' });
+    expect(() => crasher()).toThrow(RangeError);
+  });
+
+  test('should throw an UnhandledException when "crash" is true and errnum is 5', () => {
+    setQueryParams({ crash: 'true', errnum: '5' });
     expect(() => crasher()).toThrow(UnhandledException);
+  });
+
+  test('should throw an InventoryException when "crash" is true and errnum is 6', () => {
+    setQueryParams({ crash: 'true', errnum: '6' });
+    expect(() => crasher()).toThrow(InventoryException);
   });
 
 // This test is failing, need to look into this later
