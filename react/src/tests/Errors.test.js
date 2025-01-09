@@ -1,4 +1,4 @@
-import { crasher, UnhandledException } from '../utils/errors';
+import { crasher, UnhandledException, InventoryException } from '../utils/errors';
 import { createBrowserHistory } from 'history';
 
 describe('Errors module', () => {
