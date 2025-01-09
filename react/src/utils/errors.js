@@ -17,6 +17,9 @@ const rangeError = () => {
 const unhandledError = () => {
   throw new UnhandledException('unhandled error');
 };
+const inventoryError = () => {
+  throw new InventoryException('unhandled error');
+};
 
 const randomErrors = [
   notAFunctionError,
@@ -24,6 +27,7 @@ const randomErrors = [
   syntaxError,
   rangeError,
   unhandledError,
+  inventoryError,
 ];
 
 const throwErrorNumber = (i) => {
@@ -61,4 +65,11 @@ class UnhandledException extends Error {
   }
 }
 
-export { crasher, UnhandledException };
+class InventoryException extends Error {
+  constructor(message, functionName) {
+    super(message);
+  }
+}
+
+
+export { crasher, UnhandledException, InventoryException };
