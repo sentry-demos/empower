@@ -3,7 +3,7 @@ name: codecov.yml
 on: 
   push:
     branches:
-      - main
+      - master
   pull_request:
 
 jobs:
@@ -12,14 +12,12 @@ jobs:
 
     steps:
       - name: Check out this repository code
-        if: github.event_name == 'pull_request'
         uses: actions/checkout@v3
         with:
           path: empower
           fetch-depth: 0
 
       - name: Install Node
-        if: github.event_name == 'pull_request'
         uses: actions/setup-node@v3
         with:
           node-version: "18"
@@ -37,7 +35,6 @@ jobs:
           flags: frontend
 
       - name: Run Python Tests
-        if: github.event_name == 'pull_request'
         run: |
           pip install -U pytest
           pip install pytz
@@ -51,7 +48,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           flags: api
       - name: Upload test results to Codecov
-        if: ${{ !cancelled() && github.event_name == 'pull_request'}}
+        if: ${{ !cancelled()}}
         uses: codecov/test-results-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
