@@ -1,6 +1,11 @@
 name: codecov.yml
 # Run Codecov on PR open or change
-on: pull_request
+on: 
+  push:
+    branches:
+      - master
+  pull_request:
+
 jobs:
   codecov:
     runs-on: ubuntu-20.04
@@ -16,8 +21,8 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: "18"
-
-      - name: Run React tests
+# Need to run "npm run build" command for bundle analysis: https://docs.codecov.com/docs/webpack-quick-start
+      - name: Build React and run tests
         env:
             CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         run: |
