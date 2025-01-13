@@ -142,20 +142,27 @@ def get_inventory(cart):
     try:
         with sentry_sdk.start_span(op="get_inventory", description="db.connect"):
             connection = db.connect()
-        with sentry_sdk.start_span(op="get_inventory", description="db.query") as span:
-            inventory = connection.execute(
-                "SELECT * FROM inventory WHERE productId in %s" % (productIds)
+        
+        with sentry_sdk.start_span(op="get_inventory.validate_products", description="db.query") as span:
+            # First verify if products exist
+            products = connection.execute(
+                "SELECT id FROM products WHERE id in %s" % (productIds)
             ).fetchall()
-            span.set_data("inventory",inventory)
+            
+            if len(products) != len(productIds):
+                raise Exception("One or more products not found in catalog")
+            
+            # Then get inventory with proper join to ensure we get all products
+            with sentry_sdk.start_span(op="get_inventory.get_inventory", description="db.query") as span:
+                inventory = connection.execute(
+                    """SELECT i.*, COALESCE(i.count, 0) as count 
+                       FROM products p 
+                       LEFT JOIN inventory i ON p.id = i.productId 
+                       WHERE p.id in %s""" % (productIds)
+                ).fetchall()
+                span.set_data("inventory", inventory)
     except BrokenPipeError as err:
         raise DatabaseConnectionError('get_inventory')
-    except Exception as err:
-        err_string = str(err)
-        if UNPACK_FROM_ERROR in err_string:
-            raise DatabaseConnectionError('get_inventory')
-        else:
-            raise(err)
-
     return inventory
 
 

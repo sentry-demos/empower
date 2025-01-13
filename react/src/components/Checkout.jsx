@@ -10,6 +10,7 @@ import { getTag, itemsInCart } from '../utils/utils';
 function Checkout({ backend, rageclick, checkout_success, cart }) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   let initialFormValues;
   let se = sessionStorage.getItem('se');
   const seTdaPrefixRegex = /[^-]+-tda-[^-]+-/;
@@ -114,8 +115,37 @@ function Checkout({ backend, rageclick, checkout_success, cart }) {
       setLoading(true);
 
       try {
-        await checkout(cart);
+        const response = await fetch(backend + '/checkout?v2=true', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            cart: cart,
+            form: form,
+            validate_inventory: checkout_success ? "false" : "true",
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          
+          if (errorData.details) {
+            const errorMessage = errorData.details.map(item => {
+              if (item.reason === 'not_found') {
+                return `Product ${item.id} is no longer available`;
+              } else if (item.reason === 'insufficient_stock') {
+                return `Only ${item.available} units available for product ${item.id}, but ${item.requested} were requested`;
+              }
+              return `Issue with product ${item.id}`;
+            }).join('\n');
+            
+            setError(errorMessage);
+            throw new Error(errorMessage);
+          } else {
+            throw new Error(errorData.error || 'Checkout failed');
+          }
+        }
       } catch (error) {
+        setError(error.message || 'An unexpected error occurred');
         Sentry.captureException(error);
         hadError = true;
       }
@@ -128,9 +158,19 @@ function Checkout({ backend, rageclick, checkout_success, cart }) {
       }
     })
   }
+  
+  const clearError = () => {
+    setError(null);
+  };
 
   return (
     <div className="checkout-container">
+      {error && (
+        <div className="error-message" role="alert" onClick={clearError}>
+          <p>{error}</p>
+          <button className="dismiss-error">Dismiss</button>
+        </div>
+      )}
       {loading ? (
         <Loader
           type="ThreeDots"
