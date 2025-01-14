@@ -11,9 +11,13 @@ export default async function getProducts() {
   try {
     console.log("Fetching products...");
     // Artificial slowdown for demoing
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-
-    const products = await prisma.products.findMany();
+    //await new Promise((resolve) => setTimeout(resolve, 2000));
+    const sleepDuration = 2;
+    const products = await prisma.$queryRawUnsafe(`
+      SELECT * FROM products WHERE id IN (
+        SELECT id FROM products, pg_sleep(${sleepDuration}))
+    `);
+    //  const products = await prisma.products.findMany();
     // const products = data.rows;
 
     for (let i = 0; i < products.length; ++i) {
