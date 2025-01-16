@@ -111,7 +111,8 @@ cache_config = {
     "CACHE_TYPE": "RedisCache",  # Flask-Caching related configs
     "CACHE_DEFAULT_TIMEOUT": 300,
     "CACHE_REDIS_HOST": redis_host,
-    "CACHE_REDIS_PORT": redis_port
+    "CACHE_REDIS_PORT": redis_port,
+    "CACHE_KEY_PREFIX": None
 }
 
 app.config.from_mapping(cache_config)
