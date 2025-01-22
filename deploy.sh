@@ -106,6 +106,8 @@ function cleanup {
   if [ "$generated_envs" != "" ]; then
     rm -f $generated_envs # bash only (passed as separate args)
   fi
+  # terminate the celery workers
+  pkill -f "celery worker"
 }
 trap cleanup EXIT
 
@@ -145,7 +147,7 @@ for proj in $projects; do # bash only
       if  [ "$proj" == "next" ]; then
         # Next env variables need to start with NEXT_PUBLIC_*
         backend_var=$(var_name.sh NEXT_PUBLIC_%s_BACKEND $be_proj)
-      else 
+      else
         backend_var=$(var_name.sh %s_APP_%s_BACKEND $proj $be_proj)
       fi
       . get_proj_var.sh "%s_LOCAL_PORT" $be_proj # sets $local_port
@@ -213,7 +215,7 @@ for proj in $projects; do # bash only
     if [[ "$proj" =~ ^crons- ]]; then
       . get_proj_var.sh "%s_DEPLOY_DIR" $proj
       escaped_deploy_dir=$(echo "$deploy_dir" | sed 's_/_\\/_g')
-      sed -e 's/<CRONSPYTHON_DEPLOY_DIR>/'$escaped_deploy_dir'/g' crontab.template > crontab 
+      sed -e 's/<CRONSPYTHON_DEPLOY_DIR>/'$escaped_deploy_dir'/g' crontab.template > crontab
     fi
     ./deploy_project.sh
   else

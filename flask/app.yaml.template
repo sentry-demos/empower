@@ -1,6 +1,6 @@
 service: <SERVICE>
 runtime: python312
-entrypoint: gunicorn -b :$PORT -w 2 --timeout 60 src.main:app
+entrypoint: ./start.sh
 
 env_variables:
   REDISHOST: 10.251.35.179
@@ -8,4 +8,3 @@ env_variables:
 
 vpc_access_connector:
   name: projects/sales-engineering-sf/locations/us-central1/connectors/empower-plant-connector
-
