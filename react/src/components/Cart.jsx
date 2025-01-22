@@ -4,8 +4,15 @@ import * as Sentry from '@sentry/react';
 import Button from './ButtonLink';
 import { connect } from 'react-redux';
 import { setProducts, addProduct, removeProduct } from '../actions';
+import countItemsInCart from '../utils/cart';
 
 function Cart({ cart, removeProduct, addProduct }) {
+  console.log("Cart component rendered with cart:", cart);
+  const itemsInCart = countItemsInCart(cart);
+  console.log("Items in cart calculated in Cart component:", itemsInCart);
+  const span = Sentry.startInactiveSpan({ name: "items_added_to_cart", op: "function"});
+  span.setAttribute("items_in_cart", itemsInCart);
+  span.end();
   return (
     <div className="cart-container">
       <h2 className="sentry-unmask">Cart</h2>

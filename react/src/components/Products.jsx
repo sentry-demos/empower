@@ -40,7 +40,6 @@ function Products({ frontendSlowdown, backend }) {
 
   // intentionally supposed to be slow
   function renderProducts(data) {
-    console.log(Sentry.getActiveSpan())
     try {
       // Trigger a Sentry 'Performance Issue' in the case of
       // a frontend slowdown
@@ -80,7 +79,7 @@ function Products({ frontendSlowdown, backend }) {
     related to the async keyword + babel transform, hence why it probably got
     fixed with hooks (no transform on that class method anymore)"
   */
-  function getProducts(frontendSlowdown) {
+  async function getProducts(frontendSlowdown) {
     [('/api', '/connect', '/organization')].forEach((endpoint, activeSpan) => {
       fetch(backend + endpoint, {
         method: 'GET',
@@ -91,70 +90,32 @@ function Products({ frontendSlowdown, backend }) {
       });
     });
     const productsEndpoint = determineProductsEndpoint();
-    const stopMeasurement = measureRequestDuration(productsEndpoint);
-    fetch(backend + productsEndpoint, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-    })
-    .then((result) => {
-      if (!result.ok) {
+    Sentry.startSpan({ name: "Fetch Products"}, async (span) => {
+      const stopMeasurement = measureRequestDuration(productsEndpoint, span);
+      const response = await fetch(backend + productsEndpoint, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
         Sentry.setContext('err', {
-          status: result.status,
-          statusText: result.statusText,
+          status: response.status,
+          statusText: response.statusText,
         });
-        return Promise.reject();
-      } else {
-        return result.json();
+        return;
       }
+      renderProducts(data);
+      stopMeasurement();
     })
-    .then(renderProducts)
-    .catch((err) => {
-      return { ok: false, status: 500 };
-    }).then((res) => {
-      stopMeasurement()
-      return res
-    });
-
-    /*
-
-    // When triggering a frontend-only slowdown, use the products-join endpoint
-    // because it returns product data with a fast backend response.
-    // Otherwise use the /products endpoint, which provides a slow backend response.
-    Sentry.withActiveSpan(null, () => {
-      Sentry.startSpan({ name: "Products" }, () => {
-        const productsEndpoint = determineProductsEndpoint();
-        const stopMeasurement = measureRequestDuration(productsEndpoint);
-        fetch(backend + productsEndpoint, {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' },
-        })
-        .then((result) => {
-          if (!result.ok) {
-            Sentry.setContext('err', {
-              status: result.status,
-              statusText: result.statusText,
-            });
-            return Promise.reject();
-          } else {
-            return result.json();
-          }
-        })
-        .then(renderProducts)
-        .catch((err) => {
-          return { ok: false, status: 500 };
-        }).then((res) => {
-          stopMeasurement()
-          return res
-        });
-      })
-    })*/
-    
   }
 
   useEffect(() => {
-    Sentry.startSpan({ name: "Fetch Products"}, () => {
-      getProducts(frontendSlowdown);
-    })
+     try {
+      getProducts(frontendSlowdown)
+     } catch (error) {
+      Sentry.captureException(error)
+     }
   }, []);
 
   return products.length > 0 ? (

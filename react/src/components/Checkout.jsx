@@ -5,6 +5,7 @@ import './checkout.css';
 import * as Sentry from '@sentry/react';
 import { connect } from 'react-redux';
 import Loader from 'react-loader-spinner';
+import countItemsInCart from '../utils/cart';
 
 function Checkout({ backend, rageclick, cart }) {
   const navigate = useNavigate();
@@ -40,7 +41,12 @@ function Checkout({ backend, rageclick, cart }) {
   const [form, setForm] = useState(initialFormValues);
 
   async function checkout(cart, checkout_span) {
-    checkout_span.setAttribute("checkout.click.span", 1);
+    console.log("Checkout called with cart:", cart);
+    console.log("Cart quantities:", cart.quantities);
+    const itemsInCart = countItemsInCart(cart);
+    console.log("Calculated itemsInCart:", itemsInCart);
+    checkout_span.setAttribute("checkout.click", 1);
+    checkout_span.setAttribute("items_at_checkout", itemsInCart);
     const stopMeasurement = measureRequestDuration('/checkout');
     const response = await fetch(backend + '/checkout?v2=true', {
       method: 'POST',
