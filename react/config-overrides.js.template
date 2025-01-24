@@ -1,5 +1,6 @@
 const SentryWebpackPlugin = require('@sentry/webpack-plugin');
 const reactsourceMapPlugin = require('@acemarke/react-prod-sourcemaps');
+const { codecovWebpackPlugin } = require('@codecov/webpack-plugin');
 
 module.exports = function override(config, env) {
   //do stuff with the webpack config...
@@ -8,7 +9,6 @@ module.exports = function override(config, env) {
       mode: 'strict',
     })
   );
-
   config.plugins.push(
     SentryWebpackPlugin.sentryWebpackPlugin({
       authToken: process.env.SENTRY_AUTH_TOKEN,
@@ -18,7 +18,13 @@ module.exports = function override(config, env) {
       ignoreFile: '.sentrycliignore',
       ignore: ['webpack.config.js'],
       configFile: 'sentry.properties',
-      reactComponentAnnotation: {enabled:true},
+    })
+  );
+  config.plugins.push(
+    codecovWebpackPlugin({
+      enableBundleAnalysis: process.env.CI !== undefined || process.env.CODECOV_TOKEN !== undefined,
+      bundleName: "empower-react-app",
+      uploadToken: process.env.CODECOV_TOKEN,
     })
   );
   return config;

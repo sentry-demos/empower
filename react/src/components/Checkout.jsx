@@ -5,14 +5,17 @@ import './checkout.css';
 import * as Sentry from '@sentry/react';
 import { connect } from 'react-redux';
 import Loader from 'react-loader-spinner';
-import countItemsInCart from '../utils/cart';
+import { countItemsInCart } from '../utils/cart';
+import { getTag } from '../utils/utils';
 
-function Checkout({ backend, rageclick, cart }) {
+
+function Checkout({ backend, rageclick, checkout_success, cart }) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   let initialFormValues;
   let se = sessionStorage.getItem('se');
-  if (se && se.startsWith('prod-tda-')) {
+  const seTdaPrefixRegex = /[^-]+-tda-[^-]+-/;
+  if (se && seTdaPrefixRegex.test(se)) {
     // we want form actually filled out in TDA for a realistic-looking Replay
     initialFormValues = {
       email: '',
@@ -40,13 +43,11 @@ function Checkout({ backend, rageclick, cart }) {
   }
   const [form, setForm] = useState(initialFormValues);
 
-  async function checkout(cart, checkout_span) {
-    console.log("Checkout called with cart:", cart);
-    console.log("Cart quantities:", cart.quantities);
+async function checkout(cart, checkout_span) {
+
     const itemsInCart = countItemsInCart(cart);
-    console.log("Calculated itemsInCart:", itemsInCart);
-    checkout_span.setAttribute("checkout.click", 1);
-    checkout_span.setAttribute("items_at_checkout", itemsInCart);
+    let tags = { 'backendType': getTag('backendType'), 'cexp': getTag('cexp'), 'items_at_checkout': itemsInCart, 'checkout.click': 1 };
+    checkout_span.setAttributes(tags);
     const stopMeasurement = measureRequestDuration('/checkout');
     const response = await fetch(backend + '/checkout?v2=true', {
       method: 'POST',
@@ -54,6 +55,7 @@ function Checkout({ backend, rageclick, cart }) {
       body: JSON.stringify({
         cart: cart,
         form: form,
+        validate_inventory: checkout_success ? "false" : "true",
       }),
     })
     .catch((err) => {

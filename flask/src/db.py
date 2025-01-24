@@ -86,7 +86,7 @@ def get_products_join():
     try:
         with sentry_sdk.start_span(op="get_products_join", description="db.connect"):
             connection = db.connect()
-        
+
         with sentry_sdk.start_span(op="get_products_join", description="db.query") as span:
             products = connection.execute(
                 "SELECT * FROM products"

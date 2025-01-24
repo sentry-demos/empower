@@ -1,6 +1,11 @@
 name: codecov.yml
 # Run Codecov on PR open or change
-on: pull_request
+on: 
+  push:
+    branches:
+      - master
+  pull_request:
+
 jobs:
   codecov:
     runs-on: ubuntu-20.04
@@ -16,11 +21,13 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: "18"
-
-      - name: Run React tests
+# Need to run "npm run build" command for bundle analysis: https://docs.codecov.com/docs/webpack-quick-start
+      - name: Build React and run tests
+        env:
+            CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         run: |
-          npm install
-          npm test -- --coverage
+          CI=false ./build.sh
+          npm test -- --coverage --reporters=jest-junit
         working-directory: ./empower/react
       - uses: codecov/codecov-action@v3
         with:
@@ -32,11 +39,17 @@ jobs:
           pip install -U pytest
           pip install pytz
           pip install pytest-codecov
-          pytest --cov=. --cov-report=xml
+          pytest --cov=. --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
         working-directory: ./empower/flask/src
-      - uses: codecov/codecov-action@v3
+      - name: Upload coverage results to Codecov
+        uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           flags: api
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
       - run: echo "Job status is ${{ job.status }}."

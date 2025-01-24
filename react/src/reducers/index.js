@@ -17,7 +17,7 @@ const newState = (cart, products, flag) => {
   };
 };
 
-const reducer = (state = initialState, action) => {
+const reducer = (state = structuredClone(initialState), action) => {
   const { payload, type } = action;
 
   switch (type) {
@@ -52,7 +52,7 @@ const reducer = (state = initialState, action) => {
       return Object.assign({}, newState(cart1, state.products));
 
     case 'RESET_CART':
-      return Object.assign({}, newState([], state.tools));
+      return Object.assign({}, newState(structuredClone(initialState.cart), state.products));
 
     case 'SET_PRODUCTS':
       return Object.assign({}, newState(state.cart, payload.products));

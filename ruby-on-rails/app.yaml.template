@@ -1,6 +1,6 @@
 entrypoint: bundle exec rackup -s Puma -p $PORT
 env: standard
-runtime: ruby27
+runtime: ruby32
 
 service: <SERVICE>
 

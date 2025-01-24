@@ -1,6 +1,10 @@
 import reducer from '../reducers/index';
 import { ADD_PRODUCT, REMOVE_PRODUCT, RESET_CART, SET_PRODUCTS, SET_FLAG } from '../actions/types';
 
+if (typeof structuredClone === 'undefined') {
+  global.structuredClone = (obj) => JSON.parse(JSON.stringify(obj));
+}
+
 describe('Reducer', () => {
   const productOne = { id: 1, name: 'Product 1', price: 10 };
   const productTwo = { id: 2, name: 'Product 2', price: 20 };
@@ -78,8 +82,12 @@ describe('Reducer', () => {
     };
     const expectedState = {
       ...initialState,
-      cart: [],
-      products: undefined,
+      cart: {
+        "items": [],
+        "quantities": {},
+        "total": 0,
+      },
+      products: [],
       flag: undefined
     };
     expect(reducer(stateWithProducts, action)).toEqual(expectedState);

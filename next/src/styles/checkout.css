@@ -1,0 +1,38 @@
+.checkout-container {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.checkout-container h2 {
+  border-bottom: 1px solid;
+  padding: 0 0 1rem;
+}
+
+.checkout-form {
+  margin: 2rem auto;
+  max-width: 80%;
+  text-align: left;
+}
+@media screen and (min-width: 1200px) {
+  .checkout-form {
+    max-width: 50%;
+  }
+}
+
+.checkout-form input {
+  display: block;
+  width: 100%;
+}
+.checkout-form input[type='checkbox'] {
+  display: inline-block;
+  width: auto;
+}
+
+.checkout-form h4 {
+  margin: 3rem auto 1rem;
+}
+
+input[type='submit'].complete-checkout-btn {
+  font-size: 1.25rem;
+  margin-top: 3rem;
+}
