@@ -1,4 +1,4 @@
-name: codecov.yml
+name: run_codecov_on_pull_request.yml
 # Run Codecov on PR open or change
 on: 
   push:

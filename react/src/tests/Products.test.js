@@ -12,6 +12,7 @@ jest.mock('@sentry/react', () => ({
   withScope: jest.fn((fn) => fn({ _tags: { se: 'mocked_se' } })),
   captureException: jest.fn(),
   setContext: jest.fn(),
+  startSpan: jest.fn(),
   withProfiler: (Component) => Component,
 }));
 
