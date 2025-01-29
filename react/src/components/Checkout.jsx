@@ -44,8 +44,25 @@ function Checkout({ backend, rageclick, checkout_success, cart }) {
   const [form, setForm] = useState(initialFormValues);
 
 async function checkout(cart, checkout_span) {
-
+    console.log("Checkout called with cart:", cart);
+    console.log("Checkout span:", checkout_span);
     const itemsInCart = countItemsInCart(cart);
+    console.log("Calculated itemsInCart:", itemsInCart);
+    
+    if (!checkout_span || typeof checkout_span.setAttribute !== 'function') {
+        console.error("Invalid checkout_span object:", checkout_span);
+        return;
+    }
+    
+    checkout_span.setAttribute("checkout.click", 1);
+    checkout_span.setAttribute("items_at_checkout", itemsInCart);
+    
+    // Verify attributes were set
+    console.log("Span attributes after setting:", {
+        click: checkout_span.getAttribute("checkout.click"),
+        items: checkout_span.getAttribute("items_at_checkout")
+    });
+
     let tags = { 'backendType': getTag('backendType'), 'cexp': getTag('cexp'), 'items_at_checkout': itemsInCart, 'checkout.click': 1 };
     checkout_span.setAttributes(tags);
     const stopMeasurement = measureRequestDuration('/checkout');
