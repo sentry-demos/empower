@@ -14,7 +14,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        webhook-url: 'https://hooks.slack.com/services/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'
+        webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
         provider: 'slack'
         channel: '#discuss-demo' # optional
         ignore-label: 'no-reminder'
