@@ -18,6 +18,14 @@ express/node_modules
 react/build
 next/dist
 
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
 
 # misc
 .idea
@@ -90,6 +98,14 @@ env-config/*
 
 **/local.env
 tda/env
+
+
+# Lambda demo specific
+aws/lambda_demo/certifi/
+aws/lambda_demo/sentry_sdk/
+aws/lambda_demo/urllib3/
+aws/lambda_demo/*.dist-info/
+aws/lambda_demo/*.egg-info/
 
 next/.env.sentry-build-plugin
 
