@@ -57,12 +57,6 @@ async function checkout(cart, checkout_span) {
     checkout_span.setAttribute("checkout.click", 1);
     checkout_span.setAttribute("items_at_checkout", itemsInCart);
     
-    // Verify attributes were set
-    console.log("Span attributes after setting:", {
-        click: checkout_span.getAttribute("checkout.click"),
-        items: checkout_span.getAttribute("items_at_checkout")
-    });
-
     let tags = { 'backendType': getTag('backendType'), 'cexp': getTag('cexp'), 'items_at_checkout': itemsInCart, 'checkout.click': 1 };
     checkout_span.setAttributes(tags);
     const stopMeasurement = measureRequestDuration('/checkout');
