@@ -13,12 +13,12 @@ const tracingOrigins = [
   window.location.host,
 ];
 Sentry.init({
-  dsn: 'https://b9943feb5e210fbd4de6a8871d9f1db4@o88872.ingest.us.sentry.io/4508135114014720',
+  dsn: process.env.NEXT_PUBLIC_DSN,
   tracesSampleRate: 1.0,
   tracePropagationTargets: tracingOrigins,
   profilesSampleRate: 1.0,
   replaysSessionSampleRate: 1.0,
-  debug: true,
+  debug: false,
   integrations: [
     Sentry.replayIntegration({
       // Additional configuration goes in here
