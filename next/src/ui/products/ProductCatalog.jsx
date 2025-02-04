@@ -2,9 +2,11 @@
 import React from 'react';
 import ProductCard from '@/src/ui/products/ProductCard';
 import getProducts from '@/lib/data.js';
+import { getProductsRaw } from '@/lib/data.js';
 
 export default async function ProductCatalog(props) {
-  let products = await getProducts();
+  let products = await getProductsRaw();
+  //let products = await getProducts();
   console.log(products);
 
   return (

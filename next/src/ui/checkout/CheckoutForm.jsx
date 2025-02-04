@@ -2,14 +2,12 @@
 
 import React, { useState } from 'react';
 import * as Sentry from '@sentry/nextjs';
-import { useRouter, redirect } from 'next/navigation';
 import { connect } from 'react-redux';
 import { ThreeDots } from 'react-loader-spinner';
-import { Router } from 'react-router-dom';
+import ThreeDotLoader from '../ThreeDotLoader';
 
 
 export function CheckoutForm({ cart, checkoutAction }) {
-  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     email: 'plant.lover@example.com',
@@ -37,44 +35,28 @@ export function CheckoutForm({ cart, checkoutAction }) {
     Sentry.startSpan(
       {
         name: 'Submit Checkout Form',
-        forceTransaction: true,
       },
       async (span) => {
-        let hadError = false;
 
         window.scrollTo({
           top: 0,
           behavior: 'auto',
         });
 
-        try {
-          Sentry.metrics.increment('checkout.click');
-          console.log("> cart", cart);
-          // Server Action within a client component
-          // Reference: https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions-and-mutations
-          "use server"
-          return await Sentry.withServerActionInstrumentation(
-            "checkout", // The name you want to associate this Server Action with in Sentry
-            {
-            },
-            async () => {
-              await checkoutAction(cart);
-                  },
-          );
-          
-        } catch (error) {
-          console.log('had error');
-          Sentry.captureException(error);
-          hadError = true;
-        }
+        Sentry.metrics.increment('checkout.click');
+        console.log("> cart", cart);
+        // Server Action within a client component
+        // Reference: https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions-and-mutations
+        //  await checkoutAction(cart);
 
-        setLoading(false);
-
-        if (hadError) {
-          router.push('/complete/error');
-        } else {
-          router.push('/complete');
-        }
+        return await Sentry.withServerActionInstrumentation(
+          "checkout", // The name you want to associate this Server Action with in Sentry
+          {
+          },
+          async () => {
+            await checkoutAction(cart);
+                },
+        );
       }
     );
   }
@@ -84,11 +66,7 @@ export function CheckoutForm({ cart, checkoutAction }) {
     <>
     {
       loading ? (
-        <ThreeDots
-        color="#f6cfb2"
-        className="sentry-unmask"
-        height={150}
-        width={150}
+        <ThreeDotLoader
       /> ) : (
         <>
           <h2 className="sentry-unmask">Checkout</h2>
