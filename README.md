@@ -29,7 +29,7 @@ Query params to be added to the demo app. These query parameters can be stacked 
 - `?userEmail=someemail@example.com` - lets you [pass in a specific user email](https://github.com/sentry-demos/empower/blob/fce289530f72ce47fe2c7482cdbd9aa8bcc13b6e/react/src/index.js#L218-L219)
 - `?frontendSlowdown=true` - used in the [frontend-only demo flow](https://github.com/sentry-demos/empower/blob/fce289530f72ce47fe2c7482cdbd9aa8bcc13b6e/react/src/index.js#L200-L207), which showcases a frontend slowdown via profiling.
 - `?rageclick=true` - causes the checkout button to stop working, so you can rageclick it. This will prevent the checkout error from happening. If you want to still demo the checkout error AND a rageclick, you can rageclick manually on the 'Contact Us' button that shows on the page after the Checkout Error occurs.
-- `?error_boundary=true` - enables the error boundary functionality in subscribe instead of putting a message on the queue (NextJS only, react will always use error boundary)
+- `?error_boundary=true` - enables the error boundary functionality in subscribe instead of putting a message on the queue (NextJS / React)
 ```
 # example
 https://localhost:5000/?se=chris&backend=flask&frontendSlowdown=true

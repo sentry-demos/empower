@@ -4,12 +4,31 @@ import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import './footer.css';
 
-function Footer() {
+function Footer({ errorBoundary, backend }) {
+  const [email, setEmail] = useState('');
+  console.log('errorBoundary', errorBoundary);
   const [subscribed, setSubscribed] = useState(false);
 
-  const handleSubmit = () => {
+  const handleSubmit = (e) => {
+    e.preventDefault();
     setSubscribed(true);
+    addToQueue();
   };
+
+  async function addToQueue() {
+    try {
+      console.log("Sending to queue...");
+      const resp = await fetch(`${backend}/enqueue`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const data = await resp.json();
+      console.log(data);
+    } catch (err) {
+      console.error('Error adding to queue:', err);
+    }
+  }
 
   return (
     <footer id="footer">
@@ -31,7 +50,7 @@ function Footer() {
           }}
         >
           <div className="formContainer">
-            <form onSubmitCapture={handleSubmit}>
+            <form>
               <label htmlFor="email-subscribe" className="sentry-unmask">
                 Email
               </label>
@@ -39,15 +58,18 @@ function Footer() {
                 type="email"
                 name="email-subscribe"
                 id="email-subscribe"
-              ></input>
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+              <button
+                type="submit"
+                className="subscribe-button sentry-unmask"
+                onClick={handleSubmit}
+              >
+                Subscribe
+              </button>
             </form>
-            <input
-              type="submit"
-              value="Subscribe"
-              className="sentry-unmask"
-              onClick={handleSubmit}
-            />
-            {subscribed && <SubscribedMessage />}
+            {subscribed && (errorBoundary === 'true' ? <SubscribedMessageError /> : <SubscribedMessage />)}
           </div>
         </Sentry.ErrorBoundary>
         <p className="sentry-unmask">
@@ -59,6 +81,10 @@ function Footer() {
 }
 
 function SubscribedMessage() {
+  return <p>You have successfully subscribed!</p>;
+}
+
+function SubscribedMessageError() {
   throw new Error('SubscribedMessage error');
 }
 

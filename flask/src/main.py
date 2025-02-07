@@ -126,9 +126,9 @@ def enqueue():
     body = json.loads(request.data)
     print(body['email'])
     email = body['email']
-    with sentry_sdk.start_transaction(name="email-subscribe-task"):
-      r = sendEmail.apply_async(args=[email])
-      print(r.task_id)
+    with sentry_sdk.start_transaction(name="src.api.enqueueEmail"):
+        r = sendEmail.apply_async(args=[email], queue='celery-new-subscriptions')
+        print(r.task_id)
     return jsonify({"status": "success"}), 200
 
 
