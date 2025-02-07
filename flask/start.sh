@@ -4,4 +4,4 @@
 gunicorn -b :$PORT -w 2 --timeout 60 src.main:app &
 
 # Start the Celery worker
-celery -A src.queues.celery worker -l INFO
+celery -A src.queues.email_subscribe worker -l INFO

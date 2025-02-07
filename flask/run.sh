@@ -27,6 +27,6 @@ gcloud compute ssh redis-relay --zone=us-central1-a -- -N -L 6379:10.251.35.179:
 # wait for relay to be setup before celery connects
 sleep 1
 
-celery -A src.queues.celery worker -l INFO &
+celery -A src.queues.email_subscribe worker -l INFO &
 
 flask run --port $LOCAL_PORT
