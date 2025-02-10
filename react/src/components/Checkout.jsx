@@ -5,7 +5,9 @@ import './checkout.css';
 import * as Sentry from '@sentry/react';
 import { connect } from 'react-redux';
 import Loader from 'react-loader-spinner';
-import { getTag, itemsInCart } from '../utils/utils';
+import { countItemsInCart } from '../utils/cart';
+import { getTag } from '../utils/utils';
+
 
 function Checkout({ backend, rageclick, checkout_success, cart }) {
   const navigate = useNavigate();
@@ -41,11 +43,22 @@ function Checkout({ backend, rageclick, checkout_success, cart }) {
   }
   const [form, setForm] = useState(initialFormValues);
 
-  let tags = { 'backendType': getTag('backendType'), 'cexp': getTag('cexp') }
-
-  async function checkout(cart) {
-    Sentry.metrics.increment('checkout.click', 1, { tags });
-    Sentry.metrics.increment('checkout.items_in_cart', itemsInCart(cart), { tags });
+async function checkout(cart, checkout_span) {
+    console.log("Checkout called with cart:", cart);
+    console.log("Checkout span:", checkout_span);
+    const itemsInCart = countItemsInCart(cart);
+    console.log("Calculated itemsInCart:", itemsInCart);
+    
+    if (!checkout_span || typeof checkout_span.setAttribute !== 'function') {
+        console.error("Invalid checkout_span object:", checkout_span);
+        return;
+    }
+    
+    checkout_span.setAttribute("checkout.click", 1);
+    checkout_span.setAttribute("items_at_checkout", itemsInCart);
+    
+    let tags = { 'backendType': getTag('backendType'), 'cexp': getTag('cexp'), 'items_at_checkout': itemsInCart, 'checkout.click': 1 };
+    checkout_span.setAttributes(tags);
     const stopMeasurement = measureRequestDuration('/checkout');
     const response = await fetch(backend + '/checkout?v2=true', {
       method: 'POST',
@@ -56,28 +69,32 @@ function Checkout({ backend, rageclick, checkout_success, cart }) {
         validate_inventory: checkout_success ? "false" : "true",
       }),
     })
-      .catch((err) => {
-        Sentry.metrics.increment('checkout.error', 1, {
-          tags: { status: 500 },
-        });
-        return { ok: false, status: 500 };
+    .catch((err) => {
+      checkout_span.setAttributes({
+        "checkout.error": 1,
+        "status": 500
       })
-      .then((res) => {
-        stopMeasurement();
-        return res;
-      });
+      return { ok: false, status: 500 };
+    })
+    .then((res) => {
+      stopMeasurement();
+      return res;
+    });
     if (!response.ok) {
-      Sentry.metrics.increment('checkout.error', 1, {
-        tags: { status: response.status, ...tags },
-      });
+      checkout_span.setAttributes({
+        "checkout.error": 1,
+        "status": response.status
+      })
+
       throw new Error(
         [response.status, response.statusText || ' Internal Server Error'].join(
           ' -'
         )
       );
     }
-    Sentry.metrics.increment('checkout.success', 1, { tags });
-    Sentry.metrics.distribution('checkout.order.total', cart.total);
+    checkout_span.setAttribute("checkout.success", 1)
+    checkout_span.setAttribute("checkout.order.total", cart.total);
+
     return response;
   } 
   function generateUrl(product_id) {
@@ -114,7 +131,7 @@ function Checkout({ backend, rageclick, checkout_success, cart }) {
       setLoading(true);
 
       try {
-        await checkout(cart);
+        await checkout(cart, span);
       } catch (error) {
         Sentry.captureException(error);
         hadError = true;
