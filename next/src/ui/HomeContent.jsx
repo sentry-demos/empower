@@ -23,13 +23,16 @@ import '@/src/styles/product.css';
 
 const sentryReduxEnhancer = Sentry.createReduxEnhancer({});
 
-const store = createStore(
-  rootReducer,
-  compose(applyMiddleware(logger), sentryReduxEnhancer)
-);
 
 
 export default function HomeContent({ children }) {
+
+  const store = createStore(
+    rootReducer,
+    
+    compose(applyMiddleware(logger), sentryReduxEnhancer)
+  );
+  
   return (
     <>
       <Provider store={store}>

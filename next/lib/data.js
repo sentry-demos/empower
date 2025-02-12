@@ -5,7 +5,9 @@ import { isOddReleaseWeek, busy_sleep } from '@/src/utils/time';
 import * as Sentry from '@sentry/nextjs';
 import { redirect } from 'next/navigation';
 import { query } from '@/lib/db';
+import { cookies } from 'next/headers';
 
+const cookiesStore = await cookies();
 
 const prisma = new PrismaClient();
 
@@ -102,7 +104,11 @@ export async function getProduct(index) {
 }
 
 export async function checkoutAction(cart) {
-  
+  // Need to set the se tag on the server runtime scope
+  const se = cookiesStore.get("se");
+  if(se) {
+    Sentry.getCurrentScope().setTag("se", se.value)
+  }
   console.log("cart ", cart);
   const inventory = await getInventory(cart);
 

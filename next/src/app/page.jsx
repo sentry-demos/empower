@@ -21,7 +21,7 @@ export default function Page(props) {
 
   console.log("in home page");
   const router = useRouter();
-  const { backend, frontendSlowdown } = useSearchParams();
+  const { backend } = useSearchParams();
   const backendType = determineBackendType(backend);
   const backendUrl = determineBackendUrl(backendType);
   console.log('backend is ' + backendUrl);

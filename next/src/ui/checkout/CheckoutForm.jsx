@@ -21,6 +21,8 @@ export function CheckoutForm({ cart, checkoutAction }) {
     zipCode: '94122',
   });
 
+  console.log(cart);
+
   function handleInputChange(event) {
     const target = event.target;
     const value = target.type === 'checkbox' ? target.checked : target.value;
