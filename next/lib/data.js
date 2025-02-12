@@ -38,39 +38,6 @@ export async function getProductsRaw() {
   }
 }
 
-export default async function getProducts() {
-  try {
-    console.log("Fetching products...");
-    // Artificial slowdown for demoing
-    //await new Promise((resolve) => setTimeout(resolve, 2000));
-    const sleepDuration = 2;
-    const products = await prisma.$queryRawUnsafe(`
-      SELECT * FROM products WHERE id IN (
-        SELECT id FROM products, pg_sleep(${sleepDuration}))
-    `);
-    //  const products = await prisma.products.findMany();
-    // const products = data.rows;
-
-    for (let i = 0; i < products.length; ++i) {
-
-      const product_reviews = await prisma.$queryRawUnsafe(`
-        SELECT * FROM reviews WHERE productid = ${i}
-        `)
-        console.log(product_reviews);
-      // const product_reviews = await prisma.reviews.findMany({
-      //   where: { id: i },
-      // });
-
-      products[i].reviews = product_reviews;
-    }
-    console.log("products: ", products);
-    return products;
-  } catch (error) {
-    console.error("Database Error:", error)
-    // do sentry stuff
-  }
-}
-
 export async function getProductsOnly() {
   try {
     console.log("Fetching products...");
