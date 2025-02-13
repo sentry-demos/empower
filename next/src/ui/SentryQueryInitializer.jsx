@@ -8,7 +8,7 @@ import { useSearchParams } from 'next/navigation';
 import * as Sentry from '@sentry/nextjs';
 import Cookies from 'js-cookie';
 
-export  default function SentryQueryInitializer() {
+export default function SentryQueryInitializer() {
   const searchParams = useSearchParams();
   const query = Object.fromEntries(searchParams.entries());
 
