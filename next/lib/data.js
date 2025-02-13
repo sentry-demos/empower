@@ -7,8 +7,6 @@ import { redirect } from 'next/navigation';
 import { query } from '@/lib/db';
 import { cookies } from 'next/headers';
 
-const cookiesStore = await cookies();
-
 const prisma = new PrismaClient();
 
 export async function getProductsRaw() {
@@ -72,6 +70,7 @@ export async function getProduct(index) {
 
 export async function checkoutAction(cart) {
   // Need to set the se tag on the server runtime scope
+  const cookiesStore = await cookies();
   const se = cookiesStore.get("se");
   if(se) {
     Sentry.getCurrentScope().setTag("se", se.value)
