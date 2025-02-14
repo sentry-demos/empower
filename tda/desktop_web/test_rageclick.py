@@ -3,6 +3,8 @@ import sentry_sdk
 from urllib.parse import urlencode
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 # This many clicks to trigger rage click
 # plus some extra for good measure (+ extra rage)
@@ -19,32 +21,40 @@ def test_rageclick(desktop_web_driver, endpoints, batch_size, backend, random, s
         for i in range(batch_size):
             # Ensures a different backend endpoint gets picked each time
             url = ""
-            # TODO make a query_string builder function for sharing this across tests
             query_string = {
-                # 'ruby' /products /checkout endpoints not available yet
                 'backend': backend(exclude='ruby'),
                 'rageclick': 'true'
             }
             url = endpoint_products + '?' + urlencode(query_string)
 
-            # Buttons are not available if products didn't load before selection, so handle this
             try:
                 desktop_web_driver.get(url)
 
-                # Wait up to 2 implicit waits (should be 20 seconds)
-                try:
-                    desktop_web_driver.find_element(By.CSS_SELECTOR, '.products-list button').click()
-                except TimeoutException as err:
-                    desktop_web_driver.find_element(By.CSS_SELECTOR, '.products-list button').click()
+                # Wait for and click product button
+                product_button = WebDriverWait(desktop_web_driver, 20).until(
+                    EC.element_to_be_clickable((By.CSS_SELECTOR, '.products-list button'))
+                )
+                product_button.click()
 
+                # Wait for and click cart link
+                cart_link = WebDriverWait(desktop_web_driver, 10).until(
+                    EC.element_to_be_clickable((By.CSS_SELECTOR, '.show-desktop #top-right-links a[href="/cart"]'))
+                )
+                cart_link.click()
 
-                desktop_web_driver.find_element(By.CSS_SELECTOR, '.show-desktop #top-right-links a[href="/cart"]').click()
-                desktop_web_driver.find_element(By.CSS_SELECTOR, 'a[href="/checkout"]').click()
+                # Wait for and click checkout link
+                checkout_link = WebDriverWait(desktop_web_driver, 10).until(
+                    EC.element_to_be_clickable((By.CSS_SELECTOR, 'a[href="/checkout"]'))
+                )
+                checkout_link.click()
 
-                # Rage click
-                checkout_button = desktop_web_driver.find_element(By.CSS_SELECTOR, '.complete-checkout-btn')
+                # Wait for checkout button and perform rage clicks
+                checkout_button = WebDriverWait(desktop_web_driver, 10).until(
+                    EC.element_to_be_clickable((By.CSS_SELECTOR, '.complete-checkout-btn'))
+                )
                 for _ in range(RAGE_CLICK_TRIGGER_QTY):
                     checkout_button.click()
+                    
                 time.sleep(8) #rageclick currently detected after 7 seconds
 
             except Exception as err:
