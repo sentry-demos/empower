@@ -47,16 +47,9 @@ export function CheckoutForm({ cart, checkoutAction }) {
         console.log("> cart", cart);
         // Server Action within a client component
         // Reference: https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions-and-mutations
-        //  await checkoutAction(cart);
+        await checkoutAction(cart);
 
-        return await Sentry.withServerActionInstrumentation(
-          "checkout", // The name you want to associate this Server Action with in Sentry
-          {
-          },
-          async () => {
-            await checkoutAction(cart);
-                },
-        );
+
       }
     );
   }

@@ -69,44 +69,51 @@ export async function getProduct(index) {
 }
 
 export async function checkoutAction(cart) {
-  // Need to set the se tag on the server runtime scope
-  const cookiesStore = await cookies();
-  const se = cookiesStore.get("se");
-  if(se) {
-    Sentry.getCurrentScope().setTag("se", se.value)
-  }
-  console.log("cart ", cart);
-  const inventory = await getInventory(cart);
-
-  console.log("> /checkout inventory", inventory)
-  let hasError = false;
-  try {
-    if (inventory.length === 0 || cart.quantities.length === 0) {
-      const error = new Error("Not enough inventory for product")
-      //Sentry.captureException(error);
-      throw error;
-    }
-
-    for (let inventoryItem of inventory) {
-      let id = inventoryItem.id;
-      console.log(inventoryItem.count, cart.quantities[id]);
-      if (inventoryItem.count < cart.quantities[id] || cart.quantities[id] >= inventoryItem.count) {
-        const error = new Error("Not enough inventory for product")
-        //Sentry.captureException(error);
-        throw error;
+  return await Sentry.withServerActionInstrumentation(
+    "checkoutServerAction", // The name you want to associate this Server Action with in Sentry
+    {
+    },
+    async () => {
+      // Need to set the se tag on the server runtime scope
+      const cookiesStore = await cookies();
+      const se = cookiesStore.get("se");
+      if(se) {
+        Sentry.getCurrentScope().setTag("se", se.value)
       }
-    }
-  }
-  catch (error) {
-    Sentry.captureException(error);
-    hasError = true;
-  }
-    const redirectLink = '/complete' + (hasError ? '/error' : '');
-    redirect(redirectLink);
+      console.log("cart ", cart);
+      const inventory = await getInventory(cart);
+
+      console.log("> /checkout inventory", inventory)
+      let hasError = false;
+      try {
+        if (inventory.length === 0 || cart.quantities.length === 0) {
+          const error = new Error("Not enough inventory for product")
+          //Sentry.captureException(error);
+          throw error;
+        }
+
+        for (let inventoryItem of inventory) {
+          let id = inventoryItem.id;
+          console.log(inventoryItem.count, cart.quantities[id]);
+          if (inventoryItem.count < cart.quantities[id] || cart.quantities[id] >= inventoryItem.count) {
+            const error = new Error("Not enough inventory for product")
+            //Sentry.captureException(error);
+            throw error;
+          }
+        }
+      }
+      catch (error) {
+        Sentry.captureException(error);
+        hasError = true;
+      }
+      const redirectLink = '/complete' + (hasError ? '/error' : '');
+      redirect(redirectLink);
+    },
+  );
 }
 
 
-export async function getInventory(cart) {
+export async function getInventory(cart) { 
   console.log("> getInventory");
 
   const quantities = cart['quantities'];
