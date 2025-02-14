@@ -32,11 +32,6 @@ export function CheckoutForm({ cart, checkoutAction }) {
     event.preventDefault();
 
     setLoading(true);
-    Sentry.startSpan(
-      {
-        name: 'Submit Checkout Form',
-      },
-      async (span) => {
 
         window.scrollTo({
           top: 0,
@@ -51,8 +46,6 @@ export function CheckoutForm({ cart, checkoutAction }) {
 
 
       }
-    );
-  }
 
 
   return (
