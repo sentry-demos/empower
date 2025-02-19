@@ -57,6 +57,7 @@ jobs:
           disable_search: true
 
       - name: Upload Report as Artifact
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: junit-flask.xml
