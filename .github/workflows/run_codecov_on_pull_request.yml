@@ -54,6 +54,6 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: junit-flask.xml
-          disable-search: true
+          disable_search: true
 
       - run: echo "Job status is ${{ job.status }}."
