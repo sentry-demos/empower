@@ -56,4 +56,10 @@ jobs:
           file: /home/runner/work/empower/empower/empower/flask/src/junit-flask.xml
           disable_search: true
 
+      - name: Upload Report as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: /home/runner/work/empower/empower/empower/flask/src/junit-flask.xml
+          path: coverage/junit
+
       - run: echo "Job status is ${{ job.status }}."
