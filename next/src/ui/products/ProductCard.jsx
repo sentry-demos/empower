@@ -6,7 +6,6 @@ import { connect } from 'react-redux';
 import { setProducts, addProduct, setFlag } from '@/src/actions';
 
 function ProductCard(props) {
-  console.log('cart: ',props.cart)
   const router = useRouter();
   const product = props.product;
   const stars = props.stars;
