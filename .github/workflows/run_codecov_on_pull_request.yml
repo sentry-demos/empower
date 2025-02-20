@@ -17,6 +17,11 @@ jobs:
           path: empower
           fetch-depth: 0
 
+      - name: Check Git Info
+        run: |
+          which git
+          git --version
+
       - name: Install Node
         uses: actions/setup-node@v3
         with:
@@ -43,7 +48,7 @@ jobs:
         working-directory: ./empower/flask/src
 
       - name: Upload coverage results to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           flags: api
@@ -64,5 +69,8 @@ jobs:
         with:
           name: junit-flask.xml
           path: /home/runner/work/empower/empower/empower/flask/src/
+
+      - name: Check Git Location
+        run: which git
 
       - run: echo "Job status is ${{ job.status }}."
