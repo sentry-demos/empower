@@ -12,8 +12,9 @@ jobs:
 
     steps:
       - name: Check out this repository code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
+          path: empower
           fetch-depth: 0
 
       - name: Install Node
@@ -41,7 +42,7 @@ jobs:
           pytest --cov=. --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
         working-directory: ./empower/flask/src
       - name: Upload coverage results to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           flags: api
