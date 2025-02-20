@@ -17,11 +17,6 @@ jobs:
           path: empower
           fetch-depth: 0
 
-      - name: Check Git Info
-        run: |
-          which git
-          git --version
-
       - name: Install Node
         uses: actions/setup-node@v3
         with:
@@ -48,11 +43,10 @@ jobs:
         working-directory: ./empower/flask/src
 
       - name: Upload coverage results to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           flags: api
-          verbose: true
 
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
@@ -61,16 +55,5 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: /home/runner/work/empower/empower/empower/flask/src/junit-flask.xml
           disable_search: true
-          verbose: true
-
-      - name: Upload Report as Artifact
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: junit-flask.xml
-          path: /home/runner/work/empower/empower/empower/flask/src/
-
-      - name: Check Git Location
-        run: which git
-
+          
       - run: echo "Job status is ${{ job.status }}."
