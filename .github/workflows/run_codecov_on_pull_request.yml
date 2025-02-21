@@ -14,13 +14,7 @@ jobs:
       - name: Check out this repository code
         uses: actions/checkout@v4
         with:
-          path: empower
           fetch-depth: 0
-
-      - name: ls
-        run: |
-          ls -al
-          ls */*
 
       - name: Install Node
         uses: actions/setup-node@v3
@@ -33,7 +27,7 @@ jobs:
         run: |
           CI=false ./build.sh
           npm test -- --coverage --reporters=jest-junit || true
-        working-directory: ./empower/react
+        working-directory: ./react
       - uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -46,7 +40,7 @@ jobs:
           pip install pytz
           pip install pytest-codecov
           pytest --cov=. --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
-        working-directory: ./empower/flask/src
+        working-directory: ./flask/src
       - name: Upload coverage results to Codecov
         uses: codecov/codecov-action@v5
         with:
