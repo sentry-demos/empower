@@ -17,6 +17,10 @@ jobs:
           path: empower
           fetch-depth: 0
 
+      - name: ls
+        run: |
+          ls */*
+
       - name: Install Node
         uses: actions/setup-node@v3
         with:
