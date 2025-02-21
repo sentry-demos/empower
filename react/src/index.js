@@ -65,6 +65,7 @@ let PRODUCTS_EXTREMELY_SLOW;
 let PRODUCTS_BE_ERROR;
 let ADD_TO_CART_JS_ERROR;
 let CHECKOUT_SUCCESS;
+let ERROR_BOUNDARY;
 const DSN = process.env.REACT_APP_DSN;
 const RELEASE = process.env.REACT_APP_RELEASE;
 
@@ -273,6 +274,12 @@ class App extends Component {
     }
     currentScope.setUser({ email: email });
 
+    let errorBoundary = queryParams.get('error_boundary');
+    if (errorBoundary) {
+      ERROR_BOUNDARY = errorBoundary;
+      currentScope.setTag('error_boundary', errorBoundary);
+    }
+
     // Automatically append `se`, `customerType` and `userEmail` query params to all requests
     // (except for requests to Sentry)
     const nativeFetch = window.fetch;
@@ -338,7 +345,7 @@ class App extends Component {
               <Route
                 path="/products"
                 element={
-                  <Products backend={BACKEND_URL} 
+                  <Products backend={BACKEND_URL}
                     frontendSlowdown={false}
                     productsExtremelySlow={PRODUCTS_EXTREMELY_SLOW}
                     productsBeError={PRODUCTS_BE_ERROR}
@@ -363,7 +370,7 @@ class App extends Component {
               <Route path="*" element={<NotFound />} />
             </SentryRoutes>
           </div>
-          <Footer />
+          <Footer backend={BACKEND_URL} errorBoundary={ERROR_BOUNDARY} />
         </BrowserRouter>
       </Provider>
     );
