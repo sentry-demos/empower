@@ -2,9 +2,11 @@
 
 import unittest
 from unittest.mock import patch, Mock
-from ..utils import weighter, parseHeaders, get_iterator, yuval, chris
+from ..utils import weighter, parseHeaders, get_iterator, yuval, chris, vlad
 from datetime import datetime
 from pytz import timezone
+import random
+import os
 
 class TestFunctions(unittest.TestCase):
 
@@ -67,5 +69,23 @@ class TestFunctions(unittest.TestCase):
         result = chris()
         self.assertEqual(result, '')
 
+    def test_vlad(self):
+        result = vlad()
+        self.assertEqual(result, 'vlad')
+
+    def test_flaky(self):
+        """Fails on odd-numbered GitHub Actions runs, random locally"""
+        is_ci = os.getenv('CI', 'false').lower() == 'true'
+        
+        if is_ci:
+            run_number = int(os.getenv('GITHUB_RUN_NUMBER', '0'))
+            result = (run_number % 2) == 0  # True for even runs, False for odd runs
+            message = f"Failed on CI run #{run_number}"
+        else:
+            result = random.random() < 0.5  # 50/50 chance locally
+            message = "Random local failure!"
+            
+        self.assertTrue(result, message)
+        
 if __name__ == '__main__':
     unittest.main()
