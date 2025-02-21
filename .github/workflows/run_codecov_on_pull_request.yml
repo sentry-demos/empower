@@ -1,6 +1,6 @@
 name: run_codecov_on_pull_request.yml
 # Run Codecov on PR open or change
-on: 
+on:
   push:
     branches:
       - master
@@ -12,9 +12,8 @@ jobs:
 
     steps:
       - name: Check out this repository code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
-          path: empower
           fetch-depth: 0
 
       - name: Install Node
@@ -23,16 +22,15 @@ jobs:
           node-version: "18"
 # Need to run "npm run build" command for bundle analysis: https://docs.codecov.com/docs/webpack-quick-start
       - name: Build React and run tests
-        env:
-            CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         run: |
           CI=false ./build.sh
           npm test -- --coverage --reporters=jest-junit || true
-        working-directory: ./empower/react
-      - uses: codecov/codecov-action@v3
+        working-directory: ./react
+      - uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           flags: frontend
+          verbose: true
 
       - name: Run Python Tests
         run: |
@@ -40,12 +38,13 @@ jobs:
           pip install pytz
           pip install pytest-codecov
           pytest --cov=. --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
-        working-directory: ./empower/flask/src
+        working-directory: ./flask/src
       - name: Upload coverage results to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v5
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
           flags: api
+          token: ${{ secrets.CODECOV_TOKEN }}
+          verbose: true
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
         uses: codecov/test-results-action@v1
