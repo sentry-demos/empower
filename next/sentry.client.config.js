@@ -12,15 +12,15 @@ const tracingOrigins = [
   /^\//,
   window.location.host,
 ];
-console.log("DSN: ", process.env.NEXT_APP_DSN);
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_DSN,
   tracesSampleRate: 1.0,
   tracePropagationTargets: tracingOrigins,
   profilesSampleRate: 1.0,
   replaysSessionSampleRate: 1.0,
-  debug: true,
+  debug: false,
   integrations: [
+    Sentry.browserProfilingIntegration,
     Sentry.replayIntegration({
       // Additional configuration goes in here
       // replaysSessionSampleRate and replaysOnErrorSampleRate is now a top-level SDK option

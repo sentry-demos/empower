@@ -7,7 +7,6 @@ import { connect } from 'react-redux';
 import { setProducts, addProduct, removeProduct } from '/src/actions';
 
 function Cart({ cart, removeProduct, addProduct }) {
-  console.log(cart);
   return (
     <div className="cart-container">
       <h2 className="sentry-unmask">Cart</h2>
