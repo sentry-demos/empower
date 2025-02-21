@@ -22,8 +22,6 @@ jobs:
           node-version: "18"
 # Need to run "npm run build" command for bundle analysis: https://docs.codecov.com/docs/webpack-quick-start
       - name: Build React and run tests
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         run: |
           CI=false ./build.sh
           npm test -- --coverage --reporters=jest-junit || true
