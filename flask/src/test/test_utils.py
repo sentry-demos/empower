@@ -74,15 +74,18 @@ class TestFunctions(unittest.TestCase):
         self.assertEqual(result, 'vlad')
 
     def test_flaky(self):
-        """50/50 chance of failure for both first runs and re-runs"""
+        """Alternating pass/fail based on run number and attempt"""
         is_ci = os.getenv('CI', 'false').lower() == 'true'
         
         if is_ci:
+            run_number = int(os.getenv('GITHUB_RUN_NUMBER', '1'))
             attempt = int(os.getenv('GITHUB_RUN_ATTEMPT', '1'))
-            result = random.random() < 0.5
-            message = f"Random CI failure on attempt #{attempt}"
+            # Combine run_number and attempt to get a consistent pattern
+            combined = run_number + attempt
+            result = (combined % 2) == 1  # Alternate based on total number
+            message = f"{'Passed' if result else 'Failed'} on CI run #{run_number}, attempt #{attempt}"
         else:
-            result = random.random() < 0.5  # 50/50 chance locally
+            result = random.random() < 0.5  # Keep random for local testing
             message = "Random local failure!"
             
         self.assertTrue(result, message)
