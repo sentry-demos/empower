@@ -44,3 +44,6 @@ def yuval(text):
 
 def chris():
     return ""
+
+def vlad():
+    return "vlad"
