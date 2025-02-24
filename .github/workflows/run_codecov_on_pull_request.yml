@@ -39,7 +39,13 @@ jobs:
           pip install pytest-codecov
           pytest --cov=. --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
         working-directory: ./flask/src
-        
+      
+      - name: Debug - Check if test results exist
+        run: ls -lah /home/runner/work/empower/empower/flask/src/
+
+      - name: Debug - Find JUnit XML file
+        run: find /home/runner/work/ -name "junit.xml"
+      
       - name: Upload coverage results to Codecov
         uses: codecov/codecov-action@v5
         with:
