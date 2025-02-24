@@ -74,9 +74,24 @@ class TestFunctions(unittest.TestCase):
         self.assertEqual(result, 'vlad')
 
     def test_flaky(self):
-        """Simple 50/50 flaky test"""
-        result = random.random() < 0.5  # True/False with equal probability
-        self.assertTrue(result, "Random failure!")
+        """Random failures on first run, guaranteed failures on re-runs in CI"""
+        is_ci = os.getenv('CI', 'false').lower() == 'true'
+        
+        if is_ci:
+            attempt = int(os.getenv('GITHUB_RUN_ATTEMPT', '1'))
+            if attempt > 1:
+                # Always fail re-runs
+                result = False
+                message = f"Failed on CI re-run attempt #{attempt}"
+            else:
+                # First run: 50/50 chance
+                result = random.random() < 0.5
+                message = "Random CI first-run failure!"
+        else:
+            result = random.random() < 0.5  # 50/50 chance locally
+            message = "Random local failure!"
+            
+        self.assertTrue(result, message)
         
 if __name__ == '__main__':
     unittest.main()
