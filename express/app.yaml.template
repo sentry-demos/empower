@@ -1,2 +1,2 @@
-service: <SERVICE>
+service: ${SERVICE}
 runtime: nodejs18

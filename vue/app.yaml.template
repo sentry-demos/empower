@@ -1,6 +1,6 @@
   
 env: standard
-service: <SERVICE> 
+service: ${SERVICE}
 runtime: nodejs20
 
 handlers:

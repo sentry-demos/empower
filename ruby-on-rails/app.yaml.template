@@ -1,8 +1,8 @@
-entrypoint: bundle exec rackup -s Puma -p $PORT
+entrypoint: bundle exec rackup -s Puma -p \$PORT
 env: standard
 runtime: ruby32
 
-service: <SERVICE>
+service: ${SERVICE}
 
 env_variables:
   PIDFILE: "/tmp/puma.pid"

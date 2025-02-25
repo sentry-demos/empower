@@ -18,11 +18,13 @@ server_pid=""
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
     server_pid="$(netstat -lnp | grep $server_port | head -1 | awk '{ print $7 }' | cut -d '/' -f 1)"
 elif [[ "$OSTYPE" == "darwin"* ]]; then
-    server_pid="$(netstat -anv | grep $server_port | grep LISTEN | head -1 | cut -w -f 9)"
+    server_pid=$(lsof -i :$server_port -sTCP:LISTEN -P -n 2>/dev/null | awk 'NR>1 {print $2}' | sort -u)
 fi
 
 if [ "$server_pid" != "" ]; then 
-    kill "$server_pid" 2>/dev/null
+    for p in $server_pid; do
+        kill "$p" 2>/dev/null
+    done
 else
     :
     #echo "$0: unable to identify process listening on port $server_port. Using 'killall $server_cmd' instead."

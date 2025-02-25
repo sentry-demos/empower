@@ -1,13 +1,13 @@
 runtime: java
 env: flex
-service: <SERVICE>
+service: ${SERVICE}
 env_variables:
-  SPRINGBOOT_ENV: <ENV> 
+  SPRINGBOOT_ENV: ${SPRINGBOOT_ENV}
 handlers:
 - url: /.*
   script: this field is required, but ignored
 beta_settings:
-  cloud_sql_instances: <CLOUD SQL CONNECTION NAME>
+  cloud_sql_instances: ${DB_CLOUD_SQL_CONNECTION_NAME}
 readiness_check:
   app_start_timeout_sec: 600
 manual_scaling:
