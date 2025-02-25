@@ -42,7 +42,7 @@
 # MIGRATION NOTE:
 #
 #   The old .env and app.yaml must now be deleted from ./<project>/ directory. Instead move all the
-#   variables to ./env-config/<env>.env and create ./<project>/app.yaml.template with '<SERVICE>' placeholder
+#   variables to ./env-config/<env>.env and create ./<project>/app.yaml.template with '${SERVICE}' placeholder
 #   in place of actual service name. Finally add <PROJECT>_APP_ENGINE_SERVICE=<actual service name> to all the
 #   ./env-config/<env>.env files.
 
@@ -218,26 +218,23 @@ for proj in $projects; do # bash only
     ./deploy_project.sh
   else
 
-    # Replace <SERVICE> in app.yaml.template with <PROJECT>_APP_ENGINE_SERVICE
+    # Replace ${SERVICE} in app.yaml.template with <PROJECT>_APP_ENGINE_SERVICE
     . get_proj_var.sh "%s_APP_ENGINE_SERVICE" $proj
 
     if [ "$proj" == "spring-boot" ]; then
       ypath="./src/main/appengine/"
-      sed -e 's/<SERVICE>/'$app_engine_service'/g' $ypath/app.yaml.template > $ypath/app.yaml
-      # This sets SPRINGBOOT_ENV
-      # TODO: Un-hardcode. Q: what non-production values does it take?
-      sed_inplace.sh 's/<ENV>/"production"/g' $ypath/app.yaml
-      sed_inplace.sh 's/<CLOUD SQL CONNECTION NAME>/"'"$DB_CLOUD_SQL_CONNECTION_NAME"'"/g' $ypath/app.yaml
+      SERVICE=$app_engine_service SPRINGBOOT_ENV="production" envsubst.sh < $ypath/app.yaml.template > $ypath/app.yaml
       mvn clean package appengine:deploy
     elif [ "$proj" == "aspnetcore" ]; then
       # TODO: envsubst is super easy - this should be the default for all projects
-      envsubst < app.yaml.template > .app.yaml
-      envsubst < Dockerfile.template > Dockerfile
+      envsubst.sh < app.yaml.template > .app.yaml
+      envsubst.sh < Dockerfile.template > Dockerfile
       gcloud app deploy --version v1 --quiet .app.yaml
       rm Dockerfile
     else
       # all other projects
-      sed -e 's/<SERVICE>/'$app_engine_service'/g' app.yaml.template > .app.yaml
+      SERVICE=$app_engine_service envsubst.sh < app.yaml.template > .app.yaml
+      cat .app.yaml
       gcloud app deploy --version v1 --quiet .app.yaml
     fi
   fi

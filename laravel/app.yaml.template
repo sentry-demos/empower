@@ -1,5 +1,5 @@
 env: standard
-service: <SERVICE> 
+service: ${SERVICE}
 runtime: php81
 env_variables:
   APP_STORAGE: "/tmp"

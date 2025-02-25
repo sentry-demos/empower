@@ -1,10 +1,10 @@
 service: 
-service: <SERVICE> 
+service: ${SERVICE}
 runtime: ruby27
 entrypoint: bundle exec ruby main.rb
 
 ####################################
-# service: <SERVICE> 
+# service: ${SERVICE}
 # runtime: ruby
 # env: flex
 # entrypoint: bundle exec ruby main.rb
