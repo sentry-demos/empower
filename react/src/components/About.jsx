@@ -21,36 +21,39 @@ function About({ backend }) {
       busy_sleep(Math.random(25) + 100);
     }
 
-    // Http requests to make in parallel, so the Transaction has more Spans
-    let request1 = fetch(backend + '/api', {
-      method: 'GET',
-    });
-    let request2 = fetch(backend + '/organization', {
-      method: 'GET',
-    });
-    let request3 = fetch(backend + '/connect', {
-      method: 'GET',
-    });
+    const fetchData = async () => {
+      try {
+        // Http requests to make in parallel, so the Transaction has more Spans
+        const requests = [
+          fetch(backend + '/api'),
+          fetch(backend + '/organization'),
+          fetch(backend + '/connect')
+        ];
 
-    // Need Safari13 in tests/config.py in order for this modern javascript to work in Safari Browser
-    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/allSettled#browser_compatibility
-    // let response = await Promise.allSettled([request1, request2, request3])
+        const responses = await Promise.all(requests);
 
-    const response = [request1, request2, request3];
-
-    // Error Handling
-    response.forEach((r) => {
-      if (!r.ok) {
-        Sentry.withScope((scope) => {
-          scope.setContext('response', r);
-          Sentry.captureException(
-              new Error(
-                  r.status + ' - ' + (response.statusText || 'Server Error for API')
-              )
-          );
+        // Error Handling
+        responses.forEach((response) => {
+          if (!response.ok) {
+            Sentry.withScope((scope) => {
+              scope.setContext('response', {
+                status: response.status,
+                statusText: response.statusText,
+                url: response.url
+              });
+              Sentry.captureException(
+                new Error(`${response.status} - ${response.statusText || 'Server Error for API'}`)
+              );
+            });
+          }
         });
+      } catch (error) {
+        Sentry.captureException(error);
       }
-    });
+    };
+
+    fetchData();
+  }, [backend]);
   }, []);
 
   return (
