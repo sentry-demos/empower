@@ -112,8 +112,6 @@ async function checkout(cart, checkout_span) {
     event.preventDefault();
 
     if (rageclick) {
-      // do nothing. after enough clicks,
-      // Sentry will detect a rageclick
       return;
     }
 
@@ -122,6 +120,7 @@ async function checkout(cart, checkout_span) {
       forceTransaction: true,
     }, async (span) => {
       let hadError = false;
+      let errorMessage = '';
 
       window.scrollTo({
         top: 0,
@@ -131,14 +130,42 @@ async function checkout(cart, checkout_span) {
       setLoading(true);
 
       try {
-        await checkout(cart, span);
+        const response = await checkout(cart, span);
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          
+          if (response.status === 400) {
+            // Handle inventory error specifically
+            errorMessage = errorData.message || 'Inventory error occurred';
+            span.setAttributes({
+              "checkout.inventory_error": 1,
+              "status": response.status
+            });
+          } else {
+            span.setAttributes({
+              "checkout.error": 1,
+              "status": response.status
+            });
+            throw new Error(
+              [response.status, response.statusText || ' Internal Server Error'].join(' -')
+            );
+          }
+          hadError = true;
+        }
       } catch (error) {
         Sentry.captureException(error);
         hadError = true;
+        errorMessage = error.message;
       }
+      
       setLoading(false);
 
       if (hadError) {
+        // If it's an inventory error, show alert before redirecting
+        if (errorMessage.includes('Not enough inventory')) {
+          alert(errorMessage);
+        }
         navigate('/error');
       } else {
         navigate('/complete');
