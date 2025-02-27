@@ -19,6 +19,14 @@ react/config-overrides.js
 react/build
 next/dist
 
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
 
 # misc
 .idea
