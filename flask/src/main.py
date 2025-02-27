@@ -161,10 +161,11 @@ def checkout():
         tags={"endpoint": "/checkout", "method": "POST"},
     )
 
+
     order = json.loads(request.data)
     cart = order["cart"]
-    form = order["form"]
-    validate_inventory = True if "validate_inventory" not in order else order["validate_inventory"] == "true"
+    quantities = cart["quantities"]
+    validate_inventory = True if "validate_inventory" not in cart else cart["validate_inventory"] == "true"
 
     inventory = []
     try:
@@ -178,15 +179,22 @@ def checkout():
     print("> validate_inventory", validate_inventory)
 
     with sentry_sdk.start_span(op="process_order", description="function"):
-        quantities = cart['quantities']
-        for cartItem in quantities:
-            for inventoryItem in inventory:
-                print("> inventoryItem.count", inventoryItem['count'])
-                if (validate_inventory and (inventoryItem.count < quantities[cartItem] or quantities[cartItem] >= inventoryItem.count)):
-                    sentry_sdk.metrics.incr(key="checkout.failed")
-                    raise Exception("Not enough inventory for product")
-        if len(inventory) == 0 or len(quantities) == 0:
-            raise Exception("Not enough inventory for product")
+        for cartProductId, qty in quantities.items():
+            qty = int(qty)
+            # Find the inventory record for this product id
+            matchingInventory = next(
+                (item for item in inventory if int(item["productid"]) == int(cartProductId)),
+                None
+            )
+            
+            if matchingInventory is None:
+                print(f"No inventory record found for productId: {cartProductId}")
+                sentry_sdk.metrics.incr(key="checkout.failed")
+                raise Exception("Not enough inventory for product")
+            elif validate_inventory and int(matchingInventory["count"]) < qty:
+                print(f"Insufficient inventory for productId: {cartProductId}. Available: {matchingInventory['count']}, Requested: {qty}")
+                sentry_sdk.metrics.incr(key="checkout.failed")
+                raise Exception("Not enough inventory for product")
 
     response = make_response("success")
     return response
@@ -235,7 +243,7 @@ def products():
                 productsJSON = json.loads(rows)
                 descriptions = [product["description"] for product in productsJSON]
                 with sentry_sdk.start_span(op="/get_iterator", description="function"):
-                    with sentry_sdk.metrics.timing(key="products.get_iterator.execution_time"):
+                    with sentry_sdk.metrics.timing(key="products.get.iterator.execution_time"):
                         loop = get_iterator(len(descriptions) * 6 + (2 if fetch_promotions else -1))
 
                     for i in range(loop * 10):
