@@ -8,3 +8,5 @@ postgres
 crons-python
 next
 # ^ uses Vercel automation
+spring-boot
+# ^ java 8 no longer supported by GCP
