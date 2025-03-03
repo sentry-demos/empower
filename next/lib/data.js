@@ -80,7 +80,6 @@ export async function checkoutAction(cart) {
       if(se) {
         Sentry.getCurrentScope().setTag("se", se.value)
       }
-      console.log("cart ", cart);
       const inventory = await getInventory(cart);
 
       console.log("> /checkout inventory", inventory)
