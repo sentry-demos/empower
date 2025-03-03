@@ -15,6 +15,9 @@ app = Celery('subscribe',
              include=['src.queues.tasks'],
              broker_connection_retry_on_startup=True)
 
+# Set default queue name
+app.conf.task_default_queue = 'celery-new-subscriptions'
+
 # Initialize Sentry SDK on Celery startup
 @signals.celeryd_init.connect
 def init_sentry(**_kwargs):
