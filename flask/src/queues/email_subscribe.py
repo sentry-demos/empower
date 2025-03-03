@@ -4,8 +4,8 @@ import os
 
 dotenv.load_dotenv()
 
-redis_host = os.environ.get("REDISHOST", "localhost")
-redis_port = int(os.environ.get("REDISPORT"))
+redis_host = os.environ.get("FLASK_REDISHOST", "localhost")
+redis_port = int(os.environ.get("FLASK_LOCAL_REDISPORT", 6379))
 
 redis_url = f"redis://{redis_host}:{redis_port}/1"
 
@@ -14,6 +14,9 @@ app = Celery('subscribe',
              backend=redis_url,
              include=['src.queues.tasks'],
              broker_connection_retry_on_startup=True)
+
+# Set default queue name
+app.conf.task_default_queue = 'celery-new-subscriptions'
 
 # Initialize Sentry SDK on Celery startup
 @signals.celeryd_init.connect

@@ -51,12 +51,17 @@ def test_subscribe(desktop_web_driver, endpoints, batch_size, backend, sleep_len
                 # Wait to allow any subsequent requests to finish
                 time.sleep(sleep_length())
 
+                subscribe_btn.click()
+
+                time.sleep(3)
+
                 # Mark completion in Sentry metrics
                 sentry_sdk.metrics.incr(
                     key="test_subscribe.iteration.completed",
                     value=1,
                     tags=query_string
                 )
+
 
             except NoSuchElementException as err:
                 # If we can't find elements, count it as an abandoned iteration
@@ -78,3 +83,4 @@ def test_subscribe(desktop_web_driver, endpoints, batch_size, backend, sleep_len
 
             # Sleep again at the end of each iteration if needed
             time.sleep(sleep_length())
+
