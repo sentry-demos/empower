@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Read input from stdin and substitute environment variables
 while IFS= read -r line; do
