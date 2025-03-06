@@ -118,14 +118,22 @@ jobs:
 
       - name: Deploy to production
         run: |
-          CHANGED_PROJECTS=$(./bin/projects_changed_bw_commits.sh "${{ env.NX_BASE }}" "${{ env.NX_HEAD }}")
-          if [[ ! -z "$CHANGED_PROJECTS" ]]; then
-            ./deploy.sh $CHANGED_PROJECTS --env=production
-          elif [[ `./bin/release.sh` != `./bin/release.sh 1` ]]; then # different release than yesterday
-            # currently we create regular calendar releases only for React
-            ./deploy.sh react --env=production
-          else 
-            echo "No deployable projects have been changed since last successful deployment. New calendar release is not due either. Nothing to do."
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            # For manual triggers, deploy all projects
+            # this is useful for deploying empower-config changes or to force a 'bounce'
+            DEPLOYABLE_PROJECTS=$(./bin/list_deployable_projects.sh)
+            ./deploy.sh $DEPLOYABLE_PROJECTS --env=production
+          else
+            # For automated triggers, check for changes
+            CHANGED_PROJECTS=$(./bin/projects_changed_bw_commits.sh "${{ env.NX_BASE }}" "${{ env.NX_HEAD }}")
+            if [[ ! -z "$CHANGED_PROJECTS" ]]; then
+              ./deploy.sh $CHANGED_PROJECTS --env=production
+            elif [[ `./bin/release.sh` != `./bin/release.sh 1` ]]; then # different release than yesterday
+              # currently we create regular calendar releases only for React
+              ./deploy.sh react --env=production
+            else 
+              echo "No deployable projects have been changed since last successful deployment. New calendar release is not due either. Nothing to do."
+            fi
           fi
         working-directory: ./empower
 
