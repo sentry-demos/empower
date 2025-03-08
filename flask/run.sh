@@ -11,11 +11,18 @@ fi
 source venv/bin/activate
 pip3 install -r requirements.txt
 
+# Store PIDs for cleanup
+REDIS_RELAY_PID=""
+CELERY_PID=""
+FLASK_PID=""
+
 function cleanup {
   stop.sh python3 $LOCAL_PORT
-  stop.sh google_compute_engine $FLASK_LOCAL_REDISPORT 
+  stop.sh google_compute_engine $FLASK_LOCAL_REDISPORT
 }
-trap cleanup EXIT
+
+# Trap signals to ensure cleanup happens
+trap cleanup EXIT INT TERM
 
 # needed for caches since GCP redis doesn't have public IP
 ACTIVE_ACCOUNT=$(gcloud auth list --format="value(account)" --filter="status:ACTIVE")
@@ -28,5 +35,9 @@ if [ -z "$FLASK_LOCAL_REDISPORT" ]; then
 fi
 
 gcloud compute ssh redis-relay --zone=us-central1-a -- -N -L $FLASK_LOCAL_REDISPORT:$FLASK_REDISHOST:6379 &
+
+sleep 1 
+
+celery -A src.queues.email_subscribe worker -l INFO &
 
 REDISPORT=$FLASK_LOCAL_REDISPORT REDISHOST=localhost flask run --port $LOCAL_PORT
