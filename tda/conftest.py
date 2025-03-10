@@ -272,11 +272,11 @@ def cexp(random):
 
     # array length must match number of possible time segments
     probabilities = {       # segments    0    1    2    3    4    5    6    7   
-        CExp.CHECKOUT_SUCCESS:          [1.0, 0.7, 1.0, 0.7, 1.0, 0.7, 1.0, 0.7 ],
-        CExp.STANDARD_CHECKOUT_FAIL:    [0,   0.3,  0,   0,   0,   0,   0,   0  ],
-        CExp.PRODUCTS_EXTREMELY_SLOW:   [0,    0,   0,  0.3,  0,   0,   0,   0  ],
-        CExp.PRODUCTS_BE_ERROR:         [0,    0,   0,   0,   0,  0.3,  0,   0  ],
-        CExp.ADD_TO_CART_JS_ERROR:      [0,    0,   0,   0,   0,   0,   0,  0.3 ],
+        CExp.CHECKOUT_SUCCESS:          [1.0,  0, 1.0,   0, 1.0,   0, 1.0,   0 ],
+        CExp.STANDARD_CHECKOUT_FAIL:    [0,   1.0,  0,   0,   0,   0,   0,   0  ],
+        CExp.PRODUCTS_EXTREMELY_SLOW:   [0,    0,   0,  1.0,  0,   0,   0,   0  ],
+        CExp.PRODUCTS_BE_ERROR:         [0,    0,   0,   0,   0,  1.0,  0,   0  ],
+        CExp.ADD_TO_CART_JS_ERROR:      [0,    0,   0,   0,   0,   0,   0,  1.0 ],
     }
     
     def random_cexp():
