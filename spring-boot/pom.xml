@@ -22,13 +22,13 @@
 		<dependency>
 			<groupId>io.sentry</groupId>
 			<artifactId>sentry-spring-boot-starter</artifactId>
-			<version>6.6.0</version>
+			<version>8.3.0</version>
 		</dependency>
 		<!-- Sentry Logback SDK -->
 		<dependency>
 		    <groupId>io.sentry</groupId>
 		    <artifactId>sentry-logback</artifactId>
-		    <version>6.6.0</version>
+		    <version>8.3.0</version>
 		</dependency>
 		<!-- Capture Sentry Transaction -->
 		<dependency>

@@ -20,6 +20,7 @@ Sentry.init({
   replaysSessionSampleRate: 1.0,
   debug: false,
   integrations: [
+    Sentry.browserProfilingIntegration,
     Sentry.replayIntegration({
       // Additional configuration goes in here
       // replaysSessionSampleRate and replaysOnErrorSampleRate is now a top-level SDK option

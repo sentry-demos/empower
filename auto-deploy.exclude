@@ -8,3 +8,7 @@ postgres
 crons-python
 next
 # ^ uses Vercel automation
+spring-boot
+# ^ java 8 no longer supported by GCP
+aspnetcore
+# ^ deployment broken: https://github.com/sentry-demos/empower/actions/runs/13706992324/job/38334583688

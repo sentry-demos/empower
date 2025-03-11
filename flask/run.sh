@@ -13,7 +13,7 @@ pip3 install -r requirements.txt
 
 function cleanup {
   stop.sh python3 $LOCAL_PORT
-  stop.sh gcloud 6379
+  stop.sh google_compute_engine $FLASK_LOCAL_REDISPORT 
 }
 trap cleanup EXIT
 
@@ -22,6 +22,11 @@ ACTIVE_ACCOUNT=$(gcloud auth list --format="value(account)" --filter="status:ACT
 if [ -z "$ACTIVE_ACCOUNT" ]; then
     gcloud auth login
 fi
-gcloud compute ssh redis-relay --zone=us-central1-a -- -N -L 6379:10.251.35.179:6379 &
 
-flask run --port $LOCAL_PORT
+if [ -z "$FLASK_LOCAL_REDISPORT" ]; then
+    export FLASK_LOCAL_REDISPORT=6379
+fi
+
+gcloud compute ssh redis-relay --zone=us-central1-a -- -N -L $FLASK_LOCAL_REDISPORT:$FLASK_REDISHOST:6379 &
+
+REDISPORT=$FLASK_LOCAL_REDISPORT REDISHOST=localhost flask run --port $LOCAL_PORT

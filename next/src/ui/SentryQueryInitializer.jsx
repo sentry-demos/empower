@@ -6,6 +6,7 @@ import React from 'react';
 
 import { useSearchParams } from 'next/navigation';
 import * as Sentry from '@sentry/nextjs';
+import Cookies from 'js-cookie';
 
 export default function SentryQueryInitializer() {
   const searchParams = useSearchParams();
@@ -25,6 +26,8 @@ export default function SentryQueryInitializer() {
     // Route components (navigation changes) will now have 'se' tag on scope
     console.log('> src/index.js se', query.se);
     globalScope.setTag('se', query.se);
+    // Set se tag as cookie to persist on server runtime
+    Cookies.set("se", query.se);
     // for use in Checkout.js when deciding whether to pre-fill form
     // lasts for as long as the tab is open
 

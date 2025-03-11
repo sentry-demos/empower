@@ -1,0 +1,34 @@
+name: cleanup_projects.yml
+run-name: Run triggered by ${{ github.event_name }}
+
+on:
+  schedule: # every 4 hours
+    - cron:  '0 */4 * * *'
+    # see https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#schedule
+  workflow_dispatch:
+
+# Only run 1 workflow at a time. If new one starts abort any that are already running.
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  default-job:
+    if: github.repository_owner == 'sentry-demos' # don't run in forks
+    permissions:
+      contents: 'read'
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Check out this repository code
+        uses: actions/checkout@v3
+        with:
+          path: empower
+          fetch-depth: 0
+        
+      - name: Run cleanup scripts (more agressive for Flex instances)
+        run: |
+            python3 bin/cleanup_projects.py demo ${{ secrets.SENTRY_AUTH_TOKEN_CLEANUP_PROJECTS }} --exclude react empower-tda ruby-on-rails flask aspnetcore laravel spring-boot mobile-react-native express ios aws-lambda android crons-python staging-flask nextjs staging-react staging-express staging-ruby-on-rails staging-laravel staging-mobile-ios staging-aspnetcore staging-spring-boot
+        working-directory: ./empower
+          
+      - run: echo "Job status is ${{ job.status }}."
