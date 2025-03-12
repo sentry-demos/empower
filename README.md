@@ -186,3 +186,51 @@ gcloud config list, to display current account
 3. Get suggestion button should show automatically
 
 On main page load, next will check with flask if it has the OPEN_API_KEY and conditionally show the get suggestion input.
+
+
+## Caches & Queues
+
+### Redis Configuration
+
+Our Flask application uses Redis for two primary purposes:
+1. **Caching**: Improves performance by storing frequently accessed data
+2. **Message Queues**: Enables asynchronous task processing via Celery
+
+#### Production/Staging Environment
+
+In production/staging, we use a Google Cloud Redis instance that doesn't expose a public IP address for security reasons. The application connects directly to this Redis instance within the GCP network.
+
+#### Local Development Setup
+
+When developing locally, you need to establish an SSH tunnel to communicate with the cloud Redis instance:
+
+1. The `flask/run.sh` script automatically sets up this tunnel using:
+   ```bash
+   gcloud compute ssh redis-relay --zone=us-central1-a -- -N -L $FLASK_LOCAL_REDISPORT:$FLASK_REDIS_SERVER_IP:6379
+   ```
+
+2. This creates a secure tunnel that forwards your local port (default: 6379) to the remote Redis server.
+
+3. Environment variables control this configuration:
+   - `FLASK_LOCAL_REDISPORT`: Local port for Redis (defaults to 6379)
+   - `FLASK_REDIS_SERVER_IP`: IP address of the cloud Redis instance
+
+### Celery Worker
+
+For asynchronous task processing, we use Celery with Redis as the message broker:
+
+1. The `flask/run.sh` script starts a Celery worker:
+   ```bash
+   celery -A src.queues.email_subscribe worker -l INFO --concurrency=1
+   ```
+
+2. This worker processes tasks from the queue (e.g., email subscriptions)
+
+### Process Management
+
+The `flask/run.sh` script manages all necessary processes:
+1. SSH tunnel to Redis
+2. Celery worker
+3. Flask development server
+
+When the script is terminated (e.g., with Ctrl+C), it performs cleanup to ensure all processes are properly terminated.

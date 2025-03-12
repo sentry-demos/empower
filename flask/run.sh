@@ -12,27 +12,25 @@ source venv/bin/activate
 pip3 install -r requirements.txt
 
 # Store PIDs for cleanup
-REDIS_RELAY_PID=""
 CELERY_PID=""
-FLASK_PID=""
+
 
 function cleanup {
-  # First, kill the specific processes we started
+
+  # Kill Celery worker by PID since it doesn't listen on a port
+  # to be detected by stop.sh
   if [ -n "$CELERY_PID" ]; then
     kill -9 $CELERY_PID 2>/dev/null || true
   fi
 
-  if [ -n "$REDIS_RELAY_PID" ]; then
-    kill -9 $REDIS_RELAY_PID 2>/dev/null || true
-  fi
+  # Kill SSH tunnel by port
 
-  if [ -n "$FLASK_PID" ]; then
-    kill -9 $FLASK_PID 2>/dev/null || true
-  fi
+  stop.sh google_compute_engine $FLASK_LOCAL_REDISPORT
+  stop.sh python3 $LOCAL_PORT
 }
 
 # Register cleanup for all possible termination signals
-trap cleanup EXIT INT TERM HUP QUIT
+trap cleanup EXIT
 
 # needed for caches since GCP redis doesn't have public IP
 ACTIVE_ACCOUNT=$(gcloud auth list --format="value(account)" --filter="status:ACTIVE")
@@ -51,8 +49,7 @@ fi
 # Set up SSH tunnel to the cloud Redis instance
 echo "Setting up SSH tunnel to Redis server at $FLASK_REDIS_SERVER_IP:6379"
 gcloud compute ssh redis-relay --zone=us-central1-a -- -N -L $FLASK_LOCAL_REDISPORT:$FLASK_REDIS_SERVER_IP:6379 &
-REDIS_RELAY_PID=$!
-echo "SSH tunnel started with PID: $REDIS_RELAY_PID"
+
 
 # Give the SSH tunnel time to establish
 sleep 3
@@ -65,9 +62,5 @@ echo "Celery worker started with PID: $CELERY_PID"
 
 # Run Flask in the background and capture its PID
 echo "Starting Flask server on port $LOCAL_PORT"
-flask run --port $LOCAL_PORT &
-FLASK_PID=$!
-echo "Flask server started with PID: $FLASK_PID"
+flask run --port $LOCAL_PORT
 
-# Wait for Flask to exit
-wait $FLASK_PID
