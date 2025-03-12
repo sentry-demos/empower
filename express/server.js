@@ -206,8 +206,13 @@ app.post("/checkout", async (req, res) => {
     let quantities = cart["quantities"];
     console.log("quantities", quantities);
     for (const cartItem in quantities) {
-      if (!hasInventory(cartItem)) {
-        throw new Error("Not enough inventory for product");
+      const requestedQuantity = quantities[cartItem];
+      if (!hasInventory(cartItem, requestedQuantity, inventory)) {
+        return res.status(422).json({
+          error: "Inventory validation failed",
+          details: `Not enough inventory for product ID: ${cartItem}`,
+          code: "INSUFFICIENT_INVENTORY"
+        });
       }
     }
     spanProcessOrder.finish();
@@ -239,8 +244,12 @@ app.listen(PORT, () => {
 });
 // [END app]
 
-function hasInventory(item) {
-  return false;
+function hasInventory(productId, requestedQuantity, inventoryItems) {
+  const inventoryItem = inventoryItems.find(item => item.productid == productId);
+  if (!inventoryItem || inventoryItem.count < requestedQuantity) {
+    return false;
+  }
+  return true;
 }
 
 module.exports = { app, Sentry, Tracing };

@@ -84,7 +84,18 @@ async function checkout(cart, checkout_span) {
       checkout_span.setAttributes({
         "checkout.error": 1,
         "status": response.status
-      })
+      });
+      
+      if (response.status === 422) {
+        try {
+          const errorData = await response.json();
+          if (errorData.code === "INSUFFICIENT_INVENTORY") {
+            throw new Error(`Inventory Error: ${errorData.details}`);
+          }
+        } catch (jsonError) {
+          // If the response cannot be parsed as JSON, continue with the default error
+        }
+      }
 
       throw new Error(
         [response.status, response.statusText || ' Internal Server Error'].join(
