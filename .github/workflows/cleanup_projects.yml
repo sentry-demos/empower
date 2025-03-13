@@ -27,8 +27,33 @@ jobs:
           fetch-depth: 0
         
       - name: Run cleanup scripts (more agressive for Flex instances)
-        run: |
-            python3 bin/cleanup_projects.py demo ${{ secrets.SENTRY_AUTH_TOKEN_CLEANUP_PROJECTS }} --exclude react empower-tda ruby-on-rails flask aspnetcore laravel spring-boot mobile-react-native express ios aws-lambda android crons-python staging-flask nextjs staging-react staging-express staging-ruby-on-rails staging-laravel staging-mobile-ios staging-aspnetcore staging-spring-boot
+        run: |  
+            python3 bin/cleanup_projects.py demo ${{ secrets.SENTRY_AUTH_TOKEN_CLEANUP_PROJECTS }} --exclude \
+             react \
+             empower-tda \
+             ruby-on-rails \ 
+             flask \
+             aspnetcore \
+             laravel \ 
+             spring-boot \ 
+             mobile-react-native \ 
+             express \ 
+             ios \ 
+             aws-lambda \ 
+             android \ 
+             crons-python \ 
+             staging-flask \ 
+             nextjs \ 
+             staging-react \ 
+             staging-express \ 
+             staging-ruby-on-rails \ 
+             staging-laravel \ 
+             staging-mobile-ios \ 
+             staging-aspnetcore \ 
+             staging-spring-boot \
+             sentaur-survivors \
+
+
         working-directory: ./empower
           
       - run: echo "Job status is ${{ job.status }}."
