@@ -3,9 +3,19 @@ import argparse
 import http.client
 import json
 from urllib.parse import urlparse
+import sys
 
 SENTRY_API_BASE = "https://sentry.io/api/0"
-
+ACTIVE_PROJECT_THRESHOLD_EVENTS_24H = 1000  # Adjust this threshold as needed
+STATS_CATEGORIES = [
+    'error',
+    'transaction',
+    'attachment',
+    'replay',
+    'profile',
+    'profile_duration',
+    'monitor'
+]
 
 def get_projects(org_slug, auth_token):
     projects = []
@@ -22,7 +32,7 @@ def get_projects(org_slug, auth_token):
             raise Exception(f"Failed to fetch projects: {response.read().decode()}")
         
         data = json.loads(response.read().decode())
-        projects.extend([proj["slug"] for proj in data])
+        projects.extend([{"slug": proj["slug"], "id": proj["id"]} for proj in data])
         
         # Handle pagination
         link_header = response.getheader("Link", "")
@@ -41,6 +51,30 @@ def get_projects(org_slug, auth_token):
         url = next_url
     
     return projects
+
+
+def get_project_activity(org_slug, project_id, auth_token):
+    total_events = 0
+    
+    for category in STATS_CATEGORIES:
+        url = f"{SENTRY_API_BASE}/organizations/{org_slug}/stats_v2/?project={project_id}&field=sum(quantity)&interval=24h&category={category}&statsPeriod=24h"
+        parsed_url = urlparse(url)
+        headers = {"Authorization": f"Bearer {auth_token}"}
+        
+        conn = http.client.HTTPSConnection(parsed_url.netloc)
+        conn.request("GET", parsed_url.path + "?" + parsed_url.query, headers=headers)
+        response = conn.getresponse()
+        
+        if response.status != 200:
+            print(f"Warning: Failed to fetch stats for category {category}: {response.read().decode()}")
+            continue
+            
+        data = json.loads(response.read().decode())
+        if data["groups"] and data["groups"][0]["series"]["sum(quantity)"]:
+            # Get the last (most recent) interval's value
+            total_events += data["groups"][0]["series"]["sum(quantity)"][-1]
+    
+    return total_events
 
 
 def delete_project(org_slug, project_slug, auth_token, dry_run):
@@ -73,10 +107,17 @@ def main():
     projects = get_projects(args.org_slug, args.auth_token)
     
     for project in projects:
-        if project not in args.exclude:
-            delete_project(args.org_slug, project, args.auth_token, args.dry_run)
+        if project["slug"] not in args.exclude:
+            # Check project activity before deletion
+            event_count = get_project_activity(args.org_slug, project["id"], args.auth_token)
+            if event_count > ACTIVE_PROJECT_THRESHOLD_EVENTS_24H:
+                print(f"ERROR: Active project {project['slug']} found with {event_count} events in last 24h")
+                print("Aborting deletion to prevent data loss")
+                sys.exit(1)
+                
+            delete_project(args.org_slug, project["slug"], args.auth_token, args.dry_run)
         else:
-            print(f"Skipping excluded project: {project}")
+            print(f"Skipping excluded project: {project['slug']}")
 
 
 if __name__ == "__main__":
