@@ -229,6 +229,17 @@ for proj in $projects; do # bash only
       # TODO: envsubst is super easy - this should be the default for all projects
       envsubst.sh < app.yaml.template > .app.yaml
       envsubst.sh < Dockerfile.template > Dockerfile
+      # debug
+      test_sed.sh
+      if [ $? -ne 0 ]; then
+        exit 1
+      fi
+      echo "---------- .app.yaml ----------"
+      cat .app.yaml | sed -E 's/([[:alnum:]_]*(password|PASSWORD|token|TOKEN|secret|SECRET)[[:alnum:]_]*)[[:space:]]*[=:][[:space:]]*(.{4}).*/\1: \3****/g'
+      echo "---------- Dockerfile.template ----------"
+      cat Dockerfile | sed -E 's/([[:alnum:]_]*(password|PASSWORD|token|TOKEN|secret|SECRET)[[:alnum:]_]*)[[:space:]]*[=:][[:space:]]*(.{4}).*/\1: \3****/g'
+      echo "--------------------"
+      # end debug
       gcloud app deploy --version v1 --quiet .app.yaml
       rm Dockerfile
     else
