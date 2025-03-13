@@ -4,9 +4,11 @@ import http.client
 import json
 from urllib.parse import urlparse
 import sys
+from datetime import datetime, timezone
 
 SENTRY_API_BASE = "https://sentry.io/api/0"
 ACTIVE_PROJECT_THRESHOLD_EVENTS_24H = 1000  # Adjust this threshold as needed
+PROJECT_AGE_THRESHOLD_DAYS = 14
 STATS_CATEGORIES = [
     'error',
     'transaction',
@@ -32,7 +34,11 @@ def get_projects(org_slug, auth_token):
             raise Exception(f"Failed to fetch projects: {response.read().decode()}")
         
         data = json.loads(response.read().decode())
-        projects.extend([{"slug": proj["slug"], "id": proj["id"]} for proj in data])
+        projects.extend([{
+            "slug": proj["slug"], 
+            "id": proj["id"],
+            "dateCreated": proj["dateCreated"]
+        } for proj in data])
         
         # Handle pagination
         link_header = response.getheader("Link", "")
@@ -95,6 +101,12 @@ def delete_project(org_slug, project_slug, auth_token, dry_run):
             print(f"Failed to delete {project_slug}: {response.read().decode()}")
 
 
+def get_project_age_days(date_created):
+    created_date = datetime.fromisoformat(date_created.replace('Z', '+00:00'))
+    now = datetime.now(timezone.utc)
+    return (now - created_date).days
+
+
 def main():
     parser = argparse.ArgumentParser(description="Delete all Sentry projects in an organization except those excluded.")
     parser.add_argument("org_slug", help="Sentry organization slug")
@@ -108,6 +120,13 @@ def main():
     
     for project in projects:
         if project["slug"] not in args.exclude:
+            # Check project age before proceeding
+            project_age = get_project_age_days(project["dateCreated"])
+            if project_age > PROJECT_AGE_THRESHOLD_DAYS:
+                print(f"ERROR: Project {project['slug']} is {project_age} days old (older than {PROJECT_AGE_THRESHOLD_DAYS} days threshold)")
+                print("Aborting deletion to prevent data loss")
+                sys.exit(1)
+
             # Check project activity before deletion
             event_count = get_project_activity(args.org_slug, project["id"], args.auth_token)
             if event_count > ACTIVE_PROJECT_THRESHOLD_EVENTS_24H:
