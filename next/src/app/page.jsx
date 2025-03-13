@@ -16,7 +16,7 @@ const divStyle = {
   backgroundImage: 'url(' + plantsBackground.src + ')',
 };
 
-
+ 
 export default function Page(props) {
 
   console.log("in home page");
