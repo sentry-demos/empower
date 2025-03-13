@@ -2,9 +2,9 @@ name: cleanup_projects.yml
 run-name: Run triggered by ${{ github.event_name }}
 
 on:
-  schedule: # every 4 hours
-    - cron:  '0 */4 * * *'
-    # see https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#schedule
+#  schedule: # every 4 hours
+#    - cron:  '0 */4 * * *'
+#    # see https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#schedule
   workflow_dispatch:
 
 # Only run 1 workflow at a time. If new one starts abort any that are already running.
