@@ -86,8 +86,15 @@ async function checkout(cart, checkout_span) {
         "status": response.status
       })
 
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch (e) {
+        errorData = { message: response.statusText || 'Internal Server Error' };
+      }
+
       throw new Error(
-        [response.status, response.statusText || ' Internal Server Error'].join(
+        [response.status, errorData.message || response.statusText || 'Internal Server Error'].join(
           ' -'
         )
       );
@@ -122,6 +129,7 @@ async function checkout(cart, checkout_span) {
       forceTransaction: true,
     }, async (span) => {
       let hadError = false;
+      let errorType = null;
 
       window.scrollTo({
         top: 0,
@@ -135,11 +143,21 @@ async function checkout(cart, checkout_span) {
       } catch (error) {
         Sentry.captureException(error);
         hadError = true;
+        
+        // Check if this is an inventory error
+        if (error.message && error.message.includes('Inventory Error')) {
+          errorType = "inventory";
+        }
       }
       setLoading(false);
 
       if (hadError) {
-        navigate('/error');
+        if (errorType === "inventory") {
+          alert("Sorry, one or more items in your cart are no longer available in the requested quantity. Please update your cart and try again.");
+          navigate('/cart');
+        } else {
+          navigate('/error');
+        }
       } else {
         navigate('/complete');
       }

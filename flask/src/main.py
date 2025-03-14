@@ -184,9 +184,18 @@ def checkout():
                 print("> inventoryItem.count", inventoryItem['count'])
                 if (validate_inventory and (inventoryItem.count < quantities[cartItem] or quantities[cartItem] >= inventoryItem.count)):
                     sentry_sdk.metrics.incr(key="checkout.failed")
-                    raise Exception("Not enough inventory for product")
+                    response = make_response(jsonify({
+                        "error": "Inventory Error",
+                        "message": "Not enough inventory for product",
+                        "productId": cartItem
+                    }), 422)
+                    return response
         if len(inventory) == 0 or len(quantities) == 0:
-            raise Exception("Not enough inventory for product")
+            response = make_response(jsonify({
+                "error": "Inventory Error",
+                "message": "Not enough inventory for product"
+            }), 422)
+            return response
 
     response = make_response("success")
     return response
@@ -399,3 +408,44 @@ def sentry_event_context():
     email = request.headers.get('email')
     if email not in [None, "undefined"]:
         sentry_sdk.set_user({"email": email})
+
+@app.route('/check-inventory', methods=['POST'])
+def check_inventory():
+    sentry_sdk.metrics.incr(
+        key="endpoint_call",
+        value=1,
+        tags={"endpoint": "/check-inventory", "method": "POST"},
+    )
+
+    order = json.loads(request.data)
+    cart = order["cart"]
+
+    inventory = []
+    try:
+        with sentry_sdk.start_span(op="/check-inventory.get_inventory", description="function"):
+            with sentry_sdk.metrics.timing(key="check_inventory.get_inventory.execution_time"):
+                inventory = get_inventory(cart)
+    except Exception as err:
+        raise (err)
+
+    with sentry_sdk.start_span(op="validate_inventory", description="function"):
+        quantities = cart['quantities']
+        for cartItem in quantities:
+            for inventoryItem in inventory:
+                if (inventoryItem.count < quantities[cartItem] or quantities[cartItem] >= inventoryItem.count):
+                    sentry_sdk.metrics.incr(key="inventory_check.failed")
+                    response = make_response(jsonify({
+                        "error": "Inventory Error",
+                        "message": "Not enough inventory for product",
+                        "productId": cartItem
+                    }), 422)
+                    return response
+        if len(inventory) == 0 or len(quantities) == 0:
+            response = make_response(jsonify({
+                "error": "Inventory Error",
+                "message": "Not enough inventory for product"
+            }), 422)
+            return response
+
+    response = make_response(jsonify({"success": True}))
+    return response
