@@ -129,7 +129,7 @@ const getInventory = async function (cart) {
     });
 
     const inventory = await knex.raw(
-      `SELECT * FROM inventory WHERE productId in ${productIds}`
+      `SELECT * FROM inventory WHERE productid IS NOT NULL AND productid in ${productIds}`
     );
 
     span.setData("inventory", inventory.rows);
@@ -138,7 +138,7 @@ const getInventory = async function (cart) {
     return inventory.rows;
   } catch (error) {
     Sentry.captureException(error);
-    throw err;
+    throw error;
   }
 };
 
