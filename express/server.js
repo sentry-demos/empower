@@ -180,6 +180,15 @@ app.get("/products-join", async (req, res) => {
   }
 });
 
+function hasInventory(cartItem, inventory) {
+  for (const item of inventory) {
+    if (item.productId == cartItem) {
+      return item.count >= quantities[cartItem];
+    }
+  }
+  return false; // No inventory found for this item
+}
+
 app.post("/checkout", async (req, res) => {
   const order = req.body;
   const cart = order["cart"];
@@ -206,13 +215,54 @@ app.post("/checkout", async (req, res) => {
     let quantities = cart["quantities"];
     console.log("quantities", quantities);
     for (const cartItem in quantities) {
-      if (!hasInventory(cartItem)) {
-        throw new Error("Not enough inventory for product");
+      if (!hasInventory(cartItem, inventory)) {
+        return res.status(422).json({
+          error: "Inventory Error",
+          message: "Not enough inventory for product",
+          productId: cartItem
+        });
       }
     }
     spanProcessOrder.finish();
 
     res.status(200).send("success");
+  } catch (error) {
+    Sentry.captureException(error);
+    res.status(500).send(error);
+  }
+});
+
+app.post("/check-inventory", async (req, res) => {
+  const cart = req.body.cart;
+  try {
+    const transaction = Sentry.getCurrentHub().getScope().getTransaction();
+
+    // Get Inventory
+    let spanGetInventory = transaction.startChild({
+      op: "function",
+      description: "checkInventory",
+    });
+    const inventory = await DB.getInventory(cart);
+    spanGetInventory.finish();
+
+    // Check Inventory
+    let spanCheckInventory = transaction.startChild({
+      op: "function",
+      description: "validateInventory",
+    });
+    let quantities = cart["quantities"];
+    for (const cartItem in quantities) {
+      if (!hasInventory(cartItem, inventory)) {
+        return res.status(422).json({
+          error: "Inventory Error",
+          message: "Not enough inventory for product",
+          productId: cartItem
+        });
+      }
+    }
+    spanCheckInventory.finish();
+
+    res.status(200).json({ success: true });
   } catch (error) {
     Sentry.captureException(error);
     res.status(500).send(error);
@@ -238,9 +288,5 @@ app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}...`);
 });
 // [END app]
-
-function hasInventory(item) {
-  return false;
-}
 
 module.exports = { app, Sentry, Tracing };
