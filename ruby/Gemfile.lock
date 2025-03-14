@@ -1,14 +1,17 @@
 GEM
   remote: https://rubygems.org/
   specs:
-    dotenv (2.8.1)
     base64 (0.2.0)
     bigdecimal (3.1.9)
     concurrent-ruby (1.3.5)
     diff-lcs (1.6.0)
+    dotenv (2.8.1)
     logger (1.6.6)
     mustermann (3.0.3)
       ruby2_keywords (~> 0.0.1)
+    nio4r (2.7.4)
+    puma (6.6.0)
+      nio4r (~> 2.0)
     rack (3.1.12)
     rack-protection (4.1.1)
       base64 (>= 0.1.0)
@@ -19,6 +22,8 @@ GEM
       rack (>= 3.0.0)
     rack-test (2.2.0)
       rack (>= 1.3)
+    rackup (2.2.1)
+      rack (>= 3)
     rspec (3.13.0)
       rspec-core (~> 3.13.0)
       rspec-expectations (~> 3.13.0)
@@ -55,7 +60,9 @@ PLATFORMS
 
 DEPENDENCIES
   dotenv
+  puma (~> 6.6)
   rack-test
+  rackup (~> 2.2)
   rspec
   rspec_junit_formatter
   sentry-ruby
