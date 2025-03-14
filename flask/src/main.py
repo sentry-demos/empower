@@ -11,6 +11,7 @@ from flask_caching import Cache
 import dotenv
 from .db import get_products, get_products_join, get_inventory
 from .utils import parseHeaders, get_iterator
+from .queues.tasks import sendEmail
 import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
 from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
@@ -103,12 +104,12 @@ app = MyFlask(__name__)
 CORS(app)
 
 
-redis_host = os.environ.get("REDISHOST")
-redis_port = int(os.environ.get("REDISPORT"))
+redis_host = os.environ.get("FLASK_REDISHOST", "localhost")
+redis_port = int(os.environ.get("FLASK_LOCAL_REDISPORT", 6379))
 
 cache_config = {
-    "DEBUG": True,          # some Flask specific configs
-    "CACHE_TYPE": "RedisCache",  # Flask-Caching related configs
+    "DEBUG": True,
+    "CACHE_TYPE": "RedisCache",
     "CACHE_DEFAULT_TIMEOUT": 300,
     "CACHE_REDIS_HOST": redis_host,
     "CACHE_REDIS_PORT": redis_port,
@@ -119,6 +120,16 @@ app.config.from_mapping(cache_config)
 cache = Cache(app)
 
 redis_client = redis.Redis(host=redis_host, port=redis_port, decode_responses=True)
+
+@app.route('/enqueue', methods=['POST'])
+def enqueue():
+    body = json.loads(request.data)
+    print(body['email'])
+    email = body['email']
+    with sentry_sdk.start_transaction(name="src.api.enqueueEmail"):
+        r = sendEmail.apply_async(args=[email], queue='celery-new-subscriptions')
+        print(r.task_id)
+    return jsonify({"status": "success"}), 200
 
 
 @app.route('/suggestion', methods=['GET'])
