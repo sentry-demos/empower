@@ -21,7 +21,7 @@ public class ProductsController : ControllerBase
     {
         var products = await GetProductsAsync();
         
-        await CallHttpApiAsync();
+        CallHttpApiAsync().Wait();
         
         return products;
     }
@@ -55,12 +55,12 @@ public class ProductsController : ControllerBase
         try
         {
             response.EnsureSuccessStatusCode();
+            span?.Finish();
         }
         catch (Exception exception)
         {
+            span?.Finish(exception);
             SentrySdk.CaptureException(exception);
         }
-
-        span?.Finish();
     }
 }
