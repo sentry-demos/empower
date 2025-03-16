@@ -3,6 +3,11 @@ require 'dotenv'
 
 Dotenv.load
 
+puts File.exist?('.env') ? ".env file exists" : ".env does not exist"
+STDOUT.write 'RUBY_DSN=' + (ENV['RUBY_DSN'].nil? ? "" : ENV['RUBY_DSN'])
+STDOUT.write 'HTTP_SENTRY_TRACE=' + (request.env["HTTP_SENTRY_TRACE"].nil? ? "" : request.env["HTTP_SENTRY_TRACE"])
+STDOUT.write 'HTTP_BAGGAGE=' + (request.env["HTTP_BAGGAGE"].nil? ? "" : request.env["HTTP_BAGGAGE"])
+
 Sentry.init do |config|
   config.dsn = ENV['RUBY_DSN']
   config.release = "22.8.2"
@@ -20,7 +25,7 @@ Sentry.init do |config|
       return 0.0
     end
     
-    true
+    return 1.0
   end
 end
 
