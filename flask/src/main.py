@@ -9,7 +9,7 @@ from flask_cors import CORS
 from openai import OpenAI
 from flask_caching import Cache
 import dotenv
-from .db import get_products, get_products_join, get_inventory
+from .db import get_products, get_products_join, get_inventory, get_all_inventory
 from .utils import parseHeaders, get_iterator
 from .queues.tasks import sendEmail
 import sentry_sdk
@@ -235,6 +235,17 @@ def products():
         timeout_seconds -= 0.5
         ruby_delay_time = 0.5
     in_stock_only = request.args.get('in_stock_only')
+    
+    # Get all inventory when in_stock_only is set to '1'
+    if in_stock_only == '1':
+        try:
+            with sentry_sdk.start_span(op="/products.get_all_inventory", description="function"):
+                product_inventory = get_all_inventory()
+            # Create list of product IDs in inventory for easier lookup
+            inventory_product_ids = [str(item['productId']) for item in product_inventory]
+        except Exception as err:
+            sentry_sdk.capture_exception(err)
+            in_stock_only = False
 
     try:
         with sentry_sdk.start_span(op="/products.get_products", description="function"):
@@ -256,7 +267,7 @@ def products():
 
                         for i, description in enumerate(descriptions):
                             for pest in pests:
-                                if in_stock_only and productsJSON[i] not in product_inventory:
+                                if in_stock_only == '1' and str(productsJSON[i]['id']) not in inventory_product_ids:
                                     continue
                                 if pest in description:
                                     try:
