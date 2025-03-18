@@ -106,8 +106,6 @@ function cleanup {
   if [ "$generated_envs" != "" ]; then
     rm -f $generated_envs # bash only (passed as separate args)
   fi
-  # terminate the celery workers
-  pkill -f "celery worker"
 }
 trap cleanup EXIT
 
