@@ -236,6 +236,18 @@ def products():
         ruby_delay_time = 0.5
     in_stock_only = request.args.get('in_stock_only')
 
+    # Initialize product_inventory when in_stock_only is specified
+    if in_stock_only:
+        try:
+            dummy_cart = {"quantities": {"1": 1}}  # Dummy cart for inventory check
+            product_inventory = get_inventory(dummy_cart)
+            product_inventory = {str(item['productId']) for item in product_inventory}
+        except Exception as err:
+            sentry_sdk.capture_exception(err)
+            product_inventory = set()
+    else:
+        product_inventory = set()  # Ensure product_inventory is always iterable
+
     try:
         with sentry_sdk.start_span(op="/products.get_products", description="function"):
             with sentry_sdk.metrics.timing(key="products.get_products.execution_time"):
@@ -256,7 +268,7 @@ def products():
 
                         for i, description in enumerate(descriptions):
                             for pest in pests:
-                                if in_stock_only and productsJSON[i] not in product_inventory:
+                                if in_stock_only and str(productsJSON[i]['id']) not in product_inventory:
                                     continue
                                 if pest in description:
                                     try:
