@@ -1,7 +1,7 @@
 require 'sentry-ruby'
 require 'dotenv'
 
-Dotenv.load
+Dotenv.load('gloud-ignore-workaround.env')
 
 Sentry.init do |config|
   config.dsn = ENV['RUBY_DSN']
