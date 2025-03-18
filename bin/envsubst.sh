@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 envsubst_() {
   local input="$1"
@@ -8,7 +8,7 @@ envsubst_() {
   local in_var=0
   local var_name=""
 
-  while [ $i -lt $len ]; do
+  while [ "$i" -lt "$len" ]; do
     local char="${input:$i:1}"
 
     if [ "$in_var" -eq 1 ]; then
@@ -55,7 +55,7 @@ envsubst_() {
     output="$output${!var_name}"
   fi
 
-  printf "%s\n" "$output" # Corrected line using printf with \n
+  printf "%s\n" "$output"
 }
 
 # Process the entire input file
