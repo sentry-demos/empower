@@ -191,15 +191,36 @@ def checkout():
     with sentry_sdk.start_span(op="process_order", description="function"):
         quantities = cart['quantities']
         for cartItem in quantities:
+            product_found = False
             for inventoryItem in inventory:
-                print("> inventoryItem.count", inventoryItem['count'])
-                if (validate_inventory and (inventoryItem.count < quantities[cartItem] or quantities[cartItem] >= inventoryItem.count)):
-                    sentry_sdk.metrics.incr(key="checkout.failed")
-                    raise Exception("Not enough inventory for product")
+                inventory_count = int(inventoryItem[2])  # Access count at index 2 and convert to int
+                cart_qty = int(quantities[cartItem])  # Convert string to int
+                product_id = str(inventoryItem[3])  # Ensure consistent type
+                
+                if product_id == cartItem:
+                    product_found = True
+                    if validate_inventory and inventory_count < cart_qty:
+                        sentry_sdk.metrics.incr(key="checkout.failed")
+                        product_name = next((item['title'] for item in cart['items'] if item['id'] == cartItem), f"ID {cartItem}")
+                        raise ValueError(f"Not enough inventory for {product_name}. Available: {inventory_count}, Requested: {cart_qty}")
+            
+            if validate_inventory and not product_found:
+                product_name = next((item['title'] for item in cart['items'] if item['id'] == cartItem), f"ID {cartItem}")
+                raise ValueError(f"Product {product_name} not found in inventory")
+                
         if len(inventory) == 0 or len(quantities) == 0:
-            raise Exception("Not enough inventory for product")
+            raise ValueError("No inventory or empty cart")
 
     response = make_response("success")
+    return response
+
+@app.errorhandler(ValueError)
+def handle_inventory_error(error):
+    response = make_response(jsonify({
+        "error": True,
+        "message": str(error),
+        "errorType": "inventory_validation"
+    }), 400)
     return response
 
 
