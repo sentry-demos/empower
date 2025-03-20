@@ -194,6 +194,7 @@ for proj in $projects; do # bash only
   # via bin/validate_dotenv.sh -> bin/validate_env.sh.
   generated_envs+="$(../env.sh $env) "
 
+
   # We do this because 1) we need RELEASE that's generated in env.sh 2) we need *_APP_*_BACKEND
   # 3) some projects may require env variables instead of .env (not the case for react, flask & express)
   # TODO: double check above comment is still correct, we do this 3 times (once here and twice in env.sh)
