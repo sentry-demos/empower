@@ -1,7 +1,0 @@
-{
-  "dependencies": {
-    "@sentry/browser": "^9.7.0",
-    "@sentry/react": "^9.7.0",
-    "react-loader-spinner": "^6.1.6"
-  }
-}
