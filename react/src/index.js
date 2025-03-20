@@ -3,8 +3,7 @@ import ReactDOM from 'react-dom';
 import './index.css';
 import 'react-loader-spinner/dist/loader/css/react-spinner-loader.css';
 import * as Sentry from '@sentry/react';
-import { StatsigClient, StatsigOptions, StatsigUser } from '@statsig/js-client';
-import { StatsigClient, StatsigOptions, StatsigUser } from '@statsig/js-client';
+import { StatsigClient } from '@statsig/js-client';
 import { createBrowserHistory } from 'history';
 import {
   Routes,
@@ -76,11 +75,8 @@ console.log('RELEASE', RELEASE);
 
 const user = { userID: 'some_user_id' };
 
-const options = {
-  environment: { tier: ENVIRONMENT }
-};
 
-const statsigClient = new StatsigClient(STATSIG_CLIENT_KEY, user, options);
+const statsigClient = new StatsigClient(STATSIG_CLIENT_KEY, user);
 
 
 Sentry.init({
@@ -148,7 +144,7 @@ Sentry.init({
   },
 });
 
-// Get all feature flags once so they are available in sentry
+// Evaluate all feature flags once so they are available in sentry
 await statsigClient.initializeAsync();
 const featureFlags = [
   "beta_feature",
