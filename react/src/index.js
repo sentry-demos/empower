@@ -4,6 +4,7 @@ import './index.css';
 import 'react-loader-spinner/dist/loader/css/react-spinner-loader.css';
 import * as Sentry from '@sentry/react';
 import { StatsigClient, StatsigOptions, StatsigUser } from '@statsig/js-client';
+import { StatsigClient, StatsigOptions, StatsigUser } from '@statsig/js-client';
 import { createBrowserHistory } from 'history';
 import {
   Routes,
