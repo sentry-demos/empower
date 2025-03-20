@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom';
 import './index.css';
 import 'react-loader-spinner/dist/loader/css/react-spinner-loader.css';
 import * as Sentry from '@sentry/react';
+import { StatsigClient, StatsigOptions, StatsigUser } from '@statsig/js-client';
 import { createBrowserHistory } from 'history';
 import {
   Routes,
@@ -68,9 +69,18 @@ let CHECKOUT_SUCCESS;
 let ERROR_BOUNDARY;
 const DSN = process.env.REACT_APP_DSN;
 const RELEASE = process.env.REACT_APP_RELEASE;
-
+const STATSIG_CLIENT_KEY = process.env.STATSIG_CLIENT_KEY;
 console.log('ENVIRONMENT', ENVIRONMENT);
 console.log('RELEASE', RELEASE);
+
+const user = { userID: 'some_user_id' };
+
+const options = {
+  environment: { tier: ENVIRONMENT }
+};
+
+const statsigClient = new StatsigClient(STATSIG_CLIENT_KEY, user, options);
+
 
 Sentry.init({
   dsn: DSN,
@@ -102,6 +112,7 @@ Sentry.init({
       networkDetailAllowUrls: [/.*/],
       unmask: [".sentry-unmask"],
     }),
+    Sentry.statsigIntegration({ featureFlagClient: statsigClient }),
   ],
   beforeSend(event, hint) {
     // Parse from tags because src/index.js already set it there. Once there are React route changes, it is no longer in the URL bar
@@ -136,7 +147,20 @@ Sentry.init({
   },
 });
 
-// TODO is this best placement?
+// Get all feature flags once so they are available in sentry
+await statsigClient.initializeAsync();
+const featureFlags = [
+  "beta_feature",
+  "alpha_feature",
+  "fe_tda_gate"
+]
+
+featureFlags.map(async (featureFlag) => {
+  const result = statsigClient.checkGate(featureFlag);
+  console.log(`${featureFlag}:`, result);
+});
+
+
 const SentryRoutes = Sentry.withSentryReactRouterV6Routing(Routes);
 
 const sentryReduxEnhancer = Sentry.createReduxEnhancer({});
