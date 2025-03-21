@@ -2,6 +2,7 @@ import * as Sentry from '@sentry/react';
 import plantsBackground from '../assets/plants-background-img.jpg';
 import Button from './ButtonLink';
 import { useEffect } from 'react';
+import './home.css';
 
 const divStyle = {
   backgroundImage: 'url(' + plantsBackground + ')',
@@ -28,9 +29,14 @@ function Home({ frontendSlowdown, backend }) {
       <div className="hero-content">
         <h1>Empower your plants</h1>
         <p>Keep your houseplants happy.</p>
-        <Button to={frontendSlowdown ? '/products-fes' : '/products'}>
-          Browse products
-        </Button>
+        <div className="button-group">
+          <Button to={frontendSlowdown ? '/products-fes' : '/products'}>
+            Browse products
+          </Button>
+          <Button to="/specials">
+            Browse Specials
+          </Button>
+        </div>
       </div>
     </div>
   );
