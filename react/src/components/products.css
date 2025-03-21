@@ -35,3 +35,10 @@
 .loader-container {
   text-align: center;
 }
+
+.specials-title {
+  text-align: center;
+  margin: 2rem 0;
+  color: #2f3061;
+  font-size: 2.5rem;
+}
