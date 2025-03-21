@@ -410,3 +410,21 @@ def sentry_event_context():
     email = request.headers.get('email')
     if email not in [None, "undefined"]:
         sentry_sdk.set_user({"email": email})
+
+
+@app.route('/get_specials', methods=['GET'])
+def get_specials():
+    sentry_sdk.metrics.incr(
+        key="endpoint_call",
+        value=1,
+        tags={"endpoint": "/get_specials", "method": "GET"},
+    )
+    try:
+        with sentry_sdk.start_span(op="/get_specials.get_products_join", description="function"):
+            rows = get_products_join()
+            # Only return first 2 products
+            products = json.loads(rows)[:2]
+            return json.dumps(products)
+    except Exception as err:
+        sentry_sdk.capture_exception(err)
+        raise (err)

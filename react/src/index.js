@@ -39,6 +39,7 @@ import Product from './components/Product';
 import Products from './components/Products';
 import ProductsJoin from './components/ProductsJoin';
 import Nplusone from './components/nplusone';
+import Specials from './components/Specials';
 
 const tracingOrigins = [
   'localhost',
@@ -354,9 +355,15 @@ class App extends Component {
                 }
               ></Route>
               <Route
-                path="/products-fes" // fes = frontend slowdown (only frontend)
+                path="/products-fes"
                 element={
                   <Products backend={BACKEND_URL} frontendSlowdown={true} />
+                }
+              ></Route>
+              <Route
+                path="/specials"
+                element={
+                  <Specials backend={BACKEND_URL} />
                 }
               ></Route>
               <Route
