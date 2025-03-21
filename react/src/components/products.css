@@ -35,3 +35,16 @@
 .loader-container {
   text-align: center;
 }
+
+.button-group {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.specials-title {
+  text-align: center;
+  margin: 2rem 0;
+  font-size: 2rem;
+  color: #2d3436;
+}

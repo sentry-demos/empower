@@ -38,6 +38,7 @@ import NotFound from './components/NotFound';
 import Product from './components/Product';
 import Products from './components/Products';
 import ProductsJoin from './components/ProductsJoin';
+import Specials from './components/Specials';
 import Nplusone from './components/nplusone';
 
 const tracingOrigins = [
@@ -366,6 +367,10 @@ class App extends Component {
               <Route
                 path="/products-join"
                 element={<ProductsJoin backend={BACKEND_URL} />}
+              ></Route>
+              <Route
+                path="/specials"
+                element={<Specials backend={BACKEND_URL} />}
               ></Route>
               <Route path="*" element={<NotFound />} />
             </SentryRoutes>
