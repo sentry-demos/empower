@@ -52,7 +52,13 @@ def get_products():
         # before pg_sleep() was moved out of SELECT clause.
         n *= PRODUCTS_NUM
         products = connection.execute(
-            "SELECT * FROM products WHERE id IN (SELECT id from products, pg_sleep(%s))" % (n)
+            """
+            SELECT p.*, r.id as review_id, r.rating, r.customerId, r.description, r.created 
+            FROM products p
+            LEFT JOIN reviews r ON p.id = r.productId
+            LEFT JOIN product_bundles pb ON p.id = pb.productId,
+            pg_sleep(%s)
+            """ % (n)
         ).fetchall()
 
         for product in products:
