@@ -28,9 +28,14 @@ function Home({ frontendSlowdown, backend }) {
       <div className="hero-content">
         <h1>Empower your plants</h1>
         <p>Keep your houseplants happy.</p>
-        <Button to={frontendSlowdown ? '/products-fes' : '/products'}>
-          Browse products
-        </Button>
+        <div className="button-container" style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+          <Button to={frontendSlowdown ? '/products-fes' : '/products'}>
+            Browse products
+          </Button>
+          <Button to="/specials">
+            Browse specials
+          </Button>
+        </div>
       </div>
     </div>
   );
