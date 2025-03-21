@@ -175,3 +175,9 @@ input[type="email"],
   padding: 10px; /* Adjust padding for consistent appearance */
   font-size: 16px; /* Ensures text size is consistent */
 }
+
+.button-group {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
