@@ -12,6 +12,7 @@ const prisma = new PrismaClient();
 export async function getProductsRaw() {
   const cookiesStore = await cookies();
   const se = cookiesStore.get("se");
+  console.log('se: ', se);
   if(se) {
     Sentry.getCurrentScope().setTag("se", se.value)
   }
