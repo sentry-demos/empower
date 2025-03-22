@@ -10,12 +10,15 @@ import { cookies } from 'next/headers';
 const prisma = new PrismaClient();
 
 export async function getProductsRaw() {
+  const cookiesStore = await cookies();
+  const se = cookiesStore.get("se");
+  if(se) {
+    Sentry.configureScope(scope => {
+      scope.setTag("se", se.value);
+    });
+  }
   try {
-    const cookiesStore = await cookies();
-    const se = cookiesStore.get("se");
-    if(se) {
-      Sentry.getCurrentScope().setTag("se", se.value)
-    }
+
     console.log("Fetching products...");
     // Artificial slowdown for demoing
     const sleepDuration = 2;
