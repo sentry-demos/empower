@@ -10,10 +10,15 @@ import { cookies } from 'next/headers';
 const prisma = new PrismaClient();
 
 export async function getProductsRaw() {
+  let products;
+  await Sentry.startSpan(
+    { name: "Important Function" },
+    async () => {
+
   const cookiesStore = await cookies();
   const se = cookiesStore.get("se");
   if(se) {
-    Sentry.getGlobalScope().setTag("se", se.value)
+    Sentry.getCurrentScope().setTag("se", se.value)
   }
   try {
 
@@ -26,7 +31,7 @@ export async function getProductsRaw() {
       )`, 
       [sleepDuration] // Use parameterized queries to prevent SQL injection
     );
-    const products = data.rows
+    products = data.rows
     for (let i = 0; i < products.length; ++i) {
       // product_bundles is a "sleepy view", run the following query to get current sleep duration:
       // SELECT pg_get_viewdef('product_bundles', true)
@@ -35,11 +40,14 @@ export async function getProductsRaw() {
       products[i].reviews = product_reviews.rows;
     }
     console.log("products: ", products);
-    return products;
   } catch (error) {
     console.error("Database Error:", error)
     // do sentry stuff
-  }
+  } 
+},
+);
+return products;
+
 }
 
 export async function getProductsOnly() {
