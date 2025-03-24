@@ -124,11 +124,9 @@ redis_client = redis.Redis(host=redis_host, port=redis_port, decode_responses=Tr
 @app.route('/enqueue', methods=['POST'])
 def enqueue():
     body = json.loads(request.data)
-    print(body['email'])
     email = body['email']
-    with sentry_sdk.start_transaction(name="src.api.enqueueEmail"):
-        r = sendEmail.apply_async(args=[email], queue='celery-new-subscriptions')
-        print(r.task_id)
+    r = sendEmail.apply_async(args=[email], queue='celery-new-subscriptions')
+    print(f"task id: {r.task_id} for email: {email}")
     return jsonify({"status": "success"}), 200
 
 

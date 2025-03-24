@@ -13,5 +13,4 @@ def sendEmail(self, email):
     print("Sending email to: " + email)
     return x
   except Exception as e:
-      with sentry_sdk.start_transaction(name=f"{self.__qualname__} (retry)"):
-        raise self.retry(exc=e, countdown=10, max_retries=5)
+      raise self.retry(exc=e, countdown=10, max_retries=5)
