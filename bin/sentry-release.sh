@@ -28,8 +28,10 @@ if [ "$SENTRY_ORG" == "" ]; then
 fi
 # sets $sentry_project var to the value of e.g. REACT_SENTRY_PROJECT from env-config/<env>.env
 . get_proj_var.sh "%s_SENTRY_PROJECT" $proj
-. get_proj_var.sh "%s_SOURCEMAPS_URL_PREFIX" $proj
-. get_proj_var.sh "%s_SOURCEMAPS_DIR" $proj
+if [ "$upload_sourcemaps" == "true" ]; then
+  . get_proj_var.sh "%s_SOURCEMAPS_URL_PREFIX" $proj
+  . get_proj_var.sh "%s_SOURCEMAPS_DIR" $proj
+fi
 
 sentry-cli releases -o $SENTRY_ORG new -p $sentry_project $release
 sentry-cli releases -o $SENTRY_ORG finalize -p $sentry_project $release
