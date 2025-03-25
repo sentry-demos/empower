@@ -184,6 +184,10 @@ app.post("/checkout", async (req, res) => {
   const order = req.body;
   const cart = order["cart"];
   const form = order["form"];
+  const validateInventory = order["validate_inventory"] === "true";
+  
+  global.bypassInventoryCheck = !validateInventory;
+  
   let inventory = [];
   try {
     const transaction = Sentry.getCurrentHub().getScope().getTransaction();
@@ -240,7 +244,7 @@ app.listen(PORT, () => {
 // [END app]
 
 function hasInventory(item) {
-  return false;
+  return global.bypassInventoryCheck === true ? true : false;
 }
 
 module.exports = { app, Sentry, Tracing };
