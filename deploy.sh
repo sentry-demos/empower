@@ -170,9 +170,9 @@ for proj in $projects; do # bash only
   unset CI # prevents build failing in GitHub Actions
   ./build.sh
 
-  if [[ "$fe_projects" = *"$proj "* ]]; then # project is frontend
-    if [[ "$proj" == "react" || "$proj" == "next" ]]; then
-      upload_sourcemaps="false" # using webpack plugin
+  if [[ $proj =~ ^(react|next|vue|flask)$ ]]; then # Suspect Commits now require commits associated w/ release
+    if [[ $proj =~ ^(react|next|flask)$ ]]; then
+      upload_sourcemaps="false" # using webpack plugin or doesn not apply
     else
       upload_sourcemaps="true"
     fi
