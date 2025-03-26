@@ -149,9 +149,7 @@ app.get("/success", (req, res) => {
   res.send(`success from express`);
 });
 
-app.get("/products", fetchProducts);
-
-app.get("/products-join", async (req, res) => {
+app.get("/products", async (req, res) => {
   try {
     // This /api call must happen before the DB.products() call or else it's a broken subtrace (if you do it after DB.Products())
     await axios

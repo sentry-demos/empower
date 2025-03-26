@@ -86,15 +86,22 @@ function Products({ frontendSlowdown, backend, productsExtremelySlow, productsBe
     fixed with hooks (no transform on that class method anymore)"
   */
   async function getProducts(frontendSlowdown) {
-    [('/api', '/connect', '/organization')].forEach((endpoint, activeSpan) => {
+    const preliminaryEndpoints = ['/api', '/connect', '/organization'];
+    
+    // Make preliminary requests in parallel to reduce overall latency
+    const preliminaryPromises = preliminaryEndpoints.map(endpoint => 
       fetch(backend + endpoint, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
       }).catch((err) => {
         // If there's an error, it won't stop the Products http request and page from loading
         Sentry.captureException(err);
-      });
-    });
+      })
+    );
+    
+    // Use Promise.allSettled to wait for all requests to complete (successfully or not)
+    await Promise.allSettled(preliminaryPromises);
+    
     const productsEndpoint = determineProductsEndpoint();
     Sentry.startSpan({ name: "Fetch Products"}, async (span) => {
       const stopMeasurement = measureRequestDuration(productsEndpoint, span);

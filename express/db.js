@@ -66,7 +66,7 @@ const getProducts = async function () {
 const getJoinedProducts = async function () {
   let transaction = Sentry.getCurrentHub().getScope().getTransaction();
 
-  // Retrieve Products
+  // Retrieve Products - avoid using backorder_inventory which is intentionally slow
   const productsQuery = `SELECT * FROM products`;
   let span = transaction.startChild({
     op: "getjoinedproducts",
@@ -80,7 +80,8 @@ const getJoinedProducts = async function () {
   span.setData("Products", products.rows);
   span.finish();
 
-  // Retrieve Reviews
+  // Retrieve Reviews - avoid using weekly_promotions which is intentionally slow
+  // Use a JOIN to efficiently get all reviews for all products in a single query
   const reviewsQuery =
     "SELECT reviews.id, products.id AS productid, reviews.rating, reviews.customerId, reviews.description, reviews.created FROM reviews INNER JOIN products ON reviews.productId = products.id";
   span = transaction.startChild({
@@ -99,13 +100,15 @@ const getJoinedProducts = async function () {
   let formattedProducts = [];
   for (product of products.rows) {
     let productWithReviews = product;
-    productWithReviews["reviews"] = retrievedReviews.rows;
+    // Filter reviews that belong to this product
+    productWithReviews["reviews"] = retrievedReviews.rows.filter(
+      review => review.productid == product.id
+    );
     formattedProducts.push(productWithReviews);
   }
   span.setData("results", formattedProducts);
   span.finish();
 
-  transaction.finish();
   return formattedProducts;
 };
 
