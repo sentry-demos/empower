@@ -13,7 +13,6 @@ export async function getProductsRaw() {
   const cookiesStore = await cookies();
   const se = cookiesStore.get("se");
   if(se) {
-    console.log("se: ", se);
     Sentry.getCurrentScope().setTag("se", se.value)
   }
   try {
