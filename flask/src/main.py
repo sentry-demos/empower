@@ -410,3 +410,25 @@ def sentry_event_context():
     email = request.headers.get('email')
     if email not in [None, "undefined"]:
         sentry_sdk.set_user({"email": email})
+
+
+@app.route('/get_specials', methods=['GET'])
+def get_specials():
+    try:
+        with sentry_sdk.start_span(op="/get_specials.get_products_join", description="function"):
+            rows = get_products_join()
+            # Parse the JSON string into a Python object, take first 2 items, and convert back to JSON
+            products = json.loads(rows)[:2]
+            rows = json.dumps(products)
+    except Exception as err:
+        sentry_sdk.capture_exception(err)
+        raise (err)
+
+    try:
+        headers = parseHeaders(RUBY_CUSTOM_HEADERS, request.headers)
+        r = requests.get(RUBY_BACKEND + "/api", headers=headers)
+        r.raise_for_status()
+    except Exception as err:
+        sentry_sdk.capture_exception(err)
+
+    return rows
