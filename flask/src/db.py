@@ -166,3 +166,28 @@ def formatArray(ids):
         numbers += (_id + ",")
     output = "(" + numbers[:-1] + ")"
     return output
+
+def update_inventory(cart_quantities):
+    """
+    Updates inventory count after a successful checkout
+    """
+    try:
+        with sentry_sdk.start_span(op="update_inventory", description="db.connect"):
+            connection = db.connect()
+            
+        with sentry_sdk.start_span(op="update_inventory", description="db.query") as span:
+            for product_id, quantity in cart_quantities.items():
+                connection.execute(
+                    "UPDATE inventory SET count = count - %s WHERE productId = %s", 
+                    (quantity, product_id)
+                )
+            span.set_tag("products_updated", len(cart_quantities))
+        return True
+    except BrokenPipeError as err:
+        raise DatabaseConnectionError('update_inventory')
+    except Exception as err:
+        err_string = str(err)
+        if UNPACK_FROM_ERROR in err_string:
+            raise DatabaseConnectionError('update_inventory')
+        else:
+            raise(err)
