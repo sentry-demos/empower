@@ -9,13 +9,13 @@
     "license": "MIT",
     "require": {
         "php": "^8.0.0",
+        "facade/ignition": "^2.5",
         "fruitcake/laravel-cors": "^2.0",
         "guzzlehttp/guzzle": "^7.5.0",
         "laravel/framework": "^8.83.27",
         "laravel/tinker": "^2.7.3",
-        "sentry/sentry-laravel": "^3.1",
-        "facade/ignition": "^2.5",
-        "nunomaduro/collision": "^5.10"
+        "nunomaduro/collision": "^5.10",
+        "sentry/sentry-laravel": "^4.13"
     },
     "require-dev": {
         "facade/ignition": "^2.5",
