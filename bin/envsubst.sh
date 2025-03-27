@@ -2,6 +2,10 @@
 
 envsubst_() {
   local input="$1"
+  # First, replace \$ with a unique placeholder that won't appear in normal text
+  local placeholder=$'\x01ESCAPED_DOLLAR\x02'
+  input="${input//\\\$/$placeholder}"
+
   local output=""
   local i=0
   local len=${#input}
@@ -55,7 +59,8 @@ envsubst_() {
     output="$output${!var_name}"
   fi
 
-  printf "%s\n" "$output"
+  # Convert the placeholder back to $
+  printf "%s\n" "${output//$placeholder/$}"
 }
 
 # Process the entire input file
