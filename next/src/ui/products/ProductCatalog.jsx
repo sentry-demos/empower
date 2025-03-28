@@ -7,7 +7,7 @@ import { vercelWaitUntil } from '@sentry/core';
 export default async function ProductCatalog(props) {
 
   let products = await getProductsRaw();
-  vercelWaitUntil(new Promise(resolve => setTimeout(resolve, 5000)));
+  //vercelWaitUntil(new Promise(resolve => setTimeout(resolve, 5000)));
 
   return (
     <div>
