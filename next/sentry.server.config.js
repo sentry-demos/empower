@@ -3,6 +3,7 @@
 // https://docs.sentry.io/platforms/javascript/guides/nextjs/
 
 import * as Sentry from '@sentry/nextjs';
+import { PrismaInstrumentation } from '@prisma/instrumentation';
 
 console.log('Sentry.init: ', process.env.NEXT_PUBLIC_DSN);
 Sentry.init({
@@ -12,7 +13,11 @@ Sentry.init({
   tracesSampleRate: 1,
 
   integrations: [
-    Sentry.prismaIntegration(),
+    Sentry.prismaIntegration({
+      // Override the default instrumentation that Sentry uses
+      prismaInstrumentation: new PrismaInstrumentation(),
+    }),
+
   ],
 
   // Setting this option to true will print useful information to the console while you're setting up Sentry.
