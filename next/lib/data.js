@@ -10,7 +10,13 @@ import { cookies } from 'next/headers';
 const prisma = new PrismaClient();
 
 export async function getProductsRaw() {
+  const cookiesStore = await cookies();
+  const se = cookiesStore.get("se");
+  if(se) {
+    Sentry.setTag("se", se.value);
+  }
   try {
+
     console.log("Fetching products...");
     // Artificial slowdown for demoing
     const sleepDuration = 2;
@@ -33,7 +39,8 @@ export async function getProductsRaw() {
   } catch (error) {
     console.error("Database Error:", error)
     // do sentry stuff
-  }
+  } 
+
 }
 
 export async function getProductsOnly() {
