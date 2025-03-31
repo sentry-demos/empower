@@ -13,7 +13,7 @@ export async function getProductsRaw() {
   const cookiesStore = await cookies();
   const se = cookiesStore.get("se");
   if(se) {
-    Sentry.setTag("se", se.value);
+    Sentry.getIsolationScope.setTag("se", se.value);
   }
   try {
 
