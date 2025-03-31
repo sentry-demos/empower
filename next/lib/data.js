@@ -9,7 +9,22 @@ import { cookies } from 'next/headers';
 
 const prisma = new PrismaClient();
 
+async function getIterator(n = 40) {
+  if (n <= 0) {
+    return 0;
+  }
+  // Add artificial delay
+  const start = Date.now();
+  while (Date.now() - start < 100) {
+    // Busy wait for 100ms
+  }
+  return getIterator(n - 1) + 1;
+}
+
 export async function getProductsRaw() {
+  Sentry.startSpan({name: "get_iterator"}, async () => {
+    getIterator();
+  });
   const cookiesStore = await cookies();
   const se = cookiesStore.get("se");
   if(se) {
