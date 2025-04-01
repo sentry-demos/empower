@@ -4,7 +4,6 @@
 
 import * as Sentry from '@sentry/nextjs';
 import { PrismaInstrumentation } from '@prisma/instrumentation';
-import { nodeProfilingIntegration } from '@sentry/profiling-node';
 
 console.log('Sentry.init: ', process.env.NEXT_PUBLIC_DSN);
 Sentry.init({
@@ -12,8 +11,6 @@ Sentry.init({
 
   // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
   tracesSampleRate: 1.0,
-  profileSessionSampleRate: 1.0,
-  profileLifecycle: 'trace',
   
 
   integrations: [
@@ -21,7 +18,6 @@ Sentry.init({
       // Override the default instrumentation that Sentry uses
       prismaInstrumentation: new PrismaInstrumentation(),
     }),
-    nodeProfilingIntegration(),
   ],
 
   // Setting this option to true will print useful information to the console while you're setting up Sentry.
