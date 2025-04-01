@@ -9,7 +9,7 @@ import { cookies } from 'next/headers';
 
 const prisma = new PrismaClient();
 
-async function getIterator(n = 40) {
+export async function getIterator(n = 40) {
   if (n <= 0) {
     return 0;
   }
@@ -22,14 +22,14 @@ async function getIterator(n = 40) {
 }
 
 export async function getProductsRaw() {
-  Sentry.startSpan({name: "get_iterator"}, async () => {
-    getIterator();
-  });
+
   const cookiesStore = await cookies();
   const se = cookiesStore.get("se");
   if(se) {
-    Sentry.getIsolationScope().setTag("se", se.value);
+    Sentry.getCurrentScope().setTag("se", se.value);
   }
+
+  let products = [];
   try {
 
     console.log("Fetching products...");
@@ -37,11 +37,10 @@ export async function getProductsRaw() {
     const sleepDuration = 2;
     const data = await query(
       `SELECT * FROM products WHERE id IN (
-          SELECT id FROM products, pg_sleep($1)
-      )`, 
-      [sleepDuration] // Use parameterized queries to prevent SQL injection
+          SELECT id FROM products
+      )`
     );
-    const products = data.rows
+    products = data.rows
     for (let i = 0; i < products.length; ++i) {
       // product_bundles is a "sleepy view", run the following query to get current sleep duration:
       // SELECT pg_get_viewdef('product_bundles', true)
@@ -50,11 +49,17 @@ export async function getProductsRaw() {
       products[i].reviews = product_reviews.rows;
     }
     console.log("products: ", products);
-    return products;
   } catch (error) {
     console.error("Database Error:", error)
     // do sentry stuff
   } 
+
+  Sentry.startSpan({name: "get_iterator"}, async () => {
+    getIterator();
+  });
+
+  return products;
+
 
 }
 

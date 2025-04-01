@@ -17,7 +17,7 @@ Sentry.init({
     Sentry.prismaIntegration({
       // Override the default instrumentation that Sentry uses
       prismaInstrumentation: new PrismaInstrumentation(),
-    }),
+    })
   ],
 
   // Setting this option to true will print useful information to the console while you're setting up Sentry.
