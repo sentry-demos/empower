@@ -136,16 +136,13 @@ def get_inventory(cart):
     for productId in quantities:
         productIds.append(productId)
 
-    productIds = formatArray(productIds)
-    print("> productIds", productIds)
-
     try:
         with sentry_sdk.start_span(op="get_inventory", description="db.connect"):
             connection = db.connect()
         with sentry_sdk.start_span(op="get_inventory", description="db.query") as span:
-            inventory = connection.execute(
-                "SELECT * FROM inventory WHERE productId in %s" % (productIds)
-            ).fetchall()
+            placeholders = ','.join(['%s'] * len(productIds))
+            query = f"SELECT * FROM inventory WHERE productId IN ({placeholders})"
+            inventory = connection.execute(query, productIds).fetchall()
             span.set_data("inventory",inventory)
     except BrokenPipeError as err:
         raise DatabaseConnectionError('get_inventory')

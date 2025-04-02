@@ -188,14 +188,37 @@ def checkout():
 
     with sentry_sdk.start_span(op="process_order", description="function"):
         quantities = cart['quantities']
+        insufficient_products = []
+        
+        # Create inventory map for efficient lookup
+        inventory_map = {}
+        for item in inventory:
+            product_id = item[3]
+            available_qty = int(item[2]) if len(item) > 2 else 0
+            inventory_map[product_id] = available_qty
+        
         for cartItem in quantities:
-            for inventoryItem in inventory:
-                print("> inventoryItem.count", inventoryItem['count'])
-                if (validate_inventory and (inventoryItem.count < quantities[cartItem] or quantities[cartItem] >= inventoryItem.count)):
-                    sentry_sdk.metrics.incr(key="checkout.failed")
-                    raise Exception('Not enough inventory for product')
+            requested_qty = int(quantities[cartItem])
+            product_id = int(cartItem)
+            available_qty = inventory_map.get(product_id, 0)
+            
+            if validate_inventory and (product_id not in inventory_map or requested_qty > available_qty):
+                sentry_sdk.metrics.incr(key="checkout.failed")
+                insufficient_products.append({
+                    "product_id": product_id,
+                    "requested": requested_qty,
+                    "available": available_qty
+                })
+                
+        if insufficient_products:
+            response = make_response(json.dumps({"error": "Not enough inventory for product", "insufficient_products": insufficient_products}), 400)
+            response.headers['Content-Type'] = 'application/json'
+            return response
+            
         if len(inventory) == 0 or len(quantities) == 0:
-            raise Exception("Not enough inventory for product")
+            response = make_response(json.dumps({"error": "Not enough inventory for product"}), 400)
+            response.headers['Content-Type'] = 'application/json'
+            return response
 
     response = make_response("success")
     return response
