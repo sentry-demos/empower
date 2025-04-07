@@ -23,6 +23,7 @@ function ProductCard(props) {
           <p className="product-description">{product.description}</p>
         </div>
         <button id="addToCart" onClick={(e) => {
+          throw new Error('test');
           props.addProduct(product);
           e.stopPropagation();
         }}>
