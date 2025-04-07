@@ -20,7 +20,7 @@ import '@/src/styles/product.css';
 
 export default function HomeContent({ children }) {
 
-
+  notAFunction();
   
   return (
     <>
