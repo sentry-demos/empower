@@ -64,6 +64,6 @@ envsubst_() {
 }
 
 # Process the entire input file
-while IFS= read -r line; do
+while IFS= read -r line || [ -n "$line" ]; do
   envsubst_ "$line"
 done
