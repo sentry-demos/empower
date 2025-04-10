@@ -118,6 +118,48 @@ for proj in $projects; do # bash only
   echo "||| $0: $proj"
   echo "|||"
 
+  # Function to fetch secrets from Google Cloud Secret Manager (uses same name for env var and secret)
+  fetch_secrets_to_env() {
+    # Check if gcloud is available
+    if ! command -v gcloud &> /dev/null; then
+      echo "[WARN] gcloud command not found, skipping secret fetching"
+      return 1
+    fi
+
+    echo "Fetching secrets from Google Cloud Secret Manager..."
+
+    # Define the list of secrets to fetch - names will be identical in env and Secret Manager
+    # TODO: Incrementally add to this and remove from .env and validate_env.list
+    local secrets=(
+      # Sentry CLI will use this token for authentication.  Otherwise, one can use `sentry-cli login`,
+      # but that will not work when deploying to staging or production.
+      "SENTRY_AUTH_TOKEN"
+      "STATSIG_CLIENT_KEY"
+      "STATSIG_SERVER_KEY"
+    )
+
+
+    # Fetch each secret and export it to environment
+    for secret_name in "${secrets[@]}"; do
+      echo "  Fetching secret $secret_name..."
+
+      # Fetch the secret value
+      local value
+      value=$(gcloud secrets versions access latest --secret="$secret_name" --project=sales-engineering-sf 2>/dev/null)
+
+      if [ $? -ne 0 ]; then
+        echo "[WARN] Failed to fetch secret '$secret_name', skipping"
+      else
+        # Export the secret to environment
+        export "$secret_name=$value"
+        echo "  Successfully set $secret_name"
+      fi
+    done
+  }
+
+  # Fetch secrets before validating project
+  fetch_secrets_to_env
+
   validate_project.sh $top/$proj
 
   cd $top/$proj
@@ -131,6 +173,7 @@ for proj in $projects; do # bash only
   #
   # We generate a temporary .env dynamically from env-config/*.env then remove upon exit
   generated_envs+="$(../env.sh $env) "
+
 
   # We do this because 1) we need RELEASE that's generated in env.sh 2) we need *_APP_*_BACKEND
   # 3) some projects may require env variables instead of .env (not the case for react, flask & express)
@@ -178,13 +221,6 @@ for proj in $projects; do # bash only
     fi
     sentry-release.sh $env $RELEASE $upload_sourcemaps
     # NOTE: Sentry may create releases from events even without this step
-  fi
-
-  # If gcloud is installed, use it to get the sentry auth token from Google Cloud Secret Manager.
-  # Sentry CLI will use this token for authentication.  Otherwise, one can use `sentry-cli login`,
-  # but that will not work when deploying to staging or production.
-  if command -v gcloud &> /dev/null ; then
-    export SENTRY_AUTH_TOKEN=$(gcloud secrets versions access latest --secret="SENTRY_AUTH_TOKEN")
   fi
 
   # *** DEPLOY OR RUN ***
