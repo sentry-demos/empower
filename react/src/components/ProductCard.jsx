@@ -16,7 +16,12 @@ function ProductCard(props) {
   const stars = props.stars;
 
   function validate_inventory(product) {
-    return product && inventory.includes(product.id)
+    try {
+      return product && inventory.includes(product.id);
+    } catch (error) {
+      Sentry.captureException(error);
+      return false;
+    }
   }
 
   return (
