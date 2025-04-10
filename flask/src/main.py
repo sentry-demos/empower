@@ -143,11 +143,9 @@ redis_client = redis.Redis(host=redis_host, port=redis_port, decode_responses=Tr
 @app.route('/enqueue', methods=['POST'])
 def enqueue():
     body = json.loads(request.data)
-    print(body['email'])
     email = body['email']
-    with sentry_sdk.start_transaction(name="src.api.enqueueEmail"):
-        r = sendEmail.apply_async(args=[email], queue='celery-new-subscriptions')
-        print(r.task_id)
+    r = sendEmail.apply_async(args=[email], queue='celery-new-subscriptions')
+    print(f"task id: {r.task_id} for email: {email}")
     return jsonify({"status": "success"}), 200
 
 
@@ -214,7 +212,7 @@ def checkout():
                 print("> inventoryItem.count", inventoryItem['count'])
                 if (validate_inventory and (inventoryItem.count < quantities[cartItem] or quantities[cartItem] >= inventoryItem.count)):
                     sentry_sdk.metrics.incr(key="checkout.failed")
-                    raise Exception("Not enough inventory for product")
+                    raise Exception('Not enough inventory for product')
         if len(inventory) == 0 or len(quantities) == 0:
             raise Exception("Not enough inventory for product")
 
