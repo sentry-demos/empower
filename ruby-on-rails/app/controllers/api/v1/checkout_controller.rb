@@ -84,12 +84,14 @@ class Api::V1::CheckoutController < ApplicationController
     products_in_inventory.each_with_index { |inv_objs, i|
       if !enough_inventory?(cart_contents)
         begin
-          raise Exception.new "Not enough inventory for product"
-          STDERR.puts "Not enough inventory for productid " + inv_objs["productid"].to_s
-          Sentry.capture_exception(Exception)
+          product_id = @out_of_stock_product || "unknown"
+          error_message = "Not enough inventory for product ID: #{product_id}"
+          Sentry.capture_message(error_message)
+          STDERR.puts error_message
           logged = "Error: Not enough inventory"
+          span_logic.finish
           render json: {"message": logged}, status: 500
-          break # breaks on first error. might be more inventory errors.
+          return
         end
       end
     }
@@ -101,6 +103,19 @@ class Api::V1::CheckoutController < ApplicationController
   end
 
   def enough_inventory?(cart_contents)
-    return false
+    if params[:validate_inventory] == "false"
+      return true
+    end
+    
+    cart_contents.each do |product_id, quantity_requested|
+      inventory_item = Inventory.find_by(productid: product_id.to_i)
+      
+      if inventory_item.nil? || inventory_item.count < quantity_requested.to_i
+        @out_of_stock_product = product_id
+        return false
+      end
+    end
+    
+    return true
   end
 end
