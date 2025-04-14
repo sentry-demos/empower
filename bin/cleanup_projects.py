@@ -7,6 +7,7 @@ import sys
 from datetime import datetime, timezone
 
 SENTRY_API_BASE = "https://sentry.io/api/0"
+MINIMUM_EXCLUDED_COUNT = 24
 ACTIVE_PROJECT_THRESHOLD_EVENTS_24H = 1000  # Adjust this threshold as needed
 PROJECT_AGE_THRESHOLD_DAYS = 14
 STATS_CATEGORIES = [
@@ -117,6 +118,16 @@ def main():
     args = parser.parse_args()
     
     projects = get_projects(args.org_slug, args.auth_token)
+    
+    count_excluded = 0
+    for project in projects:
+        if project["slug"] in args.exclude:
+            count_excluded += 1
+
+    if count_excluded < MINIMUM_EXCLUDED_COUNT:
+        print(f"ERROR: At least {MINIMUM_EXCLUDED_COUNT} existing projects must be excluded")
+        sys.exit(1)
+
     
     for project in projects:
         if project["slug"] not in args.exclude:
