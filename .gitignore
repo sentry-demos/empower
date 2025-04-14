@@ -105,3 +105,10 @@ aspnetcore/*.suo
 /laravel/public/storage
 /laravel/storage/*.key
 /laravel/vendor
+
+#covarage
+.coverage
+config.yaml
+coverage.xml
+flask/requirements_updated.txt
+junit.xml
