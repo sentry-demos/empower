@@ -8,6 +8,8 @@ from flask import Flask, json, jsonify, request, make_response, send_from_direct
 from flask_cors import CORS
 from openai import OpenAI
 from flask_caching import Cache
+from statsig.statsig_user import StatsigUser
+from statsig import statsig
 import dotenv
 from .db import get_products, get_products_join, get_inventory
 from .utils import parseHeaders, get_iterator
@@ -17,6 +19,7 @@ from sentry_sdk.integrations.flask import FlaskIntegration
 from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 from sentry_sdk.integrations.redis import RedisIntegration
 from sentry_sdk.ai.monitoring import ai_track
+from sentry_sdk.integrations.statsig import StatsigIntegration
 
 RUBY_CUSTOM_HEADERS = ['se', 'customerType', 'email']
 pests = ["aphids", "thrips", "spider mites", "lead miners", "scale", "whiteflies", "earwigs", "cutworms", "mealybugs",
@@ -87,7 +90,12 @@ class MyFlask(Flask):
             dsn=DSN,
             release=RELEASE,
             environment=ENVIRONMENT,
-            integrations=[FlaskIntegration(), SqlalchemyIntegration(), RedisIntegration(cache_prefixes=["flask.", "ruby."])],
+            integrations=[
+                FlaskIntegration(),
+                SqlalchemyIntegration(),
+                RedisIntegration(cache_prefixes=["flask.", "ruby."]),
+                StatsigIntegration()
+            ],
             traces_sample_rate=1.0,
             before_send=before_send,
             traces_sampler=traces_sampler,
@@ -102,6 +110,17 @@ class MyFlask(Flask):
 
 app = MyFlask(__name__)
 CORS(app)
+
+statsig.initialize(os.environ.get("STATSIG_SERVER_KEY"))
+
+# check if sdk is initialized
+initialized = statsig.is_initialized()
+print(f"statsig initialized: {initialized}")
+# Evaluate all feature flags once so they are available in sentry
+feature_gates = ["beta_feature", "alpha_feature", "be_tda_gate"]
+for gate in feature_gates:
+    result = statsig.check_gate(StatsigUser("user-id"), gate)
+    print(f"{gate}: {result}")
 
 
 redis_host = os.environ.get("FLASK_REDISHOST", "localhost")
