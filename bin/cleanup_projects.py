@@ -125,10 +125,12 @@ def main():
             count_excluded += 1
 
     if count_excluded < MINIMUM_EXCLUDED_COUNT:
-        print(f"ERROR: At least {MINIMUM_EXCLUDED_COUNT} existing projects must be excluded")
+        print(f"ERROR: At least {MINIMUM_EXCLUDED_COUNT} existing projects must be excluded. Excluded projects: {count_excluded}")
         sys.exit(1)
 
     
+    count_skipped = 0
+    count_deleted = 0
     for project in projects:
         if project["slug"] not in args.exclude:
             # Check project age before proceeding
@@ -146,8 +148,13 @@ def main():
                 sys.exit(1)
                 
             delete_project(args.org_slug, project["slug"], args.auth_token, args.dry_run)
+            count_deleted += 1
         else:
+            count_skipped += 1
             print(f"Skipping excluded project: {project['slug']}")
+
+    print(f"{'Would have deleted' if args.dry_run else 'Deleted'} {count_deleted} projects")
+    print(f"Skipped {count_excluded} projects")  
 
 
 if __name__ == "__main__":
