@@ -1,7 +1,6 @@
 # Projects/directories listed here will be ommitted from auto-deployment to production
 
 vue
-ruby
 laravel
 tda
 postgres
@@ -10,4 +9,5 @@ next
 # ^ uses Vercel automation
 spring-boot
 # ^ java 8 no longer supported by GCP
-
+aspnetcore
+# ^ broken build/deploy
