@@ -1,7 +1,7 @@
 name: mock-data.yml
 on:
-  push:
-    branches: [master, test-me-*]
+  #push:
+  #  branches: [master, test-me-*]
   #pull_request:
 
 jobs:
