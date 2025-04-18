@@ -81,18 +81,14 @@ class Api::V1::CheckoutController < ApplicationController
 
     span_logic = transaction.start_child(op: "custom.inventory_vs_cart_logic")
 
-    products_in_inventory.each_with_index { |inv_objs, i|
-      if !enough_inventory?(cart_contents)
-        begin
-          raise Exception.new "Not enough inventory for product"
-          STDERR.puts "Not enough inventory for productid " + inv_objs["productid"].to_s
-          Sentry.capture_exception(Exception)
-          logged = "Error: Not enough inventory"
-          render json: {"message": logged}, status: 500
-          break # breaks on first error. might be more inventory errors.
-        end
-      end
-    }
+    if !enough_inventory?(cart_contents)
+      product_id = cart_contents.keys.first
+      error_message = "Not enough inventory for product #{product_id}"
+      Sentry.capture_message(error_message)
+      logged = "Error: Not enough inventory"
+      render json: {"message": logged, "status": "error"}, status: 422
+      return
+    end
 
     span_logic.finish
 
@@ -101,6 +97,16 @@ class Api::V1::CheckoutController < ApplicationController
   end
 
   def enough_inventory?(cart_contents)
-    return false
+    cart_contents.each do |product_id, requested_quantity|
+      inventory_item = Inventory.find_by(productid: product_id)
+      if inventory_item.nil?
+        Sentry.set_context("inventory_check", { product_id: product_id, error: "product_not_found" })
+        return false
+      elsif inventory_item.quantity < requested_quantity.to_i
+        Sentry.set_context("inventory_check", { product_id: product_id, requested: requested_quantity.to_i, available: inventory_item.quantity })
+        return false
+      end
+    end
+    return true
   end
 end
