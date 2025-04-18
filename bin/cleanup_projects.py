@@ -7,7 +7,7 @@ import sys
 from datetime import datetime, timezone
 
 SENTRY_API_BASE = "https://sentry.io/api/0"
-MINIMUM_EXCLUDED_COUNT = 24
+MINIMUM_EXCLUDED_COUNT = 19
 ACTIVE_PROJECT_THRESHOLD_EVENTS_24H = 1000  # Adjust this threshold as needed
 PROJECT_AGE_THRESHOLD_DAYS = 14
 STATS_CATEGORIES = [
