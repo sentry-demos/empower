@@ -34,7 +34,7 @@ dsn: 'https://9802de20229e4afdaa0d60796cbb44d7@o87286.ingest.sentry.io/5390094'
 
 # endpoints should NOT have "/" at the end
 react_endpoints:
-- https://application-monitoring-react-dot-sales-engineering-sf.appspot.com
+- https://empower-plant.com
 
 vue_endpoints:
 - https://application-monitoring-vue-dot-sales-engineering-sf.appspot.com
