@@ -14,7 +14,7 @@ const RELEASE = import.meta.env.RELEASE;
 
 const tracingOrigins = [
   'localhost',
-  'empowerplant.io',
+  'empower-plant.com',
   'run.app',
   'appspot.com',
   /^\//,

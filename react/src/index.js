@@ -42,7 +42,7 @@ import Nplusone from './components/nplusone';
 
 const tracingOrigins = [
   'localhost',
-  'empowerplant.io',
+  'empower-plant.com',
   'run.app',
   'appspot.com',
   /^\//,
