@@ -5,5 +5,5 @@ namespace Empower.Backend.Controllers;
 public class CheckoutController : ControllerBase
 {
     [HttpPost]
-    public void Checkout() => throw new Exception("Not enough inventory for product");
+    public void Checkout() => throw new Exception("Not enough inventory");
 }
