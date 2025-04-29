@@ -8,8 +8,9 @@
 
 set -e # exit immediately if any command exits with a non-zero status
 
+echo "[INFO] Validating environment variables..." >&2
 if [ ! -f validate_env.list ]; then
-  >&2 echo "$0: ERROR: validate_env.list file does not exist in current directory: $(pwd)"
+  >&2 echo "$0: [ERROR] validate_env.list file does not exist in current directory: $(pwd)"
   exit 1
 fi
 
@@ -22,17 +23,17 @@ for var in $(grep -v '^#' validate_env.list | xargs); do
   # Other possible methods:
   #   value=$(printenv $var)
   #   match=$(grep -e "^$var=" .env | cut -d '=' -f 2)
-  
+
   value="${!var}" # won't work in zsh, only bash
 
   if [ "$value" == "" ]; then
     >&2 echo "$0: [ERROR] required env variable $var not defined or has empty value.
       You must add it to your env-config/*.env file. Correct values can be obtained from
-      https://github.com/sentry-demos/application-monitoring-config" 
+      https://github.com/sentry-demos/application-monitoring-config"
     exit 1
   fi
-done 
-  
+done
+
 #proj=$(basename $(pwd))
 #. get_proj_var.sh "%s_APP_DSN" $proj
 #. get_proj_var.sh "%s_SENTRY_PROJECT" $proj

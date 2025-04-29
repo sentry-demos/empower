@@ -29,7 +29,7 @@ fi
 if [ -f ".env" ]; then
     >&2 echo "[ERROR] project '$proj' contains legacy .env file that is no longer used. Please delete this file,
     it is no longer needed and has been replaced by ./env-config/*.env. Note that this error
-    might also happen if deploy.sh or env.sh failed to clean up the .env file it has generated dynamically 
+    might also happen if deploy.sh or env.sh failed to clean up the .env file it has generated dynamically
     during an earlier run."
     exit 1
 fi
@@ -75,7 +75,7 @@ fi
 
 validate_dotenv.sh
 
-if [ "$2" == "" ]; then 
+if [ "$2" == "" ]; then
     # Called from deploy.sh
     #
     # 1. Calling script will use .env, this script doen't have control over that.
@@ -83,7 +83,7 @@ if [ "$2" == "" ]; then
     # 2. We can't export variables into calling script, so the calling script is
     # also responsible for that (not required for projects using dotenv package).
     trap - EXIT
-    echo "$(pwd)/.env" 
+    echo "$(pwd)/.env"
 else
     # Standalone mode
 
