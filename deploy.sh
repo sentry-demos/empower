@@ -187,10 +187,11 @@ for proj in $projects; do # bash only
 
   cd $top/$proj
 
-  # React builds env vars in; Express/Flask need .env at runtime.
+  # React "bakes in" env variables (exported from calling shell) as well as contents 
+  # of .env into the build, whereas Express/Flask need .env at runtime
   # We dynamically generate a temporary .env from env-config/$env.env.
-  # This command calls ../env.sh, which also validates env vars listed in
-  # the project's validate_env.list via bin/validate_dotenv.sh -> bin/validate_env.sh.
+  # env.sh among other things validates env vars listed in the project's validate_env.list
+  # via bin/validate_dotenv.sh -> bin/validate_env.sh.
   generated_envs+="$(../env.sh $env) "
 
   # We do this because 1) we need RELEASE that's generated in env.sh 2) we need *_APP_*_BACKEND
