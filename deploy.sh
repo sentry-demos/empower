@@ -137,7 +137,7 @@ for proj in $projects; do # bash only
     # Add environment-specific Sentry token
     local sentry_token_name
     case "$env" in
-      "prod")
+      "production")
         sentry_token_name="SENTRY_AUTH_TOKEN_PROD_DEMO"
         ;;
       "staging")
@@ -187,7 +187,7 @@ for proj in $projects; do # bash only
 
   cd $top/$proj
 
-  # React "bakes in" env variables (exported from calling shell) as well as contents 
+  # React "bakes in" env variables (exported from calling shell) as well as contents
   # of .env into the build, whereas Express/Flask need .env at runtime
   # We dynamically generate a temporary .env from env-config/$env.env.
   # env.sh among other things validates env vars listed in the project's validate_env.list
