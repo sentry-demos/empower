@@ -25,18 +25,6 @@ jobs:
           path: empower
           fetch-depth: 0
 
-      - name: Check out `empower-config` to get GCP identity provider and account name
-        uses: actions/checkout@v3
-        with:
-          repository: sentry-demos/empower-config
-          path: empower-config
-          token: ${{ secrets.KOSTY_PERSONAL_ACCESS_TOKEN_FOR_SYNC_DEPLOY_FORK }}
-          # See https://github.com/actions/checkout/issues/347#issuecomment-963586784
-          # and https://chat.openai.com/share/6f45c9e9-8e96-4ac4-adde-a65061a41de4
-
-      - name: Copy .sauce_credentials from empower-config repo
-        run: cp empower-config/.sauce_credentials empower/tda/
-        
       - id: 'auth'
         name: 'Authenticate Google Cloud'
         uses: 'google-github-actions/auth@v2'
@@ -51,8 +39,7 @@ jobs:
         run: brew update && brew install rsync
         
       - name: Run deploy_tda.sh
-        run: eval "$(ssh-agent -s)" && gcloud compute config-ssh && ssh-add ~/.ssh/google_compute_engine && ./deploy_tda.sh
-        working-directory: ./empower/tda
+        run: eval "$(ssh-agent -s)" && gcloud compute config-ssh && ssh-add ~/.ssh/google_compute_engine && ./deploy.sh --env=production tda
           
       - run: echo "Job status is ${{ job.status }}."
       

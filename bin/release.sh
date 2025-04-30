@@ -2,7 +2,7 @@
 
 # This if for Release Health. It sets a release according to Calendar Versioning and gets redeployed every day
 # In sentry-demos/tracing we did not manage and autodeploy this daily, so you were stuck with the same Release for eternity until you redeployed
-# /react and /flask both have a run.sh script that utilizes this code
+# /react and /flask both have a run_local.sh script that utilizes this code
 
 # Example: 
 # ./release.sh

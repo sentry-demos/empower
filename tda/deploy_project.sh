@@ -1,18 +1,16 @@
 #!/bin/bash
 
-HOST=empower-tda-and-crons
-HOST_ZONE=us-central1-a
-DIR=/home/kosty/empower-tda
-GCP_PROJECT=sales-engineering-sf
-
-export CLOUDSDK_CORE_PROJECT=$GCP_PROJECT
-export CLOUDSDK_COMPUTE_ZONE=$HOST_ZONE
-
 function ssh_cmd() {
     local host=$1
     shift
     gcloud compute ssh --tunnel-through-iap $host -- "$@"
 }
+
+HOST=$TDA_HOST
+DIR=$TDA_DIR
+
+export CLOUDSDK_CORE_PROJECT=$GCP_PROJECT
+export CLOUDSDK_COMPUTE_ZONE=$TDA_HOST_ZONE
 
 function cleanup {
   echo "NOTE: if ssh check hangs, re-run 'gcloud compute config-ssh; gcloud compute ssh --tunnel-through-iap $HOST -- exit' to fix"
@@ -25,7 +23,7 @@ ps aux | grep ssh-agent | grep -v grep > /dev/null && echo "ssh-agent is running
 rsync --version | head -1
 gcloud --version
 
-echo "Checking ssh connection can be established..."
+gcloud compute config-ssh
 gcloud compute ssh --tunnel-through-iap $HOST -- -o StrictHostKeyChecking=accept-new exit
 if [ $? != "0" ]; then
   echo "[ERROR] Can't ssh into destination host. Please run 'gcloud compute config-ssh; gcloud compute ssh --tunnel-through-iap $HOST -- exit' to fix"
@@ -37,12 +35,12 @@ trap - EXIT
 echo "Copying code to remote directory..."
 # for whatever reason can't delete or chmod __pycache__ directories
 export RSYNC_RSH='ssh -o "ProxyCommand gcloud compute start-iap-tunnel '$HOST' %p --listen-on-stdin --project='$GCP_PROJECT' --zone='$HOST_ZONE' --verbosity=warning" -o "StrictHostKeyChecking=accept-new"'
-rsync -rz --delete --force-delete --exclude env/ --exclude __pycache__ --exclude .pytest_cache * .sauce_credentials $HOST:$DIR/
+rsync -rz --delete --force-delete --exclude env/ --exclude __pycache__ --exclude .pytest_cache * $HOST:$DIR/
 ret="$?"
 
 echo "Re-attempting with --delete instead of --force-delete..."
 if [ $ret == 1 ]; then # some versions of rsync don't recognize --force-delete option
-  rsync -rz --delete --force --exclude env/ --exclude __pycache__ --exclude .pytest_cache * .sauce_credentials $HOST:$DIR/
+  rsync -rz --delete --force --exclude env/ --exclude __pycache__ --exclude .pytest_cache * .env $TDA_HOST:$TDA_DIR/
   ret="$?"
 fi
 if [ $ret != 0 ]; then

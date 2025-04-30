@@ -1,5 +1,5 @@
 /* @realkosty
-/env-config/ @realkosty
+*.env @realkosty
 /bin/ @realkosty
 react/src/components @sentry-demos/am-team
 react/src/components @ndmanvar

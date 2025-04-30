@@ -86,10 +86,8 @@ ruby/public/assets
 # Ignore master key for decrypting credentials and more.
 ruby/config/master.key
 
-env-config/*
-!env-config/example.env
+local.env.overrides
 
-**/local.env
 tda/env
 
 next/.env.sentry-build-plugin

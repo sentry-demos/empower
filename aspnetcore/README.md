@@ -7,8 +7,6 @@ See https://learn.microsoft.com/aspnet/core/web-api
    - Use the OS and architecture that matches your machine.
    - For example, choose Arm64 if you have an Apple Sillicon (M1) machine, or x64 if you have an Intel processor. 
 
-2. Copy contents of `aspnetcore/validate_env.list` and paste at the end of your `env-config/local.env` and fill them out.
-
 ```
 ./deploy.sh --env=local aspnetcore
 ```

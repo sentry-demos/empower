@@ -47,7 +47,7 @@ The [user feedback widget](https://docs.sentry.io/platforms/javascript/user-feed
 ## Additional documentation
 
 - project README's in subdirectories (e.g. [react/README.md](./react/README.md)
-- **"New deploy.sh and env-config for empower"** (internal doc)
+- **"empower/deploy.sh"** (internal doc)
 - See [troubleshooting](./troubleshooting.md)
 - **"Checklist for adding new language/framework demo to Empower"** (internal doc)
 - [comment at the top of `deploy.sh` file](https://github.com/sentry-demos/empower/blob/master/deploy.sh#L3-L47).
@@ -59,16 +59,15 @@ The [user feedback widget](https://docs.sentry.io/platforms/javascript/user-feed
 
 ## Setup
 
-1. Copy `local.env` from [empower-config](https://github.com/sentry-demos/empower-config) into `env-config` directory of your local repo, or, if you don't have access to it, follow `env-config/example.env`.
-2. The `REACT_APP_FLASK_BACKEND` in `env-config/local.env` points to the backend instance deployed to AppEngine, the same one used by the cloud-hosted React web app. Flask is the default backend. If you expect to run other backend types, add values for those in `env-config` in your `local.env` file as well (i.e. `REACT_APP_EXPRESS_BACKEND`).
-3. Confirm [Homebrew](https://brew.sh/) is installed with `brew -v`. If not, install using `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`.
-4. Confirm PostgreSQL is installed with `Postgres -V`. If not, install using `brew install postgresql`.
-5. As the application is compatible with specific versions of `node` and `npm`, install the following to be able to set the specific versions required (below describes how to achieve it using `n` package, but  you can use `nvm`):
+1. `cp local.env.example local.env` then edit it to set your personal `SENTRY_ORG` and fill in DSNs
+2. Confirm [Homebrew](https://brew.sh/) is installed with `brew -v`. If not, install using `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`.
+3. Confirm PostgreSQL is installed with `Postgres -V`. If not, install using `brew install postgresql`.
+4. As the application is compatible with specific versions of `node` and `npm`, install the following to be able to set the specific versions required (below describes how to achieve it using `n` package, but  you can use `nvm`):
    1. Install compatible `npm` version with `npm install -g npm@XX.XX.XX`. NOTE: may need to use `sudo` with command.
    2. Install `n` to update `node` version with `npm install -g n`.
    3. Set the specific `node` version with `n XX.XX.XX`. NOTE: may need to use `sudo` with command.
-6. Configure the `CLI` using [this](https://docs.sentry.io/product/cli/configuration/) document.
-7. Install [gcloud](https://cloud.google.com/sdk/docs/install) in the root of your project to be able to deploy to staging. Initialize the gcloud CLI by running `gcloud init`. When prompted, choose the project `sales-engineering-sf`.
+5. Configure the `CLI` using [this](https://docs.sentry.io/product/cli/configuration/) document.
+6. Install [gcloud](https://cloud.google.com/sdk/docs/install) in the root of your project to be able to deploy to staging. Initialize the gcloud CLI by running `gcloud init`. When prompted, choose the project `sales-engineering-sf`.
 
 Following sub-projects might not work with `deploy.sh` at this moment. Consult their README's for how to run and deploy them (and feel free to submit a PR that fixes it):
 
@@ -80,9 +79,9 @@ NOTE: `build.sh` and `run.sh` files in each project are not meant to be run dire
 If you run locally and only deploy `react` it will point to `staging` backends, however if you include a backend
 projects in the command `react` will magically point to it instead of staging (still requires `&backend=<backend>` url param).
 
-`deploy.sh` takes another argument `--env=<env>`, which can be either `local`, `staging` or `production`. Each value corresponds to a file in `env-config` directory. `local` is a special value, most significantly it will run all webservers locally instead of deploying to Google App Engine.
+`deploy.sh` takes another argument `--env=<env>`, which can be either `local`, `staging` or `production`. Each value corresponds to one of the *.env files in the root directory. `local` is a special value, most significantly it will run all webservers locally instead of deploying to Google App Engine.
 
-`deploy.sh` does everything including validating that all required values are set in the `env-config/*.env`, that each project's DSN and project name point to the same project, and that you are not accidentally deploying to production, etc.
+`deploy.sh` does everything including validating that all required values are set in the `*.env`, that each project's DSN and project name point to the same project, and that you are not accidentally deploying to production, etc.
 
 ## Run
 
@@ -113,7 +112,7 @@ cd react
 
 ## Deploy to Prod
 
-This script deploys the flagship apps React + Flask. For deploying a single app to App Engine, check each platform's README for specific instructions. Make sure you don't have any local changes to `env-config/production.env`.
+This script deploys the flagship apps React + Flask. For deploying a single app to App Engine, check each platform's README for specific instructions. Make sure you don't have any local changes to `production.env`.
 
 ```
 ./deploy.sh react --env=production

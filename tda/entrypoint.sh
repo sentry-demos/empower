@@ -13,7 +13,7 @@ fi
 # Set up environment:
 # fetch and set release version upfront to reduce unnecessary API calls and avoid Github API rate limiting
 source env/bin/activate
-source .sauce_credentials
+source .env
 export LATEST_REACT_NATIVE_GITHUB_RELEASE=$(python3 latest_github_release.py react_native)
 export LATEST_ANDROID_GITHUB_RELEASE=$(python3 latest_github_release.py android)
 

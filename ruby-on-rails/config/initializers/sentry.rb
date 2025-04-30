@@ -1,11 +1,11 @@
 Sentry.init do |config|
-  config.dsn = ENV['RUBYONRAILS_APP_DSN']
+  config.dsn = ENV['RUBYONRAILS_DSN']
   config.breadcrumbs_logger = [:active_support_logger, :http_logger]
 
   config.include_local_variables = true
 
-  config.release = ENV['RELEASE']
-  config.environment = ENV['RUBYONRAILS_RAILS_ENV'] || "development"
+  config.release = ENV['RUBYONRAILS_RELEASE']
+  config.environment = ENV['RUBYONRAILS_ENVIRONMENT']
 
   config.traces_sample_rate = 1.0
   config.profiles_sample_rate = 1.0
