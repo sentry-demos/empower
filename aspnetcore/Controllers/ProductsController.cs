@@ -6,14 +6,13 @@ public class ProductsController : ControllerBase
 {
     private readonly HardwareStoreContext _dbContext;
     private readonly IHttpClientFactory _httpClientFactory;
-    private readonly string _rubyBackendBaseUrl;
+    private readonly string? _rubyBackendBaseUrl;
 
     public ProductsController(HardwareStoreContext dbContext, IHttpClientFactory httpClientFactory)
     {
         _dbContext = dbContext;
         _httpClientFactory = httpClientFactory;
-        _rubyBackendBaseUrl = Environment.GetEnvironmentVariable("RUBY_BACKEND") ??
-                              "https://application-monitoring-ruby-dot-sales-engineering-sf.appspot.com";
+        _rubyBackendBaseUrl = Environment.GetEnvironmentVariable("RUBY_BACKEND");
     }
 
     [HttpGet]

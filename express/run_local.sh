@@ -6,8 +6,8 @@
 npm install
 
 function cleanup {
-  stop.sh node $LOCAL_PORT 
+  stop.sh node $EXPRESS_LOCAL_PORT 
 }
 trap cleanup EXIT
 
-PORT=$LOCAL_PORT node server.js
+PORT=$EXPRESS_LOCAL_PORT node server.js

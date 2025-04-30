@@ -15,15 +15,15 @@ services:
     build: flask
     environment:
       <<: *x-base-env
-      FLASK_ENV: test
-      FLASK_APP_DSN: http://flask@mini-relay:9989/3
+      FLASK_ENVIRONMENT: test
+      FLASK_DSN: http://flask@mini-relay:9989/3
     init: true
     ports: [8080:8080]
   ruby:
     build: ruby
     environment:
       <<: *x-base-env
-      RUBY_APP_DSN: http://ruby@mini-relay:9989/4
+      RUBY_DSN: http://ruby@mini-relay:9989/4
     init: true
   mini-relay:
     build: mini-relay

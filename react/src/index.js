@@ -51,16 +51,6 @@ const tracingOrigins = [
 
 const history = createBrowserHistory();
 
-let ENVIRONMENT;
-if (window.location.hostname === 'localhost') {
-  ENVIRONMENT = 'test';
-} else {
-  // App Engine
-  ENVIRONMENT = 'production';
-}
-    
-const PREFERRED_BACKENDS = ['flask', 'laravel'];
-
 let BACKEND_URL;
 let BACKEND_TYPE;
 let FRONTEND_SLOWDOWN;
@@ -73,6 +63,7 @@ let CHECKOUT_SUCCESS;
 let ERROR_BOUNDARY;
 const DSN = process.env.REACT_APP_DSN;
 const RELEASE = process.env.REACT_APP_RELEASE;
+const ENVIRONMENT = process.env.REACT_APP_ENVIRONMENT;
 
 console.log('ENVIRONMENT', ENVIRONMENT);
 console.log('RELEASE', RELEASE);

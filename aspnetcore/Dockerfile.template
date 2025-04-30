@@ -20,4 +20,5 @@ RUN dotnet publish "Empower.Backend.csproj" -c Release -o /app/publish -p:UseApp
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+COPY .env .
 ENTRYPOINT ["dotnet", "Empower.Backend.dll"]

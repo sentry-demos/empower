@@ -10,7 +10,7 @@ const app = createApp(App);
 app.use(createPinia());  
 app.use(router);
 
-const RELEASE = import.meta.env.RELEASE;
+const RELEASE = import.meta.env.VUE_RELEASE;
 
 const tracingOrigins = [
   'localhost',
@@ -22,7 +22,7 @@ const tracingOrigins = [
 
 Sentry.init({
     app,
-    dsn: import.meta.env.VITE_APP_DSN,
+    dsn: import.meta.env.VUE_DSN,
     release: RELEASE,
     tracePropagationTargets: tracingOrigins,
     integrations:[

@@ -6,7 +6,7 @@ sentry_project="$1"
 dsn="$2"
 error_message="$3"
 
-# Verify that <PROJ>_SENTRY_PROJECT and <PROJ>_APP_DSN point to the same project
+# Verify that <PROJ>_SENTRY_PROJECT and <PROJ>_DSN point to the same project
 if [ "$SENTRY_AUTH_TOKEN" == "" ]; then
     >&2 echo "$0 [ERROR] SENTRY_AUTH_TOKEN must be defined. See https://docs.sentry.io/product/cli/configuration/
         In GitHub Actions environment this means that corresponding secret is not set."
