@@ -1,5 +1,5 @@
 Sentry.init do |config|
-  config.dsn = ENV['RUBYONRAILS_APP_DSN']
+  config.dsn = ENV['RUBYONRAILS_DSN']
   config.breadcrumbs_logger = [:active_support_logger, :http_logger]
 
   #config.include_local_variables = true

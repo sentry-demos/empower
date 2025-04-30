@@ -34,7 +34,7 @@ builder.WebHost.UseSentry(options =>
 {
     // Set the DSN from the environment variable set by the deploy.sh script, if available.
     // But don't overwrite any existing DSN with null, as that would disable Sentry.
-    var dsn = Environment.GetEnvironmentVariable("ASPNETCORE_APP_DSN");
+    var dsn = Environment.GetEnvironmentVariable("ASPNETCORE_DSN");
     if (dsn != null)
     {
         options.Dsn = dsn;

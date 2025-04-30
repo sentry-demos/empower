@@ -26,7 +26,7 @@ function cleanup {
   # Kill SSH tunnel by port
 
   stop.sh google_compute_engine $FLASK_LOCAL_REDISPORT
-  stop.sh python3 $LOCAL_PORT
+  stop.sh python3 $FLASK_LOCAL_PORT
 }
 
 # Register cleanup for all possible termination signals
@@ -42,8 +42,8 @@ if [ -z "$FLASK_LOCAL_REDISPORT" ]; then
     export FLASK_LOCAL_REDISPORT=6379
 fi
 
-if [ -z "$LOCAL_PORT" ]; then
-    export LOCAL_PORT=8080
+if [ -z "$FLASK_LOCAL_PORT" ]; then
+    export FLASK_LOCAL_PORT=8080
 fi
 
 # Set up SSH tunnel to the cloud Redis instance
@@ -61,6 +61,7 @@ CELERY_PID=$!
 echo "Celery worker started with PID: $CELERY_PID"
 
 # Run Flask in the background and capture its PID
-echo "Starting Flask server on port $LOCAL_PORT"
-flask run --port $LOCAL_PORT
+echo "Starting Flask server on port $FLASK_LOCAL_PORT"
+flask run --port $FLASK_LOCAL_PORT
+i
 

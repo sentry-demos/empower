@@ -71,7 +71,7 @@ class MyFlask(Flask):
         dotenv.load_dotenv()
 
         RELEASE = os.environ["RELEASE"]
-        DSN = os.environ["FLASK_APP_DSN"]
+        DSN = os.environ["FLASK_DSN"]
         ENVIRONMENT = os.environ["FLASK_ENV"]
         RUBY_BACKEND = os.environ["RUBY_BACKEND"]
 

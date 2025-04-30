@@ -50,7 +50,7 @@ const sentryEventContext = function (req, res, next) {
   next();
 };
 
-const dsn = process.env.EXPRESS_APP_DSN;
+const dsn = process.env.EXPRESS_DSN;
 const release = process.env.RELEASE;
 const environment = process.env.EXPRESS_ENV;
 const RUBY_BACKEND = process.env.RUBY_BACKEND;

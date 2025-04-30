@@ -34,7 +34,7 @@ for var in $(grep -v '^#' validate_env.list | xargs); do
 done 
   
 #proj=$(basename $(pwd))
-#. get_proj_var.sh "%s_APP_DSN" $proj
+#. get_proj_var.sh "%s_DSN" $proj
 #. get_proj_var.sh "%s_SENTRY_PROJECT" $proj
-#error_message=$(var_name.sh "%s_SENTRY_PROJECT and %s_APP_DSN point to different projects." $proj $proj)
-#validate_dsn.sh $sentry_project $app_dsn "$error_message"
+#error_message=$(var_name.sh "%s_SENTRY_PROJECT and %s_DSN point to different projects." $proj $proj)
+#validate_dsn.sh $sentry_project $dsn "$error_message"

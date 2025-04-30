@@ -2,7 +2,7 @@
 
 return [
 
-    'dsn' => env('LARAVEL_APP_DSN'),
+    'dsn' => env('LARAVEL_DSN'),
 
     'release' => env('RELEASE'),
 

@@ -1,8 +1,9 @@
 env: standard
-service: ${SERVICE}
+service: ${LARAVEL_APP_ENGINE_SERVICE}
 runtime: php83
 env_variables:
   APP_STORAGE: "/tmp"
   IS_APP_ENGINE: true
+  DB_HOST: "pgsql:dbname=${DB_DATABASE};host=/cloudsql/${DB_CLOUD_SQL_CONNECTION_NAME}/"
 manual_scaling:
   instances: 1

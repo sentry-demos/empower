@@ -22,7 +22,7 @@ const tracingOrigins = [
 
 Sentry.init({
     app,
-    dsn: import.meta.env.VITE_APP_DSN,
+    dsn: import.meta.env.VITE_DSN,
     release: RELEASE,
     tracePropagationTargets: tracingOrigins,
     integrations:[

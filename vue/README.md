@@ -10,7 +10,7 @@ you may need to `npm install -g serve`
 
 Create a env-config/*.env and enter following fields. See env-config/example.env for an example:
 ```
-VITE_APP_DSN
+VITE_DSN
 ```
 
 Edit the following fields within the run.sh file:

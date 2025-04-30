@@ -1,4 +1,4 @@
-service: ${SERVICE}
+service: ${FLASK_APP_ENGINE_SERVICE}
 runtime: python312
 entrypoint: ./start.sh
 

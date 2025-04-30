@@ -23,7 +23,7 @@ app.conf.task_default_queue = 'celery-new-subscriptions'
 def init_sentry(**_kwargs):
     dotenv.load_dotenv()
     RELEASE = os.environ["RELEASE"]
-    DSN = os.environ["FLASK_APP_DSN"]
+    DSN = os.environ["FLASK_DSN"]
     ENVIRONMENT = os.environ["FLASK_ENV"]
     sentry_sdk.init(
         dsn=DSN,

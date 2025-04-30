@@ -11,8 +11,8 @@ resources:
   disk_size_gb: 10
 env_variables:
   RELEASE: ${RELEASE}
-  ASPNETCORE_APP_DSN: ${ASPNETCORE_APP_DSN}
-  DB_HOST: ${DB_HOST}
+  ASPNETCORE_DSN: ${ASPNETCORE_DSN}
+  DB_HOST: "172.17.0.1" # cloud sql auth proxy
   DB_DATABASE: ${DB_DATABASE}
   DB_USERNAME: ${DB_USERNAME}
   DB_PASSWORD: "${DB_PASSWORD}"
