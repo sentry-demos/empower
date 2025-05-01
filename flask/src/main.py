@@ -9,10 +9,10 @@ from flask_cors import CORS
 from openai import OpenAI
 from flask_caching import Cache
 from statsig.statsig_user import StatsigUser
-from statsig import statsig
+from statsig import statsig, StatsigOptions, StatsigEnvironmentTier
 import dotenv
 from .db import get_products, get_products_join, get_inventory
-from .utils import parseHeaders, get_iterator
+from .utils import parseHeaders, get_iterator, evaluate_statsig_flags
 from .queues.tasks import sendEmail
 import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
@@ -20,6 +20,8 @@ from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 from sentry_sdk.integrations.redis import RedisIntegration
 from sentry_sdk.ai.monitoring import ai_track
 from sentry_sdk.integrations.statsig import StatsigIntegration
+from celery import Celery, states
+from celery.exceptions import Ignore
 
 RUBY_CUSTOM_HEADERS = ['se', 'customerType', 'email']
 pests = ["aphids", "thrips", "spider mites", "lead miners", "scale", "whiteflies", "earwigs", "cutworms", "mealybugs",
@@ -113,16 +115,6 @@ CORS(app)
 
 statsig.initialize(os.environ.get("STATSIG_SERVER_KEY"))
 
-# check if sdk is initialized
-initialized = statsig.is_initialized()
-print(f"statsig initialized: {initialized}")
-# Evaluate all feature flags once so they are available in sentry
-feature_gates = ["beta_feature", "alpha_feature", "be_tda_gate"]
-for gate in feature_gates:
-    result = statsig.check_gate(StatsigUser("user-id"), gate)
-    print(f"{gate}: {result}")
-
-
 redis_host = os.environ.get("FLASK_REDISHOST", "localhost")
 redis_port = int(os.environ.get("FLASK_LOCAL_REDISPORT", 6379))
 
@@ -189,6 +181,12 @@ def checkout():
         tags={"endpoint": "/checkout", "method": "POST"},
     )
 
+    try:
+        evaluate_statsig_flags()
+    except Exception as e:
+        sentry_sdk.capture_exception(e)
+        print("Error evaluating flags in /checkout:", e)
+
     order = json.loads(request.data)
     cart = order["cart"]
     form = order["form"]
@@ -238,6 +236,14 @@ def products():
         value=1,
         tags={"endpoint": "/products", "method": "GET"},
     )
+
+    try:
+        evaluate_statsig_flags()
+
+    except Exception as e:
+        sentry_sdk.capture_exception(e)
+        print("Error evaluating flags in /products:", e)
+
     cache_key = str(random.randrange(100))
 
     product_inventory = None

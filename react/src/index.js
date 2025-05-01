@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom';
 import './index.css';
 import 'react-loader-spinner/dist/loader/css/react-spinner-loader.css';
 import * as Sentry from '@sentry/react';
-import { StatsigClient } from '@statsig/js-client';
+import { statsigClient, updateStatsigUserAndEvaluate } from './utils/statsig';
 import { createBrowserHistory } from 'history';
 import {
   Routes,
@@ -69,14 +69,10 @@ let CHECKOUT_SUCCESS;
 let ERROR_BOUNDARY;
 const DSN = process.env.REACT_APP_DSN;
 const RELEASE = process.env.REACT_APP_RELEASE;
-const STATSIG_CLIENT_KEY = process.env.STATSIG_CLIENT_KEY;
+
 console.log('ENVIRONMENT', ENVIRONMENT);
 console.log('RELEASE', RELEASE);
 
-const user = { userID: 'some_user_id' };
-
-
-const statsigClient = new StatsigClient(STATSIG_CLIENT_KEY, user);
 
 
 Sentry.init({
@@ -144,19 +140,7 @@ Sentry.init({
   },
 });
 
-// Evaluate all feature flags once so they are available in sentry
 await statsigClient.initializeAsync();
-const featureFlags = [
-  "beta_feature",
-  "alpha_feature",
-  "fe_tda_gate"
-]
-
-featureFlags.map(async (featureFlag) => {
-  const result = statsigClient.checkGate(featureFlag);
-  console.log(`${featureFlag}:`, result);
-});
-
 
 const SentryRoutes = Sentry.withSentryReactRouterV6Routing(Routes);
 

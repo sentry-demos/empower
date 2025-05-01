@@ -175,6 +175,11 @@ for proj in $projects; do # bash only
         else
           export "$secret_name=$value"
           echo "  Successfully set $secret_name"
+          # If the project is React, also export it prefixed for build-time embedding
+          if [[ "$proj" == "react" && "$secret_name" == "STATSIG_CLIENT_KEY" ]]; then
+            export "REACT_APP_STATSIG_CLIENT_KEY=$value"
+            echo "  Also exported as REACT_APP_STATSIG_CLIENT_KEY for React build"
+          fi
         fi
       fi
     done
@@ -193,6 +198,7 @@ for proj in $projects; do # bash only
   # env.sh among other things validates env vars listed in the project's validate_env.list
   # via bin/validate_dotenv.sh -> bin/validate_env.sh.
   generated_envs+="$(../env.sh $env) "
+
 
 
   # We do this because 1) we need RELEASE that's generated in env.sh 2) we need *_APP_*_BACKEND

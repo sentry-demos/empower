@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import measureRequestDuration from '../utils/measureRequestDuration';
 import './checkout.css';
@@ -7,7 +7,7 @@ import { connect } from 'react-redux';
 import Loader from 'react-loader-spinner';
 import { countItemsInCart } from '../utils/cart';
 import { getTag } from '../utils/utils';
-
+import { updateStatsigUserAndEvaluate } from '../utils/statsig';
 
 function Checkout({ backend, rageclick, checkout_success, cart }) {
   const navigate = useNavigate();
@@ -43,23 +43,34 @@ function Checkout({ backend, rageclick, checkout_success, cart }) {
   }
   const [form, setForm] = useState(initialFormValues);
 
+
 async function checkout(cart, checkout_span) {
     console.log("Checkout called with cart:", cart);
     console.log("Checkout span:", checkout_span);
     const itemsInCart = countItemsInCart(cart);
     console.log("Calculated itemsInCart:", itemsInCart);
-    
+
     if (!checkout_span || typeof checkout_span.setAttribute !== 'function') {
         console.error("Invalid checkout_span object:", checkout_span);
         return;
     }
-    
+
     checkout_span.setAttribute("checkout.click", 1);
     checkout_span.setAttribute("items_at_checkout", itemsInCart);
-    
+
     let tags = { 'backendType': getTag('backendType'), 'cexp': getTag('cexp'), 'items_at_checkout': itemsInCart, 'checkout.click': 1 };
     checkout_span.setAttributes(tags);
     const stopMeasurement = measureRequestDuration('/checkout');
+
+
+    // We are passing in a random user ID to get distribution of flag values to see in Sentry
+    // Rules for flag values are defined in statsig UI
+    const randomUserId = Math.random().toString(36).substring(2, 15);
+    console.log(`Updating Statsig user for Products page view: ${randomUserId}`);
+    updateStatsigUserAndEvaluate(randomUserId).catch(err => {
+      Sentry.captureException(new Error("Statsig user update failed: " + err));
+    });
+
     const response = await fetch(backend + '/checkout?v2=true', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -74,6 +85,7 @@ async function checkout(cart, checkout_span) {
         "checkout.error": 1,
         "status": 500
       })
+      Sentry.captureException(new Error("Checkout failed: " + err));
       return { ok: false, status: 500 };
     })
     .then((res) => {
@@ -96,7 +108,7 @@ async function checkout(cart, checkout_span) {
     checkout_span.setAttribute("checkout.order.total", cart.total);
 
     return response;
-  } 
+  }
   function generateUrl(product_id) {
     return product_id;
   }
