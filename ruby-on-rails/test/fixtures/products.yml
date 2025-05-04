@@ -1,0 +1,8 @@
+test_plant:
+  id: 1
+  title: "Test Plant"
+  price: 100
+  description: "A test plant"
+  descriptionfull: "A full description of test plant"
+  img: "test.jpg"
+  imgcropped: "test-cropped.jpg"
