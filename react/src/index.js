@@ -146,6 +146,8 @@ const store = createStore(
   compose(applyMiddleware(logger), sentryReduxEnhancer)
 );
 
+// adding some random comments
+
 class App extends Component {
   constructor() {
     super();
