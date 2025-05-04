@@ -186,19 +186,29 @@ def checkout():
     print("> /checkout inventory", inventory)
     print("> validate_inventory", validate_inventory)
 
-    with sentry_sdk.start_span(op="process_order", description="function"):
-        quantities = cart['quantities']
-        for cartItem in quantities:
-            for inventoryItem in inventory:
-                print("> inventoryItem.count", inventoryItem['count'])
-                if (validate_inventory and (inventoryItem.count < quantities[cartItem] or quantities[cartItem] >= inventoryItem.count)):
-                    sentry_sdk.metrics.incr(key="checkout.failed")
-                    raise Exception('Not enough inventory for product')
-        if len(inventory) == 0 or len(quantities) == 0:
-            raise Exception("Not enough inventory for product")
+   with sentry_sdk.start_span(op="process_order", description="function"):
+       quantities = cart['quantities']
+        inventory_issues = []
+        
+       for cartItem in quantities:
+           for inventoryItem in inventory:
+               print("> inventoryItem.count", inventoryItem['count'])
+               if (validate_inventory and (inventoryItem.count < quantities[cartItem] or quantities[cartItem] >= inventoryItem.count)):
+                   sentry_sdk.metrics.incr(key="checkout.failed")
+                    inventory_issues.append({
+                        "product_id": cartItem,
+                        "requested": quantities[cartItem],
+                        "available": inventoryItem.count
+                    })
+        
+        if len(inventory_issues) > 0:
+            return jsonify({"status": "error", "message": "Not enough inventory", "inventory_issues": inventory_issues}), 400
+            
+       if len(inventory) == 0 or len(quantities) == 0:
+            return jsonify({"status": "error", "message": "Not enough inventory", "inventory_issues": []}), 400
 
-    response = make_response("success")
-    return response
+   response = make_response("success")
+   return response
 
 
 @app.route('/success', methods=['GET'])
@@ -342,6 +352,33 @@ def unhandled_exception():
 def api():
     return "flask /api"
 
+
+@app.route('/check-inventory', methods=['GET'])
+def check_inventory():
+    sentry_sdk.metrics.incr(
+        key="endpoint_call",
+        value=1,
+        tags={"endpoint": "/check-inventory", "method": "GET"},
+    )
+    
+    product_id = request.args.get('product_id')
+    if not product_id:
+        return jsonify({"status": "error", "message": "Product ID is required"}), 400
+    
+    try:
+        with sentry_sdk.start_span(op="/check-inventory.get_inventory", description="function"):
+            connection = db.connect()
+            inventory = connection.execute(
+                "SELECT * FROM inventory WHERE productId = %s", (product_id,)
+            ).fetchall()
+            
+            if not inventory:
+                return jsonify({"available": 0}), 200
+                
+            return jsonify({"available": inventory[0][2]}), 200
+    except Exception as err:
+        sentry_sdk.capture_exception(err)
+        return jsonify({"status": "error", "message": "Failed to check inventory"}), 500
 
 @app.route('/organization', methods=['GET'])
 @cache.cached(timeout=1000, key_prefix="flask.cache.organization")
