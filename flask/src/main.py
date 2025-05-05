@@ -236,14 +236,6 @@ def products():
         value=1,
         tags={"endpoint": "/products", "method": "GET"},
     )
-
-    try:
-        evaluate_statsig_flags()
-
-    except Exception as e:
-        sentry_sdk.capture_exception(e)
-        print("Error evaluating flags in /products:", e)
-
     cache_key = str(random.randrange(100))
 
     product_inventory = None
