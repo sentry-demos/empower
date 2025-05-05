@@ -187,15 +187,26 @@ def checkout():
     print("> validate_inventory", validate_inventory)
 
     with sentry_sdk.start_span(op="process_order", description="function"):
-        quantities = cart['quantities']
-        for cartItem in quantities:
-            for inventoryItem in inventory:
-                print("> inventoryItem.count", inventoryItem['count'])
-                if (validate_inventory and (inventoryItem.count < quantities[cartItem] or quantities[cartItem] >= inventoryItem.count)):
-                    sentry_sdk.metrics.incr(key="checkout.failed")
-                    raise Exception('Not enough inventory for product')
-        if len(inventory) == 0 or len(quantities) == 0:
+        # Create inventory lookup dictionary for O(1) access
+        inventory_dict = {}
+        for item in inventory:
+            product_id = str(item[0])  # Convert ID to string to match quantities keys
+            count = item[3]  # The count is at index 3 in the inventory tuple
+            inventory_dict[product_id] = count
+
+        # Check for empty inventory or cart only if validation is enabled
+        if validate_inventory and (len(inventory) == 0 or len(quantities) == 0):
             raise Exception("Not enough inventory for product")
+
+        # Validate each product quantity against available inventory
+        quantities = cart['quantities']
+        for product_id, requested_qty in quantities.items():
+            if requested_qty == 0:
+                continue
+            available_qty = inventory_dict.get(product_id, 0)
+            if validate_inventory and requested_qty > available_qty:
+                sentry_sdk.metrics.incr(key="checkout.failed")
+                raise Exception(f'Not enough inventory for product {product_id}')
 
     response = make_response("success")
     return response
