@@ -1,7 +1,7 @@
 import type { Product } from '$lib/types';
 import type { PageServerLoad } from './$types';
 
-export const load = (async ({ parent }) => {
+export const load = (async ({ parent, fetch }) => {
 	const { backendUrl } = await parent();
 
 	console.log(backendUrl);

@@ -46,7 +46,7 @@
 			</tbody>
 		</table>
 
-		<p class="mt-4 font-serif text-2xl font-bold">
+		<p class="my-4 font-serif text-2xl font-bold">
 			Cart Subtotal: $ {cartState
 				.reduce((acc, item) => acc + item.product.price * item.quantity, 0)
 				.toFixed(2)}

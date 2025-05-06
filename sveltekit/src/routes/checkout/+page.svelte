@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { enhance } from '$app/forms';
 	import Button from '$lib/components/Button.svelte';
 	import { route } from '$lib/ROUTES';
 </script>
@@ -7,7 +8,7 @@
 	<h1 class="font-serif text-3xl font-semibold">Checkout</h1>
 </div>
 <div class="mt-4 flex w-full flex-col items-center justify-center">
-	<form class="mb-8 w-full max-w-md">
+	<form method="post" use:enhance class="mb-8 w-full max-w-md">
 		<h3 class="mb-4 font-serif text-2xl font-medium">Contact Information</h3>
 		<div class="mb-4">
 			<label for="email" class="mb-2 block font-medium">Email</label>
