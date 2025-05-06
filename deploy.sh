@@ -49,6 +49,24 @@
 set -e # exit immediately if any command exits with a non-zero status
 # https://fvue.nl/wiki/Bash:_Error_handling
 
+
+# Check if user is authenticated with Google Cloud before running deployment
+if command -v gcloud &> /dev/null ; then
+  ACTIVE_ACCOUNT=$(gcloud auth list --format="value(account)" --filter="status:ACTIVE")
+  if [ -z "$ACTIVE_ACCOUNT" ]; then
+    echo "You are not authenticated with Google Cloud. Press any key to authenticate..."
+    read -n 1 -s
+    gcloud auth login
+  else
+    echo "Already authenticated with Google Cloud as $ACTIVE_ACCOUNT."
+  fi
+else
+  echo "'gcloud' command not found. The Google Cloud SDK is required."
+  echo "Please install it, ensure 'gcloud' is in your PATH, and log in, then re-run the script."
+  exit 1
+fi
+
+
 # use top-level directory (repository root), to ensure this works regardless of current directory
 top=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 export PATH="$PATH:$top/bin"

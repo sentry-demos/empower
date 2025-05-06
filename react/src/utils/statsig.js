@@ -22,8 +22,8 @@ async function updateStatsigUserAndEvaluate(userId) {
   console.log(`[Statsig] Attempting to update user to: ${JSON.stringify(newUser)}`);
   try {
     console.log(`[Statsig] Calling statsigClient.updateUserSync for user: ${userId}`);
-
-    statsigClient.updateUserSync(newUser);
+    console.log('StatsigClient', statsigClient);
+    await statsigClient.updateUserAsync(newUser);
 
     featureFlags.forEach(flag => {
       const result = statsigClient.checkGate(flag);
