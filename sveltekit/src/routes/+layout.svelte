@@ -6,9 +6,15 @@
 	let { children } = $props();
 </script>
 
-<Nav></Nav>
-<main class="flex w-screen flex-row justify-center">
+<Nav class="layoutWidth" />
+<main class="layoutWidth flex flex-row justify-center">
 	<div class="flex w-full flex-col items-start xl:w-[80vw]">
 		{@render children()}
 	</div>
 </main>
+
+<style>
+	.layoutWidth {
+		max-width: calc(100vw - 30px);
+	}
+</style>
