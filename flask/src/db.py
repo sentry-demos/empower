@@ -143,10 +143,22 @@ def get_inventory(cart):
         with sentry_sdk.start_span(op="get_inventory", description="db.connect"):
             connection = db.connect()
         with sentry_sdk.start_span(op="get_inventory", description="db.query") as span:
-            inventory = connection.execute(
+            raw_inventory = connection.execute(
                 "SELECT * FROM inventory WHERE productId in %s" % (productIds)
             ).fetchall()
-            span.set_data("inventory",inventory)
+            span.set_data("inventory", raw_inventory)
+            
+            # Transform raw inventory into structured data
+            inventory = []
+            for item in raw_inventory:
+                inventory_item = {
+                    'id': item[0],
+                    'sku': item[1],
+                    'count': item[2], # Map index 2 to 'count' key
+                    'productId': item[3]
+                }
+                inventory.append(inventory_item)
+            span.set_data("structured_inventory", inventory)
     except BrokenPipeError as err:
         raise DatabaseConnectionError('get_inventory')
     except Exception as err:
