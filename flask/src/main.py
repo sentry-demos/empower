@@ -8,8 +8,7 @@ from flask import Flask, json, jsonify, request, make_response, send_from_direct
 from flask_cors import CORS
 from openai import OpenAI
 from flask_caching import Cache
-from statsig.statsig_user import StatsigUser
-from statsig import statsig, StatsigOptions, StatsigEnvironmentTier
+from statsig import statsig
 import dotenv
 from .db import get_products, get_products_join, get_inventory
 from .utils import parseHeaders, get_iterator, evaluate_statsig_flags
@@ -113,7 +112,11 @@ class MyFlask(Flask):
 app = MyFlask(__name__)
 CORS(app)
 
-statsig.initialize(os.environ.get("STATSIG_SERVER_KEY"))
+try:
+    statsig.initialize(os.environ.get("STATSIG_SERVER_KEY"))
+except Exception as e:
+    print(f"Error initializing statsig: {e}")
+    sentry_sdk.capture_exception(e)
 
 redis_host = os.environ.get("FLASK_REDISHOST", "localhost")
 redis_port = int(os.environ.get("FLASK_LOCAL_REDISPORT", 6379))

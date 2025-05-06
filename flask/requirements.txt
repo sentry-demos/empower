@@ -16,4 +16,4 @@ flask_caching==2.3.0
 openai==1.52.2
 tiktoken==0.8.0
 celery==5.4.0
-statsig-python-core==0.0.9
+statsig==0.57.1
