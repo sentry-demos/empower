@@ -52,9 +52,8 @@ set -e # exit immediately if any command exits with a non-zero status
 
 # Check if user is authenticated with Google Cloud before running deployment
 if command -v gcloud &> /dev/null ; then
-  ACTIVE_ACCOUNT=$(gcloud auth list --format="value(account)" --filter="status:ACTIVE")
-  if [ -z "$ACTIVE_ACCOUNT" ]; then
-    echo "You are not authenticated with Google Cloud. Press any key to authenticate..."
+  if [ "$(gcloud auth print-access-token 2>/dev/null | wc -c)" -le 200 ]; then
+    echo "You are not authenticated with Google Cloud. Press any key to authenticate... (browser window may open)"
     read -n 1 -s
     gcloud auth login
   else
