@@ -26,6 +26,11 @@
 	});
 </script>
 
+<div
+	style="background-image: url(/plants-background-img.jpg); background-size: cover"
+	class="absolute bottom-0 left-0 right-0 top-0"
+></div>
+
 <div class="sentry-unmask relative h-screen overflow-hidden">
 	<div class="relative z-10 flex h-full flex-col items-start justify-center px-4 text-center">
 		<h1 class="mb-4 font-serif text-5xl">Empower your plants</h1>

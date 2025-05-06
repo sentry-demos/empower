@@ -12,7 +12,11 @@ const PAGES = {
   "/": `/`,
   "/about": `/about`,
   "/cart": `/cart`,
-  "/products": `/products`
+  "/checkout": `/checkout`,
+  "/products": `/products`,
+  "/products/[id]": (params: { id: (string | number) }) => {
+    return `/products/${params['id']}`
+  }
 }
 
 /**
@@ -141,9 +145,9 @@ export function route<T extends keyof AllTypes>(key: T, ...params: any[]): strin
 * ```
 */
 export type KIT_ROUTES = {
-  PAGES: { '/': never, '/about': never, '/cart': never, '/products': never }
+  PAGES: { '/': never, '/about': never, '/cart': never, '/checkout': never, '/products': never, '/products/[id]': 'id' }
   SERVERS: Record<string, never>
   ACTIONS: Record<string, never>
   LINKS: Record<string, never>
-  Params: Record<string, never>
+  Params: { 'id': never }
 }

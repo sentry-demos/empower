@@ -3,7 +3,11 @@
 
 	import { route } from '$lib/ROUTES';
 
-	import { page } from '$app/state';
+	import { cartState } from '$lib/cart.svelte';
+
+	const cartTotal = $derived(
+		cartState.reduce((acc, item) => acc + item.product.price * item.quantity, 0)
+	);
 
 	let { class: className } = $props();
 </script>
@@ -17,7 +21,13 @@
 		<div class="flex flex-row items-center gap-4 text-xl font-light">
 			<NavItem href={route('/about')}>About</NavItem>
 			<NavItem href={route('/products')}>Products</NavItem>
-			<NavItem href={route('/cart')}>Cart</NavItem>
+			<NavItem href={route('/cart')}
+				>Cart
+
+				{#if cartTotal > 0}
+					<span class="font-light">(${cartTotal.toFixed(2)})</span>
+				{/if}
+			</NavItem>
 		</div>
 	</div>
 </nav>
