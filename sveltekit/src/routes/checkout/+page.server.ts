@@ -1,4 +1,4 @@
-import { error, redirect, type Actions } from '@sveltejs/kit';
+import { error, type Actions } from '@sveltejs/kit';
 
 import * as Sentry from '@sentry/sveltekit';
 import type { CartItem } from '$lib/cart.svelte';
@@ -12,7 +12,6 @@ export const actions: Actions = {
 			},
 			async () => {
 				const formData = await request.formData();
-				console.log({ formData, backend: locals.backendUrl });
 
 				const formValues = {
 					email: formData.get('email'),
@@ -26,8 +25,6 @@ export const actions: Actions = {
 				};
 
 				const rawCart = JSON.parse(formData.get('cart') as string) as CartItem[];
-
-				console.log({ rawCart });
 
 				const cart = {
 					items: rawCart.map((r) => r.product),
@@ -51,15 +48,12 @@ export const actions: Actions = {
 						})
 					});
 
-					console.log({ response });
-
 					if (!response.ok) {
 						error(500, 'Failed to checkout');
 					}
 				} catch (_) {
 					Sentry.captureException(new Error('Failed to checkout'));
 					error(500, 'Failed to checkout with throw');
-					redirect(301, '/');
 				}
 
 				return {
