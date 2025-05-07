@@ -49,6 +49,23 @@
 set -e # exit immediately if any command exits with a non-zero status
 # https://fvue.nl/wiki/Bash:_Error_handling
 
+
+# Check if user is authenticated with Google Cloud before running deployment
+if command -v gcloud &> /dev/null ; then
+  if [ "$(gcloud auth print-access-token 2>/dev/null | wc -c)" -le 200 ]; then
+    echo "You are not authenticated with Google Cloud. Press any key to authenticate... (browser window may open)"
+    read -n 1 -s
+    gcloud auth login
+  else
+    echo "Already authenticated with Google Cloud as $ACTIVE_ACCOUNT."
+  fi
+else
+  echo "'gcloud' command not found. The Google Cloud SDK is required."
+  echo "Please install it, ensure 'gcloud' is in your PATH, and log in, then re-run the script."
+  exit 1
+fi
+
+
 # use top-level directory (repository root), to ensure this works regardless of current directory
 top=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 export PATH="$PATH:$top/bin"
@@ -175,6 +192,11 @@ for proj in $projects; do # bash only
         else
           export "$secret_name=$value"
           echo "  Successfully set $secret_name"
+          # If the project is React, also export it prefixed for build-time embedding
+          if [[ "$proj" == "react" && "$secret_name" == "STATSIG_CLIENT_KEY" ]]; then
+            export "REACT_APP_STATSIG_CLIENT_KEY=$value"
+            echo "  Also exported as REACT_APP_STATSIG_CLIENT_KEY for React build"
+          fi
         fi
       fi
     done
@@ -193,6 +215,8 @@ for proj in $projects; do # bash only
   # env.sh among other things validates env vars listed in the project's validate_env.list
   # via bin/validate_dotenv.sh -> bin/validate_env.sh.
   generated_envs+="$(../env.sh $env) "
+
+
 
   # We do this because 1) we need RELEASE that's generated in env.sh 2) we need *_APP_*_BACKEND
   # 3) some projects may require env variables instead of .env (not the case for react, flask & express)

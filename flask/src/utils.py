@@ -3,6 +3,9 @@ from datetime import datetime
 from pytz import timezone
 import time
 from random import choices
+import random
+import string
+from statsig import statsig, StatsigUser
 
 # https://www.postgresql.org/docs/9.0/functions-datetime.html
 # 'n' seconds input for pg_sleep, but actual sleep time ends up being much longer
@@ -44,3 +47,27 @@ def yuval(text):
 
 def chris():
     return ""
+
+def generate_random_user_id(length=8):
+    """Generates a random alphanumeric string to use as a user ID."""
+    characters = string.ascii_letters + string.digits
+    return ''.join(random.choice(characters) for i in range(length))
+
+def evaluate_statsig_flags():
+    """Evaluates predefined Statsig flags for a random user."""
+    feature_gates = ["beta_feature", "alpha_feature", "new_products_fetch_feature"]
+    random_user_id = generate_random_user_id()
+    user = StatsigUser(random_user_id)
+
+    flag_values = {}
+    print(f"Evaluating Statsig flags for user: {random_user_id}")
+    if not statsig.is_initialized():
+      print("Warning: Statsig SDK not initialized during flag evaluation.")
+      return
+    for gate in feature_gates:
+        try:
+            result = statsig.check_gate(user, gate)
+            print(f"  -> statsig {gate}: {result}")
+            flag_values[gate] = result
+        except Exception as e:
+            print(f"Error evaluating gate {gate}: {e}")
