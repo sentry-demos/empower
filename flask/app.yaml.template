@@ -7,6 +7,7 @@ instance_class: F2
 env_variables:
   REDISHOST: ${FLASK_REDISHOST}
   REDISPORT: 6379
+  STATSIG_SERVER_KEY: ${STATSIG_SERVER_KEY}
 
 vpc_access_connector:
   name: projects/sales-engineering-sf/locations/us-central1/connectors/empower-plant-connector
