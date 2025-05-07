@@ -3,14 +3,6 @@
 	import { route } from '$lib/ROUTES';
 
 	let { data }: { data: PageData } = $props();
-
-	// Slugify function
-	function slugify(text: string): string {
-		return text
-			.toLowerCase()
-			.replace(/[^a-z0-9]+/g, '-')
-			.replace(/(^-|-$)/g, '');
-	}
 </script>
 
 <div class="mt-8 p-8">
