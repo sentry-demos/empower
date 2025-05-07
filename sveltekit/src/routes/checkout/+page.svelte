@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { cartState } from '$lib/cart.svelte';
 	import Button from '$lib/components/Button.svelte';
 	import { route } from '$lib/ROUTES';
 </script>
@@ -95,6 +96,8 @@
 				required
 			/>
 		</div>
+
+		<input type="hidden" name="cart" value={JSON.stringify(cartState)} />
 
 		<Button type="submit" class="w-full">Submit</Button>
 	</form>

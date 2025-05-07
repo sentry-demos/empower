@@ -1,6 +1,6 @@
 import type { Product } from '$lib/types';
 
-type CartItem = {
+export type CartItem = {
 	product: Product;
 	quantity: number;
 };
