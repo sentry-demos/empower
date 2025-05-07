@@ -20,7 +20,7 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: "20"
-# Need to run "npm run build" command for bundle analysis: https://docs.codecov.com/docs/webpack-quick-start
+      # Need to run "npm run build" command for bundle analysis: https://docs.codecov.com/docs/webpack-quick-start
       - name: Build React and run tests
         run: |
           CI=false ./build.sh
@@ -34,6 +34,7 @@ jobs:
 
       - name: Run Python Tests
         run: |
+          pip install -r ../requirements.txt
           pip install -U pytest
           pip install pytz
           pip install pytest-codecov
