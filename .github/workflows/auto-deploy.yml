@@ -86,6 +86,7 @@ jobs:
 
       - name: Run Python Tests
         run: |
+          pip install -r ../requirements.txt
           pip install -U pytest
           pip install pytest-codecov
           pytest --cov=. --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
@@ -129,7 +130,7 @@ jobs:
             elif [[ `./bin/release.sh` != `./bin/release.sh 1` ]]; then # different release than yesterday
               # currently we create regular calendar releases only for React
               ./deploy.sh react --env=production
-            else 
+            else
               echo "No deployable projects have been changed since last successful deployment. New calendar release is not due either. Nothing to do."
             fi
           fi
