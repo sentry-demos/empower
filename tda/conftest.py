@@ -603,7 +603,7 @@ def ios_sim_driver(request, selenium_endpoint, se_prefix):
 @pytest.fixture
 def ios_dotnet_maui_driver(request, selenium_endpoint, se_prefix):
 
-    se = f'{se_prefix}-sauce-ios18.0'
+    se = f'{se_prefix}-sauce-ios15.0'
     sentry_sdk.set_tag('se', se)
     try:
         release_version = ReleaseVersion.latest_dotnet_maui_github_release()
@@ -616,11 +616,50 @@ def ios_dotnet_maui_driver(request, selenium_endpoint, se_prefix):
 
             'sauce:options': {
                 'appiumVersion': '2.0.0',
-                'build': 'dotnet-maui',
+                'build': 'dotnet-maui-ios-x64',
                 'name': request.node.name,
-                #'deviceOrientation': 'PORTRAIT'
             },
-            'appium:app': f'https://github.com/sentry-demos/dotnet-maui/releases/download/{release_version}/release.zip',
+            'appium:app': f'https://github.com/sentry-demos/dotnet-maui/releases/download/{release_version}/dotnet-maui-ios-x64.zip',
+        })
+
+        driver = appiumdriver.Remote(selenium_endpoint, options=options)
+        driver.implicitly_wait(20)
+
+        sentry_sdk.set_tag("sauceLabsUrl", f"https://app.saucelabs.com/tests/{driver.session_id}")
+
+        yield driver
+        sauce_result = "failed" if request.node.rep_call.failed else "passed"
+        driver.execute_script("sauce:job-result={}".format(sauce_result))
+        driver.quit()
+
+        # send to Sentry empower-tda, look for tags: se, sauceLabsUrl
+        sentry_sdk.capture_message("Selenium Session Done")
+
+    except Exception as err:
+        sentry_sdk.capture_exception(err)
+
+
+@pytest.fixture
+def android_dotnet_maui_driver(request, selenium_endpoint, se_prefix):
+
+    se = f'{se_prefix}-sauce-android-15'
+    sentry_sdk.set_tag('se', se)
+    try:
+        release_version = ReleaseVersion.latest_dotnet_maui_github_release()
+
+        options = UiAutomator2Options().load_capabilities({
+            'deviceName': 'Android GoogleAPI Emulator',
+            'platformVersion': '12.0',
+            'platformName': 'Android',
+            'appium:automationName':'UiAutomator2',
+            'sauce:options': {
+                'appiumVersion': '1.20.2',
+                'build': 'dotnet-maui-android',
+                'name': request.node.name
+            },
+            'app': f'https://github.com/sentry-demos/dotnet-maui/releases/download/{release_version}/dotnet-maui-android.apk',
+            #'appWaitDuration': 60000,
+            #'appWaitForLaunch': True
         })
 
         driver = appiumdriver.Remote(selenium_endpoint, options=options)
