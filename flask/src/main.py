@@ -241,6 +241,19 @@ def products():
     product_inventory = None
     fetch_promotions = request.args.get('fetch_promotions')
     timeout_seconds = (EXTREMELY_SLOW_PROFILE if fetch_promotions else NORMAL_SLOW_PROFILE)
+    in_stock_only = request.args.get('in_stock_only')
+
+    if in_stock_only:
+        try:
+            inventory = get_all_inventory()
+            in_stock_product_ids = set()
+            for item in inventory:
+                if item['count'] > 0:
+                    in_stock_product_ids.add(str(item['productId']))
+            product_inventory = []  # Initialize as empty list
+        except Exception as err:
+            sentry_sdk.capture_exception(err)
+            product_inventory = []  # Set to empty list on error
 
     # Adding 0.5 seconds to the ruby /api_request in order to show caching
     # However, we want to keep the total trace time the same to preserve web vitals (+ other) functionality in sentry
@@ -271,7 +284,7 @@ def products():
 
                         for i, description in enumerate(descriptions):
                             for pest in pests:
-                                if in_stock_only and productsJSON[i] not in product_inventory:
+                                if in_stock_only and product_inventory is not None and str(productsJSON[i]['id']) not in in_stock_product_ids:
                                     continue
                                 if pest in description:
                                     try:

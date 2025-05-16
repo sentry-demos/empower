@@ -160,6 +160,25 @@ def get_inventory(cart):
 
 
 
+def get_all_inventory():
+    try:
+        with sentry_sdk.start_span(op="get_all_inventory", description="db.connect"):
+            connection = db.connect()
+        with sentry_sdk.start_span(op="get_all_inventory", description="db.query") as span:
+            inventory = connection.execute(
+                "SELECT * FROM inventory"
+            ).fetchall()
+            span.set_data("inventory",inventory)
+    except BrokenPipeError as err:
+        raise DatabaseConnectionError('get_all_inventory')
+    except Exception as err:
+        err_string = str(err)
+        if UNPACK_FROM_ERROR in err_string:
+            raise DatabaseConnectionError('get_all_inventory')
+        else:
+            raise(err)
+    return inventory
+
 def formatArray(ids):
     numbers = ""
     for _id in ids:
