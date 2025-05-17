@@ -8,7 +8,7 @@ def test_checkout_dotnet_maui_ios(ios_dotnet_maui_driver):
     driver = ios_dotnet_maui_driver
 
     try:
-        driver.find_element(AppiumBy.ACCESSIBILITY_ID, "Real_World_Sample").click()
+        driver.find_element(AppiumBy.ACCESSIBILITY_ID, "Shop_For_Plants").click()
 
         first_item_add_to_cart = driver.find_element(AppiumBy.XPATH, '(//XCUIElementTypeButton[@name="Add to Cart"])[1]')
         first_item_add_to_cart.click()
