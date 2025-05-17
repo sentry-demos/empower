@@ -6,7 +6,7 @@ def test_checkout_dotnet_maui_android(android_dotnet_maui_driver):
     driver = android_dotnet_maui_driver
 
     try:
-        driver.find_element(AppiumBy.ID, "io.sentry.dotnet.maui.empowerplant:id/Real_World_Sample").click()
+        driver.find_element(AppiumBy.ID, "io.sentry.dotnet.maui.empowerplant:id/Shop_For_Plants").click()
 
         first_item_add_to_cart = driver.find_element(AppiumBy.ANDROID_UIAUTOMATOR,
                                                      'new UiSelector().text("Add to Cart").instance(0)')
