@@ -184,6 +184,7 @@ app.post("/checkout", async (req, res) => {
   const order = req.body;
   const cart = order["cart"];
   const form = order["form"];
+  const validateInventory = order["validate_inventory"] === "true";
   let inventory = [];
   try {
     const transaction = Sentry.getCurrentHub().getScope().getTransaction();
@@ -205,9 +206,12 @@ app.post("/checkout", async (req, res) => {
     });
     let quantities = cart["quantities"];
     console.log("quantities", quantities);
-    for (const cartItem in quantities) {
-      if (!hasInventory(cartItem)) {
-        throw new Error("Not enough inventory for product");
+    if (validateInventory) {
+      for (const productId in quantities) {
+        const requestedQuantity = quantities[productId];
+        if (!hasInventory(productId, requestedQuantity, inventory)) {
+          throw new Error(`Not enough inventory for product ${productId}`);
+        }
       }
     }
     spanProcessOrder.finish();
@@ -239,8 +243,9 @@ app.listen(PORT, () => {
 });
 // [END app]
 
-function hasInventory(item) {
-  return false;
+function hasInventory(productId, requestedQuantity, inventory) {
+  const productInventory = inventory.find(item => item.productId == productId);
+  return productInventory && productInventory.quantity >= requestedQuantity;
 }
 
 module.exports = { app, Sentry, Tracing };
