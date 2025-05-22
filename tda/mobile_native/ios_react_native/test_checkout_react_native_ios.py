@@ -21,6 +21,11 @@ def test_checkout_react_native_ios(ios_react_native_sim_driver):
             ios_react_native_sim_driver.find_element(AppiumBy.ACCESSIBILITY_ID, 'Return').click()
 
         ios_react_native_sim_driver.find_element(AppiumBy.XPATH, '(//XCUIElementTypeOther[@name="Place your order"])[2]').click()
+        
+        time.sleep(6)
+        ios_react_native_sim_driver.close_app() # in case hasn't crashed 
+        ios_react_native_sim_driver.launch_app() # we don't send replay segments upon crash to avoid blocking
+        time.sleep(6)
 
     except Exception as err:
         sentry_sdk.capture_exception(err)
