@@ -5,7 +5,7 @@ def test_homescreen_react_native_android(android_react_native_emu_driver, random
 
     try:
         # click into list app screen
-        android_react_native_emu_driver.find_element(AppiumBy.XPATH, '//android.widget.FrameLayout[@resource-id="android:id/content"]/android.widget.FrameLayout/android.view.ViewGroup/android.view.ViewGroup/android.view.ViewGroup/android.view.ViewGroup[2]/android.view.View/android.view.View[3]').click()
+        android_react_native_emu_driver.find_element(AppiumBy.XPATH, '//android.widget.TextView[@text=""]').click()
 
         # Handled Exceptions - This clicks the Handled Exception' button in the app
         # This error type does not increment the Crash Count for the release,
