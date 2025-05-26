@@ -26,8 +26,6 @@ def test_checkout_react_native_android(android_react_native_emu_driver):
 
         # Appium on android can't find the 'place your order' button
         # unless we scroll down to it
-        top_of_screen_element = android_react_native_emu_driver.find_element(AppiumBy.XPATH, '//android.widget.EditText[@text="email"]')
-        bottom_of_screen_element = android_react_native_emu_driver.find_element(AppiumBy.XPATH, '//android.widget.EditText[@text="country/region"]')
         android_react_native_emu_driver.scroll(bottom_of_screen_element, top_of_screen_element)
 
         # Place order button
