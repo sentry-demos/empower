@@ -528,13 +528,13 @@ def android_emu_driver(request, selenium_endpoint, se_prefix):
 @pytest.fixture
 def ios_react_native_sim_driver(request, selenium_endpoint, se_prefix):
 
-    se = f'{se_prefix}-sauce-ios14.5'
+    se = f'{se_prefix}-sauce-ios15.5'
     sentry_sdk.set_tag('se', se)
     try:
         release_version = ReleaseVersion.latest_react_native_github_release()
 
         options = XCUITestOptions().load_capabilities({
-            'appium:deviceName': 'iPhone 11 Simulator',
+            'appium:deviceName': 'iPhone 13 Simulator',
             'platformName': 'iOS',
             'appium:platformVersion': '15.5',
 
