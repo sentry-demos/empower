@@ -15,7 +15,12 @@ def test_checkout_react_native_android(android_react_native_emu_driver):
         # checkout button
         android_react_native_emu_driver.find_element(AppiumBy.ACCESSIBILITY_ID, 'CHECKOUT').click()
 
-        android_react_native_emu_driver.find_element(AppiumBy.XPATH, '//android.widget.EditText[@text="email"]').click
+        # We need to find the elements before the placeholder text is replaced by the demo data
+        top_of_screen_element = android_react_native_emu_driver.find_element(AppiumBy.XPATH, '//android.widget.EditText[@text="email"]')
+        bottom_of_screen_element = android_react_native_emu_driver.find_element(AppiumBy.XPATH, '//android.widget.EditText[@text="country/region"]')
+
+        # Click to fill in the demo data
+        android_react_native_emu_driver.find_element(AppiumBy.XPATH, '//android.widget.EditText[@text="email"]').click()
         if android_react_native_emu_driver.is_keyboard_shown():
             android_react_native_emu_driver.hide_keyboard()
 
