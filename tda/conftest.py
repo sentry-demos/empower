@@ -536,7 +536,7 @@ def ios_react_native_sim_driver(request, selenium_endpoint, se_prefix):
         options = XCUITestOptions().load_capabilities({
             'appium:deviceName': 'iPhone 11 Simulator',
             'platformName': 'iOS',
-            'appium:platformVersion': '14.5',
+            'appium:platformVersion': '15.5',
 
             'sauce:options': {
                 'appiumVersion': '2.0.0',
