@@ -459,12 +459,13 @@ def android_react_native_emu_driver(request, selenium_endpoint, se_prefix):
         release_version = ReleaseVersion.latest_react_native_github_release()
 
         options = UiAutomator2Options().load_capabilities({
-            'deviceName': 'Android GoogleAPI Emulator',
-            'platformVersion': '10.0',
+            'appium:deviceName': 'Android GoogleAPI Emulator',
+            'appium:platformVersion': '15.0',
             'platformName': 'Android',
-            'app': f'https://github.com/sentry-demos/sentry_react_native/releases/download/{release_version}/app-release.apk',
+            'appium:app': f'https://github.com/sentry-demos/sentry_react_native/releases/download/{release_version}/app-release.apk',
+            'appium:automationName': 'uiautomator2',
             'sauce:options': {
-                'appiumVersion': '1.20.2',
+                'appiumVersion': '2.0.0',
                 'build': 'RDC-Android-Python-Best-Practice',
                 'name': request.node.name
             },
