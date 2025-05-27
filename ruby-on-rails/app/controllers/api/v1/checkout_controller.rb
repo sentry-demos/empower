@@ -76,31 +76,54 @@ class Api::V1::CheckoutController < ApplicationController
     logged = "Thanks for your order. Total cost is $" + total 
 
     span_inventory_call = transaction.start_child(op: "custom.inventory_db_call")
-    products_in_inventory = Inventory.all()
+    all_inventory_records = Inventory.all()
     span_inventory_call.finish
 
     span_logic = transaction.start_child(op: "custom.inventory_vs_cart_logic")
-
-    products_in_inventory.each_with_index { |inv_objs, i|
-      if !enough_inventory?(cart_contents)
+    
+    # Initialize response variables
+    response_message = "Thanks for your order. Total cost is $" + total
+    response_status = 200
+    
+    # Check if we should validate inventory
+    should_validate_inventory = true
+    params.each do |key, value|
+      if key.to_s == "validate_inventory" && value.to_s.downcase == "false"
+        should_validate_inventory = false
+      end
+    end
+    
+    if should_validate_inventory
+      unless enough_inventory?(cart_contents, all_inventory_records)
         begin
-          raise Exception.new "Not enough inventory for product"
-          STDERR.puts "Not enough inventory for productid " + inv_objs["productid"].to_s
-          Sentry.capture_exception(Exception)
-          logged = "Error: Not enough inventory"
-          render json: {"message": logged}, status: 500
-          break # breaks on first error. might be more inventory errors.
+          STDERR.puts "Not enough inventory for one or more products"
+          Sentry.capture_exception(Exception.new "Not enough inventory for product")
+          response_message = "Error: Not enough inventory for one or more products."
+          response_status = 500
         end
       end
-    }
+    end
 
     span_logic.finish
 
-    render json: {"message": logged}, status: 200
+    render json: {"message": response_message}, status: response_status
 
   end
 
-  def enough_inventory?(cart_contents)
-    return false
+  def enough_inventory?(cart_contents, inventory_records)
+    cart_contents.each do |product_id_str, quantity_in_cart_str|
+      # Type conversion and validation
+      product_id = product_id_str.to_i
+      quantity_in_cart = quantity_in_cart_str.to_i
+      
+      # Find the corresponding inventory record
+      inventory_item = inventory_records.find { |item| item["productid"] == product_id }
+      
+      # Check if inventory exists and has enough quantity
+      if inventory_item.nil? || inventory_item["quantity"] < quantity_in_cart
+        return false
+      end
+    end
+    return true
   end
 end
