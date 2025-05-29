@@ -1,3 +1,4 @@
+import time
 import sentry_sdk
 from appium.webdriver.common.appiumby import AppiumBy
 
@@ -12,6 +13,8 @@ def test_nativecrash_react_native_android(android_react_native_emu_driver):
         btn.click()
         # launch app again or the error does not get sent to Sentry
         android_react_native_emu_driver.launch_app()
+        
+        # even 14 second sleep doesn't seem to help with replay after native crash
 
     except Exception as err:
         sentry_sdk.capture_exception(err)
