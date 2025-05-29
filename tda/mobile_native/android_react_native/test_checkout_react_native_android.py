@@ -1,3 +1,4 @@
+import time
 import sentry_sdk
 from appium.webdriver.common.appiumby import AppiumBy
 
@@ -31,6 +32,8 @@ def test_checkout_react_native_android(android_react_native_emu_driver):
         # Place order button
         android_react_native_emu_driver.find_element(AppiumBy.XPATH, '//android.view.ViewGroup[@content-desc="Place your order"]').click()
         # text element of the button is '//android.widget.TextView[@text="Place your order"]'
+
+        time.sleep(14) # needed for replay to get flushed, duration determined empirically
 
     except Exception as err:
         sentry_sdk.capture_exception(err)
