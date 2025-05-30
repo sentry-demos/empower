@@ -86,6 +86,7 @@ jobs:
 
       - name: Run Python Tests
         run: |
+          pip install -r ../requirements.txt
           pip install -U pytest
           pip install pytest-codecov
           pytest --cov=. --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
@@ -101,19 +102,12 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
-      - name: Get GCP_ env variables from empower-config/.gcloudrc
-        run: |
-          source empower-config/.gcloudrc 
-          echo "GCP_WORKLOAD_IDENTITY_PROVIDER=$GCP_WORKLOAD_IDENTITY_PROVIDER" >> $GITHUB_OUTPUT
-          echo "GCP_SERVICE_ACCOUNT=$GCP_SERVICE_ACCOUNT" >> $GITHUB_OUTPUT
-        id: gcloudrc
-
       - id: "auth"
         name: "Authenticate Google Cloud"
         uses: "google-github-actions/auth@v0"
         with:
-          workload_identity_provider: ${{ steps.gcloudrc.outputs.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ steps.gcloudrc.outputs.GCP_SERVICE_ACCOUNT }}
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER}}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
 
       - name: "Set up Google Cloud SDK"
         uses: "google-github-actions/setup-gcloud@v0"
@@ -136,7 +130,7 @@ jobs:
             elif [[ `./bin/release.sh` != `./bin/release.sh 1` ]]; then # different release than yesterday
               # currently we create regular calendar releases only for React
               ./deploy.sh react --env=production
-            else 
+            else
               echo "No deployable projects have been changed since last successful deployment. New calendar release is not due either. Nothing to do."
             fi
           fi

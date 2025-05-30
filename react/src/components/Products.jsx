@@ -7,6 +7,7 @@ import measureRequestDuration from '../utils/measureRequestDuration';
 import Loader from 'react-loader-spinner';
 import ProductCard from './ProductCard';
 import { useState, useEffect } from 'react';
+import { updateStatsigUserAndEvaluate } from '../utils/statsig';
 
 function Products({ frontendSlowdown, backend, productsExtremelySlow, productsBeError, addToCartJsError }) {
   const [products, setProducts] = useState([]);
@@ -30,7 +31,7 @@ function Products({ frontendSlowdown, backend, productsExtremelySlow, productsBe
     uc_small_script.src =
       backend +
       '/compressed_assets/compressed_small_file.js' +
-      `?cacheBuster=${Math.random()}&se=${se}`; 
+      `?cacheBuster=${Math.random()}&se=${se}`;
     document.body.appendChild(uc_small_script);
 
     // big uncompressed file
@@ -40,7 +41,7 @@ function Products({ frontendSlowdown, backend, productsExtremelySlow, productsBe
     c_big_script.src =
       backend +
       '/uncompressed_assets/uncompressed_big_file.js' +
-      `?cacheBuster=${Math.random()}&se=${se}`; 
+      `?cacheBuster=${Math.random()}&se=${se}`;
     document.body.appendChild(c_big_script);
   }
 

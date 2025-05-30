@@ -1,3 +1,4 @@
+import time
 import sentry_sdk
 from appium.webdriver.common.appiumby import AppiumBy
 
@@ -10,23 +11,29 @@ def test_checkout_react_native_android(android_react_native_emu_driver):
         add_to_cart_btn.click()
 
         # Click cart at bottom
-        android_react_native_emu_driver.find_element(AppiumBy.XPATH, '//android.widget.FrameLayout[@resource-id="android:id/content"]/android.widget.FrameLayout/android.view.ViewGroup/android.view.ViewGroup/android.view.ViewGroup/android.view.ViewGroup[2]/android.view.View/android.view.View[2]').click()
+        android_react_native_emu_driver.find_element(AppiumBy.XPATH, '//android.widget.TextView[@resource-id="bottom-tab-cart"]').click()
 
         # checkout button
         android_react_native_emu_driver.find_element(AppiumBy.ACCESSIBILITY_ID, 'CHECKOUT').click()
 
-        android_react_native_emu_driver.find_element(AppiumBy.XPATH, '//android.widget.EditText[@text="email"]').click
+        # We need to find the elements before the placeholder text is replaced by the demo data
+        top_of_screen_element = android_react_native_emu_driver.find_element(AppiumBy.XPATH, '//android.widget.EditText[@text="email"]')
+        bottom_of_screen_element = android_react_native_emu_driver.find_element(AppiumBy.XPATH, '//android.widget.EditText[@text="country/region"]')
+
+        # Click to fill in the demo data
+        android_react_native_emu_driver.find_element(AppiumBy.XPATH, '//android.widget.EditText[@text="email"]').click()
         if android_react_native_emu_driver.is_keyboard_shown():
             android_react_native_emu_driver.hide_keyboard()
 
         # Appium on android can't find the 'place your order' button
         # unless we scroll down to it
-        top_of_screen_element = android_react_native_emu_driver.find_element(AppiumBy.XPATH, '//android.widget.EditText[@text="email"]')
-        bottom_of_screen_element = android_react_native_emu_driver.find_element(AppiumBy.XPATH, '//android.widget.EditText[@text="country/region"]')
         android_react_native_emu_driver.scroll(bottom_of_screen_element, top_of_screen_element)
 
         # Place order button
-        android_react_native_emu_driver.find_element(AppiumBy.ACCESSIBILITY_ID, 'Place your order').click()
+        android_react_native_emu_driver.find_element(AppiumBy.XPATH, '//android.view.ViewGroup[@content-desc="Place your order"]').click()
+        # text element of the button is '//android.widget.TextView[@text="Place your order"]'
+
+        time.sleep(14) # needed for replay to get flushed, duration determined empirically
 
     except Exception as err:
         sentry_sdk.capture_exception(err)

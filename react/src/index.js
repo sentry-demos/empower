@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom';
 import './index.css';
 import 'react-loader-spinner/dist/loader/css/react-spinner-loader.css';
 import * as Sentry from '@sentry/react';
+import { statsigClient, updateStatsigUserAndEvaluate } from './utils/statsig';
 import { createBrowserHistory } from 'history';
 import {
   Routes,
@@ -72,6 +73,8 @@ const RELEASE = process.env.REACT_APP_RELEASE;
 console.log('ENVIRONMENT', ENVIRONMENT);
 console.log('RELEASE', RELEASE);
 
+
+
 Sentry.init({
   dsn: DSN,
   release: RELEASE,
@@ -99,9 +102,10 @@ Sentry.init({
       // replaysSessionSampleRate and replaysOnErrorSampleRate is now a top-level SDK option
       blockAllMedia: false,
       // https://docs.sentry.io/platforms/javascript/session-replay/configuration/#network-details
-      networkDetailAllowUrls: ['/checkout', '/products'],
+      networkDetailAllowUrls: [/.*/],
       unmask: [".sentry-unmask"],
     }),
+    Sentry.statsigIntegration({ featureFlagClient: statsigClient }),
   ],
   beforeSend(event, hint) {
     // Parse from tags because src/index.js already set it there. Once there are React route changes, it is no longer in the URL bar
@@ -136,7 +140,8 @@ Sentry.init({
   },
 });
 
-// TODO is this best placement?
+await statsigClient.initializeAsync();
+
 const SentryRoutes = Sentry.withSentryReactRouterV6Routing(Routes);
 
 const sentryReduxEnhancer = Sentry.createReduxEnhancer({});

@@ -8,15 +8,20 @@ from flask import Flask, json, jsonify, request, make_response, send_from_direct
 from flask_cors import CORS
 from openai import OpenAI
 from flask_caching import Cache
+from statsig.statsig_user import StatsigUser
+from statsig import statsig, StatsigOptions, StatsigEnvironmentTier
 import dotenv
 from .db import get_products, get_products_join, get_inventory
-from .utils import parseHeaders, get_iterator
+from .utils import parseHeaders, get_iterator, evaluate_statsig_flags
 from .queues.tasks import sendEmail
 import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
 from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 from sentry_sdk.integrations.redis import RedisIntegration
 from sentry_sdk.ai.monitoring import ai_track
+from sentry_sdk.integrations.statsig import StatsigIntegration
+from celery import Celery, states
+from celery.exceptions import Ignore
 
 RUBY_CUSTOM_HEADERS = ['se', 'customerType', 'email']
 pests = ["aphids", "thrips", "spider mites", "lead miners", "scale", "whiteflies", "earwigs", "cutworms", "mealybugs",
@@ -87,7 +92,12 @@ class MyFlask(Flask):
             dsn=DSN,
             release=RELEASE,
             environment=ENVIRONMENT,
-            integrations=[FlaskIntegration(), SqlalchemyIntegration(), RedisIntegration(cache_prefixes=["flask.", "ruby."])],
+            integrations=[
+                FlaskIntegration(),
+                SqlalchemyIntegration(),
+                RedisIntegration(cache_prefixes=["flask.", "ruby."]),
+                StatsigIntegration()
+            ],
             traces_sample_rate=1.0,
             before_send=before_send,
             traces_sampler=traces_sampler,
@@ -103,6 +113,7 @@ class MyFlask(Flask):
 app = MyFlask(__name__)
 CORS(app)
 
+statsig.initialize(os.environ.get("STATSIG_SERVER_KEY"))
 
 redis_host = os.environ.get("FLASK_REDISHOST", "localhost")
 redis_port = int(os.environ.get("FLASK_LOCAL_REDISPORT", 6379))
@@ -169,6 +180,12 @@ def checkout():
         value=1,
         tags={"endpoint": "/checkout", "method": "POST"},
     )
+
+    try:
+        evaluate_statsig_flags()
+    except Exception as e:
+        sentry_sdk.capture_exception(e)
+        print("Error evaluating flags in /checkout:", e)
 
     order = json.loads(request.data)
     cart = order["cart"]

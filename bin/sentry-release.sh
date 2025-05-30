@@ -21,11 +21,12 @@ if [[ "$env" == "" || "$release" == "" || "$upload_sourcemaps" == "" ]]; then
 fi
 
 proj=$(basename $(pwd))
-    
+
 if [ "$SENTRY_ORG" == "" ]; then
   echo "$0 [ERROR] SENTRY_ORG must be defined in ./env-config/$env.env."
   exit 1
 fi
+
 # sets $sentry_project var to the value of e.g. REACT_SENTRY_PROJECT from env-config/<env>.env
 . get_proj_var.sh "%s_SENTRY_PROJECT" $proj
 if [ "$upload_sourcemaps" == "true" ]; then

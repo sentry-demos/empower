@@ -49,6 +49,23 @@
 set -e # exit immediately if any command exits with a non-zero status
 # https://fvue.nl/wiki/Bash:_Error_handling
 
+
+# Check if user is authenticated with Google Cloud before running deployment
+if command -v gcloud &> /dev/null ; then
+  if [ "$(gcloud auth print-access-token 2>/dev/null | wc -c)" -le 200 ]; then
+    echo "You are not authenticated with Google Cloud. Press any key to authenticate... (browser window may open)"
+    read -n 1 -s
+    gcloud auth login
+  else
+    echo "Already authenticated with Google Cloud as $ACTIVE_ACCOUNT."
+  fi
+else
+  echo "'gcloud' command not found. The Google Cloud SDK is required."
+  echo "Please install it, ensure 'gcloud' is in your PATH, and log in, then re-run the script."
+  exit 1
+fi
+
+
 # use top-level directory (repository root), to ensure this works regardless of current directory
 top=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 export PATH="$PATH:$top/bin"
@@ -118,19 +135,88 @@ for proj in $projects; do # bash only
   echo "||| $0: $proj"
   echo "|||"
 
+  # Function to fetch secrets from Google Cloud Secret Manager (uses same name for env var and secret)
+  fetch_secrets_to_env() {
+    # Check if gcloud is available
+    if ! command -v gcloud &> /dev/null; then
+      echo "[ERROR] gcloud command not found, skipping secret fetching"
+      return 1
+    fi
+
+    echo "Fetching secrets from Google Cloud Secret Manager for environment: $env..."
+
+    # Define the list of secrets to fetch - names will be identical in env and Secret Manager
+    local secrets=(
+      "STATSIG_CLIENT_KEY"
+      "STATSIG_SERVER_KEY"
+    )
+
+    # Add environment-specific Sentry token
+    local sentry_token_name
+    case "$env" in
+      "production")
+        sentry_token_name="SENTRY_AUTH_TOKEN_PROD_DEMO"
+        ;;
+      "staging")
+        sentry_token_name="SENTRY_AUTH_TOKEN_STAGING_TEAM_SE"
+        ;;
+      "local")
+        echo "[INFO] Skipping auth token fetching for local environment"
+        ;;
+      *)
+        echo "[ERROR] Unknown environment '$env'"
+        exit 1
+    esac
+
+    # Add Sentry token to secrets list if we're in prod/staging
+    if [ -n "$sentry_token_name" ]; then
+      secrets+=("$sentry_token_name")
+    fi
+
+    # Fetch each secret and export it to environment
+    for secret_name in "${secrets[@]}"; do
+      echo "  Fetching secret $secret_name..."
+
+      # Fetch the secret value
+      local value
+      value=$(gcloud secrets versions access latest --secret="$secret_name" --project=sales-engineering-sf 2>/dev/null)
+
+      if [ $? -ne 0 ]; then
+        echo "[ERROR] Failed to fetch secret '$secret_name', skipping"
+        exit 1
+      else
+        # For Sentry tokens, always export as SENTRY_AUTH_TOKEN regardless of secret name
+        if [[ "$secret_name" == "SENTRY_AUTH_TOKEN"* ]]; then
+          export "SENTRY_AUTH_TOKEN=$value"
+          echo "  Successfully set SENTRY_AUTH_TOKEN"
+        else
+          export "$secret_name=$value"
+          echo "  Successfully set $secret_name"
+          # If the project is React, also export it prefixed for build-time embedding
+          if [[ "$proj" == "react" && "$secret_name" == "STATSIG_CLIENT_KEY" ]]; then
+            export "REACT_APP_STATSIG_CLIENT_KEY=$value"
+            echo "  Also exported as REACT_APP_STATSIG_CLIENT_KEY for React build"
+          fi
+        fi
+      fi
+    done
+  }
+
+  # Fetch secrets before validating project
+  fetch_secrets_to_env
+
   validate_project.sh $top/$proj
 
   cd $top/$proj
 
-  # React bakes in (exported) env variables from calling shell as well as contents of .env
-  # at build time into the static build output. As a result it doesn't need .env at runtime.
-  # See: https://github.com/facebook/create-react-app/blob/main/packages/react-scripts/config/env.js
-  # and https://create-react-app.dev/docs/adding-custom-environment-variables/
-  #
-  # Express and Flask on the other hand need .env deployed and present at runtime.
-  #
-  # We generate a temporary .env dynamically from env-config/*.env then remove upon exit
+  # React "bakes in" env variables (exported from calling shell) as well as contents
+  # of .env into the build, whereas Express/Flask need .env at runtime
+  # We dynamically generate a temporary .env from env-config/$env.env.
+  # env.sh among other things validates env vars listed in the project's validate_env.list
+  # via bin/validate_dotenv.sh -> bin/validate_env.sh.
   generated_envs+="$(../env.sh $env) "
+
+
 
   # We do this because 1) we need RELEASE that's generated in env.sh 2) we need *_APP_*_BACKEND
   # 3) some projects may require env variables instead of .env (not the case for react, flask & express)
@@ -170,6 +256,7 @@ for proj in $projects; do # bash only
   unset CI # prevents build failing in GitHub Actions
   ./build.sh
 
+
   if [[ $proj =~ ^(react|next|vue|flask)$ ]]; then # Suspect Commits now require commits associated w/ release
     if [[ $proj =~ ^(react|next|flask)$ ]]; then
       upload_sourcemaps="false" # using webpack plugin or doesn not apply
@@ -178,13 +265,6 @@ for proj in $projects; do # bash only
     fi
     sentry-release.sh $env $RELEASE $upload_sourcemaps
     # NOTE: Sentry may create releases from events even without this step
-  fi
-
-  # If gcloud is installed, use it to get the sentry auth token from Google Cloud Secret Manager.
-  # Sentry CLI will use this token for authentication.  Otherwise, one can use `sentry-cli login`,
-  # but that will not work when deploying to staging or production.
-  if command -v gcloud &> /dev/null ; then
-    export SENTRY_AUTH_TOKEN=$(gcloud secrets versions access latest --secret="SENTRY_AUTH_TOKEN")
   fi
 
   # *** DEPLOY OR RUN ***
