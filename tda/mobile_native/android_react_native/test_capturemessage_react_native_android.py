@@ -12,7 +12,7 @@ def test_capturemessage_react_native_android(android_react_native_emu_driver):
         btn = android_react_native_emu_driver.find_element(AppiumBy.XPATH, '//android.widget.TextView[@text="Capture Message"]')
         btn.click()
         
-        time.sleep(14) # needed for replay to get flushed, duration determined empirically for test_checkout
+        time.sleep(2) # sufficient for error + replay to go through > 90% of the time
 
     except Exception as err:
         sentry_sdk.capture_exception(err)
