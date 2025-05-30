@@ -138,7 +138,7 @@ const getInventory = async function (cart) {
     return inventory.rows;
   } catch (error) {
     Sentry.captureException(error);
-    throw err;
+    throw error;
   }
 };
 
