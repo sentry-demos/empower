@@ -13,11 +13,10 @@ PROJECT_AGE_THRESHOLD_DAYS = 14
 STATS_CATEGORIES = [
     'error',
     'transaction',
-    'attachment',
     'replay',
     'profile',
-    'profile_duration',
-    'monitor'
+    'monitor',
+    'span'
 ]
 
 def get_projects(org_slug, auth_token):
