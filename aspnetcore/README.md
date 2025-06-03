@@ -1,9 +1,9 @@
-Demo ASP.NET Core 7 HTTP service
+Demo ASP.NET Core 9 HTTP service
 
 Uses the controller-based Web API approach.
 See https://learn.microsoft.com/aspnet/core/web-api
 
-1. Install the latest .NET 7 SDK from https://dotnet.microsoft.com/download
+1. Install the latest .NET 9 SDK from https://dotnet.microsoft.com/download
    - Use the OS and architecture that matches your machine.
    - For example, choose Arm64 if you have an Apple Sillicon (M1) machine, or x64 if you have an Intel processor. 
 

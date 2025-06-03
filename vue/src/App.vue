@@ -4,42 +4,38 @@ import { RouterLink, RouterView } from "vue-router";
 
 <template>
 <div>
-  <header>
-    <img
-      alt="Vue logo"
-      class="logo"
-      src="@/assets/logo.svg"
-      width="125"
-      height="125"
-    />
-    <img
-      alt="Sentry logo"
-      class="logo"
-      src="@/assets/sentry-logo.png"
-      width="125"
-      height="125"
-    />
-  </header>
-    <div>
-      <nav>
-        <RouterLink to="/">Home</RouterLink>
+  <header class="header">
+    <a class="nav-logo" href="/">
+      <img :src="logo" alt="Empower Plant Logo" class="logo" />
+      Empower Plant
+    </a>
+
+      <nav class="nav">
         <RouterLink to="/about">About</RouterLink>
+        <RouterLink to="/products">Products</RouterLink>
+        <RouterLink to="/checkout">Cart</RouterLink>
         <RouterLink to="/subscribe">Subscribe</RouterLink>
-        <!-- <RouterLink to="/trigger">Manually Trigger Errors</RouterLink> -->
       </nav>
-    </div>
+    </header>
   <RouterView />
 </div>
 </template>
 
+<script>
+import logo from "@/assets/empowerplant-logo.svg"; 
+
+export default {
+  data(){
+    return {
+      logo,
+    }
+  }
+}
+</script>
 <style>
 @import "@/assets/base.css";
 
 #app {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-
   font-weight: normal;
 }
 
@@ -49,17 +45,21 @@ header {
   max-height: 100vh;
 }
 
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
+.nav-logo {
+  display: flex;
+  font-size: 1.8rem;
+  padding: 1rem;
+  padding-left: 70px;
+  color: black;
+  text-decoration: none;
+  width: -webkit-fill-available
 }
 
-a,
-.green {
-  text-decoration: none;
-  color: hsla(160, 100%, 37%, 1);
-  transition: 0.4s;
+.logo {
+  display: block;
+  max-height: 3rem;
 }
+
 
 @media (hover: hover) {
   a:hover {
@@ -69,9 +69,14 @@ a,
 
 nav {
   width: 100%;
-  font-size: 12px;
+  font-size: 20px;
   text-align: center;
   margin-top: 2rem;
+}
+
+nav a {
+  color: black;
+  text-decoration: none;
 }
 
 nav a.router-link-exact-active {

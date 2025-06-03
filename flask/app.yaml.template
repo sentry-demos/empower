@@ -1,3 +1,13 @@
-service: <SERVICE> 
+service: ${SERVICE}
 runtime: python312
-entrypoint: gunicorn -b :$PORT -w 2 --timeout 60 src.main:app
+entrypoint: ./start.sh
+
+instance_class: F2
+
+env_variables:
+  REDISHOST: ${FLASK_REDISHOST}
+  REDISPORT: 6379
+  STATSIG_SERVER_KEY: ${STATSIG_SERVER_KEY}
+
+vpc_access_connector:
+  name: projects/sales-engineering-sf/locations/us-central1/connectors/empower-plant-connector

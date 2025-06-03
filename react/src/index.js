@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom';
 import './index.css';
 import 'react-loader-spinner/dist/loader/css/react-spinner-loader.css';
 import * as Sentry from '@sentry/react';
+import { statsigClient, updateStatsigUserAndEvaluate } from './utils/statsig';
 import { createBrowserHistory } from 'history';
 import {
   Routes,
@@ -42,7 +43,7 @@ import Nplusone from './components/nplusone';
 
 const tracingOrigins = [
   'localhost',
-  'empowerplant.io',
+  'empower-plant.com',
   'run.app',
   'appspot.com',
   /^\//,
@@ -65,11 +66,14 @@ let PRODUCTS_EXTREMELY_SLOW;
 let PRODUCTS_BE_ERROR;
 let ADD_TO_CART_JS_ERROR;
 let CHECKOUT_SUCCESS;
+let ERROR_BOUNDARY;
 const DSN = process.env.REACT_APP_DSN;
 const RELEASE = process.env.REACT_APP_RELEASE;
 
 console.log('ENVIRONMENT', ENVIRONMENT);
 console.log('RELEASE', RELEASE);
+
+
 
 Sentry.init({
   dsn: DSN,
@@ -98,9 +102,10 @@ Sentry.init({
       // replaysSessionSampleRate and replaysOnErrorSampleRate is now a top-level SDK option
       blockAllMedia: false,
       // https://docs.sentry.io/platforms/javascript/session-replay/configuration/#network-details
-      networkDetailAllowUrls: ['/checkout', '/products'],
+      networkDetailAllowUrls: [/.*/],
       unmask: [".sentry-unmask"],
     }),
+    Sentry.statsigIntegration({ featureFlagClient: statsigClient }),
   ],
   beforeSend(event, hint) {
     // Parse from tags because src/index.js already set it there. Once there are React route changes, it is no longer in the URL bar
@@ -135,7 +140,8 @@ Sentry.init({
   },
 });
 
-// TODO is this best placement?
+await statsigClient.initializeAsync();
+
 const SentryRoutes = Sentry.withSentryReactRouterV6Routing(Routes);
 
 const sentryReduxEnhancer = Sentry.createReduxEnhancer({});
@@ -273,6 +279,12 @@ class App extends Component {
     }
     currentScope.setUser({ email: email });
 
+    let errorBoundary = queryParams.get('error_boundary');
+    if (errorBoundary) {
+      ERROR_BOUNDARY = errorBoundary;
+      currentScope.setTag('error_boundary', errorBoundary);
+    }
+
     // Automatically append `se`, `customerType` and `userEmail` query params to all requests
     // (except for requests to Sentry)
     const nativeFetch = window.fetch;
@@ -338,7 +350,7 @@ class App extends Component {
               <Route
                 path="/products"
                 element={
-                  <Products backend={BACKEND_URL} 
+                  <Products backend={BACKEND_URL}
                     frontendSlowdown={false}
                     productsExtremelySlow={PRODUCTS_EXTREMELY_SLOW}
                     productsBeError={PRODUCTS_BE_ERROR}
@@ -363,7 +375,7 @@ class App extends Component {
               <Route path="*" element={<NotFound />} />
             </SentryRoutes>
           </div>
-          <Footer />
+          <Footer backend={BACKEND_URL} errorBoundary={ERROR_BOUNDARY} />
         </BrowserRouter>
       </Provider>
     );

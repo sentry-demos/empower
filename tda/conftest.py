@@ -260,22 +260,30 @@ def cexp(random):
         #    return 3 + now.minute // 30
 
         # change every hour, except for segment #4 that's 2 hours long (cycle = 6 hours)
-        mod5 = now.hour % 6 
-        return 4 if mod5 == 5 else mod5
+        #mod5 = now.hour % 6 
+        #return 4 if mod5 == 5 else mod5
+        
+        # change every 4 hours, except for segment #4 that's 8 hours long (cycle = 24 hours)
+        #d4 = now.hour // 4
+        #return 4 if d4 == 5 else d4
+
+        # 5 - 1 - 5 - 1 - 5 - 1 - 5 - 1
+        return (now.hour // 6) * 2 + (0 if now.hour % 6 < 5 else 1)
 
     # array length must match number of possible time segments
-    probabilities = {       # segments    0    1    2    3    4 
-        CExp.STANDARD_CHECKOUT_FAIL:    [1.0, 0.0, 0.0, 0.0, 0.0],
-        CExp.PRODUCTS_EXTREMELY_SLOW:   [0.0, 1.0, 0.0, 0.0, 0.0],
-        CExp.PRODUCTS_BE_ERROR:         [0.0, 0.0, 1.0, 0.0, 0.0],
-        CExp.ADD_TO_CART_JS_ERROR:      [0.0, 0.0, 0.0, 1.0, 0.0],
-        CExp.CHECKOUT_SUCCESS:          [0.0, 0.0, 0.0, 0.0, 1.0],
+    probabilities = {       # segments    0    1    2    3    4    5    6    7   
+        CExp.CHECKOUT_SUCCESS:          [1.0,  0, 1.0,   0, 1.0,   0, 1.0,   0 ],
+        CExp.STANDARD_CHECKOUT_FAIL:    [0,   1.0,  0,   0,   0,   0,   0,   0  ],
+        CExp.PRODUCTS_EXTREMELY_SLOW:   [0,    0,   0,  1.0,  0,   0,   0,   0  ],
+        CExp.PRODUCTS_BE_ERROR:         [0,    0,   0,   0,   0,  1.0,  0,   0  ],
+        CExp.ADD_TO_CART_JS_ERROR:      [0,    0,   0,   0,   0,   0,   0,  1.0 ],
     }
     
     def random_cexp():
+        segment = time_segment()
         return random.choices(
             list(probabilities.keys()),
-            weights=list(probabilities.values())[time_segment()],
+            weights=list([row[segment] for row in probabilities.values()]),
             k=1)[0]
 
     return random_cexp
@@ -451,12 +459,13 @@ def android_react_native_emu_driver(request, selenium_endpoint, se_prefix):
         release_version = ReleaseVersion.latest_react_native_github_release()
 
         options = UiAutomator2Options().load_capabilities({
-            'deviceName': 'Android GoogleAPI Emulator',
-            'platformVersion': '10.0',
+            'appium:deviceName': 'Android GoogleAPI Emulator',
+            'appium:platformVersion': '15.0',
             'platformName': 'Android',
-            'app': f'https://github.com/sentry-demos/sentry_react_native/releases/download/{release_version}/app-release.apk',
+            'appium:app': f'https://github.com/sentry-demos/sentry_react_native/releases/download/{release_version}/app-release.apk',
+            'appium:automationName': 'uiautomator2',
             'sauce:options': {
-                'appiumVersion': '1.20.2',
+                'appiumVersion': '2.0.0',
                 'build': 'RDC-Android-Python-Best-Practice',
                 'name': request.node.name
             },
@@ -520,15 +529,15 @@ def android_emu_driver(request, selenium_endpoint, se_prefix):
 @pytest.fixture
 def ios_react_native_sim_driver(request, selenium_endpoint, se_prefix):
 
-    se = f'{se_prefix}-sauce-ios14.5'
+    se = f'{se_prefix}-sauce-ios15.5'
     sentry_sdk.set_tag('se', se)
     try:
         release_version = ReleaseVersion.latest_react_native_github_release()
 
         options = XCUITestOptions().load_capabilities({
-            'appium:deviceName': 'iPhone 11 Simulator',
+            'appium:deviceName': 'iPhone 13 Simulator',
             'platformName': 'iOS',
-            'appium:platformVersion': '14.5',
+            'appium:platformVersion': '15.5',
 
             'sauce:options': {
                 'appiumVersion': '2.0.0',

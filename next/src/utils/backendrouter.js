@@ -29,6 +29,7 @@ const determineBackendType = (desiredBackend) => {
 };
 
 const determineBackendUrl = (backendType) => {
+  console.log("Supported backend types: ", SUPPORTED_BACKEND_TYPES);
   return SUPPORTED_BACKEND_TYPES[backendType];
 };
 

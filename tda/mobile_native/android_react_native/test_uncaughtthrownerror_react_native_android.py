@@ -1,3 +1,4 @@
+import time
 import sentry_sdk
 from appium.webdriver.common.appiumby import AppiumBy
 
@@ -5,13 +6,17 @@ def test_uncaughtthrownerror_react_native_android(android_react_native_emu_drive
 
     try:
         # click into list app screen
-        android_react_native_emu_driver.find_element(AppiumBy.XPATH, '//android.widget.FrameLayout[@resource-id="android:id/content"]/android.widget.FrameLayout/android.view.ViewGroup/android.view.ViewGroup/android.view.ViewGroup/android.view.ViewGroup[2]/android.view.View/android.view.View[3]').click()
+        android_react_native_emu_driver.find_element(AppiumBy.XPATH, '//android.widget.TextView[@text=""]').click()
 
         # trigger error
         btn = android_react_native_emu_driver.find_element(AppiumBy.XPATH, '//android.widget.TextView[@text="Uncaught Thrown Error"]')
         btn.click()
+
         # launch app again or the error does not get sent to Sentry
+        # still ~ 83% success rate
         android_react_native_emu_driver.launch_app()
+        
+        time.sleep(10) # replay success rate is ~ 75% for sleep >= 10 seconds and ~ 50% for sleep = 5 seconds
 
     except Exception as err:
         sentry_sdk.capture_exception(err)

@@ -7,6 +7,7 @@ import measureRequestDuration from '../utils/measureRequestDuration';
 import Loader from 'react-loader-spinner';
 import ProductCard from './ProductCard';
 import { useState, useEffect } from 'react';
+import { updateStatsigUserAndEvaluate } from '../utils/statsig';
 
 function Products({ frontendSlowdown, backend, productsExtremelySlow, productsBeError, addToCartJsError }) {
   const [products, setProducts] = useState([]);
@@ -30,7 +31,7 @@ function Products({ frontendSlowdown, backend, productsExtremelySlow, productsBe
     uc_small_script.src =
       backend +
       '/compressed_assets/compressed_small_file.js' +
-      `?cacheBuster=${Math.random()}&se=${se}`; 
+      `?cacheBuster=${Math.random()}&se=${se}`;
     document.body.appendChild(uc_small_script);
 
     // big uncompressed file
@@ -40,7 +41,7 @@ function Products({ frontendSlowdown, backend, productsExtremelySlow, productsBe
     c_big_script.src =
       backend +
       '/uncompressed_assets/uncompressed_big_file.js' +
-      `?cacheBuster=${Math.random()}&se=${se}`; 
+      `?cacheBuster=${Math.random()}&se=${se}`;
     document.body.appendChild(c_big_script);
   }
 
@@ -85,49 +86,43 @@ function Products({ frontendSlowdown, backend, productsExtremelySlow, productsBe
     related to the async keyword + babel transform, hence why it probably got
     fixed with hooks (no transform on that class method anymore)"
   */
-  useEffect(() => {
-    // getProducts handles error responses differently, depending on the browser used
-    function getProducts(frontendSlowdown) {
-      [('/api', '/connect', '/organization')].forEach((endpoint) => {
-        fetch(backend + endpoint, {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' },
-        }).catch((err) => {
-          // If there's an error, it won't stop the Products http request and page from loading
-          Sentry.captureException(err);
-        });
-      });
-
-      // When triggering a frontend-only slowdown, use the products-join endpoint
-      // because it returns product data with a fast backend response.
-      // Otherwise use the /products endpoint, which provides a slow backend response.
-      const productsEndpoint = determineProductsEndpoint();
-      const stopMeasurement = measureRequestDuration(productsEndpoint);
-      fetch(backend + productsEndpoint, {
+  async function getProducts(frontendSlowdown) {
+    [('/api', '/connect', '/organization')].forEach((endpoint, activeSpan) => {
+      fetch(backend + endpoint, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
-      })
-        .then((result) => {
-          if (!result.ok) {
-            Sentry.setContext('err', {
-              status: result.status,
-              statusText: result.statusText,
-            });
-            return Promise.reject();
-          } else {
-            return result.json();
-          }
-        })
-        .then(renderProducts)
-        .catch((err) => {
-          return { ok: false, status: 500 };
-        }).then((res) => {
-          stopMeasurement()
-          return res
-        });
-    }
+      }).catch((err) => {
+        // If there's an error, it won't stop the Products http request and page from loading
+        Sentry.captureException(err);
+      });
+    });
+    const productsEndpoint = determineProductsEndpoint();
+    Sentry.startSpan({ name: "Fetch Products"}, async (span) => {
+      const stopMeasurement = measureRequestDuration(productsEndpoint, span);
+      const response = await fetch(backend + productsEndpoint, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = await response.json();
 
-    getProducts(frontendSlowdown);
+      if (!response.ok) {
+        Sentry.setContext('err', {
+          status: response.status,
+          statusText: response.statusText,
+        });
+        return;
+      }
+      renderProducts(data);
+      stopMeasurement();
+    })
+  }
+
+  useEffect(() => {
+     try {
+      getProducts(frontendSlowdown)
+     } catch (error) {
+      Sentry.captureException(error)
+     }
   }, []);
 
   return products.length > 0 ? (

@@ -8,6 +8,8 @@ next/node_modules
 express/node_modules
 /.pnp
 .pnp.js
+.vercel
+react/config-overrides.js
 
 # testing
 /coverage
@@ -33,6 +35,7 @@ venv
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+next/config-overrides.js
 
 notes.txt
 flask/.virtualenv

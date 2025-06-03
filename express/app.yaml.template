@@ -1,2 +1,2 @@
-service: <SERVICE>
-runtime: nodejs18
+service: ${SERVICE}
+runtime: nodejs20

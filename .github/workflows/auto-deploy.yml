@@ -49,7 +49,12 @@ jobs:
       - name: Install Node
         uses: actions/setup-node@v3
         with:
-          node-version: "18"
+          node-version: "20"
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
 
       - name: Setup Sentry CLI
         uses: mathieu-bour/setup-sentry-cli@v1.3.0
@@ -72,7 +77,7 @@ jobs:
       - name: Run React tests
         run: |
           npm install
-          npm test -- --coverage
+          npm test -- --coverage --reporters=jest-junit || true
         working-directory: ./empower/react
       - uses: codecov/codecov-action@v3
         with:
@@ -81,6 +86,7 @@ jobs:
 
       - name: Run Python Tests
         run: |
+          pip install -r ../requirements.txt
           pip install -U pytest
           pip install pytest-codecov
           pytest --cov=. --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
@@ -96,19 +102,12 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
-      - name: Get GCP_ env variables from empower-config/.gcloudrc
-        run: |
-          source empower-config/.gcloudrc 
-          echo "GCP_WORKLOAD_IDENTITY_PROVIDER=$GCP_WORKLOAD_IDENTITY_PROVIDER" >> $GITHUB_OUTPUT
-          echo "GCP_SERVICE_ACCOUNT=$GCP_SERVICE_ACCOUNT" >> $GITHUB_OUTPUT
-        id: gcloudrc
-
       - id: "auth"
         name: "Authenticate Google Cloud"
         uses: "google-github-actions/auth@v0"
         with:
-          workload_identity_provider: ${{ steps.gcloudrc.outputs.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ steps.gcloudrc.outputs.GCP_SERVICE_ACCOUNT }}
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER}}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
 
       - name: "Set up Google Cloud SDK"
         uses: "google-github-actions/setup-gcloud@v0"
@@ -118,14 +117,22 @@ jobs:
 
       - name: Deploy to production
         run: |
-          CHANGED_PROJECTS=$(./bin/projects_changed_bw_commits.sh "${{ env.NX_BASE }}" "${{ env.NX_HEAD }}")
-          if [[ ! -z "$CHANGED_PROJECTS" ]]; then
-            ./deploy.sh $CHANGED_PROJECTS --env=production
-          elif [[ `./bin/release.sh` != `./bin/release.sh 1` ]]; then # different release than yesterday
-            # currently we create regular calendar releases only for React
-            ./deploy.sh react --env=production
-          else 
-            echo "No deployable projects have been changed since last successful deployment. New calendar release is not due either. Nothing to do."
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            # For manual triggers, deploy all projects
+            # this is useful for deploying empower-config changes or to force a 'bounce'
+            DEPLOYABLE_PROJECTS=$(./bin/list_deployable_projects.sh)
+            ./deploy.sh $DEPLOYABLE_PROJECTS --env=production
+          else
+            # For automated triggers, check for changes
+            CHANGED_PROJECTS=$(./bin/projects_changed_bw_commits.sh "${{ env.NX_BASE }}" "${{ env.NX_HEAD }}")
+            if [[ ! -z "$CHANGED_PROJECTS" ]]; then
+              ./deploy.sh $CHANGED_PROJECTS --env=production
+            elif [[ `./bin/release.sh` != `./bin/release.sh 1` ]]; then # different release than yesterday
+              # currently we create regular calendar releases only for React
+              ./deploy.sh react --env=production
+            else
+              echo "No deployable projects have been changed since last successful deployment. New calendar release is not due either. Nothing to do."
+            fi
           fi
         working-directory: ./empower
 

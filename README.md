@@ -27,9 +27,9 @@ Query params to be added to the demo app. These query parameters can be stacked 
 - `?crash=true` - forces [a crash](https://github.com/sentry-demos/empower/blob/fce289530f72ce47fe2c7482cdbd9aa8bcc13b6e/react/src/utils/errors.js#L41) of one of predefined types, selected randomly.
 - `?crash=true&errnum=3` - forces crash of specific type depending on `errnum` value
 - `?userEmail=someemail@example.com` - lets you [pass in a specific user email](https://github.com/sentry-demos/empower/blob/fce289530f72ce47fe2c7482cdbd9aa8bcc13b6e/react/src/index.js#L218-L219)
-- `?frontendSlowdown=true` - used in the [frontend-only demo flow](https://github.com/sentry-demos/empower/blob/fce289530f72ce47fe2c7482cdbd9aa8bcc13b6e/react/src/index.js#L200-L207), which showcases a frontend slowdown via profiling.
+- **DEPRECATED (broke at some point)** `?frontendSlowdown=true` - used in the [frontend-only demo flow](https://github.com/sentry-demos/empower/blob/fce289530f72ce47fe2c7482cdbd9aa8bcc13b6e/react/src/index.js#L200-L207), which showcases a frontend slowdown via profiling.
 - `?rageclick=true` - causes the checkout button to stop working, so you can rageclick it. This will prevent the checkout error from happening. If you want to still demo the checkout error AND a rageclick, you can rageclick manually on the 'Contact Us' button that shows on the page after the Checkout Error occurs.
-
+- `?error_boundary=true` - enables the error boundary functionality in subscribe instead of putting a message on the queue (NextJS / React)
 ```
 # example
 https://localhost:5000/?se=chris&backend=flask&frontendSlowdown=true
@@ -54,13 +54,16 @@ The [user feedback widget](https://docs.sentry.io/platforms/javascript/user-feed
 
 # Local Setup / Development
 
+> [!WARNING]
+> Don't simply use `npm run` etc directly, please use the build system (`deploy.sh`) that's documented in detail below. It's not meant to be run directly.
+
 ## Setup
 
 1. Copy `local.env` from [empower-config](https://github.com/sentry-demos/empower-config) into `env-config` directory of your local repo, or, if you don't have access to it, follow `env-config/example.env`.
 2. The `REACT_APP_FLASK_BACKEND` in `env-config/local.env` points to the backend instance deployed to AppEngine, the same one used by the cloud-hosted React web app. Flask is the default backend. If you expect to run other backend types, add values for those in `env-config` in your `local.env` file as well (i.e. `REACT_APP_EXPRESS_BACKEND`).
 3. Confirm [Homebrew](https://brew.sh/) is installed with `brew -v`. If not, install using `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`.
 4. Confirm PostgreSQL is installed with `Postgres -V`. If not, install using `brew install postgresql`.
-5. As the application is compatible with specific versions of `node` and `npm`, install the following to be able to set the specific versions required (below describes how to achieve it using `n` package, but alternatively you can use `nvm`):
+5. As the application is compatible with specific versions of `node` and `npm`, install the following to be able to set the specific versions required (below describes how to achieve it using `n` package, but  you can use `nvm`):
    1. Install compatible `npm` version with `npm install -g npm@XX.XX.XX`. NOTE: may need to use `sudo` with command.
    2. Install `n` to update `node` version with `npm install -g n`.
    3. Set the specific `node` version with `n XX.XX.XX`. NOTE: may need to use `sudo` with command.
@@ -175,3 +178,59 @@ gcloud config list, to display current account
 ```
 
 `gcloud app deploy` does not support `--update-env-vars RELEASE=$RELEASE` like `gcloud run deploy` does with Cloud Run
+
+## Local Run with AI Suggestions
+
+1. Add your OPENAI_API_KEY= to local.env
+2. Run next and flask (./deploy.sh --env=local next flask)
+3. Get suggestion button should show automatically
+
+On main page load, next will check with flask if it has the OPEN_API_KEY and conditionally show the get suggestion input.
+
+
+## Caches & Queues
+
+### Redis Configuration
+
+Our Flask application uses Redis for two primary purposes:
+1. **Caching**: Improves performance by storing frequently accessed data
+2. **Message Queues**: Enables asynchronous task processing via Celery
+
+#### Production/Staging Environment
+
+In production/staging, we use a Google Cloud Redis instance that doesn't expose a public IP address for security reasons. The application connects directly to this Redis instance within the GCP network.
+
+#### Local Development Setup
+
+When developing locally, you need to establish an SSH tunnel to communicate with the cloud Redis instance:
+
+1. The `flask/run.sh` script automatically sets up this tunnel using:
+   ```bash
+   gcloud compute ssh redis-relay --zone=us-central1-a -- -N -L $FLASK_LOCAL_REDISPORT:$FLASK_REDIS_SERVER_IP:6379
+   ```
+
+2. This creates a secure tunnel that forwards your local port (default: 6379) to the remote Redis server.
+
+3. Environment variables control this configuration:
+   - `FLASK_LOCAL_REDISPORT`: Local port for Redis (defaults to 6379)
+   - `FLASK_REDIS_SERVER_IP`: IP address of the cloud Redis instance
+
+### Celery Worker
+
+For asynchronous task processing, we use Celery with Redis as the message broker:
+
+1. The `flask/run.sh` script starts a Celery worker:
+   ```bash
+   celery -A src.queues.email_subscribe worker -l INFO --concurrency=1
+   ```
+
+2. This worker processes tasks from the queue (e.g., email subscriptions)
+
+### Process Management
+
+The `flask/run.sh` script manages all necessary processes:
+1. SSH tunnel to Redis
+2. Celery worker
+3. Flask development server
+
+When the script is terminated (e.g., with Ctrl+C), it performs cleanup to ensure all processes are properly terminated.

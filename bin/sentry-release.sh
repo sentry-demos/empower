@@ -21,20 +21,23 @@ if [[ "$env" == "" || "$release" == "" || "$upload_sourcemaps" == "" ]]; then
 fi
 
 proj=$(basename $(pwd))
-    
+
 if [ "$SENTRY_ORG" == "" ]; then
   echo "$0 [ERROR] SENTRY_ORG must be defined in ./env-config/$env.env."
   exit 1
 fi
+
 # sets $sentry_project var to the value of e.g. REACT_SENTRY_PROJECT from env-config/<env>.env
 . get_proj_var.sh "%s_SENTRY_PROJECT" $proj
-. get_proj_var.sh "%s_SOURCEMAPS_URL_PREFIX" $proj
-. get_proj_var.sh "%s_SOURCEMAPS_DIR" $proj
+if [ "$upload_sourcemaps" == "true" ]; then
+  . get_proj_var.sh "%s_SOURCEMAPS_URL_PREFIX" $proj
+  . get_proj_var.sh "%s_SOURCEMAPS_DIR" $proj
+fi
 
 sentry-cli releases -o $SENTRY_ORG new -p $sentry_project $release
 sentry-cli releases -o $SENTRY_ORG finalize -p $sentry_project $release
 sentry-cli releases -o $SENTRY_ORG -p $sentry_project set-commits --auto $release --ignore-missing
 if [ "$upload_sourcemaps" == "true" ]; then
-  sentry-cli releases -o $SENTRY_ORG -p $sentry_project files $release upload-sourcemaps --url-prefix "$sourcemaps_url_prefix" --validate "$sourcemaps_dir"
+  sentry-cli sourcemaps upload -o $SENTRY_ORG -p $sentry_project --release $release --url-prefix "$sourcemaps_url_prefix" --validate "$sourcemaps_dir"
 fi
 sentry-cli deploys -o $SENTRY_ORG new -p $sentry_project -r $release -e $env -n $env

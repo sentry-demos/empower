@@ -2,8 +2,6 @@ package com.sentrydemos.springboot;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.PropertySource;
-import org.springframework.core.env.Environment;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -16,15 +14,13 @@ import org.springframework.http.ResponseEntity;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.sentry.IHub;
 import io.sentry.ISpan;
-import io.sentry.ITransaction;
 import io.sentry.Sentry;
 import io.sentry.SpanStatus;
 import io.sentry.protocol.User;
+import io.sentry.IScopes;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -53,7 +49,7 @@ public class AppController {
 	private DatabaseHelper dbHelper = new DatabaseHelper();
 
 	@Autowired
-	private IHub hub;
+	private IScopes scopes;
 	
 	// headers passed by frontend
 	@Bean
@@ -166,21 +162,21 @@ public class AppController {
 	@CrossOrigin
 	@GetMapping("/products")
 	public String GetProductsDelay(HttpServletRequest request) {
-		ISpan span = hub.getSpan().startChild("Overhead", "Set tags");
+		ISpan span = scopes.getSpan().startChild("Overhead", "Set tags");
 		setTags(request);
 		span.finish();
 
 		String fooResourceUrl = "https://application-monitoring-ruby-dot-sales-engineering-sf.appspot.com";
 		ResponseEntity<String> response = restTemplate.exchange(fooResourceUrl + "/api", HttpMethod.GET,new HttpEntity<>(headers), String.class);
 
-		String allProducts = dbHelper.mapAllProducts(hub.getSpan());
+		String allProducts = dbHelper.mapAllProducts(scopes.getSpan());
 		return allProducts;
 	}
 
 	@CrossOrigin
 	@GetMapping("/products-join")
 	public String GetProducts(HttpServletRequest request) {
-		ISpan span = hub.getSpan().startChild("Overhead", "Set tags");
+		ISpan span = scopes.getSpan().startChild("Overhead", "Set tags");
 		setTags(request);
 		span.finish();
 
@@ -188,7 +184,7 @@ public class AppController {
 		ResponseEntity<String> response = restTemplate.exchange(fooResourceUrl + "/api", HttpMethod.GET,new HttpEntity<>(headers), String.class);
 
 		
-		String allProducts = dbHelper.mapAllProductsJoin(hub.getSpan());
+		String allProducts = dbHelper.mapAllProductsJoin(scopes.getSpan());
 		return allProducts;
 	}
 
@@ -196,7 +192,7 @@ public class AppController {
 	@PostMapping("/checkout")
 	public String CheckoutCart(HttpServletRequest request, @RequestBody String payload) throws Exception {
 		
-		ISpan span = hub.getSpan().startChild("Overhead", "Set tags and map payload to Cart object");
+		ISpan span = scopes.getSpan().startChild("Overhead", "Set tags and map payload to Cart object");
 		setTags(request);
 
 		JSONObject json = new JSONObject(payload);
@@ -207,12 +203,12 @@ public class AppController {
 
 		span.finish();
 		
-		ISpan checkoutSpan = hub.getSpan().startChild("Process Order", "Checkout Cart quantities");
+		ISpan checkoutSpan = scopes.getSpan().startChild("Process Order", "Checkout Cart quantities");
 
 		checkout(cart.getQuantities(), checkoutSpan);
 		
 		checkoutSpan.finish();
-		return "success";
+		return "Checkout completed";
 	}
 
 	private void checkout(Map<String, Integer> quantities, ISpan span) {
