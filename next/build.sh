@@ -4,7 +4,7 @@
 
 set -e # exit immediately if any command exits with a non-zero status
 
-envsubst < config-overrides.js.template > config-overrides.js
+../bin/envsubst.sh < config-overrides.js.template > config-overrides.js
 
 rm -rf build
 # npm ci does not update minor versions ->
