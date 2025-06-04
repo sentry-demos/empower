@@ -18,6 +18,8 @@ def test_nativecrash_android(android_emu_driver):
         # nativecrash button
         android_emu_driver.find_element(AppiumBy.ID, 'com.example.vu.android:id/native_crash').click()
 
+        time.sleep(2)
+
         android_emu_driver.execute_script('mobile: startActivity', {
             'component': 'com.example.vu.android/.empowerplant.EmpowerPlantActivity',
             'action': 'android.intent.action.MAIN',
@@ -25,7 +27,7 @@ def test_nativecrash_android(android_emu_driver):
         })
 
         # sleep after relaunch to make sure error (+ traces + replays) makes it to the server
-        time.sleep(8)
+        time.sleep(10)
 
     except Exception as err:
         sentry_sdk.capture_exception(err)

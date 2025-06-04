@@ -498,7 +498,7 @@ def android_emu_driver(request, selenium_endpoint, se_prefix):
 
         options = UiAutomator2Options().load_capabilities({
             'deviceName': 'Android GoogleAPI Emulator',
-            'platformVersion': '10.0',
+            'platformVersion': '14.0',
             'platformName': 'Android',
             'app': f'https://github.com/sentry-demos/android/releases/download/{release_version}/app-release.apk',
             'sauce:options': {

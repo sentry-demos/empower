@@ -17,17 +17,31 @@ def test_anr_android(android_emu_driver):
 
         # keep clicking on the button for a while so the ANR is thrown with "Input dispatching timeout"
         # we can't use Appium's driver here as it's also locked together with the ANR, so we send taps directly via adb
-        time.sleep(1)
-        subprocess.run(["adb", "shell", "input", "tap", "200", "200"])
-        
-        time.sleep(1)
-        subprocess.run(["adb", "shell", "input", "tap", "200", "200"])
+        try:
+            time.sleep(1)
+            android_emu_driver.execute_script('mobile: shell', {
+                'command': 'input',
+                'args': ['tap', '200', '200'],
+                'timeout': 5000
+            })
+        except Exception:
+            pass # it's expected to fail but it's still gonna click and cause an ANR     
+            
+        try:
+            time.sleep(1)
+            android_emu_driver.execute_script('mobile: shell', {
+                'command': 'input',
+                'args': ['tap', '200', '200'],
+                'timeout': 5000
+            })
+        except Exception:
+            pass # it's expected to fail but it's still gonna click and cause an ANR
 
         # Click "Close app" in the ANR dialog
         android_emu_driver.find_element(AppiumBy.ID, 'android:id/aerr_close').click()
 
         # Give system some time to recover
-        time.sleep(2)
+        time.sleep(3)
 
         android_emu_driver.execute_script('mobile: startActivity', {
             'component': 'com.example.vu.android/.empowerplant.EmpowerPlantActivity',
