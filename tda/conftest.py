@@ -502,7 +502,7 @@ def android_emu_driver(request, selenium_endpoint, se_prefix):
             'platformName': 'Android',
             'app': f'https://github.com/sentry-demos/android/releases/download/{release_version}/app-release.apk',
             'sauce:options': {
-                'appiumVersion': '1.20.2',
+                'appiumVersion': '2.0.0',
                 'build': 'RDC-Android-Python-Best-Practice',
                 'name': request.node.name
             },
