@@ -129,14 +129,13 @@ def get_inventory(cart):
     print("> get_inventory")
 
     quantities = cart['quantities']
-
     print("> quantities", quantities)
 
-    productIds = []
-    for productId in quantities:
-        productIds.append(productId)
+    product_ids = list(quantities.keys())
+    if not product_ids:
+        return []
 
-    productIds = formatArray(productIds)
+    productIds = formatArray(product_ids)
     print("> productIds", productIds)
 
     try:
@@ -163,6 +162,6 @@ def get_inventory(cart):
 def formatArray(ids):
     numbers = ""
     for _id in ids:
-        numbers += (_id + ",")
+        numbers += (str(_id) + ",") # Ensure ID is string
     output = "(" + numbers[:-1] + ")"
     return output
