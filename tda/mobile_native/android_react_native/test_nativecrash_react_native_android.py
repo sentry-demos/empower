@@ -13,7 +13,7 @@ def test_nativecrash_react_native_android(android_react_native_emu_driver):
         btn.click()
 
         # launch app again or the error does not get sent to Sentry
-        android_react_native_emu_driver.launch_app()
+        android_react_native_emu_driver.activate_app("com.sentry_react_native")
 
         time.sleep(5) # success rate is ~ 46% regardless of sleep duration (must be at least 2 seconds)
 

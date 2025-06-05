@@ -1,3 +1,4 @@
+import time
 import sentry_sdk
 from appium.webdriver.common.appiumby import AppiumBy
 
@@ -11,6 +12,7 @@ def test_handlederror_android(android_emu_driver):
 
         # trigger error
         android_emu_driver.find_element(AppiumBy.ID, 'com.example.vu.android:id/handled_exception').click()
-        
+
+        time.sleep(4)
     except Exception as err:
         sentry_sdk.capture_exception(err)
