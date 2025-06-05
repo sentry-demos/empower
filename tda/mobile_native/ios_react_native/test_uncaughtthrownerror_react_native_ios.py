@@ -1,4 +1,5 @@
 import sentry_sdk
+import time
 from appium.webdriver.common.appiumby import AppiumBy
 
 def test_uncaughtthrownerror_react_native_ios(ios_react_native_sim_driver):
@@ -11,7 +12,8 @@ def test_uncaughtthrownerror_react_native_ios(ios_react_native_sim_driver):
         btn = ios_react_native_sim_driver.find_element(AppiumBy.ACCESSIBILITY_ID, "Uncaught Thrown Error")
         btn.click()
         # launch app again or the error does not get sent to Sentry
-        ios_react_native_sim_driver.launch_app()
+        ios_react_native_sim_driver.activate_app('org.reactjs.native.example.sentry-react-native')
 
+        time.sleep(5)
     except Exception as err:
         sentry_sdk.capture_exception(err)

@@ -11,5 +11,6 @@ def test_unhandledpromiserejection_react_native_ios(ios_react_native_sim_driver)
         btn = ios_react_native_sim_driver.find_element(AppiumBy.ACCESSIBILITY_ID, "Unhandled Promise Rejection")
         btn.click()
 
+        time.sleep(2)
     except Exception as err:
         sentry_sdk.capture_exception(err)

@@ -577,7 +577,7 @@ def ios_sim_driver(request, selenium_endpoint, se_prefix):
             'appium:platformVersion': '15.5',
 
             'sauce:options': {
-                'appiumVersion': '1.22.3',
+                'appiumVersion': '2.0.0',
                 'build': 'RDC-iOS-Mobile-Native',
                 'name': request.node.name,
             },

@@ -22,5 +22,6 @@ def test_checkout_react_native_ios(ios_react_native_sim_driver):
 
         ios_react_native_sim_driver.find_element(AppiumBy.XPATH, '(//XCUIElementTypeOther[@name="Place your order"])').click()
 
+        time.sleep(10)
     except Exception as err:
         sentry_sdk.capture_exception(err)
