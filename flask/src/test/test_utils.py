@@ -67,5 +67,15 @@ class TestFunctions(unittest.TestCase):
         result = chris()
         self.assertEqual(result, '')
 
+    def test_get_subscription_plan_monthly(self):
+        result = get_subscription_plan('monthly')
+        self.assertEqual(result, 'monthly')
+
+    def test_get_subscription_plan_annual(self):
+        result = get_subscription_plan('annual')
+        self.assertEqual(result, 'annual')
+        result = get_subscription_plan('anything_else')
+        self.assertEqual(result, 'annual')
+
 if __name__ == '__main__':
     unittest.main()
