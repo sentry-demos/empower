@@ -71,3 +71,6 @@ def evaluate_statsig_flags():
             flag_values[gate] = result
         except Exception as e:
             print(f"Error evaluating gate {gate}: {e}")
+
+def get_subscription_plan(type):
+    return 'monthly' if type == 'monthly' else 'annual'
