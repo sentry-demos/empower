@@ -55,7 +55,10 @@ builder.WebHost.UseSentry(options =>
     }
 
     // https://docs.sentry.io/platforms/dotnet/guides/aspnetcore/#captureblockingcalls
-    options.CaptureBlockingCalls = true;
+    // Disabling until we make some improvements:
+    // https://github.com/getsentry/sentry-dotnet/issues/4263
+    // https://github.com/getsentry/sentry-dotnet/issues/4262
+    // options.CaptureBlockingCalls = true;
 
     options.MaxRequestBodySize = RequestSize.Always; // Capture request body
 });
