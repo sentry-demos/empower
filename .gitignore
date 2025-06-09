@@ -105,3 +105,4 @@ aspnetcore/*.suo
 /laravel/public/storage
 /laravel/storage/*.key
 /laravel/vendor
+.sentryclirc
