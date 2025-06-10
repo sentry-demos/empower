@@ -14,7 +14,7 @@ def test_uncaughtthrownerror_react_native_android(android_react_native_emu_drive
 
         # launch app again or the error does not get sent to Sentry
         # still ~ 83% success rate
-        android_react_native_emu_driver.launch_app()
+        android_react_native_emu_driver.activate_app("com.sentry_react_native")
         
         time.sleep(10) # replay success rate is ~ 75% for sleep >= 10 seconds and ~ 50% for sleep = 5 seconds
 
