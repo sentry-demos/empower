@@ -204,15 +204,26 @@ def checkout():
     print("> validate_inventory", validate_inventory)
 
     with sentry_sdk.start_span(op="process_order", description="function"):
-        quantities = cart['quantities']
-        for cartItem in quantities:
-            for inventoryItem in inventory:
-                print("> inventoryItem.count", inventoryItem['count'])
-                if (validate_inventory and (inventoryItem.count < quantities[cartItem] or quantities[cartItem] >= inventoryItem.count)):
+        if validate_inventory:
+            inventory_map = {}
+            for item in inventory:
+                product_id = str(item[3])
+                count = item[2]
+                inventory_map[product_id] = count
+
+            quantities = cart['quantities']
+            for product_id, requested_quantity in quantities.items():
+                if product_id not in inventory_map:
+                    raise Exception(f"Product {product_id} not found in inventory")
+
+                available_quantity = inventory_map[product_id]
+                if requested_quantity > available_quantity:
                     sentry_sdk.metrics.incr(key="checkout.failed")
-                    raise Exception('Not enough inventory for product')
-        if len(inventory) == 0 or len(quantities) == 0:
-            raise Exception("Not enough inventory for product")
+                    raise Exception(f"Not enough inventory for product {product_id}. Requested: {requested_quantity}, Available: {available_quantity}")
+
+            if not inventory or not quantities:
+                sentry_sdk.metrics.incr(key="checkout.failed")
+                raise Exception("Cart or inventory is empty")
 
     response = make_response("success")
     return response
