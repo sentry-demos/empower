@@ -219,17 +219,29 @@ public class AppController {
 		for (String key : quantities.keySet()) {
 			logger.info("Item " + key + " has quantity " + quantities.get(key));
 
-			int currentInventory = tempInventory.get(key);
-			currentInventory = currentInventory - quantities.get(key);
-			if (!hasInventory()) {
-				String message = "No inventory for item";
+			int requestedQuantity = quantities.get(key);
+			Integer stockBeforeSubtractionInteger = tempInventory.get(key);
+			int stockBeforeSubtraction = (stockBeforeSubtractionInteger == null) ? 0 : stockBeforeSubtractionInteger;
+			
+			if (requestedQuantity < 0) {
+				String message = "Requested quantity for item " + key + " cannot be negative: " + requestedQuantity;
+				inventorySpan.setStatus(SpanStatus.INVALID_ARGUMENT);
+				inventorySpan.finish();
+				span.finish();
+				throw new IllegalArgumentException(message);
+			}
+			
+			int remainingStock = stockBeforeSubtraction - requestedQuantity;
+			
+			if (!hasInventory(remainingStock)) {
+				String message = "Not enough inventory for item " + key + ". Requested: " + requestedQuantity + ", Available: " + stockBeforeSubtraction;
 				inventorySpan.setStatus(SpanStatus.fromHttpStatusCode(500, SpanStatus.INTERNAL_ERROR));
 				inventorySpan.finish(); //resolve spans before throwing exception
 				span.finish(); //resolve spans before throwing exception
 				throw new RuntimeException(message);
 			}
 
-			tempInventory.put(key, currentInventory);
+			tempInventory.put(key, remainingStock);
 
 		}
 		inventorySpan.finish();
@@ -244,7 +256,7 @@ public class AppController {
 		return "Hello " + fullName;
 	}
 	
-	public Boolean hasInventory() {
-		return false;
+	public Boolean hasInventory(int remainingStock) {
+		return remainingStock >= 0;
 	}
 }
