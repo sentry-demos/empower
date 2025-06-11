@@ -12,7 +12,7 @@ const referenceError = () => {
 //eslint-disable-next-line
 const syntaxError = () => eval('foo bar');
 const rangeError = () => {
-  throw new RangeError('Parameter must be between 1 and 100');
+  throw new RangeError('INTENTIONAL TEST: Parameter must be between 1 and 100');
 };
 const unhandledError = () => {
   throw new UnhandledException('unhandled error');
