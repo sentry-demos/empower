@@ -51,9 +51,8 @@ def get_products():
         # adjust by number of products to get the same timeout as we had in the past
         # before pg_sleep() was moved out of SELECT clause.
         n *= PRODUCTS_NUM
-        products = connection.execute(
-            "SELECT * FROM products WHERE id IN (SELECT id from products, pg_sleep(%s))" % (n)
-        ).fetchall()
+        query = text("SELECT * FROM products WHERE id IN (SELECT id from products, pg_sleep(:sleep_duration))")
+        products = connection.execute(query, sleep_duration=n).fetchall()
 
         for product in products:
             # product_bundles is a "sleepy view", run the following query to get current sleep duration:
@@ -136,16 +135,15 @@ def get_inventory(cart):
     for productId in quantities:
         productIds.append(productId)
 
-    productIds = formatArray(productIds)
     print("> productIds", productIds)
 
     try:
         with sentry_sdk.start_span(op="get_inventory", description="db.connect"):
             connection = db.connect()
         with sentry_sdk.start_span(op="get_inventory", description="db.query") as span:
-            inventory = connection.execute(
-                "SELECT * FROM inventory WHERE productId in %s" % (productIds)
-            ).fetchall()
+            # Use parameterized query with ANY() to safely handle array of product IDs
+            query = text("SELECT * FROM inventory WHERE productId = ANY(:product_ids)")
+            inventory = connection.execute(query, product_ids=productIds).fetchall()
             span.set_data("inventory",inventory)
     except BrokenPipeError as err:
         raise DatabaseConnectionError('get_inventory')
@@ -157,12 +155,3 @@ def get_inventory(cart):
             raise(err)
 
     return inventory
-
-
-
-def formatArray(ids):
-    numbers = ""
-    for _id in ids:
-        numbers += (_id + ",")
-    output = "(" + numbers[:-1] + ")"
-    return output
