@@ -66,6 +66,11 @@ let PRODUCTS_EXTREMELY_SLOW;
 let PRODUCTS_BE_ERROR;
 let ADD_TO_CART_JS_ERROR;
 let CHECKOUT_SUCCESS;
+if (ENVIRONMENT === 'production') {
+  CHECKOUT_SUCCESS = false; // Default to validating inventory in production
+} else {
+  CHECKOUT_SUCCESS = true;  // Default to skipping inventory validation in non-production environments
+}
 let ERROR_BOUNDARY;
 const DSN = process.env.REACT_APP_DSN;
 const RELEASE = process.env.REACT_APP_RELEASE;
