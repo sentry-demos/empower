@@ -12,6 +12,7 @@ import { updateStatsigUserAndEvaluate } from '../utils/statsig';
 function Checkout({ backend, rageclick, checkout_success, cart }) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [checkoutError, setCheckoutError] = useState(null);
   let initialFormValues;
   let se = sessionStorage.getItem('se');
   const seTdaPrefixRegex = /[^-]+-tda-[^-]+-/;
@@ -98,11 +99,19 @@ async function checkout(cart, checkout_span) {
         "status": response.status
       })
 
-      throw new Error(
-        [response.status, response.statusText || ' Internal Server Error'].join(
-          ' -'
-        )
-      );
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch (e) {
+        errorData = { error: 'Server error', message: `Server error: ${response.status}` };
+      }
+
+      throw { 
+        type: errorData.error === "Insufficient inventory" ? 'INVENTORY_ERROR' : 'BACKEND_ERROR', 
+        status: response.status, 
+        data: errorData, 
+        message: errorData.message || errorData.error || `Server error: ${response.status}` 
+      };
     }
     checkout_span.setAttribute("checkout.success", 1)
     checkout_span.setAttribute("checkout.order.total", cart.total);
@@ -129,6 +138,9 @@ async function checkout(cart, checkout_span) {
       return;
     }
 
+    // Clear any previous error
+    setCheckoutError(null);
+
     Sentry.startSpan({
       name: 'Submit Checkout Form',
       forceTransaction: true,
@@ -145,13 +157,21 @@ async function checkout(cart, checkout_span) {
       try {
         await checkout(cart, span);
       } catch (error) {
-        Sentry.captureException(error);
+        Sentry.captureException(error.data ? new Error(error.message) : error);
         hadError = true;
+        
+        if (error.type === 'INVENTORY_ERROR') {
+          setCheckoutError(`Item (ID: ${error.data.itemId}) is out of stock. Requested: ${error.data.requested}, Available: ${error.data.available}`);
+        } else {
+          setCheckoutError('An error occurred during checkout. Please try again.');
+        }
       }
+      
       setLoading(false);
 
       if (hadError) {
-        navigate('/error');
+        // Don't navigate to error page, stay on checkout with error message
+        return;
       } else {
         navigate('/complete');
       }
@@ -171,6 +191,11 @@ async function checkout(cart, checkout_span) {
       ) : (
         <>
           <h2 className="sentry-unmask">Checkout</h2>
+          {checkoutError && (
+            <div className="error-message sentry-unmask" style={{ color: 'purple', marginBottom: '15px' }}>
+              {checkoutError}
+            </div>
+          )}
           <form className="checkout-form" onSubmit={handleSubmit}>
             <h4 className="sentry-unmask">Contact information</h4>
 
