@@ -309,7 +309,9 @@ class App extends Component {
     };
 
     // Crasher parses query params sent by /tests for triggering crashes for Release Health
-    crasher();
+    if (ENVIRONMENT !== 'production') {
+      crasher();
+    }
   }
 
   render() {
