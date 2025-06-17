@@ -56,6 +56,8 @@ if command -v gcloud &> /dev/null ; then
     echo "You are not authenticated with Google Cloud. Press any key to authenticate... (browser window may open)"
     read -n 1 -s
     gcloud auth login
+    echo "Setting project to $PROJECT_ID"
+    gcloud config set project $PROJECT_ID
   else
     echo "Already authenticated with Google Cloud as $ACTIVE_ACCOUNT."
   fi
