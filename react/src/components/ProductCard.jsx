@@ -16,7 +16,7 @@ function ProductCard(props) {
   const stars = props.stars;
 
   function validate_inventory(product) {
-    return product && inventory.includes(product.id)
+    return product && Array.isArray(inventory) && inventory.includes(product.id)
   }
 
   return (
