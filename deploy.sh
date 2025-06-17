@@ -56,8 +56,6 @@ if command -v gcloud &> /dev/null ; then
     echo "You are not authenticated with Google Cloud. Press any key to authenticate... (browser window may open)"
     read -n 1 -s
     gcloud auth login
-    echo "Setting project to $PROJECT_ID"
-    gcloud config set project $PROJECT_ID
   else
     echo "Already authenticated with Google Cloud as $ACTIVE_ACCOUNT."
   fi
@@ -219,12 +217,14 @@ for proj in $projects; do # bash only
   generated_envs+="$(../env.sh $env) "
 
 
-
   # We do this because 1) we need RELEASE that's generated in env.sh 2) we need *_APP_*_BACKEND
   # 3) some projects may require env variables instead of .env (not the case for react, flask & express)
   # TODO: double check above comment is still correct, we do this 3 times (once here and twice in env.sh)
   # TODO: support spring-boot which seems to use .properties files
   export $(grep -v '^#' .env | sed 's/ #.*//' | xargs)
+
+  echo "Setting project to $PROJECT_ID"
+  gcloud config set project $PROJECT_ID
 
   if [[ "$env" == "local" && "$fe_projects" = *"$proj "* ]]; then
     # Point to local backend http://host:port instead of cloud endpoints for all _built_ BE projects
