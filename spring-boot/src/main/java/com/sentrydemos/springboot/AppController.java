@@ -220,9 +220,10 @@ public class AppController {
 			logger.info("Item " + key + " has quantity " + quantities.get(key));
 
 			int currentInventory = tempInventory.get(key);
-			currentInventory = currentInventory - quantities.get(key);
-			if (!hasInventory()) {
-				String message = "No inventory for item";
+			int requestedQuantity = quantities.get(key);
+			currentInventory = currentInventory - requestedQuantity;
+			if (currentInventory < 0) {
+				String message = "No inventory for item " + key + ". Requested: " + requestedQuantity + ", Available: " + (currentInventory + requestedQuantity);
 				inventorySpan.setStatus(SpanStatus.fromHttpStatusCode(500, SpanStatus.INTERNAL_ERROR));
 				inventorySpan.finish(); //resolve spans before throwing exception
 				span.finish(); //resolve spans before throwing exception
@@ -242,9 +243,5 @@ public class AppController {
 	@PostMapping("/postbody")
 	public String postBody(@RequestBody String fullName) {
 		return "Hello " + fullName;
-	}
-	
-	public Boolean hasInventory() {
-		return false;
 	}
 }
