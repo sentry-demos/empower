@@ -218,8 +218,8 @@ def checkout():
     fulfilled_count = 0
     out_of_stock = [] # list of items that are out of stock
     try:
-        with sentry_sdk.start_span(op="process_order", description="function"):
-            if validate_inventory:
+        if validate_inventory:
+            with sentry_sdk.start_span(op="process_order", description="function"):
                 if len(quantities) == 0:
                     raise Exception("Invalid checkout request")
 
