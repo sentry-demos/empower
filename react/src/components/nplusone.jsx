@@ -4,13 +4,24 @@ function Nplusone({ backend }) {
   const idRequests = 20;
 
   useEffect(() => {
-    for (let i = 0; i < idRequests; i++) {
-      fetch(backend + '/product/0/info?id=' + i, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
-  }, []);
+    // Collect all product IDs to fetch
+    const productIds = Array.from({ length: idRequests }, (_, i) => i);
+    const idsQueryParam = productIds.join(',');
+    const batchApiUrl = `${backend}/products/batch-info?ids=${idsQueryParam}`;
+
+    // Make a single batch request instead of multiple individual requests
+    fetch(batchApiUrl, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    })
+    .then(response => response.json())
+    .then(data => {
+      console.log('Batch product data:', data);
+    })
+    .catch(error => {
+      console.error('Error fetching batch product data:', error);
+    });
+  }, [backend]);
 
   return (
     <div>

@@ -385,6 +385,36 @@ def product_info():
     return "flask /product/0/info"
 
 
+@app.route('/products/batch-info', methods=['GET'])
+def batch_product_info():
+    """
+    Batch endpoint to fetch multiple product information at once.
+    Accepts a comma-separated list of product IDs via 'ids' query parameter.
+    """
+    product_ids_str = request.args.get('ids')
+    if not product_ids_str:
+        return jsonify({"error": "Missing 'ids' parameter"}), 400
+    
+    try:
+        # Parse the comma-separated IDs
+        product_ids = [int(id_str.strip()) for id_str in product_ids_str.split(',')]
+    except ValueError:
+        return jsonify({"error": "Invalid ID format"}), 400
+    
+    # Simulate the same delay as individual calls but only once for the batch
+    time.sleep(.55)
+    
+    # Return mock product information for each ID
+    products = []
+    for product_id in product_ids:
+        products.append({
+            "id": product_id,
+            "info": f"flask /product/0/info for id={product_id}"
+        })
+    
+    return jsonify(products)
+
+
 # uncompressed assets
 @app.route('/uncompressed_assets/<path:path>')
 def send_report(path):
