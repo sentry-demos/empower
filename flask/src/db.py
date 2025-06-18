@@ -1,6 +1,7 @@
 import json
 import operator
 import os
+import logging
 import sentry_sdk
 import sqlalchemy
 from sqlalchemy import create_engine, text
