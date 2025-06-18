@@ -7,10 +7,11 @@ browsers:
   platformName: Windows 10
   param_display: chrome_windows
 - remote: true
-  browserName: firefox
+  browserName: chrome
   browserVersion: latest
   platformName: Windows 10
-  param_display: firefox_windows
+  param_display: fake_firefox_windows
+  userAgent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:139.0) Gecko/20100101 Firefox/139.0
 ## commenting out safari for now as it's not loading up empower-app as expected
 ## see `sauceLabsUrl`s in https://demo.sentry.io/issues/5275523263/?project=5390094
 # - remote: true
