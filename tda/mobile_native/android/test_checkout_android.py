@@ -17,7 +17,7 @@ def test_checkout_android(android_emu_driver):
         android_emu_driver.find_element(AppiumBy.ID, 'com.example.vu.android:id/checkout_btn').click()
 
         # Sleep in seconds to allow time for error to send to Sentry (minimum 4, tested 6/4/2025 romtsn)
-        time.sleep(4)
+        time.sleep(5)
 
     except Exception as err:
         sentry_sdk.capture_exception(err)
