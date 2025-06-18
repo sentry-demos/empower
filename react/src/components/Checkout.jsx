@@ -42,6 +42,7 @@ function Checkout({ backend, rageclick, checkout_success, cart }) {
     };
   }
   const [form, setForm] = useState(initialFormValues);
+  const [checkoutError, setCheckoutError] = useState(null);
 
 
 async function checkout(cart, checkout_span) {
@@ -92,22 +93,39 @@ async function checkout(cart, checkout_span) {
       stopMeasurement();
       return res;
     });
-    if (!response.ok) {
+    
+    const status = response.status;
+    let responseBody;
+    
+    try {
+      responseBody = await response.json();
+    } catch (e) {
+      responseBody = { error: "Invalid server response" };
+    }
+
+    if (response.ok) {
+      checkout_span.setAttribute("checkout.success", 1)
+      checkout_span.setAttribute("checkout.order.total", cart.total);
+      return { success: true, data: responseBody };
+    } else {
       checkout_span.setAttributes({
         "checkout.error": 1,
-        "status": response.status
+        "status": status
       })
 
-      throw new Error(
-        [response.status, response.statusText || ' Internal Server Error'].join(
-          ' -'
-        )
-      );
-    }
-    checkout_span.setAttribute("checkout.success", 1)
-    checkout_span.setAttribute("checkout.order.total", cart.total);
+      let errorMessage = "An unexpected error occurred";
+      let errorType = "server_error";
 
-    return response;
+      if (status === 400 && responseBody.error) {
+        errorMessage = responseBody.error;
+        errorType = "inventory_error";
+      } else if (status >= 500) {
+        errorMessage = "Internal server error. Please try again later.";
+        errorType = "server_error";
+      }
+
+      return { success: false, message: errorMessage, type: errorType, status: status };
+    }
   }
   function generateUrl(product_id) {
     return product_id;
@@ -141,19 +159,22 @@ async function checkout(cart, checkout_span) {
       });
 
       setLoading(true);
+      setCheckoutError(null);
 
       try {
-        await checkout(cart, span);
-      } catch (error) {
-        Sentry.captureException(error);
-        hadError = true;
-      }
-      setLoading(false);
+        const result = await checkout(cart, span);
+        setLoading(false);
 
-      if (hadError) {
+        if (result.success) {
+          navigate('/complete');
+        } else {
+          setCheckoutError(result.message);
+          // Do not navigate to /error for handled errors like inventory issues
+        }
+      } catch (error) {
+        setLoading(false);
+        Sentry.captureException(error);
         navigate('/error');
-      } else {
-        navigate('/complete');
       }
     })
   }
@@ -171,6 +192,7 @@ async function checkout(cart, checkout_span) {
       ) : (
         <>
           <h2 className="sentry-unmask">Checkout</h2>
+          {checkoutError && <div className="checkout-error-message">{checkoutError}</div>}
           <form className="checkout-form" onSubmit={handleSubmit}>
             <h4 className="sentry-unmask">Contact information</h4>
 
