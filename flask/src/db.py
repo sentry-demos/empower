@@ -135,6 +135,7 @@ def get_inventory(cart):
     productIds = []
     for productId_str in quantities.keys():
         try:
+            logging.info(f"Processing product ID: {productId_str}")
             productIds.append(int(productId_str))
         except ValueError as e:
             # Handle potential non-integer keys if necessary, e.g., log or raise
