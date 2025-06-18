@@ -162,3 +162,6 @@ def get_inventory(cart):
             raise(err)
 
     return inventory
+
+def decrement_inventory(id, count):
+    pass

@@ -12,7 +12,7 @@ from flask_caching import Cache
 from statsig.statsig_user import StatsigUser
 from statsig import statsig, StatsigOptions, StatsigEnvironmentTier
 import dotenv
-from .db import get_products, get_products_join, get_inventory
+from .db import decrement_inventory, get_products, get_products_join, get_inventory
 from .utils import parseHeaders, get_iterator, evaluate_statsig_flags
 from .queues.tasks import sendEmail
 import sentry_sdk
@@ -208,25 +208,42 @@ def checkout():
         with sentry_sdk.start_span(op="/checkout.get_inventory", description="function"):
             with sentry_sdk.metrics.timing(key="checkout.get_inventory.execution_time"):
                 inventory = get_inventory(cart)
+                # id | sku | count | productid
     except Exception as err:
         raise (err)
 
     logging.info("> /checkout inventory %s", inventory)
     logging.info("> validate_inventory %s", validate_inventory)
 
-    with sentry_sdk.start_span(op="process_order", description="function"):
-        quantities = cart['quantities']
-        for cartItem in quantities:
-            for inventoryItem in inventory:
-                logging.debug("> inventoryItem.count %s", inventoryItem['count'])
-                if (validate_inventory and (inventoryItem.count < quantities[cartItem] or quantities[cartItem] >= inventoryItem.count)):
-                    sentry_sdk.metrics.incr(key="checkout.failed")
-                    raise Exception('Not enough inventory for product')
-        if len(inventory) == 0 or len(quantities) == 0:
-            raise Exception("Not enough inventory for product")
+    fulfilled_count = 0
+    out_of_stock = [] # list of items that are out of stock
+    try:
+        if validate_inventory:
+            with sentry_sdk.start_span(op="process_order", description="function"):
+                if len(quantities) == 0:
+                    raise Exception("Invalid checkout request")
 
-    response = make_response("success")
-    return response
+                quantities = cart['quantities']
+                inventoryDict = {x.productid: x for x in inventory}
+                for i, cartItem in enumerate(quantities):
+                    if cartItem in inventoryDict and inventoryDict[cartItem].count >= quantities[cartItem]:
+                        decrement_inventory(inventoryDict[cartItem].id, quantities[cartItem])
+                        fulfilled_count += 1
+                    else:
+                        out_of_stock.push(f'Item #{i}')
+    except Exception as err:
+        sentry_sdk.metrics.incr(key="checkout.failed")
+        raise Exception("Error validating enough inventory for product") from err
+
+    if len(out_of_stock) == 0:
+        result = {'status': 'success'}
+    else:
+        if fulfilled_count == 0:
+            result = {'status': 'failed'} # All items are out of stock
+        else: 
+            result = {'status': 'partial', 'out_of_stock': out_of_stock}
+    
+    return make_response(json.dumps(result))
 
 
 @app.route('/success', methods=['GET'])
