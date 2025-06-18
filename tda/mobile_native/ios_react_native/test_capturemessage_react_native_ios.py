@@ -1,4 +1,5 @@
 import sentry_sdk
+import time
 from appium.webdriver.common.appiumby import AppiumBy
 
 def test_capturemessage_react_native_ios(ios_react_native_sim_driver):
@@ -11,5 +12,6 @@ def test_capturemessage_react_native_ios(ios_react_native_sim_driver):
         btn = ios_react_native_sim_driver.find_element(AppiumBy.ACCESSIBILITY_ID, "Capture Message")
         btn.click()
 
+        time.sleep(2)
     except Exception as err:
         sentry_sdk.capture_exception(err)

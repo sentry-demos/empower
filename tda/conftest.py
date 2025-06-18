@@ -509,11 +509,11 @@ def android_emu_driver(request, selenium_endpoint, se_prefix):
 
         options = UiAutomator2Options().load_capabilities({
             'deviceName': 'Android GoogleAPI Emulator',
-            'platformVersion': '10.0',
+            'platformVersion': '14.0',
             'platformName': 'Android',
             'app': f'https://github.com/sentry-demos/android/releases/download/{release_version}/app-release.apk',
             'sauce:options': {
-                'appiumVersion': '1.20.2',
+                'appiumVersion': '2.0.0',
                 'build': 'RDC-Android-Python-Best-Practice',
                 'name': request.node.name
             },
@@ -588,7 +588,7 @@ def ios_sim_driver(request, selenium_endpoint, se_prefix):
             'appium:platformVersion': '15.5',
 
             'sauce:options': {
-                'appiumVersion': '1.22.3',
+                'appiumVersion': '2.0.0',
                 'build': 'RDC-iOS-Mobile-Native',
                 'name': request.node.name,
             },

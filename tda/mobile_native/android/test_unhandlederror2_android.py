@@ -1,3 +1,4 @@
+import time
 import sentry_sdk
 from appium.webdriver.common.appiumby import AppiumBy
 
@@ -24,7 +25,16 @@ def test_unhandlederror2_android(android_emu_driver):
             level='info',
         )
 
-        android_emu_driver.launch_app()
+        time.sleep(2)
+
+        android_emu_driver.execute_script('mobile: startActivity', {
+            'component': 'com.example.vu.android/.empowerplant.EmpowerPlantActivity',
+            'action': 'android.intent.action.MAIN',
+            'extras': [['z', 'relaunch_for_send', 'true']]
+        })
+
+        # sleep after relaunch to make sure error (+ traces + replays) makes it to the server
+        time.sleep(10)
 
     except Exception as err:
         sentry_sdk.capture_exception(err)

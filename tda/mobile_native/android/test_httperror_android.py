@@ -11,9 +11,12 @@ def test_httperror_android(android_emu_driver):
         android_emu_driver.find_element(AppiumBy.ID, 'com.example.vu.android:id/content').click()
 
         # swipe down to have the HTTP Error button in the frame
-        android_emu_driver.swipe(start_x=0, start_y=1100, end_x=0, end_y=500, duration=800)
+        android_emu_driver.find_element(AppiumBy.ANDROID_UIAUTOMATOR,
+            'new UiScrollable(new UiSelector().scrollable(true).instance(0)).scrollIntoView(new UiSelector().resourceId(\"com.example.vu.android:id/error_404\"))'
+        )
         # HTTP Error button
         android_emu_driver.find_element(AppiumBy.ID, 'com.example.vu.android:id/error_404').click()
 
+        time.sleep(4)
     except Exception as err:
         sentry_sdk.capture_exception(err)
