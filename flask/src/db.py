@@ -132,8 +132,13 @@ def get_inventory(cart):
     print("> quantities", quantities)
 
     productIds = []
-    for productId in quantities:
-        productIds.append(productId)
+    for productId_str in quantities.keys():
+        try:
+            productIds.append(int(productId_str))
+        except ValueError as e:
+            # Handle potential non-integer keys if necessary, e.g., log or raise
+            sentry_sdk.capture_exception(e)
+            raise ValueError(f"Invalid product ID format: {productId_str}. Expected an integer-convertible string.") from e
 
     print("> productIds", productIds)
 
