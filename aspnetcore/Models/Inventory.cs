@@ -6,4 +6,5 @@ public class Inventory
     public required string Sku { get; set; }
     public required int Count { get; set; }
     public int? ProductId { get; set; }
+    public int Stock { get; set; }
 }

@@ -14,6 +14,7 @@ public class HardwareStoreContext : DbContext
     public virtual DbSet<Product> Products { get; set; } = null!;
     public virtual DbSet<Review> Reviews { get; set; } = null!;
     public virtual DbSet<Tools> Tools { get; set; } = null!;
+    public virtual DbSet<Order> Orders { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -31,6 +32,17 @@ public class HardwareStoreContext : DbContext
                 .IsRequired()
                 .HasColumnName("sku")
                 .HasColumnType("character varying");
+        });
+
+        modelBuilder.Entity<Order>(entity =>
+        {
+            entity.ToTable("orders");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+
+            entity.Property(e => e.OrderDate).HasColumnName("order_date");
+
+            entity.Property(e => e.Total).HasColumnName("total");
         });
 
         modelBuilder.Entity<Product>(entity =>
