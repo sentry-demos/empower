@@ -80,14 +80,6 @@ async function checkout(cart, checkout_span) {
         validate_inventory: checkout_success ? "false" : "true",
       }),
     })
-    .catch((err) => {
-      checkout_span.setAttributes({
-        "checkout.error": 1,
-        "status": 500
-      })
-      Sentry.captureException(new Error("Checkout failed: " + err));
-      return { ok: false, status: 500 };
-    })
     .then((res) => {
       stopMeasurement();
       return res;
