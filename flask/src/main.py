@@ -252,9 +252,9 @@ def products():
     in_stock_only = request.args.get('in_stock_only')
 
     try:
-        with sentry_sdk.start_span(op="/products.get_products", description="function"):
-            with sentry_sdk.metrics.timing(key="products.get_products.execution_time"):
-                rows = get_products()
+        with sentry_sdk.start_span(op="/products.get_products_join", description="function"):
+            with sentry_sdk.metrics.timing(key="products.get_products_join.execution_time"):
+                rows = get_products_join()
 
             if RUN_SLOW_PROFILE:
                 start_time = time.time()
