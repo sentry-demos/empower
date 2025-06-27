@@ -258,17 +258,23 @@ def checkout():
     try:
         if validate_inventory:
             with sentry_sdk.start_span(op="process_order", description="function"):
-                if len(quantities) == 0:
-                    raise Exception("Invalid checkout request")
+                quantities = cart.get('quantities', {})
+                if not quantities:
+                    raise Exception("Invalid checkout request: quantities is empty")
 
-                quantities = cart['quantities']
                 inventoryDict = {x.productid: x for x in inventory}
-                for i, cartItem in enumerate(quantities):
-                    if cartItem in inventoryDict and inventoryDict[cartItem].count >= quantities[cartItem]:
-                        decrement_inventory(inventoryDict[cartItem].id, quantities[cartItem])
+                for productId_str, quantity in quantities.items():
+                    try:
+                        productId = int(productId_str)
+                    except ValueError:
+                        out_of_stock.append(productId_str)
+                        continue
+                    
+                    if productId in inventoryDict and inventoryDict[productId].count >= quantity:
+                        decrement_inventory(inventoryDict[productId].id, quantity)
                         fulfilled_count += 1
                     else:
-                        out_of_stock.push(f'Item #{i}')
+                        out_of_stock.append(productId_str)
     except Exception as err:
         sentry_sdk.metrics.incr(key="checkout.failed")
         raise Exception("Error validating enough inventory for product") from err
