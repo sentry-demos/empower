@@ -72,6 +72,28 @@ var app = builder.Build();
 // Add middleware components, including Sentry Tracing.
 app.UseMiddleware<AppMiddleware>();
 app.UseCors();
+
+// Add global exception handler to ensure CORS headers are applied to error responses
+app.Use(async (context, next) =>
+{
+    try
+    {
+        await next();
+    }
+    catch (Exception ex)
+    {
+        // Ensure CORS headers are applied even when exceptions occur
+        context.Response.Headers.Add("Access-Control-Allow-Origin", "*");
+        
+        // Set error response
+        context.Response.StatusCode = 500;
+        context.Response.ContentType = "application/json";
+        
+        var errorResponse = new { error = "Internal Server Error" };
+        await context.Response.WriteAsJsonAsync(errorResponse);
+    }
+});
+
 app.UseSentryTracing();
 app.MapControllers();
 

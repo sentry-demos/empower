@@ -6,7 +6,6 @@ import time
 import redis
 import logging
 from flask import Flask, json, jsonify, request, make_response, send_from_directory
-from flask_cors import CORS
 from openai import OpenAI
 from flask_caching import Cache
 from statsig.statsig_user import StatsigUser
@@ -120,8 +119,47 @@ class MyFlask(Flask):
         super(MyFlask, self).__init__(import_name, *args, **kwargs)
 
 
+# This ensures CORS headers are applied to ALL responses, including 500 errors
+# upgrading flask-cors from 3.0.10 to 6.0.1 and flask from 3.0.0 to 3.1.1 alone did not fix the issue
+# doesn't seem to be related to https://github.com/corydolphin/flask-cors/issues/210 as we don't set
+# debug=True anywhere. However suspiciously it didn't show up in production/TDA only when testing 
+# locally against staging.
+class CORSWSGIWrapper:
+    def __init__(self, app):
+        self.app = app
+
+    def __call__(self, environ, start_response):
+        def custom_start_response(status, headers, exc_info=None):
+            headers.append(('Access-Control-Allow-Origin', '*'))
+            headers.append(('Access-Control-Allow-Headers', '*')) # needed for 'customertype' and other "tag headers"
+            return start_response(status, headers, exc_info)
+
+        try:
+            return self.app(environ, custom_start_response)
+        except Exception as e:
+            pass
+            # If an exception occurs, create a response with CORS headers
+            status = '500 Internal Server Error'
+            headers = [
+                ('Content-Type', 'application/json'),
+                ('Access-Control-Allow-Origin', '*'),
+                ('Access-Control-Allow-Headers', '*'),
+            ]
+            response_body = json.dumps({"error": "Internal Server Error"}).encode('utf-8')
+            
+            def error_start_response(status, headers, exc_info=None):
+                return start_response(status, headers, exc_info)
+            
+            error_start_response(status, headers)
+            return [response_body]
+
+    def __getattr__(self, name):
+        # Delegate attribute access to the underlying Flask app e.g. app.config
+        return getattr(self.app, name)
+
+
 app = MyFlask(__name__)
-CORS(app)
+app = CORSWSGIWrapper(app)
 
 statsig.initialize(os.environ.get("STATSIG_SERVER_KEY"))
 
