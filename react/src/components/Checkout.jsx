@@ -12,6 +12,7 @@ import { updateStatsigUserAndEvaluate } from '../utils/statsig';
 function Checkout({ backend, rageclick, checkout_success, cart }) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [checkoutError, setCheckoutError] = useState(null);
   let initialFormValues;
   let se = sessionStorage.getItem('se');
   const seTdaPrefixRegex = /[^-]+-tda-[^-]+-/;
@@ -98,11 +99,18 @@ async function checkout(cart, checkout_span) {
         "status": response.status
       })
 
-      throw new Error(
-        [response.status, response.statusText || ' Internal Server Error'].join(
-          ' -'
-        )
-      );
+      if (response.status === 400) {
+        const errorData = await response.json();
+        const inventoryError = new Error(errorData.message || "An item in your cart is out of stock.");
+        inventoryError.name = "InventoryError";
+        throw inventoryError;
+      } else {
+        throw new Error(
+          [response.status, response.statusText || ' Internal Server Error'].join(
+            ' -'
+          )
+        );
+      }
     }
     checkout_span.setAttribute("checkout.success", 1)
     checkout_span.setAttribute("checkout.order.total", cart.total);
@@ -144,16 +152,16 @@ async function checkout(cart, checkout_span) {
 
       try {
         await checkout(cart, span);
+        navigate('/complete');
       } catch (error) {
         Sentry.captureException(error);
-        hadError = true;
-      }
-      setLoading(false);
-
-      if (hadError) {
-        navigate('/error');
-      } else {
-        navigate('/complete');
+        if (error.name === 'InventoryError') {
+          setCheckoutError(error.message);
+        } else {
+          navigate('/error');
+        }
+      } finally {
+        setLoading(false);
       }
     })
   }
@@ -171,6 +179,11 @@ async function checkout(cart, checkout_span) {
       ) : (
         <>
           <h2 className="sentry-unmask">Checkout</h2>
+          {checkoutError && (
+            <p className="error-message" style={{ color: 'red', textAlign: 'center' }}>
+              {checkoutError}
+            </p>
+          )}
           <form className="checkout-form" onSubmit={handleSubmit}>
             <h4 className="sentry-unmask">Contact information</h4>
 
