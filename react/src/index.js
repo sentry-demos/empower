@@ -116,7 +116,9 @@ Sentry.init({
       se = scope._tags.se;
     });
 
-    if (se) {
+    let is5xxError = event.exception && /^5\d{2} - .*$/.test(event.exception.values[0].value);
+    if (se && is5xxError) {
+      // Create a separate issue for each SE and RELEASE combination
       const seTdaPrefixRegex = /[^-]+-tda-[^-]+-/;
       let seFingerprint = se;
       let prefix = seTdaPrefixRegex.exec(se);
