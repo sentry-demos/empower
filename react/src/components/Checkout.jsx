@@ -12,6 +12,7 @@ import { updateStatsigUserAndEvaluate } from '../utils/statsig';
 function Checkout({ backend, rageclick, checkout_success, cart }) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [checkoutError, setCheckoutError] = useState(null);
   let initialFormValues;
   let se = sessionStorage.getItem('se');
   const seTdaPrefixRegex = /[^-]+-tda-[^-]+-/;
@@ -97,12 +98,19 @@ async function checkout(cart, checkout_span) {
         "checkout.error": 1,
         "status": response.status
       })
-
-      throw new Error(
-        [response.status, response.statusText || ' Internal Server Error'].join(
-          ' -'
-        )
-      );
+      
+      let errorResponseMessage = response.statusText || 'Internal Server Error';
+      try {
+        const errorBody = await response.json(); // Attempt to parse JSON
+        if (errorBody && errorBody.message) {
+          errorResponseMessage = errorBody.message; // Use backend message
+        }
+      } catch (parseError) {
+        console.error('Failed to parse error response JSON:', parseError);
+      }
+      const error = new Error(`${response.status} - ${errorResponseMessage}`);
+      error.status = response.status;
+      throw error;
     }
     checkout_span.setAttribute("checkout.success", 1)
     checkout_span.setAttribute("checkout.order.total", cart.total);
@@ -146,15 +154,14 @@ async function checkout(cart, checkout_span) {
         await checkout(cart, span);
       } catch (error) {
         Sentry.captureException(error);
-        hadError = true;
+        setLoading(false);
+        // Set the state with the error message
+        setCheckoutError(error.message || 'An unexpected error occurred.');
+        return; // Exit early to stay on checkout page
       }
       setLoading(false);
 
-      if (hadError) {
-        navigate('/error');
-      } else {
-        navigate('/complete');
-      }
+      navigate('/complete');
     })
   }
 
@@ -171,6 +178,11 @@ async function checkout(cart, checkout_span) {
       ) : (
         <>
           <h2 className="sentry-unmask">Checkout</h2>
+          {checkoutError && (
+            <div className="error-message" style={{ color: 'red', marginBottom: '15px' }}>
+              {checkoutError}
+            </div>
+          )}
           <form className="checkout-form" onSubmit={handleSubmit}>
             <h4 className="sentry-unmask">Contact information</h4>
 
