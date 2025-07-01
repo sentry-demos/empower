@@ -93,10 +93,18 @@ async function checkout(cart, checkout_span) {
       if (!response.error || response.status === undefined) {
         checkout_span.setAttribute("status", response.status);
 
+        let errorMessage = 'Internal Server Error';
+        try {
+          const errorData = await response.json();
+          if (errorData && errorData.error) {
+            errorMessage = errorData.error;
+          }
+        } catch (e) {
+          console.error("Failed to parse error response:", e);
+        }
+
         throw new Error(
-          [response.status, response.statusText || ' Internal Server Error'].join(
-            ' -'
-          )
+          [response.status, errorMessage].join(' - ')
         );
       } else {
         checkout_span.setAttribute("status", "unknown_error");
@@ -154,11 +162,12 @@ async function checkout(cart, checkout_span) {
       } catch (error) {
         Sentry.captureException(error);
         hadError = true;
+        alert(error.message);
       }
       setLoading(false);
 
       if (hadError) {
-        navigate('/error');
+        // navigate('/error');
       } else {
         navigate('/complete');
       }
