@@ -190,7 +190,7 @@ public class AppController {
 
 	@CrossOrigin
 	@PostMapping("/checkout")
-	public String CheckoutCart(HttpServletRequest request, @RequestBody String payload) throws Exception {
+	public ResponseEntity<String> CheckoutCart(HttpServletRequest request, @RequestBody String payload) throws Exception {
 		
 		ISpan span = scopes.getSpan().startChild("Overhead", "Set tags and map payload to Cart object");
 		setTags(request);
@@ -205,10 +205,17 @@ public class AppController {
 		
 		ISpan checkoutSpan = scopes.getSpan().startChild("Process Order", "Checkout Cart quantities");
 
-		checkout(cart.getQuantities(), checkoutSpan);
-		
-		checkoutSpan.finish();
-		return "Checkout completed";
+		try {
+			checkout(cart.getQuantities(), checkoutSpan);
+			checkoutSpan.finish();
+			return ResponseEntity.ok("Checkout completed");
+		} catch (RuntimeException e) {
+			checkoutSpan.setStatus(SpanStatus.INTERNAL_ERROR);
+			checkoutSpan.finish();
+			JSONObject errorResponse = new JSONObject();
+			errorResponse.put("error", e.getMessage());
+			return ResponseEntity.badRequest().body(errorResponse.toString());
+		}
 	}
 
 	private void checkout(Map<String, Integer> quantities, ISpan span) {
@@ -222,7 +229,7 @@ public class AppController {
 			int currentInventory = tempInventory.get(key);
 			currentInventory = currentInventory - quantities.get(key);
 			if (!hasInventory()) {
-				String message = "No inventory for item";
+				String message = "No inventory for item: " + key;
 				inventorySpan.setStatus(SpanStatus.fromHttpStatusCode(500, SpanStatus.INTERNAL_ERROR));
 				inventorySpan.finish(); //resolve spans before throwing exception
 				span.finish(); //resolve spans before throwing exception
