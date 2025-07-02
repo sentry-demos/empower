@@ -1,0 +1,8 @@
+env: standard
+service: ${SERVICE}
+runtime: php83
+env_variables:
+  APP_STORAGE: "/tmp"
+  IS_APP_ENGINE: true
+manual_scaling:
+  instances: 1 

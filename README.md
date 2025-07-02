@@ -5,6 +5,8 @@
 
 This is a multi-language/framework project that implements Empower Plant web app. It has one actively maintained frontend, `react`, that can connect to any one of the backend implementations using a query string parameter (e.g. `?backend=express`) and uses `flask` by default.
 
+**Latest Addition**: The `laravel-12/` directory contains a modern Laravel 12.x implementation upgraded from the legacy Laravel 8.x demo, built using Test-Driven Development with comprehensive test coverage. See [laravel-12/README.md](./laravel-12/README.md) for details.
+
 # Usage
 
 Currently deployed to: https://application-monitoring-react-dot-sales-engineering-sf.appspot.com/
