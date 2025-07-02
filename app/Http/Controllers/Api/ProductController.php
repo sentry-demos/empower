@@ -3,47 +3,82 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Product;
+use App\Services\OrderService;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 
 class ProductController extends Controller
 {
+    public function __construct(
+        private OrderService $orderService
+    ) {}
+
     /**
-     * Display a listing of the resource.
+     * Get all products with reviews
+     * Extracted from the original /products route
      */
-    public function index()
+    public function index(): JsonResponse
     {
-        //
+        $products = Product::with('reviews')->get();
+        
+        // Transform to match original format
+        $completeProductsWithReviews = $products->map(function ($product) {
+            $productArray = $product->toArray();
+            $productArray['reviews'] = $product->reviews->map(function ($review) {
+                return [
+                    'id' => $review->id,
+                    'productid' => $review->product_id,
+                    'rating' => $review->rating,
+                    'customerId' => $review->customer_id,
+                    'description' => $review->description,
+                    'created' => $review->created_at,
+                ];
+            })->toArray();
+            
+            return $productArray;
+        });
+
+        return response()->json($completeProductsWithReviews);
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Process checkout
+     * Extracted from the original /checkout route
      */
-    public function store(Request $request)
+    public function checkout(Request $request): JsonResponse
     {
-        //
+        // Get inventory (like original)
+        $this->orderService->getInventory();
+        
+        // Always throw exception like original
+        throw new \Exception("Not enough inventory");
     }
 
     /**
-     * Display the specified resource.
+     * Handle exceptions for testing
+     * Extracted from the original /handled route
      */
-    public function show(string $id)
+    public function handled(): JsonResponse
     {
-        //
+        try {
+            throw new \Exception("This is a handled exception");
+        } catch (\Throwable $exception) {
+            report($exception);
+            return response()->json([
+                'message' => $exception->getMessage(),
+                'handled' => true
+            ]);
+        }
     }
 
     /**
-     * Update the specified resource in storage.
+     * Unhandled exception for testing
+     * Extracted from the original /unhandled route
      */
-    public function update(Request $request, string $id)
+    public function unhandled(): void
     {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        // This will throw a division by zero error
+        1/0;
     }
 }

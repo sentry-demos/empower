@@ -3,16 +3,24 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use App\Services\OrderService;
+use Illuminate\Http\JsonResponse;
 
 class InventoryController extends Controller
 {
+    public function __construct(
+        private OrderService $orderService
+    ) {}
+
     /**
-     * Display a listing of the resource.
+     * Get all inventory levels
+     * Extracted from the original get_inventory() function
      */
-    public function index()
+    public function index(): JsonResponse
     {
-        //
+        $inventory = $this->orderService->getInventory();
+        
+        return response()->json($inventory);
     }
 
     /**
