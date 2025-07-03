@@ -3,7 +3,7 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
-use App\Http\Middleware\CorsMiddleware;
+use Sentry\Laravel\Integration;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -12,14 +12,9 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
-    ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->api(CorsMiddleware::class);
-        $middleware->web(CorsMiddleware::class);
+    ->withMiddleware(function (Middleware $middleware) {
+        //
     })
-    ->withExceptions(function (Exceptions $exceptions): void {
-        $exceptions->reportable(function (Throwable $e) {
-            if (app()->bound('sentry')) {
-                app('sentry')->captureException($e);
-            }
-        });
+    ->withExceptions(function (Exceptions $exceptions) {
+        Integration::handles($exceptions);
     })->create();
