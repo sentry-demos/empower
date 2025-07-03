@@ -7,6 +7,8 @@ use App\Models\Product;
 use App\Services\OrderService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 
 class ProductController extends Controller
 {
@@ -80,5 +82,26 @@ class ProductController extends Controller
     {
         // This will throw a division by zero error
         1/0;
+    }
+
+    /**
+     * 
+     */
+    public function maybe_cached(): JsonResponse
+    {
+        Cache::rememberForever('always-cached-key', fn () => Str::random(16));
+        $randomValue = rand(0, 4);
+        if ($randomValue === 0) {
+            $value = Cache::get('never-cached-key');
+            $cached = false;
+        } else {
+            $value = Cache::get('always-cached-key');
+            $cached = true;
+        }
+
+        return response()->json([
+            'value' => $value,
+            'cached' => $cached
+        ]);
     }
 }
