@@ -4,6 +4,8 @@
 
 # usage: ./loop.sh command arg1 arg2 ...
 
+LOG_FILE=/var/log/tda-signals.log
+
 # Signal handling function
 log_signal() {
     local signal_name=$1
@@ -27,7 +29,7 @@ log_signal() {
         echo "[$timestamp] Parent command line: $parent_cmd_line"
         echo "[$timestamp] exiting..."
         echo "----------------------------------------"
-    } >> /var/log/tda-signals.log 2>/dev/null || true
+    } >> $LOG_FILE 2>/dev/null || true
     
     exit 1
 }
@@ -52,8 +54,9 @@ trap 'log_signal "SIGSYS" 31' SYS
 
 # Log script start
 timestamp=$(date '+%Y-%m-%d %H:%M:%S')
-echo "[$timestamp] loop.sh started with PID $$, command: $*" >&2
+echo "[$timestamp] loop.sh started with PID $$, command: $*" >> $LOG_FILE 2>/dev/null || true
 
 while true; do 
+  echo "[$timestamp] [loop.sh] running: $@" >> $LOG_FILE 2>/dev/null || true
   "$@"
 done
