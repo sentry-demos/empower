@@ -84,6 +84,7 @@ Sentry.init({
   profilesSampleRate: 1.0,
   replaysSessionSampleRate: 1.0,
   debug: true,
+  _experiments: { enableLogs: true },
   integrations: [
     Sentry.feedbackIntegration({
       // Additional SDK configuration goes in here, for example:
@@ -106,6 +107,7 @@ Sentry.init({
       unmask: [".sentry-unmask"],
     }),
     Sentry.statsigIntegration({ featureFlagClient: statsigClient }),
+    Sentry.consoleLoggingIntegration(), // All console logs are sent to Sentry
   ],
   beforeSend(event, hint) {
     // Parse from tags because src/index.js already set it there. Once there are React route changes, it is no longer in the URL bar
@@ -114,7 +116,9 @@ Sentry.init({
       se = scope._tags.se;
     });
 
-    if (se) {
+    let is5xxError = event.exception && /^5\d{2} - .*$/.test(event.exception.values[0].value);
+    if (se && is5xxError) {
+      // Create a separate issue for each SE and RELEASE combination
       const seTdaPrefixRegex = /[^-]+-tda-[^-]+-/;
       let seFingerprint = se;
       let prefix = seTdaPrefixRegex.exec(se);

@@ -43,8 +43,34 @@ if [ $ret != 0 ]; then
   exit 1
 fi
 echo "Code copied."
+
+echo "Copying logrotate configuration..."
+ssh $HOST 'sudo cp '$DIR'/logrotate.d/tda /etc/logrotate.d/tda && sudo sed -i "s/create 0640 replace_with_user replace_with_user/create 0640 $USER $USER/" /etc/logrotate.d/tda'
+if [ $? != 0 ]; then
+  echo "[ERROR] Failed to copy logrotate configuration to remote host."
+  exit 1
+fi
+echo "Logrotate configuration copied."
+
+echo "Testing logrotate configuration..."
+ssh $HOST 'sudo logrotate -d /etc/logrotate.d/tda'
+if [ $? != 0 ]; then
+  echo "[ERROR] Logrotate configuration test failed."
+  exit 1
+fi
+echo "Logrotate configuration test passed."
+
+echo "Setting up log directory permissions..."
+ssh $HOST 'sudo mkdir -p /var/log && for job in '$DIR'/jobs/*.sh; do job_name=$(basename $job .sh); sudo touch /var/log/tda-$job_name.log; done && sudo chown $USER:$USER /var/log/tda*.log'
+ssh $HOST 'sudo touch /var/log/tda-signals.log && sudo chown $USER:$USER /var/log/tda-signals.log'
+if [ $? != 0 ]; then
+  echo "[ERROR] Failed to set up log directory permissions."
+  exit 1
+fi
+echo "Log directory permissions set up."
+
 # setting permissions with rscync doesn't work, leaves 775 instead of 777 (umask?)
-ssh $HOST 'find '$DIR' ! -path "*/__pycache__/*" ! -path "*/empower-tda/env/*" ! -path "*/canary.*" -exec sudo chmod 777 {}'
+ssh $HOST 'find '$DIR' ! -path "*/__pycache__/*" ! -path "*/empower-tda/env/*" ! -path "*/canary.*" -exec sudo chmod 777 {} \;'
 
 if [[ $reqs_changed == "1" || $env_nonempty == "0" ]]; then
   echo "re-installing requirements (because requirements.txt changed OR 'env' directory does not exist or is empty)..."

@@ -4,20 +4,21 @@ import random
 import requests
 import time
 import redis
+import logging
 from flask import Flask, json, jsonify, request, make_response, send_from_directory
-from flask_cors import CORS
 from openai import OpenAI
 from flask_caching import Cache
 from statsig.statsig_user import StatsigUser
 from statsig import statsig, StatsigOptions, StatsigEnvironmentTier
 import dotenv
-from .db import get_products, get_products_join, get_inventory
+from .db import decrement_inventory, get_products, get_products_join, get_inventory
 from .utils import parseHeaders, get_iterator, evaluate_statsig_flags
 from .queues.tasks import sendEmail
 import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
 from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 from sentry_sdk.integrations.redis import RedisIntegration
+from sentry_sdk.integrations.logging import LoggingIntegration
 from sentry_sdk.ai.monitoring import ai_track
 from sentry_sdk.integrations.statsig import StatsigIntegration
 from celery import Celery, states
@@ -84,9 +85,9 @@ class MyFlask(Flask):
         if "RUN_SLOW_PROFILE" in os.environ:
             RUN_SLOW_PROFILE = os.environ["RUN_SLOW_PROFILE"].lower() == "true"
 
-        print("> DSN", DSN)
-        print("> RELEASE", RELEASE)
-        print("> ENVIRONMENT", ENVIRONMENT)
+        logging.info("> DSN %s", DSN)
+        logging.info("> RELEASE %s", RELEASE)
+        logging.info("> ENVIRONMENT %s", ENVIRONMENT)
 
         sentry_sdk.init(
             dsn=DSN,
@@ -96,6 +97,10 @@ class MyFlask(Flask):
                 FlaskIntegration(),
                 SqlalchemyIntegration(),
                 RedisIntegration(cache_prefixes=["flask.", "ruby."]),
+                LoggingIntegration(
+                    level=logging.INFO,        # Capture info and above as breadcrumbs
+                    event_level=logging.ERROR  # Send error and above as events
+                ),
                 StatsigIntegration()
             ],
             traces_sample_rate=1.0,
@@ -103,15 +108,58 @@ class MyFlask(Flask):
             traces_sampler=traces_sampler,
             _experiments={
                 "enable_metrics": True,
-                "profiles_sample_rate": 1.0
+                "profiles_sample_rate": 1.0,
+                "enable_logs": True,
             }
         )
+
+        # Configure logging to work with Sentry
+        logging.basicConfig(level=logging.INFO)
 
         super(MyFlask, self).__init__(import_name, *args, **kwargs)
 
 
+# This ensures CORS headers are applied to ALL responses, including 500 errors
+# upgrading flask-cors from 3.0.10 to 6.0.1 and flask from 3.0.0 to 3.1.1 alone did not fix the issue
+# doesn't seem to be related to https://github.com/corydolphin/flask-cors/issues/210 as we don't set
+# debug=True anywhere. However suspiciously it didn't show up in production/TDA only when testing 
+# locally against staging.
+class CORSWSGIWrapper:
+    def __init__(self, app):
+        self.app = app
+
+    def __call__(self, environ, start_response):
+        def custom_start_response(status, headers, exc_info=None):
+            headers.append(('Access-Control-Allow-Origin', '*'))
+            headers.append(('Access-Control-Allow-Headers', '*')) # needed for 'customertype' and other "tag headers"
+            return start_response(status, headers, exc_info)
+
+        try:
+            return self.app(environ, custom_start_response)
+        except Exception as e:
+            pass
+            # If an exception occurs, create a response with CORS headers
+            status = '500 Internal Server Error'
+            headers = [
+                ('Content-Type', 'application/json'),
+                ('Access-Control-Allow-Origin', '*'),
+                ('Access-Control-Allow-Headers', '*'),
+            ]
+            response_body = json.dumps({"error": "Internal Server Error"}).encode('utf-8')
+            
+            def error_start_response(status, headers, exc_info=None):
+                return start_response(status, headers, exc_info)
+            
+            error_start_response(status, headers)
+            return [response_body]
+
+    def __getattr__(self, name):
+        # Delegate attribute access to the underlying Flask app e.g. app.config
+        return getattr(self.app, name)
+
+
 app = MyFlask(__name__)
-CORS(app)
+app = CORSWSGIWrapper(app)
 
 statsig.initialize(os.environ.get("STATSIG_SERVER_KEY"))
 
@@ -137,13 +185,13 @@ def enqueue():
     body = json.loads(request.data)
     email = body['email']
     r = sendEmail.apply_async(args=[email], queue='celery-new-subscriptions')
-    print(f"task id: {r.task_id} for email: {email}")
+    logging.info("task id: %s for email: %s", r.task_id, email)
     return jsonify({"status": "success"}), 200
 
 
 @app.route('/suggestion', methods=['GET'])
 def suggestion():
-  print("got suggestion request")
+  logging.info("got suggestion request")
   client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
   sentry_sdk.metrics.incr(
         key="endpoint_call",
@@ -175,6 +223,7 @@ def suggestion():
 
 @app.route('/checkout', methods=['POST'])
 def checkout():
+    logging.info("got checkout request")
     sentry_sdk.metrics.incr(
         key="endpoint_call",
         value=1,
@@ -185,7 +234,7 @@ def checkout():
         evaluate_statsig_flags()
     except Exception as e:
         sentry_sdk.capture_exception(e)
-        print("Error evaluating flags in /checkout:", e)
+        logging.error("Error evaluating flags in /checkout: %s", e)
 
     order = json.loads(request.data)
     cart = order["cart"]
@@ -197,25 +246,42 @@ def checkout():
         with sentry_sdk.start_span(op="/checkout.get_inventory", description="function"):
             with sentry_sdk.metrics.timing(key="checkout.get_inventory.execution_time"):
                 inventory = get_inventory(cart)
+                # id | sku | count | productid
     except Exception as err:
         raise (err)
 
-    print("> /checkout inventory", inventory)
-    print("> validate_inventory", validate_inventory)
+    logging.info("> /checkout inventory %s", inventory)
+    logging.info("> validate_inventory %s", validate_inventory)
 
-    with sentry_sdk.start_span(op="process_order", description="function"):
-        quantities = cart['quantities']
-        for cartItem in quantities:
-            for inventoryItem in inventory:
-                print("> inventoryItem.count", inventoryItem['count'])
-                if (validate_inventory and (inventoryItem.count < quantities[cartItem] or quantities[cartItem] >= inventoryItem.count)):
-                    sentry_sdk.metrics.incr(key="checkout.failed")
-                    raise Exception('Not enough inventory for product')
-        if len(inventory) == 0 or len(quantities) == 0:
-            raise Exception("Not enough inventory for product")
+    fulfilled_count = 0
+    out_of_stock = [] # list of items that are out of stock
+    try:
+        if validate_inventory:
+            with sentry_sdk.start_span(op="process_order", description="function"):
+                if len(quantities) == 0:
+                    raise Exception("Invalid checkout request")
 
-    response = make_response("success")
-    return response
+                quantities = cart['quantities']
+                inventoryDict = {x.productid: x for x in inventory}
+                for i, cartItem in enumerate(quantities):
+                    if cartItem in inventoryDict and inventoryDict[cartItem].count >= quantities[cartItem]:
+                        decrement_inventory(inventoryDict[cartItem].id, quantities[cartItem])
+                        fulfilled_count += 1
+                    else:
+                        out_of_stock.push(f'Item #{i}')
+    except Exception as err:
+        sentry_sdk.metrics.incr(key="checkout.failed")
+        raise Exception("Error validating enough inventory for product") from err
+
+    if len(out_of_stock) == 0:
+        result = {'status': 'success'}
+    else:
+        if fulfilled_count == 0:
+            result = {'status': 'failed'} # All items are out of stock
+        else: 
+            result = {'status': 'partial', 'out_of_stock': out_of_stock}
+    
+    return make_response(json.dumps(result))
 
 
 @app.route('/success', methods=['GET'])
@@ -283,7 +349,7 @@ def products():
         raise (err)
 
 
-    print("cache_key: " + str(cache_key))
+    logging.info("cache_key: %s", cache_key)
     get_api_request(cache_key, ruby_delay_time)
 
     return rows
@@ -295,10 +361,10 @@ def get_api_request(key, delay):
       cached_response = redis_client.get("ruby.api.cache:" + str(key))
 
       if cached_response is not None:
-          print("> cache hit: " + str(key))
+          logging.info("> cache hit: %s", key)
           return cached_response
 
-      print("> cache miss: " + str(key))
+      logging.info("> cache miss: %s", key)
 
       try:
           with sentry_sdk.start_span(op="/api_request", description="function"):

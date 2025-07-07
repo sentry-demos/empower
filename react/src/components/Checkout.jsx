@@ -80,32 +80,39 @@ async function checkout(cart, checkout_span) {
         validate_inventory: checkout_success ? "false" : "true",
       }),
     })
-    .catch((err) => {
-      checkout_span.setAttributes({
-        "checkout.error": 1,
-        "status": 500
-      })
-      Sentry.captureException(new Error("Checkout failed: " + err));
-      return { ok: false, status: 500 };
+    .catch((error) => {
+      return { ok: false, error: error};
     })
     .then((res) => {
       stopMeasurement();
       return res;
     });
     if (!response.ok) {
-      checkout_span.setAttributes({
-        "checkout.error": 1,
-        "status": response.status
-      })
+      checkout_span.setAttribute("checkout.error", 1);
 
-      throw new Error(
-        [response.status, response.statusText || ' Internal Server Error'].join(
-          ' -'
-        )
-      );
+      if (!response.error || response.status === undefined) {
+        checkout_span.setAttribute("status", response.status);
+
+        throw new Error(
+          [response.status, response.statusText || ' Internal Server Error'].join(
+            ' -'
+          )
+        );
+      } else {
+        checkout_span.setAttribute("status", "unknown_error");
+        if (response.error instanceof TypeError && response.error.message === "Failed to fetch") {
+          /* A fetch() promise only rejects when e.g. badly-formed request URL or a network error. It does not reject if
+          the server responds with HTTP 4xx or 5xx, etc. However some server frameworks might not attach CORS headers 
+          when returning HTTP 500 causing promise to reject and response object not be accessible. */
+          Sentry.captureException(new Error("Fetch promise rejected in Checkout due to either an actual network issue, malformed URL, etc or CORS headers not set on HTTP 500: " + response.error));
+        } else {
+          Sentry.captureException(new Error("Checkout request failed: " + response.error));
+        }
+      }
+    } else {
+      checkout_span.setAttribute("checkout.success", 1)
+      checkout_span.setAttribute("checkout.order.total", cart.total);
     }
-    checkout_span.setAttribute("checkout.success", 1)
-    checkout_span.setAttribute("checkout.order.total", cart.total);
 
     return response;
   }

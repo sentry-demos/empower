@@ -38,7 +38,6 @@ export function CheckoutForm({ cart, checkoutAction }) {
           behavior: 'auto',
         });
 
-        Sentry.metrics.increment('checkout.click');
         console.log("> cart", cart);
         // Server Action within a client component
         // Reference: https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions-and-mutations

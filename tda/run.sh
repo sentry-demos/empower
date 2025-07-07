@@ -26,6 +26,7 @@ done
 echo "[OK] All canaries passed."  
 
 for job in jobs/*.sh; do
+  job_name=$(basename $job .sh)
   echo "Starting $job to run continuously in background..."
-  nohup ./loop.sh ./$job >/dev/null 2>&1 &
+  nohup ./loop.sh ./$job >/var/log/tda-$job_name.log 2>&1 &
 done

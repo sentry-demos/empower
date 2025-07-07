@@ -65,6 +65,7 @@ class Browser(NamedTuple):
     browserVersion: str | None = None
     platformName: str | None = None
     param_display: str | None = None
+    userAgent: str | None = None
 
 
 class Config(NamedTuple):
@@ -374,6 +375,11 @@ def _sauce_browser(request, selenium_endpoint, se):
 
         options.set_capability('platformName', request.param.platformName)
         options.set_capability('browserVersion', request.param.browserVersion)
+        
+        # Set custom user agent if provided
+        if request.param.userAgent:
+            options.add_argument(f'user-agent={request.param.userAgent}')
+            
         options.set_capability('sauce:options', {
             'seleniumVersion': '4.8.0',
             'build': build_tag,
@@ -430,6 +436,11 @@ def _local_browser(request, se):
     options.add_argument("disable-gpu")
     options.add_argument("disable-dev-shm-usage")
     options.add_argument("headless")
+    
+    # Set custom user agent if provided
+    if request.param.userAgent:
+        options.add_argument(f'user-agent={request.param.userAgent}')
+        
     with ChromeWithExtraUrlParams(
             options=options,
             extra_params=urlencode({'se': se}),
@@ -498,11 +509,11 @@ def android_emu_driver(request, selenium_endpoint, se_prefix):
 
         options = UiAutomator2Options().load_capabilities({
             'deviceName': 'Android GoogleAPI Emulator',
-            'platformVersion': '10.0',
+            'platformVersion': '14.0',
             'platformName': 'Android',
             'app': f'https://github.com/sentry-demos/android/releases/download/{release_version}/app-release.apk',
             'sauce:options': {
-                'appiumVersion': '1.20.2',
+                'appiumVersion': '2.0.0',
                 'build': 'RDC-Android-Python-Best-Practice',
                 'name': request.node.name
             },
