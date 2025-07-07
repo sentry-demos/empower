@@ -59,7 +59,7 @@ fi
 echo "Log directory permissions set up."
 
 # setting permissions with rscync doesn't work, leaves 775 instead of 777 (umask?)
-ssh $HOST 'find '$DIR' ! -path "*/__pycache__/*" ! -path "*/canary.*" -exec sudo chmod 777 {} \;'
+ssh $HOST 'find '$DIR' ! -path "*/__pycache__/*" ! -path "*/empower-tda/env/*" ! -path "*/canary.*" -exec sudo chmod 777 {} \;'
 
 echo "Installing requirements..."
 # Host must have python3.8 and virtualenv installed
