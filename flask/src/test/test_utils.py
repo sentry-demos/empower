@@ -2,7 +2,7 @@
 
 import unittest
 from unittest.mock import patch, Mock
-from ..utils import weighter, parseHeaders, get_iterator, yuval, chris
+from ..utils import weighter, parseHeaders, get_iterator, yuval, chris, get_subscription_plan
 from datetime import datetime
 from pytz import timezone
 
