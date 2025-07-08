@@ -59,8 +59,9 @@ Route::get('/unhandled', ['as' => 'unhandled', function () {
 }]);
 
 Route::post('/checkout', ['as' => 'checkout', function (Request $request) {
-    get_inventory();
-    throw new Exception("Not enough inventory");
+    $cart = $request->input('cart');
+    process_order($cart);
+    return response()->json(['message' => 'Order processed successfully']);
 }]);
 
 Route::get('/', function () {
