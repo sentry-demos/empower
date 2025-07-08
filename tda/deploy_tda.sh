@@ -17,17 +17,6 @@ fi
 
 trap - EXIT
 
-reqs_changed=0
-env_nonempty=0
-echo "Checking state of current deployment..."
-diff -q requirements.txt <(ssh $HOST 'cat '$DIR'/requirements.txt')
-if [ $? == 1 ]; then # files differ or failed to compare
-  reqs_changed=1
-fi
-if ssh $HOST '[[ -d '"$DIR/env"' ]] && [[ ! -z `ls -A '"$DIR/env"'` ]]'; then
-  env_nonempty=1
-fi
-
 echo "Copying code to remote directory..."
 # for whatever reason can't delete or chmod __pycache__ directories
 rsync -rz --delete --force-delete --exclude env/ --exclude __pycache__ --exclude .pytest_cache * .sauce_credentials $HOST:$DIR/
@@ -72,16 +61,12 @@ echo "Log directory permissions set up."
 # setting permissions with rscync doesn't work, leaves 775 instead of 777 (umask?)
 ssh $HOST 'find '$DIR' ! -path "*/__pycache__/*" ! -path "*/empower-tda/env/*" ! -path "*/canary.*" -exec sudo chmod 777 {} \;'
 
-if [[ $reqs_changed == "1" || $env_nonempty == "0" ]]; then
-  echo "re-installing requirements (because requirements.txt changed OR 'env' directory does not exist or is empty)..."
-  # Host must have python3.8 and virtualenv installed
-  ssh $HOST 'cd '$DIR' && ./build.sh'
-  if [ $? != 0 ]; then
-    echo "[ERROR] failed to install requirements on destination host"
-    exit 1
-  fi
-else
-  echo "No need to install requirements, because no changes to requirements.txt, env exists on remote host and is not empty."
+echo "Installing requirements..."
+# Host must have python3.8 and virtualenv installed
+ssh $HOST 'cd '$DIR' && ./build.sh'
+if [ $? != 0 ]; then
+  echo "[ERROR] failed to install requirements on destination host"
+  exit 1
 fi
 
 set -e
