@@ -221,8 +221,8 @@ public class AppController {
 
 			int currentInventory = tempInventory.get(key);
 			currentInventory = currentInventory - quantities.get(key);
-			if (!hasInventory()) {
-				String message = "No inventory for item";
+			if (!hasInventory(currentInventory, quantities.get(key))) {
+				String message = "No inventory for item " + key;
 				inventorySpan.setStatus(SpanStatus.fromHttpStatusCode(500, SpanStatus.INTERNAL_ERROR));
 				inventorySpan.finish(); //resolve spans before throwing exception
 				span.finish(); //resolve spans before throwing exception
@@ -244,7 +244,7 @@ public class AppController {
 		return "Hello " + fullName;
 	}
 	
-	public Boolean hasInventory() {
-		return false;
+	public Boolean hasInventory(int available, int requested) {
+		return available >= requested;
 	}
 }
