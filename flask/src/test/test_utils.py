@@ -2,7 +2,7 @@
 
 import unittest
 from unittest.mock import patch, Mock
-from ..utils import weighter, parseHeaders, get_iterator, yuval, chris
+from ..utils import weighter, parseHeaders, get_iterator, yuval, chris, get_subscription_plan
 from datetime import datetime
 from pytz import timezone
 
@@ -66,6 +66,22 @@ class TestFunctions(unittest.TestCase):
     def test_chris(self):
         result = chris()
         self.assertEqual(result, '')
+
+    def test_get_subscription_plan_monthly(self):
+        result = get_subscription_plan('monthly')
+        self.assertEqual(result, 'monthly')
+
+    def test_get_subscription_plan_annual(self):
+        result = get_subscription_plan('annual')
+        self.assertEqual(result, 'annual')
+
+    def test_get_subscription_plan_other_string(self):
+        result = get_subscription_plan('yearly')
+        self.assertEqual(result, 'annual')
+
+    def test_get_subscription_plan_none(self):
+        result = get_subscription_plan(None)
+        self.assertEqual(result, 'annual')
 
 if __name__ == '__main__':
     unittest.main()
