@@ -61,6 +61,14 @@ echo "Log directory permissions set up."
 # setting permissions with rscync doesn't work, leaves 775 instead of 777 (umask?)
 ssh $HOST 'find '$DIR' ! -path "*/__pycache__/*" ! -path "*/empower-tda/env/*" ! -path "*/canary.*" -exec sudo chmod 777 {} \;'
 
+echo "Cleaning up old virtual environment..."
+ssh $HOST 'sudo rm -rf '$DIR'/env'
+if [ $? != 0 ]; then
+  echo "[ERROR] Failed to clean up old virtual environment."
+  exit 1
+fi
+echo "Old virtual environment cleaned up."
+
 echo "Installing requirements..."
 # Host must have python3.8 and virtualenv installed
 ssh $HOST 'cd '$DIR' && ./build.sh'
