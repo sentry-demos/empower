@@ -53,10 +53,9 @@ trap 'log_signal "SIGPWR" 30' PWR
 trap 'log_signal "SIGSYS" 31' SYS
 
 # Log script start
-timestamp=$(date '+%Y-%m-%d %H:%M:%S')
-echo "[$timestamp] loop.sh started with PID $$, command: $*" >> $LOG_FILE 2>/dev/null || true
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] loop.sh started with PID $$, command: $*" >> $LOG_FILE 2>/dev/null || true
 
 while true; do 
-  echo "[$timestamp] [loop.sh] running: $@" >> $LOG_FILE 2>/dev/null || true
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')] [loop.sh] running: $@" >> $LOG_FILE 2>/dev/null || true
   "$@"
 done
