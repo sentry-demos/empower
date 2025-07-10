@@ -34,7 +34,7 @@ fi
 echo "Code copied."
 
 echo "Copying logrotate configuration..."
-ssh $HOST 'sudo cp '$DIR'/logrotate.d/tda /etc/logrotate.d/tda && sudo sed -i "s/create 0640 replace_with_user replace_with_user/create 0640 $USER $USER/" /etc/logrotate.d/tda'
+ssh $HOST 'sudo cp '$DIR'/logrotate.d/tda /etc/logrotate.d/tda && sudo sed -i "s/create 0640 replace_with_user replace_with_user/create 0640 $USER $USER/" /etc/logrotate.d/tda && sudo sed -i "s/su replace_with_user replace_with_user/su $USER $USER/" /etc/logrotate.d/tda'
 if [ $? != 0 ]; then
   echo "[ERROR] Failed to copy logrotate configuration to remote host."
   exit 1

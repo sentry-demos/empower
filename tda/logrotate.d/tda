@@ -12,5 +12,7 @@
     # Copy the original log file and then truncate it (avoids needing to restart process but may lead to minor data loss)
     copytruncate
     # Create a new log file with these permissions, owner, and group.
-    create 0640 replace_with_user replace_with_user 
+    create 0640 replace_with_user replace_with_user
+    # Use specific user/group for rotation to handle insecure parent directory permissions
+    su replace_with_user replace_with_user
 }
