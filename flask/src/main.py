@@ -265,7 +265,7 @@ def products():
     try:
         with sentry_sdk.start_span(op="/products.get_products", description="function"):
             with sentry_sdk.metrics.timing(key="products.get_products.execution_time"):
-                rows = get_products()
+                rows = get_products_join()
 
             if RUN_SLOW_PROFILE:
                 start_time = time.time()
