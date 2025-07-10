@@ -220,10 +220,10 @@ def checkout():
     try:
         if validate_inventory:
             with sentry_sdk.start_span(op="process_order", description="function"):
+                quantities = cart['quantities']
                 if len(quantities) == 0:
                     raise Exception("Invalid checkout request")
 
-                quantities = cart['quantities']
                 inventoryDict = {x.productid: x for x in inventory}
                 for i, cartItem in enumerate(quantities):
                     if cartItem in inventoryDict and inventoryDict[cartItem].count >= quantities[cartItem]:
