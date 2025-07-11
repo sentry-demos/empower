@@ -130,7 +130,7 @@ function Products({ frontendSlowdown, backend, productsExtremelySlow, productsBe
       <ul className="products-list">
         {products.map((product, i) => {
           const averageRating = (
-            product.reviews.reduce((a, b) => a + (b['rating'] || 0), 0) /
+            product.reviews && product.reviews.reduce((a, b) => a + (b['rating'] || 0), 0) /
             product.reviews.length
           ).toFixed(1);
 

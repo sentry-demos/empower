@@ -37,8 +37,8 @@ class Api::V1::ProductsjoinController < ApplicationController
         if prod.id == review.productid
           reviews_arr.push(*review)
         end
-      prod["reviews"] = reviews_arr
       end
+      prod["reviews"] = reviews_arr
     end
     span_response.finish
 
