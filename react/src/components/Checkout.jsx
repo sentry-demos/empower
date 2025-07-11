@@ -75,7 +75,7 @@ async function checkout(cart, checkout_span) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        cart: cart,
+        cart: cart.items, // Send only the items array
         form: form,
         validate_inventory: checkout_success ? "false" : "true",
       }),
