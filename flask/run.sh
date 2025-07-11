@@ -62,5 +62,4 @@ echo "Celery worker started with PID: $CELERY_PID"
 
 # Run Flask in the background and capture its PID
 echo "Starting Flask server on port $LOCAL_PORT"
-flask run --port $LOCAL_PORT
-
+gunicorn -b :$LOCAL_PORT -w 2 --timeout 60 src.main:app
