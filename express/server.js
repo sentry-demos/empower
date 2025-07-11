@@ -206,7 +206,7 @@ app.post("/checkout", async (req, res) => {
     let quantities = cart["quantities"];
     console.log("quantities", quantities);
     for (const cartItem in quantities) {
-      if (!hasInventory(cartItem)) {
+      if (!hasInventory(cartItem, quantities[cartItem], inventory)) {
         throw new Error("Not enough inventory for product");
       }
     }
@@ -239,8 +239,14 @@ app.listen(PORT, () => {
 });
 // [END app]
 
-function hasInventory(item) {
-  return false;
+function hasInventory(item, quantity, inventory) {
+  const inventoryForProduct = inventory.find(
+    (inventoryItem) => inventoryItem.productid == item
+  );
+  if (!inventoryForProduct) {
+    return false;
+  }
+  return inventoryForProduct.count >= quantity;
 }
 
 module.exports = { app, Sentry, Tracing };
