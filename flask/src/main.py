@@ -253,35 +253,34 @@ def checkout():
     logging.info("> /checkout inventory %s", inventory)
     logging.info("> validate_inventory %s", validate_inventory)
 
-    fulfilled_count = 0
-    out_of_stock = [] # list of items that are out of stock
-    try:
-        if validate_inventory:
-            with sentry_sdk.start_span(op="process_order", description="function"):
-                if len(quantities) == 0:
-                    raise Exception("Invalid checkout request")
+    if not validate_inventory:
+        return make_response(json.dumps({'status': 'success'}))
 
-                quantities = cart['quantities']
-                inventoryDict = {x.productid: x for x in inventory}
-                for i, cartItem in enumerate(quantities):
-                    if cartItem in inventoryDict and inventoryDict[cartItem].count >= quantities[cartItem]:
-                        decrement_inventory(inventoryDict[cartItem].id, quantities[cartItem])
-                        fulfilled_count += 1
-                    else:
-                        out_of_stock.append(f'Item #{i}')
-    except Exception as err:
-        sentry_sdk.metrics.incr(key="checkout.failed")
-        raise Exception("Error validating enough inventory for product") from err
+    quantities = cart.get('quantities', {})
+    if not quantities:
+        return make_response(json.dumps({'status': 'failed', 'error': 'Invalid checkout request, no quantities provided'}), 400)
 
-    if len(out_of_stock) == 0:
-        result = {'status': 'success'}
-    else:
-        if fulfilled_count == 0:
-            result = {'status': 'failed'} # All items are out of stock
-        else: 
-            result = {'status': 'partial', 'out_of_stock': out_of_stock}
+    inventory_dict = {str(item.productid): item for item in inventory}
+    out_of_stock = []
     
-    return make_response(json.dumps(result))
+    with sentry_sdk.start_span(op="process_order", description="function"):
+        for product_id, requested_quantity in quantities.items():
+            if product_id not in inventory_dict or inventory_dict[product_id].count < requested_quantity:
+                out_of_stock.append(product_id)
+    
+    if not out_of_stock:
+        for product_id, requested_quantity in quantities.items():
+            try:
+                decrement_inventory(inventory_dict[product_id].id, requested_quantity)
+            except Exception as e:
+                sentry_sdk.capture_exception(e)
+                return make_response(json.dumps({'status': 'failed', 'error': 'Error processing order'}), 500)
+        
+        sentry_sdk.metrics.incr(key="checkout.success")
+        return make_response(json.dumps({'status': 'success'}))
+    else:
+        sentry_sdk.metrics.incr(key="checkout.failed")
+        return make_response(json.dumps({'status': 'failed', 'out_of_stock': out_of_stock}), 400)
 
 
 @app.route('/success', methods=['GET'])
