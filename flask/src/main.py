@@ -268,7 +268,7 @@ def checkout():
                         decrement_inventory(inventoryDict[cartItem].id, quantities[cartItem])
                         fulfilled_count += 1
                     else:
-                        out_of_stock.push(f'Item #{i}')
+                        out_of_stock.append(f'Item #{i}')
     except Exception as err:
         sentry_sdk.metrics.incr(key="checkout.failed")
         raise Exception("Error validating enough inventory for product") from err
