@@ -52,6 +52,7 @@ echo "Logrotate configuration test passed."
 echo "Setting up log directory permissions..."
 ssh $HOST 'sudo mkdir -p /var/log && for job in '$DIR'/jobs/*.sh; do job_name=$(basename $job .sh); sudo touch /var/log/tda-$job_name.log; done && sudo chown $USER:$USER /var/log/tda*.log'
 ssh $HOST 'sudo touch /var/log/tda-signals.log && sudo chown $USER:$USER /var/log/tda-signals.log'
+ssh $HOST 'sudo chown $USER:$USER /var/log/tda*.log*'
 if [ $? != 0 ]; then
   echo "[ERROR] Failed to set up log directory permissions."
   exit 1
