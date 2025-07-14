@@ -59,8 +59,17 @@ Route::get('/unhandled', ['as' => 'unhandled', function () {
 }]);
 
 Route::post('/checkout', ['as' => 'checkout', function (Request $request) {
-    get_inventory();
-    throw new Exception("Not enough inventory");
+    $cart = $request->input('cart');
+    if(isset($cart['items'])) {
+        try {
+            process_order($cart['items']);
+            return response()->json(['message' => 'Checkout successful!'], 200);
+        } catch (Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+    } else {
+        return response()->json(['message' => 'Cart is empty.'], 400);
+    }
 }]);
 
 Route::get('/', function () {
