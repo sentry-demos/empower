@@ -8,6 +8,8 @@ Sentry.init do |config|
   config.environment = ENV['RUBYONRAILS_RAILS_ENV'] || "development"
 
   config.traces_sample_rate = 1.0
+  config.profiles_sample_rate = 1.0
+  config.profiler_class = Sentry::Vernier::Profiler
 
   #config.before_send = lambda do |event, hint|
     # nothing yet
