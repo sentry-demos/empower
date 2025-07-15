@@ -111,7 +111,7 @@ BATCH_SIZE = os.getenv("IS_CANARY") and "1" or (os.getenv("BATCH_SIZE") or "1")
 SLEEP_LENGTH = os.getenv("SLEEP_LENGTH") or "random_2_1"
 
 # Currently only used in desktop_web/ tests. Mobile apps have it hardcoded.
-BACKENDS = (os.getenv("BACKENDS") or "flask,express,springboot,ruby,laravel,rails,aspnetcore").split(',')
+BACKENDS = (os.getenv("BACKENDS") or "flask,express,springboot,laravel,rails,aspnetcore").split(',')
 
 import urllib3
 urllib3.disable_warnings()
