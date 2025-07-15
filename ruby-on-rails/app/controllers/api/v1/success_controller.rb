@@ -20,8 +20,6 @@ class Api::V1::SuccessController < ApplicationController
   # end
 
   def index
-    Sentry.logger.info("Success endpoint accessed - transaction completed")
-    
     render json: {"message": "success from rails"}, status: 200
     # -- below was for testing a client issue, remove after confirmation client resolved issue --
     # # results = []
