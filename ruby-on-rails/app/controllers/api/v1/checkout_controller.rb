@@ -84,7 +84,7 @@ class Api::V1::CheckoutController < ApplicationController
     span_inventory_call = transaction.start_child(op: "custom.inventory_db_call")
     products_in_inventory = Inventory.all()
     span_inventory_call.finish
-    Sentry.logger.trace("Completed inventory database query, found %{count} items", count: products_in_inventory.count)
+    Sentry.logger.trace("Completed inventory database query, found %{count} items", count: products_in_inventory.length)
 
     span_logic = transaction.start_child(op: "custom.inventory_vs_cart_logic")
 

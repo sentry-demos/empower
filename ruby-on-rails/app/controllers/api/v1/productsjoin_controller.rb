@@ -15,7 +15,7 @@ class Api::V1::ProductsjoinController < ApplicationController
     products = Products.select("id, title, description, descriptionfull, price, img, imgcropped, NULL as pg_sleep, NULL as reviews")
     sleep 0.25
     #span_products_db.finish
-    Sentry.logger.trace("Completed products query, found %{count} products", count: products.count)
+    Sentry.logger.trace("Completed products query, found %{count} products", count: products.length)
     
     # n+1 to db if done this way
     # products.each do |prod_slow|
@@ -33,9 +33,9 @@ class Api::V1::ProductsjoinController < ApplicationController
     reviews = Reviews.select("id, productid, rating, customerid, description, created, NULL as pg_sleep")
     sleep 0.25
     #span_reviews_db.finish
-    Sentry.logger.trace("Completed reviews query, found %{count} reviews", count: reviews.count)
+    Sentry.logger.trace("Completed reviews query, found %{count} reviews", count: reviews.length)
 
-    Sentry.logger.debug("Starting response object construction with %{product_count} products and %{review_count} reviews", product_count: products.count, review_count: reviews.count)
+    Sentry.logger.debug("Starting response object construction with %{product_count} products and %{review_count} reviews", product_count: products.length, review_count: reviews.length)
     span_response = transaction.start_child(op: "custom.construct_response_object")
     products.each do |prod|  
       prod["pg_sleep"] = ""
@@ -50,7 +50,7 @@ class Api::V1::ProductsjoinController < ApplicationController
     span_response.finish
     Sentry.logger.debug("Completed response construction")
 
-    Sentry.logger.info("Products join completed successfully, returning %{count} products", count: products.count)
+    Sentry.logger.info("Products join completed successfully, returning %{count} products", count: products.length)
     render json: products, status: 200
   end
 end

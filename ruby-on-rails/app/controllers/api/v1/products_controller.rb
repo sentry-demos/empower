@@ -13,7 +13,7 @@ class Api::V1::ProductsController < ApplicationController
     products = Products.select("id, title, description, descriptionfull, price, img, imgcropped, NULL as pg_sleep, NULL as reviews")
     sleep 0.25
     span_products_db.finish
-    Sentry.logger.trace("Completed products database query, found %{count} products", count: products.count)
+    Sentry.logger.trace("Completed products database query, found %{count} products", count: products.length)
     
     # n+1 to db if done this way
     products = products.map do |prod|
@@ -24,7 +24,7 @@ class Api::V1::ProductsController < ApplicationController
       prod_attrs["reviews"] = []
       prod_attrs["reviews"] = Reviews.select("id, productid, rating, customerid, description, created, NULL as pg_sleep").where("productid="+prod.id.to_s).as_json
       span_products_slow_db.finish
-      Sentry.logger.debug("Found %{review_count} reviews for product %{product_id}", review_count: prod_attrs["reviews"].count, product_id: prod.id)
+      Sentry.logger.debug("Found %{review_count} reviews for product %{product_id}", review_count: prod_attrs["reviews"].length, product_id: prod.id)
       prod_attrs
     end
 
@@ -48,7 +48,7 @@ class Api::V1::ProductsController < ApplicationController
     # end
     # span_response.finish
 
-    Sentry.logger.info("Products index completed successfully, returning %{count} products", count: products.count)
+    Sentry.logger.info("Products index completed successfully, returning %{count} products", count: products.length)
     render json: products, status: 200
   end
 
