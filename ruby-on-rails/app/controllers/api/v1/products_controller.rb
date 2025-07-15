@@ -16,7 +16,6 @@ class Api::V1::ProductsController < ApplicationController
     Sentry.logger.trace("Completed products database query, found %{count} products", count: products.count)
     
     # n+1 to db if done this way
-    Sentry.logger.warn("Using N+1 query pattern for reviews - performance impact expected")
     products = products.map do |prod|
       span_products_slow_db = transaction.start_child(op: "custom.reviews_slow_db_call")
       Sentry.logger.trace("Fetching reviews for product %{product_id}", product_id: prod.id)
