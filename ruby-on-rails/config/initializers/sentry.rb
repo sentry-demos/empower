@@ -11,8 +11,15 @@ Sentry.init do |config|
   config.profiles_sample_rate = 1.0
   config.profiler_class = Sentry::Vernier::Profiler
 
-  #config.before_send = lambda do |event, hint|
-    # nothing yet
-  #end
+  # Enable comprehensive logging
+  config.enable_logs = true
 
+  # Configure logger for better debugging (adjust level as needed)
+  # config.sdk_logger = Rails.logger
+  # config.sdk_logger.level = ::Logger::INFO # Change to DEBUG for more verbose logging
+
+  # Optional: Enable debug mode for development
+  if Rails.env.development?
+    config.debug = true
+  end
 end

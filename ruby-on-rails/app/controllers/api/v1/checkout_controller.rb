@@ -5,6 +5,8 @@ class Api::V1::CheckoutController < ApplicationController
     # get Sentry tags in application_controller.rb
     set_Sentry_tags 
 
+    Sentry.logger.info("Starting checkout process")
+
     # mock data for testing local
     # infoin = {
     #   "cart":
@@ -54,6 +56,8 @@ class Api::V1::CheckoutController < ApplicationController
     transaction = Sentry.get_current_scope.get_transaction || Sentry.start_transaction(name: "custom transaction")
     span_read_params = transaction.start_child(op: "custom.read_params")
 
+    Sentry.logger.debug("Processing cart parameters for checkout")
+
     total = ""
     cart_contents = Hash.new
     params.each do |key, value|
@@ -62,9 +66,12 @@ class Api::V1::CheckoutController < ApplicationController
          if key2.to_s == "quantities"
            value2.each do | product_id, product_quantity |
              cart_contents[product_id.to_s] = product_quantity.to_s
+             Sentry.logger.trace("Processing cart item %{product_id} with quantity %{quantity}", 
+                                product_id: product_id, quantity: product_quantity)
            end
          elsif key2.to_s == "total"
            total = value2.to_s
+           Sentry.logger.debug("Cart total calculated: %{total}", total: total)
          end
         end
       end
@@ -76,6 +83,7 @@ class Api::V1::CheckoutController < ApplicationController
     logged = "Thanks for your order. Total cost is $" + total 
 
     span_inventory_call = transaction.start_child(op: "custom.inventory_db_call")
+    Sentry.logger.trace("Starting inventory database connection %{operation}", operation: "inventory_check")
     products_in_inventory = Inventory.all()
     span_inventory_call.finish
 
@@ -86,6 +94,8 @@ class Api::V1::CheckoutController < ApplicationController
         begin
           raise Exception.new "Not enough inventory for product"
           STDERR.puts "Not enough inventory for productid " + inv_objs["productid"].to_s
+          Sentry.logger.error("Failed to process payment. Product: %{product_id}. Insufficient inventory", 
+                             product_id: inv_objs["productid"])
           Sentry.capture_exception(Exception)
           logged = "Error: Not enough inventory"
           render json: {"message": logged}, status: 500
@@ -95,6 +105,12 @@ class Api::V1::CheckoutController < ApplicationController
     }
 
     span_logic.finish
+
+    if logged.include?("Error")
+      Sentry.logger.fatal("Checkout process failed due to inventory issues")
+    else
+      Sentry.logger.info("Checkout completed successfully")
+    end
 
     render json: {"message": logged}, status: 200
 
