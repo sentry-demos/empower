@@ -11,6 +11,8 @@ Sentry.init do |config|
   config.profiles_sample_rate = 1.0
   config.profiler_class = Sentry::Vernier::Profiler
 
+  config.enable_logs = true
+
   #config.before_send = lambda do |event, hint|
     # nothing yet
   #end

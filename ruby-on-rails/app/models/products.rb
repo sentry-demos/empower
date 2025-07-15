@@ -1,4 +1,5 @@
 class Products < ActiveRecord::Base
+    Sentry.logger.trace("Products model loaded with inventory association")
     has_one :inventory
     # may reuse below for a more elegant query
     #has_many :review, class_name: "Reviews", foreign_key: "productid"
