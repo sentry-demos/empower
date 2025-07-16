@@ -63,7 +63,7 @@ describe('Checkout Component', () => {
     );
 
     // Trigger checkout by submitting the form
-    const submitButton = screen.getByRole('button', { name: /Complete order/i });
+    const submitButton = screen.getByDisplayValue('Complete order');
     fireEvent.click(submitButton);
 
     await waitFor(() => {
@@ -86,7 +86,7 @@ describe('Checkout Component', () => {
     );
 
     // Trigger checkout by submitting the form
-    const submitButton = screen.getByRole('button', { name: /Complete order/i });
+    const submitButton = screen.getByDisplayValue('Complete order');
     fireEvent.click(submitButton);
 
     await waitFor(() => {
@@ -109,7 +109,7 @@ describe('Checkout Component', () => {
     );
 
     // Trigger checkout by submitting the form
-    const submitButton = screen.getByRole('button', { name: /Complete order/i });
+    const submitButton = screen.getByDisplayValue('Complete order');
     fireEvent.click(submitButton);
 
     await waitFor(() => {
