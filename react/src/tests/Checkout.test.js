@@ -10,6 +10,10 @@ jest.mock('react-loader-spinner', () => () => <div data-testid="loader" />);
 jest.mock('@sentry/react', () => ({
   ...jest.requireActual('@sentry/react'),
   captureException: jest.fn(),
+  setTag: jest.fn(),
+  getCurrentScope: jest.fn(() => ({
+    _tags: {}
+  })),
   metrics: {
     increment: jest.fn(),
     distribution: jest.fn(),
@@ -42,6 +46,75 @@ describe('Checkout Component', () => {
     // expect(screen.getByText(/Checkout/i)).toBeInTheDocument();
     // expect(screen.getByPlaceholderText(/plant.lover@example.com/i)).toBeInTheDocument();
     // expect(screen.getByPlaceholderText(/123 Main Street/i)).toBeInTheDocument();
+  });
+
+  test('sets seerDemo tag when backendType is flask', async () => {
+    const mockGetCurrentScope = jest.fn(() => ({
+      _tags: { backendType: 'flask' }
+    }));
+    Sentry.getCurrentScope.mockImplementation(mockGetCurrentScope);
+
+    render(
+      <Provider store={store}>
+        <Router>
+          <Checkout backend="/api" rageclick={false} />
+        </Router>
+      </Provider>
+    );
+
+    // Trigger checkout by submitting the form
+    const submitButton = screen.getByRole('button', { name: /Complete order/i });
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(Sentry.setTag).toHaveBeenCalledWith('seerDemo', true);
+    });
+  });
+
+  test('does not set seerDemo tag when backendType is not flask', async () => {
+    const mockGetCurrentScope = jest.fn(() => ({
+      _tags: { backendType: 'express' }
+    }));
+    Sentry.getCurrentScope.mockImplementation(mockGetCurrentScope);
+
+    render(
+      <Provider store={store}>
+        <Router>
+          <Checkout backend="/api" rageclick={false} />
+        </Router>
+      </Provider>
+    );
+
+    // Trigger checkout by submitting the form
+    const submitButton = screen.getByRole('button', { name: /Complete order/i });
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(Sentry.setTag).not.toHaveBeenCalledWith('seerDemo', true);
+    });
+  });
+
+  test('does not set seerDemo tag when backendType is undefined', async () => {
+    const mockGetCurrentScope = jest.fn(() => ({
+      _tags: {}
+    }));
+    Sentry.getCurrentScope.mockImplementation(mockGetCurrentScope);
+
+    render(
+      <Provider store={store}>
+        <Router>
+          <Checkout backend="/api" rageclick={false} />
+        </Router>
+      </Provider>
+    );
+
+    // Trigger checkout by submitting the form
+    const submitButton = screen.getByRole('button', { name: /Complete order/i });
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(Sentry.setTag).not.toHaveBeenCalledWith('seerDemo', true);
+    });
   });
 
 //   test('handles input change', () => {
