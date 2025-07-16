@@ -59,8 +59,9 @@ Route::get('/unhandled', ['as' => 'unhandled', function () {
 }]);
 
 Route::post('/checkout', ['as' => 'checkout', function (Request $request) {
-    get_inventory();
-    throw new Exception("Not enough inventory");
+    $cart = $request->json()->get('cart');
+    process_order($cart);
+    return response()->json(['message' => 'Order processed successfully'], 200);
 }]);
 
 Route::get('/', function () {
@@ -87,8 +88,8 @@ Route::get('/debug-sentry', function () {
     throw new Exception('My first Sentry error!');
 });
 
-function decrementInventory($item) {
-    Cache::decrement($item->id, 1);
+function decrementInventory($item_id, $quantity) {
+    Cache::decrement($item_id, $quantity);
 }
 
 function get_inventory() {
@@ -96,18 +97,20 @@ function get_inventory() {
     return $inventory;
 }
 
-function isOutOfStock($item) {
-    $inventory = get_inventory();
-    return $inventory->{$item->id} <= 0;
+function isOutOfStock($item_id, $quantity) {
+    $inventory_level = Cache::get($item_id, 0);
+    return $inventory_level < $quantity;
 }
 
 function process_order(array $cart) {
     error_log("IN PROCESS ORDER");
     foreach ($cart as $item) {
-        if (isOutOfStock($item)) {
-            throw new Exception("Not enough inventory for " . $item->id);
+        $item_id = $item['id'];
+        $quantity = $item['quantity'];
+        if (isOutOfStock($item_id, $quantity)) {
+            throw new Exception("Not enough inventory for " . $item['name']);
         } else {
-            decrementInventory($item);
+            decrementInventory($item_id, $quantity);
         }
     }
 }
