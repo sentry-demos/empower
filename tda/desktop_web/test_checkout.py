@@ -15,8 +15,7 @@ def test_checkout(desktop_web_driver, endpoints, batch_size, backend, random, sl
         for i in range(batch_size):
             url = ""
             # Ensures a different backend endpoint gets picked each time
-            # 'ruby' /products /checkout endpoints not available yet
-            current_backend = backend(exclude='ruby')
+            current_backend = backend()
             ce = cexp()
             if (ce in [CExp.CHECKOUT_SUCCESS, CExp.PRODUCTS_BE_ERROR, CExp.PRODUCTS_EXTREMELY_SLOW] and current_backend != 'flask'):
                 # those two are only implemented for flask

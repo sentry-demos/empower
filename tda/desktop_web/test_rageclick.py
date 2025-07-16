@@ -21,8 +21,7 @@ def test_rageclick(desktop_web_driver, endpoints, batch_size, backend, random, s
             url = ""
             # TODO make a query_string builder function for sharing this across tests
             query_string = {
-                # 'ruby' /products /checkout endpoints not available yet
-                'backend': backend(exclude='ruby'),
+                'backend': backend(),
                 'rageclick': 'true'
             }
             url = endpoint_products + '?' + urlencode(query_string)
