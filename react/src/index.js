@@ -85,7 +85,10 @@ Sentry.init({
   replaysSessionSampleRate: 1.0,
   debug: true,
   _experiments: { enableLogs: true },
-  integrations: [
+  integrations: (defaultIntegrations) => [
+    // Filter out the Dedupe integration from the defaults
+    ...defaultIntegrations.filter(integration => integration.name !== "Dedupe"),
+    // Add custom integrations with options
     Sentry.feedbackIntegration({
       // Additional SDK configuration goes in here, for example:
       colorScheme: 'system',
