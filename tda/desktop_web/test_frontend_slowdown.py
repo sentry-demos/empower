@@ -13,8 +13,7 @@ def test_frontend_slowdown(desktop_web_driver, endpoints, random, batch_size, ba
             url = ""
             # TODO make a query_string builder function for sharing this across tests
             query_string = {
-                # 'ruby' /products /checkout endpoints not available yet
-                'backend': backend(exclude=['ruby', 'laravel', 'aspnetcore'])
+                'backend': backend(exclude=['laravel', 'aspnetcore'])
             }
             url = endpoint_frontend_slowdown + '?' + urlencode(query_string)
 
