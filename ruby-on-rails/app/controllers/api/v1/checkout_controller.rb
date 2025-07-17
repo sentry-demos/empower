@@ -72,35 +72,35 @@ class Api::V1::CheckoutController < ApplicationController
 
     span_read_params.finish
 
-    #default message, rewritten if exception
-    logged = "Thanks for your order. Total cost is $" + total 
-
-    span_inventory_call = transaction.start_child(op: "custom.inventory_db_call")
-    products_in_inventory = Inventory.all()
-    span_inventory_call.finish
-
     span_logic = transaction.start_child(op: "custom.inventory_vs_cart_logic")
 
-    products_in_inventory.each_with_index { |inv_objs, i|
-      if !enough_inventory?(cart_contents)
-        begin
-          raise Exception.new "Not enough inventory for product"
-          STDERR.puts "Not enough inventory for productid " + inv_objs["productid"].to_s
-          Sentry.capture_exception(Exception)
-          logged = "Error: Not enough inventory"
-          render json: {"message": logged}, status: 500
-          break # breaks on first error. might be more inventory errors.
-        end
-      end
-    }
+    # Perform the inventory check *once* for the entire cart
+    unless enough_inventory?(cart_contents)
+      logged_message = "Error: Not enough inventory for one or more items."
+      response_status = 400 # Use 400 for client error
+    else
+      # Success path
+      logged_message = "Thanks for your order. Total cost is $" + total
+      response_status = 200
+    end
 
     span_logic.finish
 
-    render json: {"message": logged}, status: 200
+    render json: {"message": logged_message}, status: response_status
 
   end
 
   def enough_inventory?(cart_contents)
-    return false
+    inventory_stock = Inventory.all().each_with_object({}) do |inventory_item, stock_map|
+      stock_map[inventory_item.productid.to_s] = inventory_item.quantity
+    end
+    cart_contents.each do |product_id_str, requested_quantity_str|
+      requested_quantity = requested_quantity_str.to_i
+      available_stock = inventory_stock[product_id_str] || 0
+      if requested_quantity > available_stock
+        return false
+      end
+    end
+    return true
   end
 end
