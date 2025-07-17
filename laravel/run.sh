@@ -5,5 +5,6 @@ function cleanup {
 }
 trap cleanup EXIT
 
+composer install
 php artisan serve --port=$LOCAL_PORT
 
