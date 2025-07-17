@@ -62,6 +62,7 @@ if (window.location.hostname === 'localhost') {
 let BACKEND_URL;
 let FRONTEND_SLOWDOWN;
 let RAGECLICK;
+let PRODUCTS_API;
 let PRODUCTS_EXTREMELY_SLOW;
 let PRODUCTS_BE_ERROR;
 let ADD_TO_CART_JS_ERROR;
@@ -233,6 +234,17 @@ class App extends Component {
       currentScope.setTag('frontendSlowdown', false);
     }
 
+    if (queryParams.get('api') === 'join') {
+      if (PRODUCTS_EXTREMELY_SLOW || PRODUCTS_BE_ERROR || FRONTEND_SLOWDOWN) {
+        throw new Error('?products_api=join can\'t be combined with ?cexp=products_extremely_slow, ?cexp=products_be_error, or ?frontendSlowdown=true');
+      }
+      PRODUCTS_API = 'products-join';
+      currentScope.setTag('api', 'products-join');
+    } else {
+      PRODUCTS_API = 'products';
+      currentScope.setTag('api', 'products');
+    }
+
     if (queryParams.get('rageclick') === 'true') {
       RAGECLICK = true;
     }
@@ -359,6 +371,7 @@ class App extends Component {
                 element={
                   <Products backend={BACKEND_URL}
                     frontendSlowdown={false}
+                    productsApi={PRODUCTS_API}
                     productsExtremelySlow={PRODUCTS_EXTREMELY_SLOW}
                     productsBeError={PRODUCTS_BE_ERROR}
                     addToCartJsError={ADD_TO_CART_JS_ERROR}
