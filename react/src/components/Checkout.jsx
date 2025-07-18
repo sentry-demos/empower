@@ -87,34 +87,19 @@ async function checkout(cart, checkout_span) {
       stopMeasurement();
       return res;
     });
+    
+    const data = await response.json();
+    checkout_span.setAttribute('checkout.response', JSON.stringify(data));
+
     if (!response.ok) {
-      checkout_span.setAttribute("checkout.error", 1);
-
-      if (!response.error || response.status === undefined) {
-        checkout_span.setAttribute("status", response.status);
-
-        throw new Error(
-          [response.status, response.statusText || ' Internal Server Error'].join(
-            ' -'
-          )
-        );
-      } else {
-        checkout_span.setAttribute("status", "unknown_error");
-        if (response.error instanceof TypeError && response.error.message === "Failed to fetch") {
-          /* A fetch() promise only rejects when e.g. badly-formed request URL or a network error. It does not reject if
-          the server responds with HTTP 4xx or 5xx, etc. However some server frameworks might not attach CORS headers 
-          when returning HTTP 500 causing promise to reject and response object not be accessible. */
-          Sentry.captureException(new Error("Fetch promise rejected in Checkout due to either an actual network issue, malformed URL, etc or CORS headers not set on HTTP 500: " + response.error));
-        } else {
-          Sentry.captureException(new Error("Checkout request failed: " + response.error));
-        }
-      }
-    } else {
-      checkout_span.setAttribute("checkout.success", 1)
-      checkout_span.setAttribute("checkout.order.total", cart.total);
+      checkout_span.setAttribute('checkout.error', 1);
+      const errorMessage = data.error || `${response.status} - ${response.statusText || 'Internal Server Error'}`;
+      checkout_span.setAttribute('error', errorMessage);
+      throw new Error(errorMessage);
     }
 
-    return response;
+    checkout_span.setAttribute('checkout.success', 1);
+    return data;
   }
   function generateUrl(product_id) {
     return product_id;
