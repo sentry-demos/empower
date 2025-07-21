@@ -30,3 +30,5 @@ for job in jobs/*.sh; do
   echo "Starting $job to run continuously in background..."
   nohup ./loop.sh ./$job >/var/log/tda-$job_name.log 2>&1 &
 done
+
+sleep 1 # give a chance for the background jobs to start
