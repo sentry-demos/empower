@@ -1,7 +1,7 @@
 #!/bin/bash
 
-HOST=empower-tda-and-crons
-HOST_ZONE=us-central1-a
+HOST=empower-tda-and-crons-2
+HOST_ZONE=us-central1-c
 DIR=/home/kosty/empower-tda
 GCP_PROJECT=sales-engineering-sf
 
