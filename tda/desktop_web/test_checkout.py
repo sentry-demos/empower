@@ -1,32 +1,53 @@
 import time
 import sentry_sdk
 from urllib.parse import urlencode
-from conftest import CExp
+from conftest import CExp, BACKENDS
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
 
 
+PRODUCTS_JOIN_RATIO = 0.5
+CEXP_RATIO = 0.3
+CHECKOUT_FLASK_RATIO = 0.6
+
 def test_checkout(desktop_web_driver, endpoints, batch_size, backend, random, sleep_length, cexp):
     for endpoint in endpoints.react_endpoints:
-        endpoint_products = endpoint + "/products"
+
+        if random.random() < PRODUCTS_JOIN_RATIO:
+            endpoint_products = endpoint + "/products?api=join"
+        else:
+            endpoint_products = endpoint + "/products"
+
         sentry_sdk.set_tag("endpoint", endpoint_products)
         sentry_sdk.set_tag("batch_size", batch_size)
 
-        for i in range(batch_size):
+        for s in range(batch_size):
             url = ""
-            # Ensures a different backend endpoint gets picked each time
-            current_backend = backend()
-            ce = cexp()
-            if (ce in [CExp.CHECKOUT_SUCCESS, CExp.PRODUCTS_BE_ERROR, CExp.PRODUCTS_EXTREMELY_SLOW] and current_backend != 'flask'):
-                # those two are only implemented for flask
-                ce = CExp.STANDARD_CHECKOUT_FAIL
-            sentry_sdk.set_tag("cexp", ce)
+            
+            if random.random() < CEXP_RATIO: # Determine if this iteration should use CExp flow
+                current_backend = 'flask'
+                ce = cexp()
+                sentry_sdk.set_tag("cexp", ce)
+            else:
+                # For non-CExp flows, use CHECKOUT_FLASK_RATIO probabilities
+                ce = None
+                probs = {'flask': CHECKOUT_FLASK_RATIO}
+                for backend_name in BACKENDS:
+                    if backend_name != 'flask':
+                        probs[backend_name] = (1.0 - CHECKOUT_FLASK_RATIO) / (len(BACKENDS) - 1)
+                
+                current_backend = backend(probabilities=probs)
+            
+            # to generate more flagship errors than Slow DB Query, other performance issues
+            checkout_attempts = 1 if ce and ce in [CExp.CHECKOUT_SUCCESS, CExp.ADD_TO_CART_JS_ERROR] else 3
 
             # TODO make a query_string builder function for sharing this across tests
             query_string = {
                 'backend': current_backend,
-                'cexp': ce
             }
+            if ce:
+                query_string['cexp'] = ce
+
             url = endpoint_products + '?' + urlencode(query_string)
             
             sentry_sdk.metrics.incr(key="test_checkout.iteration.started", value=1, tags=query_string)
@@ -53,25 +74,26 @@ def test_checkout(desktop_web_driver, endpoints, batch_size, backend, random, sl
                 #   to solve for web vitals issue as transaction may not be resolving
                 time.sleep(2)
 
-                desktop_web_driver.find_element(By.CSS_SELECTOR, '.show-desktop #top-right-links a[href="/cart"]').click()
-
-                time.sleep(sleep_length())
-
-                if (ce != CExp.ADD_TO_CART_JS_ERROR):
-                    try:
-                        desktop_web_driver.find_element(By.CSS_SELECTOR, 'a[href="/checkout"]').click()
-                    except NoSuchElementException as err:
-                        sentry_sdk.metrics.incr(key="test_checkout.iteration.abandoned", value=1, tags=dict(query_string, reason="no_proceed_to_checkout_btn"))
-                        continue
+                for c in range(checkout_attempts):
+                    desktop_web_driver.find_element(By.CSS_SELECTOR, '.show-desktop #top-right-links a[href="/cart"]').click()
 
                     time.sleep(sleep_length())
-                    
-                    desktop_web_driver.find_element(By.CSS_SELECTOR, '#email').send_keys("sampleEmail@email.com")
 
-                    desktop_web_driver.find_element(By.CSS_SELECTOR, '.complete-checkout-btn').click()
-                    time.sleep(sleep_length())
+                    if (ce != CExp.ADD_TO_CART_JS_ERROR):
+                        try:
+                            desktop_web_driver.find_element(By.CSS_SELECTOR, 'a[href="/checkout"]').click()
+                        except NoSuchElementException as err:
+                            sentry_sdk.metrics.incr(key="test_checkout.iteration.abandoned", value=1, tags=dict(query_string, reason="no_proceed_to_checkout_btn"))
+                            continue
 
-                    sentry_sdk.metrics.incr(key="test_checkout.iteration.completed", value=1, tags=query_string)
+                        time.sleep(sleep_length())
+                        
+                        desktop_web_driver.find_element(By.CSS_SELECTOR, '#email').send_keys("sampleEmail@email.com")
+
+                        desktop_web_driver.find_element(By.CSS_SELECTOR, '.complete-checkout-btn').click()
+                        time.sleep(sleep_length())
+
+                        sentry_sdk.metrics.incr(key="test_checkout.iteration.completed", value=1, tags=query_string)
 
             except Exception as err:
                 sentry_sdk.metrics.incr(key="test_checkout.iteration.abandoned", value=1, tags=dict(query_string, reason=f"other({err.__class__.__name__})"))
