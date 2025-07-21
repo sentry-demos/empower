@@ -32,25 +32,29 @@ function About({ backend }) {
       method: 'GET',
     });
 
-    // Need Safari13 in tests/config.py in order for this modern javascript to work in Safari Browser
-    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/allSettled#browser_compatibility
-    // let response = await Promise.allSettled([request1, request2, request3])
-
-    const response = [request1, request2, request3];
-
-    // Error Handling
-    response.forEach((r) => {
-      if (!r.ok) {
-        Sentry.withScope((scope) => {
-          scope.setContext('response', r);
-          Sentry.captureException(
-              new Error(
-                  r.status + ' - ' + (response.statusText || 'Server Error for API')
-              )
-          );
+    Promise.allSettled([request1, request2, request3])
+      .then((results) => {
+        // Error Handling
+        results.forEach((result) => {
+          if (result.status === 'rejected') {
+            Sentry.withScope((scope) => {
+              scope.setContext('error', result.reason);
+              Sentry.captureException(
+                new Error('Network error: ' + result.reason.message)
+              );
+            });
+          } else if (!result.value.ok) {
+            Sentry.withScope((scope) => {
+              scope.setContext('response', result.value);
+              Sentry.captureException(
+                new Error(
+                  result.value.status + ' - ' + (result.value.statusText || 'Server Error for API')
+                )
+              );
+            });
+          }
         });
-      }
-    });
+      });
   }, []);
 
   return (

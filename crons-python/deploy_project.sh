@@ -10,13 +10,15 @@ source .env
 HOST="$CRONSPYTHON_DEPLOY_HOST"
 DIR="$CRONSPYTHON_DEPLOY_DIR"
 CRONTAB_USER=$CRONSPYTHON_CRONTAB_USER
+GCP_PROJECT=sales-engineering-sf
+
+export CLOUDSDK_CORE_PROJECT=$GCP_PROJECT
+export CLOUDSDK_COMPUTE_ZONE=$CRONSPYTHON_DEPLOY_ZONE
+
 function ssh_cmd() {
-    local host_full=$1
-    local host_name=${host_full%%.*}
-    local rest=${host_full#*.}
-    local region=${rest%%.*}
+    local host=$1
     shift
-    gcloud compute ssh $host_name --zone $region -- "$@" 2>&1 | grep -v '^Connection to .* closed\.' || true
+    gcloud compute ssh $host -- "$@" 2>&1 | grep -v '^Connection to .* closed\.' || true
 }
 
 function cleanup {
@@ -51,6 +53,7 @@ if ssh_cmd $HOST '[[ -d '"$DIR/env"' ]] && [[ ! -z `ls -A '"$DIR/env"'` ]]'; the
 fi
 
 echo "Copying code to remote directory..."
+export RSYNC_RSH='ssh -o "ProxyCommand gcloud compute start-iap-tunnel '$HOST' %p --listen-on-stdin --verbosity=warning"'
 rsync -rz --exclude env * .env $HOST:$DIR/
 if [ $? != 0 ]; then
   echo "[ERROR] Failed to rsync code to remote directory."
