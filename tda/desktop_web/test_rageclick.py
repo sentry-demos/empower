@@ -21,6 +21,7 @@ def test_rageclick(desktop_web_driver, endpoints, batch_size, backend, random, s
             url = ""
             # TODO make a query_string builder function for sharing this across tests
             query_string = {
+                'api': 'join', # faster, avoid generating too many N+1s, etc
                 'backend': backend(),
                 'rageclick': 'true'
             }
