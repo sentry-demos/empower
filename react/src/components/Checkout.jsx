@@ -81,7 +81,7 @@ async function checkout(cart, checkout_span) {
       }),
     })
     .catch((error) => {
-      return { ok: false, error: error};
+      throw new Error(`Backend connectivity issue: ${error.message}`);
     })
     .then((res) => {
       stopMeasurement();
