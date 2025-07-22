@@ -28,7 +28,7 @@ function Home({ frontendSlowdown, backend }) {
       <div className="hero-content">
         <h1>Empower your plants</h1>
         <p>Keep your houseplants happy.</p>
-        <Button to={frontendSlowdown ? '/products-fes' : '/products'}>
+        <Button to={'/products'}>
           Browse products
         </Button>
       </div>

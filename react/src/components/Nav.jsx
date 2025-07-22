@@ -51,7 +51,7 @@ function Nav({ cart, frontendSlowdown }) {
               About
             </Link>
             <Link
-              to={frontendSlowdown ? '/products-fes' : '/products'}
+              to={'/products'}
               className="sentry-unmask"
             >
               Products

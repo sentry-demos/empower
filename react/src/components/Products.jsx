@@ -9,71 +9,13 @@ import ProductCard from './ProductCard';
 import { useState, useEffect } from 'react';
 import { updateStatsigUserAndEvaluate } from '../utils/statsig';
 
-function Products({ frontendSlowdown, backend, productsApi, productsExtremelySlow, productsBeError, addToCartJsError }) {
+function Products({ backend, productsApi, productsExtremelySlow, productsBeError, addToCartJsError }) {
   const [products, setProducts] = useState([]);
 
-  function determineProductsEndpoint() {
-    if (productsApi !== 'products-join') {
-      if (productsExtremelySlow) {
-        return '/products?fetch_promotions=true';
-      } else if (productsBeError) {
-        return '/products?in_stock_only=1';
-      } else {
-        return frontendSlowdown ? '/products-join' : '/products';
-      }
-    } else {
-      return '/products-join';
-    }
-  }
-
-  function fetchUncompressedAsset() {
-    let se; // `se` is automatically added to all fetch requests, but need to do manually for script tags
-    Sentry.withScope(function (scope) { se = scope._tags.se; });
-
-    let uc_small_script = document.createElement('script');
-    uc_small_script.async = false;
-    uc_small_script.src =
-      backend +
-      '/compressed_assets/compressed_small_file.js' +
-      `?cacheBuster=${Math.random()}&se=${se}`;
-    document.body.appendChild(uc_small_script);
-
-    // big uncompressed file
-    let c_big_script = document.createElement('script');
-    c_big_script.async = false;
-
-    c_big_script.src =
-      backend +
-      '/uncompressed_assets/uncompressed_big_file.js' +
-      `?cacheBuster=${Math.random()}&se=${se}`;
-    document.body.appendChild(c_big_script);
-  }
-
-  // intentionally supposed to be slow
   function renderProducts(data) {
     try {
-      // Trigger a Sentry 'Performance Issue' in the case of
-      // a frontend slowdown
-      if (frontendSlowdown) {
-        // Must bust cache to have force transfer size
-        // small compressed file
-        fetchUncompressedAsset();
-
-        console.log('triggering slow render problem');
-        // When triggering a frontend-only slowdown, cause a slow render problem
-        setProducts(
-          Array(150) // 150 is arbitrary to make a slow enough render
-            .fill(data.slice(0, 4))
-            .flat()
-            .map((p, n) => {
-              p.id = n;
-              return p;
-            })
-        );
-      } else {
-        console.log('setting products quickly');
-        setProducts(data.slice(0, 4));
-      }
+      console.log('setting products quickly');
+      setProducts(data.slice(0, 4));
     } catch (err) {
       Sentry.captureException(new Error('app unable to load products: ' + err));
     }
@@ -90,7 +32,7 @@ function Products({ frontendSlowdown, backend, productsApi, productsExtremelySlo
     related to the async keyword + babel transform, hence why it probably got
     fixed with hooks (no transform on that class method anymore)"
   */
-  async function getProducts(frontendSlowdown) {
+  async function getProducts() {
     [('/api', '/connect', '/organization')].forEach((endpoint, activeSpan) => {
       fetch(backend + endpoint, {
         method: 'GET',
@@ -100,7 +42,14 @@ function Products({ frontendSlowdown, backend, productsApi, productsExtremelySlo
         Sentry.captureException(err);
       });
     });
-    const productsEndpoint = determineProductsEndpoint();
+    let productsEndpoint = '/products';
+    if (productsApi === 'products-join') {
+      productsEndpoint = '/products-join';
+    } else if (productsExtremelySlow) {
+      productsEndpoint = '/products?fetch_promotions=true';
+    } else if (productsBeError) {
+      productsEndpoint = '/products?in_stock_only=1';
+    }
     Sentry.startSpan({ name: "Fetch Products"}, async (span) => {
       const stopMeasurement = measureRequestDuration(productsEndpoint, span);
       const response = await fetch(backend + productsEndpoint, {
@@ -123,7 +72,7 @@ function Products({ frontendSlowdown, backend, productsApi, productsExtremelySlo
 
   useEffect(() => {
      try {
-      getProducts(frontendSlowdown)
+      getProducts()
      } catch (error) {
       Sentry.captureException(error)
      }
