@@ -60,6 +60,7 @@ if (window.location.hostname === 'localhost') {
 }
 
 let BACKEND_URL;
+let BACKEND_TYPE;
 let FRONTEND_SLOWDOWN;
 let RAGECLICK;
 let PRODUCTS_API;
@@ -140,6 +141,11 @@ Sentry.init({
       }
     }
 
+    if (BACKEND_TYPE === 'flask' && is5xxError && (se && se.startsWith('prod-tda-'))) {
+      // Seer when run automatically will use the latest event. We want it to run on event with flask backend instead of taking chances.
+      event.fingerprint += ['flagship-react-flask'];
+    }
+
     if (event.exception) {
       sessionStorage.setItem('lastErrorEventId', event.event_id);
     }
@@ -178,7 +184,8 @@ class App extends Component {
     // Set desired backend
     let backendTypeParam = queryParams.get('backend');
     const backendType = determineBackendType(backendTypeParam);
-    BACKEND_URL = determineBackendUrl(backendType, ENVIRONMENT);
+    BACKEND_TYPE = backendType;
+    BACKEND_URL = determineBackendUrl(backendType);
 
     console.log(`> backendType: ${backendType} | backendUrl: ${BACKEND_URL}`);
 
