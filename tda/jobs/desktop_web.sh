@@ -5,5 +5,5 @@
 #   0.42-0.6 flask
 #   0.056-0.08 each of {express,springboot,laravel,rails,aspnetcore}
 # flask total = 0.6 - 0.72
-BATCH_SIZE=random_5_15 pytest -s -n 7 --ignore-glob='*_vue.py' desktop_web
+BATCH_SIZE=random_5_15 pytest --timeout=1200 -s -n 7 --ignore-glob='*_vue.py' desktop_web
 
