@@ -30,15 +30,17 @@ class Api::V1::ProductsjoinController < ApplicationController
     #span_reviews_db.finish
 
     span_response = transaction.start_child(op: "custom.construct_response_object")
-    products.each do |prod|  
-      prod["pg_sleep"] = ""
+    products = products.map do |prod|  
+      prod_attrs = prod.attributes
+      prod_attrs["pg_sleep"] = ""
       reviews_arr = []
       reviews.each do |review|
         if prod.id == review.productid
-          reviews_arr.push(*review)
+          reviews_arr.push(review.as_json)
         end
-      prod["reviews"] = reviews_arr
       end
+      prod_attrs["reviews"] = reviews_arr
+      prod_attrs
     end
     span_response.finish
 

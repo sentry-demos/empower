@@ -111,7 +111,7 @@ BATCH_SIZE = os.getenv("IS_CANARY") and "1" or (os.getenv("BATCH_SIZE") or "1")
 SLEEP_LENGTH = os.getenv("SLEEP_LENGTH") or "random_2_1"
 
 # Currently only used in desktop_web/ tests. Mobile apps have it hardcoded.
-BACKENDS = (os.getenv("BACKENDS") or "flask,express,springboot,ruby,laravel,rails,aspnetcore").split(',')
+BACKENDS = (os.getenv("BACKENDS") or "flask,express,springboot,laravel,rails,aspnetcore").split(',')
 
 import urllib3
 urllib3.disable_warnings()
@@ -187,14 +187,22 @@ def sleep_length(random):
 @pytest.fixture
 def batch_size(random):
     if BATCH_SIZE.startswith("random_"):
-        return random.randrange(int(BATCH_SIZE.split('_')[1]))
+        parts = BATCH_SIZE.split('_')
+        if len(parts) == 2:
+            # random_X format: random number between 0 and X-1
+            return random.randrange(int(parts[1]))
+        elif len(parts) == 3:
+            # random_X_Y format: random number between X and Y (inclusive)
+            return random.randint(int(parts[1]), int(parts[2]))
+        else:
+            raise ValueError(f"Invalid BATCH_SIZE format: {BATCH_SIZE}. Expected 'random_X' or 'random_X_Y'")
     else:
         r = random.random() # unused, to make sure we call random same number of times
         return int(BATCH_SIZE)
 
 @pytest.fixture
 def backend(random):
-    def random_backend(exclude=[], include=[]):
+    def random_backend(exclude=[], include=[], probabilities=None):
         if not include:
             include = BACKENDS
         else:
@@ -213,9 +221,40 @@ def backend(random):
         #   >>> list(set(['b', 'a', 'f', 'd', 'e', 'c']) - set(['c', 'a']))
         #   ['d', 'f', 'b', 'e']
         backends = sorted(list(set(include) - set(exclude)))
-        if 'flask' in backends:
-            backends += ['flask'] # make flask 2x more likely than others
-        return random.sample(backends, 1)[0]
+        
+        if probabilities is not None:
+            # Validate that probabilities add up to 1.0
+            total_prob = sum(probabilities.values())
+            if abs(total_prob - 1.0) > 1e-6:  # Allow for small floating point errors
+                raise ValueError
+            
+            if not set(probabilities.keys()).issubset(set(backends)):
+                raise ValueError
+            
+            probs_to_use = probabilities
+        else:
+            # Default behavior: if flask is among backends, make it 2x more likely
+            if 'flask' in backends:
+                # Calculate default probabilities to make flask 2x more likely
+                num_backends = len(backends)
+                flask_weight = 2
+                other_weight = 1
+                total_weight = flask_weight + (num_backends - 1) * other_weight
+                
+                probs_to_use = {}
+                for backend_name in backends:
+                    if backend_name == 'flask':
+                        probs_to_use[backend_name] = flask_weight / total_weight
+                    else:
+                        probs_to_use[backend_name] = other_weight / total_weight
+            else:
+                # If flask not among backends, make all backends equally likely
+                return random.sample(backends, 1)[0]
+        
+        # Use weighted random choice
+        backend_names = list(probs_to_use.keys())
+        weights = list(probs_to_use.values())
+        return random.choices(backend_names, weights=weights, k=1)[0]
     return random_backend
 
 
