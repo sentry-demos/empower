@@ -9,5 +9,7 @@ fi
 # since using '-s' instead of '-s -n 1' to be able to capture output:
 #   "Due to how pytest-xdist is implemented, the -s/--capture=no option does not work."
 #   https://pytest-xdist.readthedocs.io/en/stable/
-pytest --timeout=1200 -s mobile_native
+#
+#   timeout is per test
+pytest --timeout=600 -s mobile_native
 
