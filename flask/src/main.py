@@ -54,6 +54,15 @@ def before_send(event, hint):
             se_fingerprint = prefix[0]
 
         if se.startswith('prod-tda-'):
+            # Drop inventory-related errors with 1% probability (only for TDA, SE flow is not affected)
+            # so it shows up #1 in Sandbox once it's ordering by Events https://linear.app/getsentry/issue/TET-929
+            if (event.get('exception') and 
+                event['exception'].get('values') and
+                any('inventory' in value.get('value', '') 
+                    for value in event['exception']['values'])):
+                if random.random() < 0.01:
+                    return None
+
             event['fingerprint'] = ['{{ default }}', se_fingerprint, RELEASE]
         else:
             event['fingerprint'] = ['{{ default }}', se_fingerprint]

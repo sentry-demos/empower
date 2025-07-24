@@ -99,4 +99,4 @@ def test_checkout(desktop_web_driver, endpoints, batch_size, backend, random, sl
                 sentry_sdk.metrics.incr(key="test_checkout.iteration.abandoned", value=1, tags=dict(query_string, reason=f"other({err.__class__.__name__})"))
                 sentry_sdk.capture_exception(err)
 
-            time.sleep(sleep_length())
+            time.sleep(3)
