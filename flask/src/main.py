@@ -259,23 +259,27 @@ def checkout():
         if validate_inventory:
             with sentry_sdk.start_span(op="process_order", description="function"):
                 if len(quantities) == 0:
-                    raise Exception("Invalid checkout request")
+                    raise Exception("Invalid checkout request: cart is empty")
 
-                quantities = cart['quantities']
-                inventoryDict = {x.productid: x for x in inventory}
-                for i, cartItem in enumerate(quantities):
-                    if cartItem in inventoryDict and inventoryDict[cartItem].count >= quantities[cartItem]:
-                        decrement_inventory(inventoryDict[cartItem].id, quantities[cartItem])
+                quantities = {int(k): v for k, v in cart['quantities'].items()}
+                inventory_dict = {x.productid: x for x in inventory}
+                for product_id in quantities:
+                    inventory_count = inventory_dict[product_id].count if product_id in inventory_dict else 0
+                    if inventory_count >= quantities[product_id]:
+                        decrement_inventory(inventory_dict[product_id].id, quantities[product_id])
                         fulfilled_count += 1
                     else:
-                        out_of_stock.append(f'Item #{i}')
+                        title = list(filter(lambda x: x['id'] == product_id, cart['items']))[0]['title'] 
+                        out_of_stock.append(title)
     except Exception as err:
         sentry_sdk.metrics.incr(key="checkout.failed")
         raise Exception("Error validating enough inventory for product") from err
 
     if len(out_of_stock) == 0:
         result = {'status': 'success'}
+        logging.info("Checkout successful")
     else:
+        # react doesn't handle these yet, shows "Checkout complete" as long as it's HTTP 200
         if fulfilled_count == 0:
             result = {'status': 'failed'} # All items are out of stock
         else: 
