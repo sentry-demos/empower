@@ -19,8 +19,6 @@ PRODUCTS_NUM = 4
 class DatabaseConnectionError (Exception):
     pass
 
-# error type was 'Error' so using the error message here so it's more specific
-UNPACK_FROM_ERROR="unpack_from requires a buffer of at least 5 bytes for unpacking 5 bytes at offset"
 
 if FLASK_ENV == "test":
     print("> ENVIRONMENT test ")
@@ -71,14 +69,8 @@ def get_products():
         with sentry_sdk.start_span(op="serialization", description="json"):
             result = json.dumps(results, default=str)
         return result
-    except BrokenPipeError as err:
-        raise DatabaseConnectionError('get_products')
     except Exception as err:
-        err_string = str(err)
-        if UNPACK_FROM_ERROR in err_string:
-            raise DatabaseConnectionError('get_products')
-        else:
-            raise(err)
+        raise DatabaseConnectionError('get_products') from err
 
 # 2 sql queries max, then sort in memory
 def get_products_join():
@@ -99,14 +91,8 @@ def get_products_join():
                 "SELECT reviews.id, products.id AS productid, reviews.rating, reviews.customerId, reviews.description, reviews.created FROM reviews INNER JOIN products ON reviews.productId = products.id"
             ).fetchall()
             span.set_data("reviews",reviews)
-    except BrokenPipeError as err:
-        raise DatabaseConnectionError('get_products_join')
     except Exception as err:
-        err_string = str(err)
-        if UNPACK_FROM_ERROR in err_string:
-            raise DatabaseConnectionError('get_products_join')
-        else:
-            raise(err)
+        raise DatabaseConnectionError('get_products_join') from err
 
     with sentry_sdk.start_span(op="get_products_join.format_results", description="function") as span:
         for product in products:
@@ -134,13 +120,8 @@ def get_inventory(cart):
 
     productIds = []
     for productId_str in quantities.keys():
-        try:
-            logging.info(f"Processing product ID: {productId_str}")
-            productIds.append(int(productId_str))
-        except ValueError as e:
-            # Handle potential non-integer keys if necessary, e.g., log or raise
-            sentry_sdk.capture_exception(e)
-            raise ValueError(f"Invalid product ID format: {productId_str}. Expected an integer-convertible string.") from e
+        logging.info(f"Processing product ID: {productId_str}")
+        productIds.append(int(productId_str))
 
     print("> productIds", productIds)
 
@@ -152,14 +133,8 @@ def get_inventory(cart):
             query = text("SELECT * FROM inventory WHERE productId = ANY(:product_ids)")
             inventory = connection.execute(query, product_ids=productIds).fetchall()
             span.set_data("inventory",inventory)
-    except BrokenPipeError as err:
-        raise DatabaseConnectionError('get_inventory')
     except Exception as err:
-        err_string = str(err)
-        if UNPACK_FROM_ERROR in err_string:
-            raise DatabaseConnectionError('get_inventory')
-        else:
-            raise(err)
+        raise DatabaseConnectionError('get_inventory') from err
 
     return inventory
 

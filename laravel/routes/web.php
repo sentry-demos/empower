@@ -67,8 +67,76 @@ Route::get('/unhandled', ['as' => 'unhandled', function () {
 }]);
 
 Route::post('/checkout', ['as' => 'checkout', function (Request $request) {
-    get_inventory();
-    throw new Exception("Not enough inventory");
+    $order = json_decode($request->getContent(), true);
+    $cart = $order["cart"];
+    $form = $order["form"];
+    $validate_inventory = true;
+    if (isset($order["validate_inventory"])) {
+        $validate_inventory = $order["validate_inventory"] == "true";
+    }
+    
+    $inventory = [];
+    try {
+        $inventory = get_inventory($cart);
+        // id | sku | count | productid
+    } catch (Exception $err) {
+        throw $err;
+    }
+    
+    error_log("> /checkout inventory " . json_encode($inventory));
+    error_log("> validate_inventory " . ($validate_inventory ? "true" : "false"));
+    
+    $fulfilled_count = 0;
+    $out_of_stock = []; // list of items that are out of stock
+    try {
+        if ($validate_inventory) {
+            if (empty($quantities)) {
+                throw new Exception("Invalid checkout request: cart is empty");
+            }
+            
+            $quantities = [];
+            foreach ($cart['quantities'] as $key => $value) {
+                $quantities[(int)$key] = $value;
+            }
+            $inventory_dict = [];
+            foreach ($inventory as $x) {
+                $inventory_dict[$x->productid] = $x;
+            }
+            
+            foreach ($quantities as $product_id => $quantity) {
+                $inventory_count = isset($inventory_dict[$product_id]) ? $inventory_dict[$product_id]->count : 0;
+                if ($inventory_count >= $quantity) {
+                    decrement_inventory($inventory_dict[$product_id]->id, $quantity);
+                    $fulfilled_count += 1;
+                } else {
+                    $title = null;
+                    foreach ($cart['items'] as $item) {
+                        if ($item['id'] == $product_id) {
+                            $title = $item['title'];
+                            break;
+                        }
+                    }
+                    $out_of_stock[] = $title;
+                }
+            }
+        }
+    } catch (Exception $err) {
+        throw new Exception("Error validating enough inventory for product", 0, $err);
+    }
+    
+    if (empty($out_of_stock)) {
+        $result = ['status' => 'success'];
+        error_log("Checkout successful");
+    } else {
+        // react doesn't handle these yet, shows "Checkout complete" as long as it's HTTP 200
+        if ($fulfilled_count == 0) {
+            $result = ['status' => 'failed']; // All items are out of stock
+        } else {
+            $result = ['status' => 'partial', 'out_of_stock' => $out_of_stock];
+        }
+    }
+    
+    return response()->json($result);
 }]);
 
 Route::get('/', function () {
@@ -95,12 +163,31 @@ Route::get('/debug-sentry', function () {
     throw new Exception('My first Sentry error!');
 });
 
-function decrementInventory($item) {
-    Cache::decrement($item->id, 1);
+function decrement_inventory($product_id, $count) {
+    // Do nothing
 }
 
-function get_inventory() {
-    $inventory = Inventory::all();
+function get_inventory($cart) {
+    error_log("> get_inventory");
+    
+    $quantities = $cart['quantities'];
+    
+    error_log("> quantities " . json_encode($quantities));
+    
+    $productIds = [];
+    foreach (array_keys($quantities) as $productId_str) {
+        error_log("Processing product ID: " . $productId_str);
+        $productIds[] = intval($productId_str);
+    }
+    
+    error_log("> productIds " . json_encode($productIds));
+    
+    try {
+        $inventory = DB::select('SELECT * FROM inventory WHERE productid IN (' . implode(',', array_fill(0, count($productIds), '?')) . ')', $productIds);
+    } catch (Exception $err) {
+        throw new Exception('get_inventory', 0, $err);
+    }
+    
     return $inventory;
 }
 
