@@ -141,7 +141,7 @@ Sentry.init({
       }
     }
 
-    if (BACKEND_TYPE === 'flask' && is5xxError && (se && se.startsWith('prod-tda-'))) {
+    if ((BACKEND_TYPE === 'flask' || BACKEND_TYPE === 'laravel') && is5xxError && (se && se.startsWith('prod-tda-'))) {
       // Seer when run automatically will use the latest event. We want it to run on event with flask backend instead of taking chances.
       event.fingerprint += ['flagship-react-flask'];
     }
