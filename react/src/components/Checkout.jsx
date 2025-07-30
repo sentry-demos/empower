@@ -55,10 +55,14 @@ async function checkout(cart, checkout_span) {
         return;
     }
 
+    if(getTag('backendType') === 'flask') { 
+      Sentry.setTag('seerDemo', true);
+    }
+    
     checkout_span.setAttribute("checkout.click", 1);
     checkout_span.setAttribute("items_at_checkout", itemsInCart);
 
-    let tags = { 'backendType': getTag('backendType'), 'cexp': getTag('cexp'), 'items_at_checkout': itemsInCart, 'checkout.click': 1 };
+    let tags = { 'backendType': getTag('backendType'), 'cexp': getTag('cexp'), 'items_at_checkout': itemsInCart, 'checkout.click': 1, };
     checkout_span.setAttributes(tags);
     const stopMeasurement = measureRequestDuration('/checkout');
 
