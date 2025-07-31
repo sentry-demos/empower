@@ -51,7 +51,7 @@ jobs:
         run: brew update && brew install rsync
         
       - name: Run deploy_tda.sh
-        run: eval "$(ssh-agent -s)" && gcloud compute config-ssh && ./deploy_tda.sh
+        run: eval "$(ssh-agent -s)" && gcloud compute config-ssh && ssh-add ~/.ssh/google_compute_engine && ./deploy_tda.sh
         working-directory: ./empower/tda
           
       - run: echo "Job status is ${{ job.status }}."
