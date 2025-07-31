@@ -19,6 +19,10 @@ function cleanup {
 }
 trap cleanup EXIT
 
+ssh -V
+rsync --version | head -1
+gcloud --version
+
 echo "Checking ssh connection can be established..."
 gcloud compute ssh --tunnel-through-iap $HOST -- -o StrictHostKeyChecking=accept-new exit
 if [ $? != "0" ]; then
@@ -31,8 +35,6 @@ trap - EXIT
 echo "Copying code to remote directory..."
 # for whatever reason can't delete or chmod __pycache__ directories
 export RSYNC_RSH='ssh -o "ProxyCommand gcloud compute start-iap-tunnel '$HOST' %p --listen-on-stdin --project='$GCP_PROJECT' --zone='$HOST_ZONE' --verbosity=warning"'
-ssh -V
-rsync --version | head -1
 rsync -rz --delete --force-delete --exclude env/ --exclude __pycache__ --exclude .pytest_cache * .sauce_credentials $HOST:$DIR/
 ret="$?"
 
