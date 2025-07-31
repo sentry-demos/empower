@@ -6,7 +6,12 @@
 # 'run_local.sh' script instead of deploying to Google App Engine. If multiple projects are specified on
 # the command-line in this local mode, a webserver will be started for each project.
 #
-# Usage: ./deploy.sh react flask laravel --env=staging
+# In local mode, you can also specify a custom command to run instead of run_local.sh using the -- separator:
+# Usage: ./deploy.sh --env=local flask                 # uses flask/run_local.sh - a setup similar to production
+# Usage: ./deploy.sh react --env=local -- npm start    # any command after --, e.g. hot reload server or `cat .env`
+# Usage: ./deploy.sh --env=production react            # deploy to production
+# Usage: ./deploy.sh --env=staging express spring-boot # multiple projects
+# Usage: ./deploy.sh --env=local react flask laravel   # wires all 3 together automatically (see local.env)
 #
 # Runtime configuration is done by substituting variables in all *.template files found anywhere
 # inside each project with the values from *.env file. The output of substitution will be saved in
@@ -45,20 +50,44 @@ export PATH="$PATH:$top/bin"
 # Parse CLI arguments
 projects=""
 env=""
+custom_command=""
+custom_command_args=""
+found_separator=false
+
 for arg in "$@"; do
   if [[ $arg = --env=* ]]; then
     env=$(echo $arg | cut -d '=' -f 2)
     echo "env = $env"
+  elif [[ $arg = "--" ]]; then
+    found_separator=true
+  elif [[ $found_separator = true ]]; then
+    if [[ -z "$custom_command" ]]; then
+      custom_command="$arg"
+    else
+      custom_command_args+="$arg "
+    fi
   else
     projects+="$arg "
   fi
 done
 
-USAGE="[ERROR] Invalid arguments. Usage e.g.: ./deploy.sh --env=staging react flask"
+USAGE="[ERROR] Invalid arguments.\n\
+Usage: \n\
+./deploy.sh --env=local flask                 # uses flask/run_local.sh - a setup similar to production\n\
+./deploy.sh react --env=local -- npm start    # any command after --, e.g. hot reload server or `cat .env`\n\
+./deploy.sh --env=production react            # deploy to production\n\
+./deploy.sh --env=staging express spring-boot # multiple projects\n\
+./deploy.sh --env=local react flask laravel   # wires all 3 together automatically (see local.env)"
 
 # Validate CLI arguments
 if [[ "$env" == "" || "$projects" == "" ]]; then
   echo "$USAGE";
+  exit 1
+fi
+
+# Validate custom command usage
+if [[ -n "$custom_command" && "$env" != "local" ]]; then
+  echo "[ERROR] Custom commands (-- <command>) are only allowed in local mode (--env=local)"
   exit 1
 fi
 
@@ -168,8 +197,6 @@ echo "SENTRY_AUTH_TOKEN=$SENTRY_AUTH_TOKEN" >> .resolved.env
 # Resolve all variables in .resolved.env
 while true; do
     prev_content=$(cat .resolved.env)
-    # TODO now that we are using --from instead of exporting, 
-    # do we still need to process __MAGIC_VARS__??
     envsubst.sh --strict-allow-empty --ignore-prefix=__GCP_SECRET__ --from=.resolved.env < .resolved.env > .resolved.tmp
     new_content=$(cat .resolved.tmp)
     mv .resolved.tmp .resolved.env
@@ -178,18 +205,6 @@ while true; do
     fi
 done
 
-function ignore_special_dotenvs {
-  local tmp_file=$1
-  if [ -f ".gcloudignore" ]; then
-    cp .gcloudignore "$tmp_file"
-  else
-    touch "$tmp_file"
-  fi
-  echo ".env.local" >> "$tmp_file"
-  echo ".env.build" >> "$tmp_file"
-  echo ".env.deploy" >> "$tmp_file"
-  temp_files+="$(pwd)/$tmp_file "
-}
 
 for proj in $projects; do # bash only
 
@@ -261,7 +276,7 @@ for proj in $projects; do # bash only
     if [ -f "$script_file" ]; then
       echo "Checking what env variables $script_file needs..."
       
-      # Step 1: Substitute variables in the script (like we do for templates)
+      # Step 1: Substitute variables in the script as if it was a template so we can see which secrets are needed
       tmp_script_file=".${script_file}.tmp"
       temp_files+="$(pwd)/$tmp_script_file "
       exit_code=0
@@ -274,7 +289,7 @@ for proj in $projects; do # bash only
         exit 1
       fi
       
-      # Step 2: Identify GCP secrets from the substituted script
+      # Step 2: Identify GCP secrets
       current_secrets=$(envsubst.sh --script --list < "$tmp_script_file" | grep '^__GCP_SECRET__' | sed 's/^__GCP_SECRET__//' | tr '\n' ' ')
       
       if [ -n "$current_secrets" ]; then
@@ -304,23 +319,37 @@ for proj in $projects; do # bash only
   unset CI # prevents build failing in GitHub Actions
   # if needed build.sh is responsible for calling sentry-release.sh with appropriate arguments
   echo "Running build.sh with resolved environment..."
+  set -x
   gcp_secret_wrapper.sh --pass $script_secrets -- env "${RESOLVED_VARS[@]}" ./build.sh
+  set +x
 
   # *** DEPLOY OR RUN ***
   if [ "$env" == "local" ]; then
-    echo "Running run_local.sh with resolved environment..."
-    gcp_secret_wrapper.sh --pass $script_secrets -- env "${RESOLVED_VARS[@]}" ./run_local.sh &
-    pid="$!"
-    run_sh_pids+="$pid " # for later cleanup
+    if [[ -n "$custom_command" ]]; then
+      echo "Running custom command '$custom_command $custom_command_args' with resolved environment..."
+      gcp_secret_wrapper.sh --pass $script_secrets -- env "${RESOLVED_VARS[@]}" $custom_command $custom_command_args &
+      pid="$!"
+      run_sh_pids+="$pid " # for later cleanup
 
-    if [[ "$projects" != *"$proj " ]]; then # not last one
-      wait_check_if_crashed "$pid" "$proj"
+      if [[ "$projects" != *"$proj " ]]; then # not last one
+        wait_check_if_crashed "$pid" "$proj"
+      fi
+    else
+      echo "Running run_local.sh with resolved environment..."
+      set -x
+      gcp_secret_wrapper.sh --pass $script_secrets -- env "${RESOLVED_VARS[@]}" ./run_local.sh &
+      pid="$!"
+      set +x
+      run_sh_pids+="$pid " # for later cleanup
+
+      if [[ "$projects" != *"$proj " ]]; then # not last one
+        wait_check_if_crashed "$pid" "$proj"
+      fi
     fi
   else
     if [ -f deploy_project.sh ]; then
       ./deploy_project.sh
     else 
-      ignore_special_dotenvs .gcloudignore.tmp
       if [ "$proj" == "spring-boot" ]; then
         mvn clean package appengine:deploy -Dapp.deploy.gcloudignore=.gcloudignore.tmp
       else
