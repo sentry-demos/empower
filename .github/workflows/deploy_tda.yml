@@ -13,7 +13,7 @@ jobs:
     permissions:
       contents: 'read'
       id-token: 'write'
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     
     steps:
       - run: echo "Triggered by ${{ github.event_name }} event."
