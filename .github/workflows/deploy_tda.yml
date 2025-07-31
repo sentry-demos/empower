@@ -13,7 +13,7 @@ jobs:
     permissions:
       contents: 'read'
       id-token: 'write'
-    runs-on: macos-15 # Ubuntu has old rsync that doesn't work with IAP tunnel ProxyCommand
+    runs-on: ubuntu-24.04
     
     steps:
       - run: echo "Triggered by ${{ github.event_name }} event."
@@ -46,12 +46,9 @@ jobs:
 
       - name: 'Set up Google Cloud SDK'
         uses: 'google-github-actions/setup-gcloud@v2'
-
-      - name: Install latest rsync from Homebrew
-        run: brew update && brew install rsync
         
       - name: Run deploy_tda.sh
-        run: gcloud compute config-ssh && ./deploy_tda.sh
+        run: eval "$(ssh-agent -s)" && gcloud compute config-ssh && ./deploy_tda.sh
         working-directory: ./empower/tda
           
       - run: echo "Job status is ${{ job.status }}."
