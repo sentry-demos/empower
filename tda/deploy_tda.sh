@@ -19,7 +19,9 @@ function cleanup {
 }
 trap cleanup EXIT
 
+echo "[DEBUG] System information:"
 ssh -V
+ps aux | grep ssh-agent | grep -v grep > /dev/null && echo "ssh-agent is running" || echo "ssh-agent is NOT running"
 rsync --version | head -1
 gcloud --version
 
