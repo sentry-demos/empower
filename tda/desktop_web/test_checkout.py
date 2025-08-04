@@ -8,7 +8,8 @@ from selenium.common.exceptions import NoSuchElementException
 
 PRODUCTS_JOIN_RATIO = 0.5
 CEXP_RATIO = 0.3
-CHECKOUT_FLASK_RATIO = 0.6
+BYPASS_PREFERRED_BACKENDS_RATIO = 0.6 # backends that have a realistic autofixable error
+BYPASS_PREFERRED_BACKENDS = ['flask', 'laravel']
 
 def test_checkout(desktop_web_driver, endpoints, batch_size, backend, random, sleep_length, cexp):
     for endpoint in endpoints.react_endpoints:
@@ -31,10 +32,13 @@ def test_checkout(desktop_web_driver, endpoints, batch_size, backend, random, sl
             else:
                 # For non-CExp flows, use CHECKOUT_FLASK_RATIO probabilities
                 ce = None
-                probs = {'flask': CHECKOUT_FLASK_RATIO}
+                probs = {}
                 for backend_name in BACKENDS:
-                    if backend_name != 'flask':
-                        probs[backend_name] = (1.0 - CHECKOUT_FLASK_RATIO) / (len(BACKENDS) - 1)
+                    if backend_name in BYPASS_PREFERRED_BACKENDS:
+                        probs[backend_name] = BYPASS_PREFERRED_BACKENDS_RATIO / len(BYPASS_PREFERRED_BACKENDS)
+                    else:
+                        probs[backend_name] = (1.0 - BYPASS_PREFERRED_BACKENDS_RATIO) / (len(BACKENDS) - len(BYPASS_PREFERRED_BACKENDS))
+                    
                 
                 current_backend = backend(probabilities=probs)
             
