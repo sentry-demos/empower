@@ -61,7 +61,6 @@ console.log("> ENVIRONMENT", environment);
 
 // Initialize Sentry
 const Sentry = require("@sentry/node");
-const Tracing = require("@sentry/tracing");
 const { ProfilingIntegration } = require("@sentry/profiling-node");
 Sentry.init({
   dsn: dsn,
@@ -69,7 +68,7 @@ Sentry.init({
   release: release,
   integrations: [
     new Sentry.Integrations.Http({ tracing: true }),
-    new Tracing.Integrations.Express({ app }),
+    new Sentry.Integrations.Express({ app }),
     new ProfilingIntegration(),
     new Sentry.Integrations.LocalVariables({
       captureAllExceptions: true,
@@ -243,4 +242,4 @@ function hasInventory(item) {
   return false;
 }
 
-module.exports = { app, Sentry, Tracing };
+module.exports = { app, Sentry };
