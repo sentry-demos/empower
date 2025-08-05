@@ -19,7 +19,7 @@ gem 'nokogiri', '~>1.17.2'
 gem 'rack-cors'
 gem 'pg'
 
-gem "stackprof"
+gem "vernier"
 gem "sentry-ruby"
 gem "sentry-rails"
 gem "rack"
