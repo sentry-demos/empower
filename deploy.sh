@@ -83,7 +83,7 @@ fi
 be_projects=""
 fe_projects=""
 for proj in $projects; do
-  if [[ $proj =~ ^(flask|express|ruby|spring-boot|aspnetcore|laravel|ruby-on-rails|crons-python)$ ]]; then
+  if [[ $proj =~ ^(flask|express|ruby|spring-boot|aspnetcore|laravel|laravel-12|ruby-on-rails|crons-python)$ ]]; then
     be_projects+="$proj "
   else
     fe_projects+="$proj "
@@ -162,6 +162,9 @@ for proj in $projects; do # bash only
       # https://cloud.google.com/sql/docs/postgres/connect-app-engine-flexible
       export DB_HOST="$CLOUD_SQL_AUTH_PROXY"
     elif [ "$proj" == "laravel" ]; then
+      # https://cloud.google.com/sql/docs/postgres/connect-app-engine-standard#php
+      export DB_HOST="pgsql:dbname=$DB_DATABASE;host=/cloudsql/$DB_CLOUD_SQL_CONNECTION_NAME/"
+    elif [ "$proj" == "laravel-12" ]; then
       # https://cloud.google.com/sql/docs/postgres/connect-app-engine-standard#php
       export DB_HOST="pgsql:dbname=$DB_DATABASE;host=/cloudsql/$DB_CLOUD_SQL_CONNECTION_NAME/"
     fi
