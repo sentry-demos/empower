@@ -17,7 +17,7 @@ import io.sentry.SentryOptions.TracesSamplerCallback;
 import io.sentry.SamplingContext;
 import io.sentry.CustomSamplingContext;
 import org.springframework.stereotype.Component;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

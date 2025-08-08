@@ -9,11 +9,17 @@ sentry.exception-resolver-order=-1
 sentry.enable-tracing=true
 sentry.traces-sample-rate=1.0
 
-spring.datasource.driver-class-name=org.postgresql.Driver
+# Database configuration - using H2 for testing
+spring.datasource.url=jdbc:h2:mem:testdb
+spring.datasource.driver-class-name=org.h2.Driver
+spring.datasource.username=sa
+spring.datasource.password=
+spring.h2.console.enabled=true
+
 #So app starts despite "table already exists" errors.
 spring.datasource.continue-on-error=true
 #Enforces database initialization
-spring.datasource.initialization-mode=always
+spring.sql.init.mode=always
 
 # Must be set for request body to be captured
 sentry.max-request-body-size=always
