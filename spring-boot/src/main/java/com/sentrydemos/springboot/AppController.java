@@ -2,6 +2,7 @@ package com.sentrydemos.springboot;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
+import jakarta.annotation.PostConstruct;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -24,7 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -52,7 +53,7 @@ public class AppController {
 	private IScopes scopes;
 	
 	// headers passed by frontend
-	@Bean
+	@PostConstruct
 	public void initHeaders() {
 		headerTags.add("se");
 		headerTags.add("customerType");
