@@ -220,15 +220,18 @@ public class AppController {
 			logger.info("Item " + key + " has quantity " + quantities.get(key));
 
 			int currentInventory = tempInventory.get(key);
-			currentInventory = currentInventory - quantities.get(key);
-			if (!hasInventory()) {
-				String message = "No inventory for item";
+			int requestedQuantity = quantities.get(key);
+			
+			// Check if there's enough inventory before reducing
+			if (currentInventory < requestedQuantity) {
+				String message = "No inventory for item " + key + ". Available: " + currentInventory + ", Requested: " + requestedQuantity;
 				inventorySpan.setStatus(SpanStatus.fromHttpStatusCode(500, SpanStatus.INTERNAL_ERROR));
 				inventorySpan.finish(); //resolve spans before throwing exception
 				span.finish(); //resolve spans before throwing exception
 				throw new RuntimeException(message);
 			}
-
+			
+			currentInventory = currentInventory - requestedQuantity;
 			tempInventory.put(key, currentInventory);
 
 		}
@@ -245,6 +248,8 @@ public class AppController {
 	}
 	
 	public Boolean hasInventory() {
-		return false;
+		// This method is no longer used since inventory checking is now done properly in the checkout method
+		// Keeping it for backward compatibility but returning true to not block other potential uses
+		return true;
 	}
 }
