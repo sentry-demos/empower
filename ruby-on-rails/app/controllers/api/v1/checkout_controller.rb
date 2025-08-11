@@ -94,7 +94,6 @@ class Api::V1::CheckoutController < ApplicationController
           Sentry.logger.error("Failed to process payment. Insufficient inventory for product: %{product_id}", product_id: inv_objs["productid"])
           raise Exception.new "Not enough inventory for product: #{inv_objs["productid"]}"
           STDERR.puts "Not enough inventory for productid " + inv_objs["productid"].to_s
-          Sentry.capture_exception(Exception)
           logged = "Error: Not enough inventory"
           render json: {"message": logged}, status: 500
           break # breaks on first error. might be more inventory errors.
