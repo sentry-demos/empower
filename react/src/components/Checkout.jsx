@@ -83,22 +83,32 @@ async function checkout(cart, checkout_span) {
     .catch((error) => {
       return { ok: false, error: error};
     })
-    .then((res) => {
+    .then(async (res) => {
       stopMeasurement();
+      
+      // If it's a fetch response, we need to parse the JSON body for error details
+      if (res.status && !res.ok) {
+        try {
+          const errorData = await res.json();
+          return { ...res, errorData: errorData };
+        } catch (jsonError) {
+          // If JSON parsing fails, return response as is
+          return res;
+        }
+      }
+      
       return res;
     });
+    
     if (!response.ok) {
       checkout_span.setAttribute("checkout.error", 1);
 
-      if (!response.error || response.status === undefined) {
+      if (response.errorData) {
+        // We have error details from the backend
         checkout_span.setAttribute("status", response.status);
-
-        throw new Error(
-          [response.status, response.statusText || ' Internal Server Error'].join(
-            ' -'
-          )
-        );
-      } else {
+        throw new Error(response.errorData.error || `${response.status} - Server Error`);
+      } else if (response.error) {
+        // Network error or other fetch error
         checkout_span.setAttribute("status", "unknown_error");
         if (response.error instanceof TypeError && response.error.message === "Failed to fetch") {
           /* A fetch() promise only rejects when e.g. badly-formed request URL or a network error. It does not reject if
@@ -108,6 +118,15 @@ async function checkout(cart, checkout_span) {
         } else {
           Sentry.captureException(new Error("Checkout request failed: " + response.error));
         }
+        throw response.error;
+      } else {
+        // Fallback for other error cases
+        checkout_span.setAttribute("status", response.status);
+        throw new Error(
+          [response.status, response.statusText || ' Internal Server Error'].join(
+            ' -'
+          )
+        );
       }
     } else {
       checkout_span.setAttribute("checkout.success", 1)
