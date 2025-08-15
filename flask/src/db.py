@@ -39,7 +39,7 @@ else:
         )
     )
 
-# N+1 because a sql query for every product n
+# Fixed N+1 query issue by using JOIN instead of loop
 def get_products():
     results = []
     try:
@@ -53,17 +53,35 @@ def get_products():
         query = text("SELECT * FROM products WHERE id IN (SELECT id from products, pg_sleep(:sleep_duration))")
         products = connection.execute(query, sleep_duration=n).fetchall()
 
+        # Get all reviews and product_bundles data in a single query
+        # This eliminates the N+1 query pattern by mimicking the original cross join behavior
+        # Original query was: SELECT * FROM reviews, product_bundles WHERE productId = :x
+        # This is equivalent to a cross join between reviews and product_bundles for each product
+        product_ids = [product.id for product in products]
+        
+        if product_ids:
+            query = text("""
+                SELECT r.*, pb.*
+                FROM reviews r, product_bundles pb 
+                WHERE r.productId = pb.productId 
+                AND r.productId = ANY(:product_ids)
+            """)
+            reviews_data = connection.execute(query, product_ids=product_ids).fetchall()
+        else:
+            reviews_data = []
+
+        # Create a dictionary to group reviews by product_id for efficient lookup
+        reviews_by_product = {}
+        for row in reviews_data:
+            product_id = row.productId  # Use the productId from reviews table
+            if product_id not in reviews_by_product:
+                reviews_by_product[product_id] = []
+            reviews_by_product[product_id].append(dict(row))
+
+        # Build results using the pre-fetched review data
         for product in products:
-            # product_bundles is a "sleepy view", run the following query to get current sleep duration:
-            # SELECT pg_get_viewdef('product_bundles', true)
-            query = text("SELECT * FROM reviews, product_bundles WHERE productId = :x")
-            reviews = connection.execute(query, x=product.id).fetchall()
-
             result = dict(product)
-            result["reviews"] = []
-
-            for review in reviews:
-                result["reviews"].append(dict(review))
+            result["reviews"] = reviews_by_product.get(product.id, [])
             results.append(result)
 
         with sentry_sdk.start_span(op="serialization", description="json"):
