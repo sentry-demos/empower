@@ -220,8 +220,8 @@ public class AppController {
 			logger.info("Item " + key + " has quantity " + quantities.get(key));
 
 			int currentInventory = tempInventory.get(key);
-			currentInventory = currentInventory - quantities.get(key);
-			if (!hasInventory()) {
+			int newInventory = currentInventory - quantities.get(key);
+			if (!hasInventory(newInventory)) {
 				String message = "No inventory for item";
 				inventorySpan.setStatus(SpanStatus.fromHttpStatusCode(500, SpanStatus.INTERNAL_ERROR));
 				inventorySpan.finish(); //resolve spans before throwing exception
@@ -229,7 +229,7 @@ public class AppController {
 				throw new RuntimeException(message);
 			}
 
-			tempInventory.put(key, currentInventory);
+			tempInventory.put(key, newInventory);
 
 		}
 		inventorySpan.finish();
@@ -244,7 +244,7 @@ public class AppController {
 		return "Hello " + fullName;
 	}
 	
-	public Boolean hasInventory() {
-		return false;
+	public Boolean hasInventory(int inventoryCount) {
+		return inventoryCount >= 0;
 	}
 }
