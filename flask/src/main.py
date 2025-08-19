@@ -278,14 +278,11 @@ def checkout():
     if len(out_of_stock) == 0:
         result = {'status': 'success'}
         logging.info("Checkout successful")
+        return make_response(json.dumps(result), 200)
     else:
-        # react doesn't handle these yet, shows "Checkout complete" as long as it's HTTP 200
-        if fulfilled_count == 0:
-            result = {'status': 'failed'} # All items are out of stock
-        else: 
-            result = {'status': 'partial', 'out_of_stock': out_of_stock}
-    
-    return make_response(json.dumps(result))
+        result = {'status': 'failed', 'out_of_stock': out_of_stock}
+        logging.warning("Checkout failed due to out of stock items: %s", out_of_stock)
+        return make_response(json.dumps(result), 400)
 
 
 @app.route('/success', methods=['GET'])
