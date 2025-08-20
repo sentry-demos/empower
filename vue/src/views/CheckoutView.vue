@@ -129,6 +129,7 @@ import { useCounterStore } from "../stores/cart";
             );
             Sentry.logger.error(`Checkout request failed with status: ${response.status}`)
             throw err
+            
           } else {
             Sentry.logger.trace(`Checkout request successful`)
             return true;
