@@ -7,10 +7,15 @@ import vueJsx from "@vitejs/plugin-vue-jsx";
 
 
 // https://vitejs.dev/config/
-export default defineConfig(({ command, mode}) => {
+export default defineConfig(({ command, mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
 
   return {
+    server: {
+      headers: {
+        'Document-Policy': 'js-profiling'
+      }
+    },
     plugins: [vue(), vueJsx(), sentryVitePlugin({
       org: env.SENTRY_ORG,
       project: env.VUE_SENTRY_PROJECT,

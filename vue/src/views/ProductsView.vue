@@ -20,24 +20,6 @@ export default {
   },
 
   methods: {
-    makeCheckoutRequest: function(requestOptions) {
-      return fetch(
-          "https://application-monitoring-flask-dot-sales-engineering-sf.appspot.com/checkout",
-          requestOptions
-        ).then(function (response) {
-          if (!response.ok) {
-            const err = new Error(
-              response.status +
-                " -- " +
-                (response.statusText || "Internal Server Error")
-            );
-            Sentry.captureException(err);
-            return false;
-          } else {
-            return true;
-          }
-        });
-    },
     checkout: function () {
       this.$router.push("/checkout");
     },
@@ -50,14 +32,17 @@ export default {
   },
 
   mounted() {
+    const backendUrl = window.BACKEND_URL + '/products';
+    Sentry.logger.trace(`Fetching products from endpoint: ${backendUrl}`)
     try {
       fetch(
-        "https://application-monitoring-flask-dot-sales-engineering-sf.appspot.com/products"
+        backendUrl
       )
         .then((response) => response.text())
         .then((result) => {
           this.products = JSON.parse(result);
           this.loading = false;
+          Sentry.logger.trace(`Products fetched successfully, found ${this.products.length} products`)
         })
         .catch((error) => {
           console.log("error", error);
