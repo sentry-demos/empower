@@ -2,13 +2,16 @@ import { createApp } from "vue";
 import * as Sentry from "@sentry/vue";
 import { createPinia } from "pinia";
 // import { Debug as DebugIntegration } from "@sentry/integrations";
+import { createSentryPiniaPlugin } from "@sentry/vue";
 
 import App from "./App.vue";
 import router from "./router";
 import { determineBackendType, determineBackendUrl } from "./utils/backendrouter";
 
+const pinia = createPinia();
+pinia.use(createSentryPiniaPlugin());
 const app = createApp(App);
-app.use(createPinia());  
+app.use(pinia);  
 app.use(router);
 
 const RELEASE = import.meta.env.RELEASE;
