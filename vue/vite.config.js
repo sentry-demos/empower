@@ -19,7 +19,7 @@ export default defineConfig(({ command, mode }) => {
     plugins: [vue(), vueJsx(), sentryVitePlugin({
       org: env.SENTRY_ORG,
       project: env.VUE_SENTRY_PROJECT,
-      authToken: env.VITE_RELEASE_TOKEN
+      authToken: env.SENTRY_AUTH_TOKEN
     })],
     resolve: {
       alias: {
