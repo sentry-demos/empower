@@ -12,3 +12,5 @@ handlers:
   - url: .*
     static_files: dist/index.html
     upload: dist/index.html
+    http_headers:
+      Document-Policy: js-profiling
