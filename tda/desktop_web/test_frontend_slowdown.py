@@ -4,7 +4,7 @@ from urllib.parse import urlencode
 
 def test_frontend_slowdown(desktop_web_driver, endpoints, random, batch_size, backend, sleep_length):
 
-    for endpoint in endpoints.react_endpoints:
+    for endpoint in [endpoints.react_endpoint]:
         endpoint_frontend_slowdown = endpoint + "/products-fes"
         sentry_sdk.set_tag("endpoint", endpoint_frontend_slowdown)
 

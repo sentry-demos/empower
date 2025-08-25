@@ -6,7 +6,7 @@ from selenium.webdriver.common.by import By
 
 def test_subscribe_vue(desktop_web_driver, endpoints, random, batch_size, sleep_length):
 
-    for endpoint in endpoints.vue_endpoints:
+    for endpoint in [endpoints.vue_endpoint]:
         
         endpoint = endpoint + "/subscribe"
 

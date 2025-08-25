@@ -44,7 +44,7 @@ function Checkout({ backend, rageclick, checkout_success, cart }) {
   const [form, setForm] = useState(initialFormValues);
 
 
-async function checkout(cart, checkout_span) {
+  async function checkout(cart, checkout_span) {
     console.log("Checkout called with cart:", cart);
     console.log("Checkout span:", checkout_span);
     const itemsInCart = countItemsInCart(cart);

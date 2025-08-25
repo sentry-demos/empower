@@ -5,7 +5,7 @@ import sentry_sdk
 def test_nplusone_api_call(desktop_web_driver, endpoints, random, batch_size, sleep_length):
     sentry_sdk.set_tag("pytestName", "test_nplusone_api_call")
 
-    for endpoint in endpoints.react_endpoints:
+    for endpoint in [endpoints.react_endpoint]:
         endpoint_organization = endpoint + "/nplusone"
         sentry_sdk.set_tag("endpoint", endpoint_organization)
 
