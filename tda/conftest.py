@@ -644,6 +644,46 @@ def ios_sim_driver(request, se_prefix):
         sentry_sdk.capture_exception(err)
 
 
+@pytest.fixture
+def android_flutter_driver(request, se_prefix):
+    se = f'{se_prefix}-sauce-android14'
+    sentry_sdk.set_tag('se', se)
+    try:
+
+        options = UiAutomator2Options().load_capabilities({
+            'platformName': 'Android',
+            'appium:deviceName': 'Android GoogleAPI Emulator',
+            'appium:platformVersion': '14.0',
+            'appium:app': f'https://github.com/sentry-demos/flutter/releases/download/1.0.0/flutter-android.apk',
+            'appium:automationName': 'UiAutomator2',
+            'sauce:options': {
+                'appiumVersion': '2.0.0-flutter2',
+                'name': request.node.name,
+                'username': SAUCE_USERNAME,
+                'accessKey': SAUCE_ACCESS_KEY
+            },
+            'appWaitForLaunch': False
+        })
+
+        driver = appiumdriver.Remote(SELENIUM_ENDPOINT, options=options)
+        driver.implicitly_wait(20)
+
+        sentry_sdk.set_tag("sauceLabsUrl", f"https://app.saucelabs.com/tests/{driver.session_id}")
+
+        yield driver
+        sauce_result = "failed" if request.node.rep_call.failed else "passed"
+        driver.execute_script("sauce:job-result={}".format(sauce_result))
+        driver.quit()
+
+        # send to Sentry empower-tda, look for tags: se, sauceLabsUrl
+        sentry_sdk.capture_message("Selenium Session Done")
+
+    except Exception as err:
+        sentry_sdk.capture_exception(err)
+        raise err
+
+
+
 @pytest.hookimpl(hookwrapper=True, tryfirst=True)
 def pytest_runtest_makereport(item, call):
     # this sets the result as a test attribute for Sauce Labs reporting.
