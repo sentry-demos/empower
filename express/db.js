@@ -10,51 +10,41 @@ const getProducts = async function () {
   let results = [];
   try {
     // Retrieve Products
-    let transaction = Sentry.getCurrentHub().getScope().getTransaction();
-    let span = transaction.startChild({
-      op: "getproducts",
-      description: "db.query",
-    });
+
     // backorder_inventory is a "sleepy view", run the following query to get current sleep duration:
     // SELECT pg_get_viewdef('backorder_inventory', true)
     const productsQuery = `SELECT * FROM products CROSS JOIN backorder_inventory`;
-    const subspan = span.startChild({
-      op: "fetch products",
-      description: productsQuery,
-    });
 
-    const products = await knex.raw(productsQuery).catch((err) => {
-      console.log("There was an error", err);
-      throw err;
-    });
+    const products = await Sentry.startSpan(
+      { op: "getproducts", description: "db.query" },
+      async () => {
+        return await knex.raw(productsQuery).catch((err) => {
+          console.log("There was an error", err);
+          throw err;
+        });
+      }
+    );
+
     Sentry.setTag("totalProducts", products.rows.length);
-    span.setData("Products", products.rows);
-    subspan.finish();
-    span.finish();
+    const span = Sentry.getActiveSpan();
+    if (span) span.setAttribute("products", products.rows);
 
     // Retrieve Reviews
-    span = transaction.startChild({
-      op: "getproducts.reviews",
-      description: "db.query",
-    });
+    Sentry.startSpan({ op: "getproducts.reviews", description: "db.query" }, () => true);
+
     let formattedProducts = [];
-    for (product of products.rows) {
+    for (const product of products.rows) {
       // weekly_promotions is a "sleepy view", run the following query to get current sleep duration:
       // SELECT pg_get_viewdef('weekly_promotions', true)
       const reviewsQuery = `SELECT * FROM reviews, weekly_promotions WHERE productId = ${product.id}`;
-      const subspan = span.startChild({
-        op: "fetch review",
-        description: reviewsQuery,
-      });
+
+      await Sentry.startSpan({ op: "fetch review", description: reviewsQuery }, () => true);
+
       const retrievedReviews = await knex.raw(reviewsQuery);
       let productWithReviews = product;
       productWithReviews["reviews"] = retrievedReviews.rows;
       formattedProducts.push(productWithReviews);
-      subspan.setData("Reviews", retrievedReviews.rows);
-      subspan.finish();
     }
-    span.setData("Products With Reviews", formattedProducts);
-    span.finish();
 
     return formattedProducts;
   } catch (error) {
@@ -64,48 +54,51 @@ const getProducts = async function () {
 };
 
 const getJoinedProducts = async function () {
-  let transaction = Sentry.getCurrentHub().getScope().getTransaction();
-
   // Retrieve Products
   const productsQuery = `SELECT * FROM products`;
-  let span = transaction.startChild({
-    op: "getjoinedproducts",
-    description: productsQuery,
-  });
-  const products = await knex.raw(productsQuery).catch((err) => {
-    console.log("There was an error", err);
-    throw err;
-  });
+
+  let products;
+
+  let span = Sentry.startSpan(
+    { op: "getjoinedproducts", description: productsQuery },
+    async () => {
+      products = await knex.raw(productsQuery).catch((err) => {
+        console.log("There was an error", err);
+        throw err;
+      });
+    }
+  );
+
   Sentry.setTag("totalProducts", products.rows.length);
-  span.setData("Products", products.rows);
-  span.finish();
+  span.setAttribute("Products", products.rows);
 
   // Retrieve Reviews
   const reviewsQuery =
     "SELECT reviews.id, products.id AS productid, reviews.rating, reviews.customerId, reviews.description, reviews.created FROM reviews INNER JOIN products ON reviews.productId = products.id";
-  span = transaction.startChild({
-    op: "getjoinedproducts.reviews",
-    description: reviewsQuery,
-  });
+  
+  span = Sentry.startSpan(
+    { op: "getjoinedproducts.reviews", description: reviewsQuery },
+    async () => {}
+  );
+  
   const retrievedReviews = await knex.raw(reviewsQuery);
-  span.setData("reviews", retrievedReviews.rows);
-  span.finish();
+  span.setAttribute("reviews", retrievedReviews.rows);
 
   // Format Products/Reviews
-  span = transaction.startChild({
-    op: "getjoinedproducts.formatresults",
-    description: "function",
-  });
+  span = Sentry.startSpan(
+    { op: "getjoinedproducts.formatresults", description: "function" },
+    async () => {}
+  );
+  
   let formattedProducts = [];
-  for (product of products.rows) {
+  for (const product of products.rows) {
     let productWithReviews = product;
     productWithReviews["reviews"] = retrievedReviews.rows;
     formattedProducts.push(productWithReviews);
   }
-  span.setData("results", formattedProducts);
-  span.finish();
+  
+  span.setAttribute("results", formattedProducts);
 
-  transaction.finish();
   return formattedProducts;
 };
 
@@ -114,26 +107,24 @@ const getInventory = async function (cart) {
   const quantities = cart["quantities"];
   console.log("> quantities", quantities);
   let productIds = [];
-  for (productId in quantities) {
+  
+  for (const productId in quantities) {
     productIds.push(productId);
   }
+  
   productIds = formatArray(productIds);
   console.log("> productIds", productIds);
 
   try {
-    const transaction = Sentry.getCurrentHub().getScope().getTransaction();
-
-    let span = transaction.startChild({
-      op: "getInventory",
-      description: "db.query",
-    });
-
-    const inventory = await knex.raw(
-      `SELECT * FROM inventory WHERE productId in ${productIds}`
+    const inventory = await Sentry.startSpan(
+      { name: "getInventory", description: "db.query", op: "function" },
+      async () => {
+        return await knex.raw(`SELECT * FROM inventory WHERE productId in ${productIds}`);
+      }
     );
 
-    span.setData("inventory", inventory.rows);
-    span.finish();
+    const span = Sentry.getActiveSpan();
+    span.setAttribute("inventory", inventory.rows);
 
     return inventory.rows;
   } catch (error) {
@@ -144,7 +135,7 @@ const getInventory = async function (cart) {
 
 function formatArray(ids) {
   let numbers = "";
-  for (id of ids) {
+  for (const id of ids) {
     numbers += id + ",";
   }
   const output = "(" + numbers.substring(0, numbers.length - 1) + ")";
