@@ -275,11 +275,7 @@ def checkout():
                 logging.debug("> inventoryItem.count %s", inventoryItem['count'])
                 if (validate_inventory and (inventoryItem.count < quantities[cartItem] or quantities[cartItem] >= inventoryItem.count)):
                     sentry_sdk.metrics.incr(key="checkout.failed")
-                    logger.warning('Processing /checkout - insufficient inventory', extra={
-                        'product': cartItem,
-                        'requested_quantity': quantities[cartItem],
-                        'available_inventory': inventoryItem.get('count', 0)
-                    })
+                    logger.warning('Processing /checkout - insufficient inventory')
                     raise Exception('Not enough inventory for product')
         if len(inventory) == 0 or len(quantities) == 0:
             logger.error('Processing /checkout - empty inventory or quantities', extra={
