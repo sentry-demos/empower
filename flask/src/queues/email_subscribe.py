@@ -31,10 +31,7 @@ def init_sentry(**_kwargs):
         environment=ENVIRONMENT,
         traces_sample_rate=1.0,
         profiles_sample_rate=1.0,
-        debug=True,
-        _experiments={
-            "enable_logs": True,
-        }
+        enable_logs=True,
     )
 
 if __name__ == '__main__':
