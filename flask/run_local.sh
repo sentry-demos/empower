@@ -5,9 +5,6 @@ set -e
 # This is not a standalone script. It is called from ../deploy.sh that
 # sets up the right environemnt variables and files for it.
 
-source .env
-source .env.local
-
 if [ ! -d ./venv ]; then
     python3 -m venv ./venv
 fi
@@ -33,14 +30,6 @@ function cleanup {
 
 # Register cleanup for all possible termination signals
 trap cleanup EXIT
-
-if [ -z "$FLASK_LOCAL_REDISPORT" ]; then
-    export FLASK_LOCAL_REDISPORT=6379
-fi
-
-if [ -z "$FLASK_LOCAL_PORT" ]; then
-    export FLASK_LOCAL_PORT=8080
-fi
 
 # Set up SSH tunnel to the cloud Redis instance
 # (deploy.sh ensures we are authenticated with Google Cloud)

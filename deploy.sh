@@ -91,6 +91,16 @@ if [[ -n "$custom_command" && "$env" != "local" ]]; then
   exit 1
 fi
 
+# Validate that custom commands are only used with a single project
+if [[ -n "$custom_command" ]]; then
+  # Count the number of projects (trim whitespace and count words)
+  project_count=$(echo "$projects" | xargs | wc -w)
+  if [[ $project_count -gt 1 ]]; then
+    echo "[ERROR] Custom commands (-- <command>) can only be used with a single project, but $project_count projects were specified: $projects"
+    exit 1
+  fi
+fi
+
 if [ ! -f "$env.env" ]; then
   >&2 echo "[ERROR] Missing file $env.env or invalid environment '$env'."
   exit 1
@@ -169,15 +179,6 @@ function wait_check_if_crashed {
 cp $env.env .resolved.env
 temp_files+="$(pwd)/.resolved.env "
 
-# Check for placeholder values in the environment file (only for projects being deployed)
-for proj in $projects; do
-  proj_prefix=$(echo "$proj" | tr '[:lower:]' '[:upper:]' | tr -d '_-')
-  if grep -q "^${proj_prefix}_[^=]*=[[:space:]]*\*\* FILL IN" .resolved.env; then
-      echo "[ERROR] Found placeholder values ('** FILL IN ...') for project '$proj_prefix'. Please modify your $env.env and re-run." >&2
-      exit 1
-  fi
-done
-  
 # additionally some of the variables are used at build-time, e.g:
 # local port in run_local.sh, SENTRY_ORG for sourcemaps upload, *_*_BACKEND logic, etc
 projects_re="("$(echo $projects | sed 's/ /|/g' | sed 's/|$//')")" # e.g. (react|flask|laravel)
@@ -266,7 +267,7 @@ for proj in $projects; do # bash only
   done
 
   # Process build.sh and run_local.sh scripts using --script mode
-  script_secrets=""
+  script_secrets="" # secrets used in at least one of the scripts
   script_files="build.sh"
   if [ "$env" == "local" ]; then
     script_files="build.sh run_local.sh"
@@ -294,6 +295,16 @@ for proj in $projects; do # bash only
       
       if [ -n "$current_secrets" ]; then
         echo "Found GCP secrets in $script_file: $current_secrets"
+        
+        # Step 3: Validate that secret names match variable names for script processing
+        for secret_name in $current_secrets; do
+          # Check if this secret name is used in a variable that has parentheses syntax (different secret name)
+          if grep -q "^${secret_name}[ ]*=[ ]*\${__GCP_SECRET__([^}]*)}" "$top/.resolved.env"; then
+            echo "[ERROR] '$script_file' references secret '$secret_name' but this variable uses __GCP_SECRET__(<different_name>) syntax which is only supported for *.template files."
+            exit 1
+          fi
+        done
+        
         script_secrets="$script_secrets $current_secrets"
       else
         echo "No references to GCP secrets found in $script_file"
@@ -309,7 +320,9 @@ for proj in $projects; do # bash only
   RESOLVED_VARS=()
   while IFS='=' read -r var value || [ -n "$var" ]; do
     # Skip empty lines, comments, and GCP secret variables
-    [[ -z "$var" || "$var" =~ ^# || "$var" =~ __GCP_SECRET__ ]] && continue
+    # It's important to filter out unresolved variables, e.g. __GCP_SECRET__* because some dotenv libraries
+    # like python-dotenv will not override existing variables from environment
+    [[ -z "$var" || "$var" =~ ^# || "$value" =~ __GCP_SECRET__ ]] && continue
     # Remove trailing comments from value
     value=$(echo "$value" | sed 's/ #.*$//')
     # Add variable assignment to array
@@ -327,24 +340,20 @@ for proj in $projects; do # bash only
   if [ "$env" == "local" ]; then
     if [[ -n "$custom_command" ]]; then
       echo "Running custom command '$custom_command $custom_command_args' with resolved environment..."
-      gcp_secret_wrapper.sh --pass $script_secrets -- env "${RESOLVED_VARS[@]}" $custom_command $custom_command_args &
+      # Note: we assume no secrets inside the custom command, any secrets used must be in *.template files
+      env "${RESOLVED_VARS[@]}" $custom_command $custom_command_args &
       pid="$!"
-      run_sh_pids+="$pid " # for later cleanup
-
-      if [[ "$projects" != *"$proj " ]]; then # not last one
-        wait_check_if_crashed "$pid" "$proj"
-      fi
     else
       echo "Running run_local.sh with resolved environment..."
       set -x
       gcp_secret_wrapper.sh --pass $script_secrets -- env "${RESOLVED_VARS[@]}" ./run_local.sh &
       pid="$!"
       set +x
-      run_sh_pids+="$pid " # for later cleanup
+    fi
+    run_sh_pids+="$pid " # for later cleanup
 
-      if [[ "$projects" != *"$proj " ]]; then # not last one
-        wait_check_if_crashed "$pid" "$proj"
-      fi
+    if [[ "$projects" != *"$proj " ]]; then # not last one
+      wait_check_if_crashed "$pid" "$proj"
     fi
   else
     if [ -f deploy_project.sh ]; then

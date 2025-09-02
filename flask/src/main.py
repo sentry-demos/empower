@@ -73,7 +73,7 @@ def traces_sampler(sampling_context):
 
 class MyFlask(Flask):
     def __init__(self, import_name, *args, **kwargs):
-        global RELEASE, DSN, ENVIRONMENT, RUBY_BACKEND, RUN_SLOW_PROFILE;
+        global RELEASE, DSN, ENVIRONMENT, RUBY_BACKEND, RUN_SLOW_PROFILE, redis_client, cache;
         dotenv.load_dotenv()
 
         RELEASE = os.environ["FLASK_RELEASE"]
@@ -105,7 +105,27 @@ class MyFlask(Flask):
             }
         )
 
+        statsig.initialize(os.environ["STATSIG_SERVER_KEY"])
+
         super(MyFlask, self).__init__(import_name, *args, **kwargs)
+
+        redis_host = os.environ["FLASK_REDISHOST"]
+        redis_port = int(os.environ["FLASK_REDISPORT"])
+
+        cache_config = {
+            "DEBUG": True,
+            "CACHE_TYPE": "RedisCache",
+            "CACHE_DEFAULT_TIMEOUT": 300,
+            "CACHE_REDIS_HOST": redis_host,
+            "CACHE_REDIS_PORT": redis_port,
+            "CACHE_KEY_PREFIX": None
+        }
+
+        self.config.from_mapping(cache_config)
+        cache = Cache(self)
+
+        redis_client = redis.Redis(host=redis_host, port=redis_port, decode_responses=True)
+
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -156,24 +176,6 @@ class CORSWSGIWrapper:
 app = MyFlask(__name__)
 app = CORSWSGIWrapper(app)
 
-statsig.initialize(os.environ.get("STATSIG_SERVER_KEY"))
-
-redis_host = os.environ.get("FLASK_REDISHOST", "localhost")
-redis_port = int(os.environ.get("FLASK_LOCAL_REDISPORT", 6379))
-
-cache_config = {
-    "DEBUG": True,
-    "CACHE_TYPE": "RedisCache",
-    "CACHE_DEFAULT_TIMEOUT": 300,
-    "CACHE_REDIS_HOST": redis_host,
-    "CACHE_REDIS_PORT": redis_port,
-    "CACHE_KEY_PREFIX": None
-}
-
-app.config.from_mapping(cache_config)
-cache = Cache(app)
-
-redis_client = redis.Redis(host=redis_host, port=redis_port, decode_responses=True)
 
 @app.route('/enqueue', methods=['POST'])
 def enqueue():
