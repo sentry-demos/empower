@@ -8,7 +8,7 @@
 #
 # In local mode, you can also specify a custom command to run instead of run_local.sh using the -- separator:
 # Usage: ./deploy.sh --env=local flask                 # uses flask/run_local.sh - a setup similar to production
-# Usage: ./deploy.sh react --env=local -- npm start    # any command after --, e.g. hot reload server or `cat .env`
+# Usage: ./deploy.sh --env=local react -- npm start    # any command after --, e.g. hot reload server or `cat .env`
 # Usage: ./deploy.sh --env=production react            # deploy to production
 # Usage: ./deploy.sh --env=staging express spring-boot # multiple projects
 # Usage: ./deploy.sh --env=local react flask laravel   # wires all 3 together automatically (see local.env)
@@ -74,7 +74,7 @@ done
 USAGE="[ERROR] Invalid arguments.\n\
 Usage: \n\
 ./deploy.sh --env=local flask                 # uses flask/run_local.sh - a setup similar to production\n\
-./deploy.sh react --env=local -- npm start    # any command after --, e.g. hot reload server or `cat .env`\n\
+./deploy.sh --env=local react -- npm start    # any command after --, e.g. hot reload server or 'cat .env'\n\
 ./deploy.sh --env=production react            # deploy to production\n\
 ./deploy.sh --env=staging express spring-boot # multiple projects\n\
 ./deploy.sh --env=local react flask laravel   # wires all 3 together automatically (see local.env)"

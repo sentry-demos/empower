@@ -2,6 +2,80 @@
 
 # envsubst on steroids
 
+show_usage() {
+  cat << 'EOF'
+Usage: envsubst.sh [--strict | --strict-allow-empty | --list] [--script] [--ignore-prefix=<prefix>] [--from=<file>]
+
+DESCRIPTION:
+    Enhanced environment variable substitution tool that processes templates
+    containing ${VAR} or $VAR syntax and replaces them with actual values.
+    Reads template from stdin and writes substituted output to stdout.
+
+OPTIONS:
+    --strict
+        Strict mode: Fail if any variable referenced in the template is 
+        undefined or empty. 
+
+    --strict-allow-empty  
+        Strict mode allowing empty values: Fail if any variable referenced in 
+        the template is undefined, but allow variables that are defined but have
+        empty values.
+
+    --list
+        List mode: Instead of substituting variables, output a list of all
+        unique variable names found in the template. Useful for discovering
+        what variables a template requires.
+
+    --script
+        Script mode: Ignore variables that are defined within the input itself.
+        Useful when processing shell scripts that contain both variable 
+        assignments and template variables that should be substituted.
+        Currently not very smart - doesn't understand for loops, etc
+        (consider using --ignore-prefix as workaround if having issues)
+
+    --ignore-prefix=<prefix>
+        Ignore variables whose names start with the specified prefix.
+        These variables will be left as-is in the output instead of being
+        substituted.
+
+    --from=<file>
+        Source environment variables from the specified file before processing
+        and NOT use the current environment. The file should contain KEY=VALUE
+        pairs (one per line). Comments starting with # are ignored.
+
+    --help, -h
+        Display this help message and exit.
+
+EXAMPLES:
+    # Basic substitution
+    echo 'Hello ${USER}!' | envsubst.sh
+
+    # Strict mode - fail if any variable is undefined/empty  
+    echo 'Config: ${CONFIG_FILE}' | envsubst.sh --strict
+
+    # List all variables in a template
+    cat template.txt | envsubst.sh --list
+
+    # Process with variables from a file
+    cat template.txt | envsubst.sh --from=production.env
+
+    # Script mode - ignore variables defined in the script itself
+    cat deploy_script.sh | envsubst.sh --script
+
+    # Ignore variables starting with 'LOCAL_'
+    cat template.txt | envsubst.sh --ignore-prefix=LOCAL_
+
+NOTES:
+    - Only one of --strict, --strict-allow-empty, or --list can be used at once
+    - --from and --list cannot be used together
+    - Use \$ to escape dollar signs that should not be substituted
+    - Variables can use ${VAR} or $VAR syntax
+    - Variable names must start with a letter or underscore, followed by
+      letters, numbers, or underscores
+
+EOF
+}
+
 strict_mode=0
 strict_allow_empty_mode=0
 list_mode=0
@@ -195,8 +269,14 @@ while [[ $# -gt 0 ]]; do
       # Don't add --from to passed_flags to prevent infinite recursion
       shift
       ;;
+    --help|-h)
+      show_usage
+      exit 0
+      ;;
     *)
-      echo "Usage: $0 [--strict | --strict-allow-empty | --list] [--script] [--ignore-prefix=<prefix>] [--from=<file>]" >&2
+      echo "Error: Unknown option '$1'. Try --help for usage information." >&2
+      echo "" >&2
+      show_usage
       exit 1
       ;;
   esac
