@@ -106,7 +106,7 @@ async function fetchProducts(req, res) {
     const products = await DB.getProducts();
     
     const span = await Sentry.startSpan(
-      { name: "getIteratorProcesssor", op: "products.get_iterator", description: "function" },
+      { op: "products.get_iterator", description: "function" },
       async () => {
         await utils.getIteratorProcessor(products);
       }
@@ -158,7 +158,7 @@ app.get("/products-join", async (req, res) => {
       });
 
     const products = await Sentry.startSpan(
-      { name: "products.get_products_join", op: "function" },
+      { op: "products.get_products_join", description: "function" },
       async () => {
         return await DB.getJoinedProducts();
       }

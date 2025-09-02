@@ -16,7 +16,7 @@ const getProducts = async function () {
     const productsQuery = `SELECT * FROM products CROSS JOIN backorder_inventory`;
 
     const products = await Sentry.startSpan(
-      { op: "getproducts", description: "db.query" },
+      { op: "db.query.getproducts", description: productsQuery },
       async () => {
         return await knex.raw(productsQuery).catch((err) => {
           console.log("There was an error", err);
@@ -30,7 +30,7 @@ const getProducts = async function () {
     if (span) span.setAttribute("products", products.rows);
 
     // Retrieve Reviews
-    Sentry.startSpan({ op: "getproducts.reviews", description: "db.query" }, () => true);
+    Sentry.startSpan({ op: "db.query.getallreviews"}, () => true);
 
     let formattedProducts = [];
     for (const product of products.rows) {
@@ -38,7 +38,7 @@ const getProducts = async function () {
       // SELECT pg_get_viewdef('weekly_promotions', true)
       const reviewsQuery = `SELECT * FROM reviews, weekly_promotions WHERE productId = ${product.id}`;
 
-      await Sentry.startSpan({ op: "fetch review", description: reviewsQuery }, () => true);
+      await Sentry.startSpan({ op: "db.query.getreview", description: reviewsQuery }, () => true);
 
       const retrievedReviews = await knex.raw(reviewsQuery);
       let productWithReviews = product;
@@ -60,7 +60,7 @@ const getJoinedProducts = async function () {
   let products;
 
   let span = Sentry.startSpan(
-    { op: "getjoinedproducts", description: productsQuery },
+    { op: "db.query.getjoinedproducts", description: productsQuery },
     async () => {
       products = await knex.raw(productsQuery).catch((err) => {
         console.log("There was an error", err);
@@ -77,7 +77,7 @@ const getJoinedProducts = async function () {
     "SELECT reviews.id, products.id AS productid, reviews.rating, reviews.customerId, reviews.description, reviews.created FROM reviews INNER JOIN products ON reviews.productId = products.id";
   
   span = Sentry.startSpan(
-    { op: "getjoinedproducts.reviews", description: reviewsQuery },
+    { op: "db.query.getjoinedproducts.reviews", description: reviewsQuery },
     async () => {}
   );
   
@@ -116,10 +116,11 @@ const getInventory = async function (cart) {
   console.log("> productIds", productIds);
 
   try {
+    const inventoryQuery = `SELECT * FROM inventory WHERE productId in ${productIds}`;
     const inventory = await Sentry.startSpan(
-      { name: "getInventory", description: "db.query", op: "function" },
+      { name: "db.query.getInventory", description: inventoryQuery },
       async () => {
-        return await knex.raw(`SELECT * FROM inventory WHERE productId in ${productIds}`);
+        return await knex.raw(inventoryQuery);
       }
     );
 
