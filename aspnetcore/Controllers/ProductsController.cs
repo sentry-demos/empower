@@ -12,7 +12,7 @@ public class ProductsController : ControllerBase
     {
         _dbContext = dbContext;
         _httpClientFactory = httpClientFactory;
-        _rubyBackendBaseUrl = Environment.GetEnvironmentVariable("RUBY_BACKEND");
+        _rubyBackendBaseUrl = Environment.GetEnvironmentVariable("BACKEND_URL_RUBY");
     }
 
     [HttpGet]

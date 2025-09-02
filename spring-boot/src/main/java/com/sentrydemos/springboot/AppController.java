@@ -132,8 +132,8 @@ public class AppController {
 		logger.info("> /api");
 		setTags(request);
 
-		String RUBY_BACKEND = environment.getProperty("empower.ruby_backend");
-		ResponseEntity<String> response = restTemplate.exchange(RUBY_BACKEND + "/api", HttpMethod.GET,new HttpEntity<>(headers), String.class);
+		String BACKEND_URL_RUBY = environment.getProperty("empower.ruby_backend");
+		ResponseEntity<String> response = restTemplate.exchange(BACKEND_URL_RUBY + "/api", HttpMethod.GET,new HttpEntity<>(headers), String.class);
 
 		return "springboot /api";
 	}
