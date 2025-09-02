@@ -7,7 +7,7 @@
 #
 # Example:
 # ./var_name.sh %s_APP_%s_BACKEND react spring-boot
-# REACT_APP_SPRINGBOOT_BACKEND
+# REACT_APP_BACKEND_URL_SPRINGBOOT
 
 set -e
 

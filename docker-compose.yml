@@ -1,6 +1,6 @@
 x-base-env: &x-base-env
   RELEASE: 2023+compose
-  RUBY_BACKEND: http://ruby:4567
+  RUBY_URL: http://ruby:4567
   DB_HOST: postgres
   DB_USERNAME: postgres
   DB_PASSWORD: postgres

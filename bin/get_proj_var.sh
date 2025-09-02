@@ -9,7 +9,7 @@
 # . get_proj_var %s_APP_%s_BACKEND react spring-boot
 # 
 # Defines an "output" variable named 'app_backend' (i.e. printf string with '%s' and extra underscored removed) and
-# sets its value to the value of REACT_APP_SPRINGBOOT_BACKEND that is _already_ set in the current shell
+# sets its value to the value of REACT_APP_BACKEND_URL_SPRINGBOOT that is _already_ set in the current shell
 # (presumably from env-config/*.env)
 #
 # Output variable name is determine magically as follows: MY_%s_VAR_NAME_%s -> my_var_name
