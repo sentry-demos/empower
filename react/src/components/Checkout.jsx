@@ -57,6 +57,7 @@ async function checkout(cart, checkout_span) {
 
     checkout_span.setAttribute("checkout.click", 1);
     checkout_span.setAttribute("items_at_checkout", itemsInCart);
+    checkout_span.setAttribute("checkout.order.total", cart.total);
 
     let tags = { 'backendType': getTag('backendType'), 'cexp': getTag('cexp'), 'items_at_checkout': itemsInCart, 'checkout.click': 1 };
     checkout_span.setAttributes(tags);
@@ -111,7 +112,6 @@ async function checkout(cart, checkout_span) {
       }
     } else {
       checkout_span.setAttribute("checkout.success", 1)
-      checkout_span.setAttribute("checkout.order.total", cart.total);
     }
 
     return response;
