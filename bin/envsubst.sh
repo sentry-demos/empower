@@ -4,7 +4,7 @@
 
 show_usage() {
   cat << 'EOF'
-Usage: envsubst.sh [--strict | --strict-allow-empty | --list] [--script] [--ignore-prefix=<prefix>] [--from=<file>]
+Usage: envsubst.sh [--strict | --strict-allow-empty | --strict-allow-quoted-empty | --list] [--script] [--ignore-prefix=<prefix>] [--from=<file>] [--interpret-quotes]
 
 DESCRIPTION:
     Enhanced environment variable substitution tool that processes templates
@@ -14,12 +14,15 @@ DESCRIPTION:
 OPTIONS:
     --strict
         Strict mode: Fail if any variable referenced in the template is 
-        undefined or empty. 
+        undefined or empty, or ''/"" when --interpret-quotes.
+  
+    --strict-allow-quoted-empty
+        Fail if any variable referenced in the template is undefined or empty, 
+        but allow ''/"". Requires --interpret-quotes.
 
     --strict-allow-empty  
-        Strict mode allowing empty values: Fail if any variable referenced in 
-        the template is undefined, but allow variables that are defined but have
-        empty values.
+        Fail if any variable referenced in the template is undefined, 
+        but allow empty values or ''/""
 
     --list
         List mode: Instead of substituting variables, output a list of all
@@ -43,6 +46,12 @@ OPTIONS:
         and NOT use the current environment. The file should contain KEY=VALUE
         pairs (one per line). Comments starting with # are ignored.
 
+    --interpret-quotes
+        Quote interpretation mode: Treat environment variable values that are
+        entirely surrounded by matching quotes (single or double) as literal
+        values by removing the surrounding quotes. Only affects values that
+        are completely quoted, not partially quoted values.
+
     --help, -h
         Display this help message and exit.
 
@@ -50,7 +59,7 @@ EXAMPLES:
     # Basic substitution
     echo 'Hello ${USER}!' | envsubst.sh
 
-    # Strict mode - fail if any variable is undefined/empty  
+    # Strict mode - fail if any variable is undefined/empty (or ''/"" when --interpret-quotes)  
     echo 'Config: ${CONFIG_FILE}' | envsubst.sh --strict
 
     # List all variables in a template
@@ -65,6 +74,12 @@ EXAMPLES:
     # Ignore variables starting with 'LOCAL_'
     cat template.txt | envsubst.sh --ignore-prefix=LOCAL_
 
+    # Interpret quoted values (THING='' becomes empty string, STUFF="don't" becomes don't)
+    echo '${STUFF}${THING}' | envsubst.sh --interpret-quotes
+
+    # Strict mode allowing quoted empty values
+    echo '${EMPTY_QUOTED}' | EMPTY_QUOTED="''" ./bin/envsubst.sh --strict-allow-quoted-empty --interpret-quotes
+
 NOTES:
     - Only one of --strict, --strict-allow-empty, or --list can be used at once
     - --from and --list cannot be used together
@@ -72,14 +87,17 @@ NOTES:
     - Variables can use ${VAR} or $VAR syntax
     - Variable names must start with a letter or underscore, followed by
       letters, numbers, or underscores
+    - With --interpret-quotes, only completely quoted values have quotes removed
 
 EOF
 }
 
 strict_mode=0
 strict_allow_empty_mode=0
+strict_allow_quoted_empty_mode=0
 list_mode=0
 script_mode=0
+interpret_quotes=0
 ignore_prefix=""
 from_file=""
 passed_flags=()
@@ -113,6 +131,36 @@ mark_var_as_output() {
   fi
 }
 
+# Function to interpret quoted values if the flag is enabled
+interpret_quoted_value() {
+  local value="$1"
+  
+  if [ "$interpret_quotes" -eq 0 ]; then
+    echo "$value"
+    return
+  fi
+  
+  # Check if the entire value is surrounded by matching quotes
+  if [[ "$value" =~ ^\'.*\'$ ]]; then
+    # Single quoted - remove first and last single quote
+    if [ ${#value} -eq 2 ]; then
+      echo ""  # Empty string for ''
+    else
+      echo "${value:1:$((${#value}-2))}"
+    fi
+  elif [[ "$value" =~ ^\".*\"$ ]]; then
+    # Double quoted - remove first and last double quote
+    if [ ${#value} -eq 2 ]; then
+      echo ""  # Empty string for ""
+    else
+      echo "${value:1:$((${#value}-2))}"
+    fi
+  else
+    # Not completely quoted, return as-is
+    echo "$value"
+  fi
+}
+
 # Function to determine if a variable should be ignored during substitution
 should_ignore() {
   local var_name="$1"
@@ -142,14 +190,22 @@ check_var_defined_or_list() {
     fi
   elif [ "${!var_name+_}" != "_" ]; then
     # Variable is not defined
-    if [ "$strict_mode" -eq 1 ] || [ "$strict_allow_empty_mode" -eq 1 ]; then
+    if [ "$strict_mode" -eq 1 ] || [ "$strict_allow_empty_mode" -eq 1 ] || [ "$strict_allow_quoted_empty_mode" -eq 1 ]; then
       echo "[ERROR] bin/envsubst.sh: Variable '$var_name' is not defined" >&2
       exit 1
     fi
-  elif [ -z "${!var_name}" ] && [ "$strict_mode" -eq 1 ]; then
-    # Variable is defined but empty
-    echo "[ERROR] bin/envsubst.sh: Variable '$var_name' is empty" >&2
-    exit 1
+  elif [ -z "${!var_name}" ]; then 
+    # Variable is defined but empty 
+    if [ "$strict_mode" -eq 1 ] || [ "$strict_allow_quoted_empty_mode" -eq 1 ]; then
+      echo "[ERROR] bin/envsubst.sh: Variable '$var_name' is empty. Please use ''/\"\" if intentionally empty." >&2
+      exit 1
+    fi
+  elif [[ "$var_value" =~ ^\'\'$ ]] || [[ "$var_value" =~ ^\"\"$ ]]; then
+    # Variable is ''/""
+    if [ "$interpret_quotes" -eq 1 ] && [ "$strict_mode" -eq 1 ]; then
+      echo "[ERROR] bin/envsubst.sh: Variable '$var_name' is an empty quoted string (''/\"\")" >&2
+      exit 1
+    fi
   fi
 }
 
@@ -177,7 +233,9 @@ envsubst_() {
             output="$output\${$var_name}" # output variable name's characters but not the value
           else
             check_var_defined_or_list "$var_name"
-            output="$output${!var_name}" # in --list mode we still do this but discard the output later
+            # Use quote interpretation if enabled
+            local var_value=$(interpret_quoted_value "${!var_name}")
+            output="$output$var_value" # in --list mode we still do this but discard the output later
           fi
           var_name=""
         fi
@@ -207,7 +265,9 @@ envsubst_() {
           output="$output\${$var_name}$char"
         else
           check_var_defined_or_list "$var_name"
-          output="$output${!var_name}$char"
+          # Use quote interpretation if enabled
+          local var_value=$(interpret_quoted_value "${!var_name}")
+          output="$output$var_value$char"
         fi
         var_name=""
         in_var=0
@@ -223,7 +283,9 @@ envsubst_() {
       output="$output\${$var_name}"
     else
       check_var_defined_or_list "$var_name"
-      output="$output${!var_name}"
+      # Use quote interpretation if enabled
+      local var_value=$(interpret_quoted_value "${!var_name}")
+      output="$output$var_value"
     fi
   fi
 
@@ -245,6 +307,11 @@ while [[ $# -gt 0 ]]; do
     --strict-allow-empty)
       strict_allow_empty_mode=1
       passed_flags+=("--strict-allow-empty")
+      shift
+      ;;
+    --strict-allow-quoted-empty)
+      strict_allow_quoted_empty_mode=1
+      passed_flags+=("--strict-allow-quoted-empty")
       shift
       ;;
     --list)
@@ -269,6 +336,11 @@ while [[ $# -gt 0 ]]; do
       # Don't add --from to passed_flags to prevent infinite recursion
       shift
       ;;
+    --interpret-quotes)
+      interpret_quotes=1
+      passed_flags+=("--interpret-quotes")
+      shift
+      ;;
     --help|-h)
       show_usage
       exit 0
@@ -283,8 +355,14 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Validate options
-if [ $((strict_mode + strict_allow_empty_mode + list_mode)) -gt 1 ]; then
-  echo "[ERROR] Only one of --strict, --strict-allow-empty, or --list can be used" >&2
+if [ $((strict_mode + strict_allow_empty_mode + strict_allow_quoted_empty_mode + list_mode)) -gt 1 ]; then
+  echo "[ERROR] Only one of --strict, --strict-allow-empty, --strict-allow-quoted-empty, or --list can be used" >&2
+  exit 1
+fi
+
+# Validate that --strict-allow-quoted-empty requires --interpret-quotes
+if [ "$strict_allow_quoted_empty_mode" -eq 1 ] && [ "$interpret_quotes" -eq 0 ]; then
+  echo "[ERROR] --strict-allow-quoted-empty requires --interpret-quotes to be specified" >&2
   exit 1
 fi
 if [ -n "$from_file" ] && [ "$list_mode" -eq 1 ]; then
