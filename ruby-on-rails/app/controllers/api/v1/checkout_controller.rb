@@ -88,18 +88,17 @@ class Api::V1::CheckoutController < ApplicationController
 
     span_logic = transaction.start_child(op: "custom.inventory_vs_cart_logic")
 
-    products_in_inventory.each_with_index { |inv_objs, i|
-      if !enough_inventory?(cart_contents)
-        begin
-          Sentry.logger.error("Failed to process payment. Insufficient inventory for product: %{product_id}", product_id: inv_objs["productid"])
-          raise Exception.new "Not enough inventory for product: #{inv_objs["productid"]}"
-          STDERR.puts "Not enough inventory for productid " + inv_objs["productid"].to_s
-          logged = "Error: Not enough inventory"
-          render json: {"message": logged}, status: 500
-          break # breaks on first error. might be more inventory errors.
-        end
+    # Check if we have enough inventory for the entire cart
+    if !enough_inventory?(cart_contents)
+      begin
+        Sentry.logger.error("Failed to process payment. Insufficient inventory for cart contents")
+        raise Exception.new "Not enough inventory for one or more products in cart"
+        STDERR.puts "Not enough inventory for cart contents"
+        logged = "Error: Not enough inventory"
+        render json: {"message": logged}, status: 500
+        return
       end
-    }
+    end
 
     span_logic.finish
 
@@ -109,7 +108,35 @@ class Api::V1::CheckoutController < ApplicationController
   end
 
   def enough_inventory?(cart_contents)
-    Sentry.logger.warn("Inventory check bypassed - always returning false (mock implementation)")
-    return false
+    Sentry.logger.info("Performing inventory check for cart contents")
+    
+    # Check each product in the cart
+    cart_contents.each do |product_id_str, quantity_str|
+      product_id = product_id_str.to_i
+      requested_quantity = quantity_str.to_i
+      
+      Sentry.logger.debug("Checking inventory for product %{product_id}, requested quantity: %{quantity}", product_id: product_id, quantity: requested_quantity)
+      
+      # Find inventory record for this product
+      inventory_record = Inventory.find_by(productid: product_id)
+      
+      if inventory_record.nil?
+        Sentry.logger.warn("No inventory record found for product %{product_id}", product_id: product_id)
+        return false
+      end
+      
+      available_quantity = inventory_record.count
+      Sentry.logger.debug("Product %{product_id} has %{available} items available, %{requested} requested", 
+                         product_id: product_id, available: available_quantity, requested: requested_quantity)
+      
+      if available_quantity < requested_quantity
+        Sentry.logger.warn("Insufficient inventory for product %{product_id}: %{available} available, %{requested} requested", 
+                          product_id: product_id, available: available_quantity, requested: requested_quantity)
+        return false
+      end
+    end
+    
+    Sentry.logger.info("Inventory check passed - sufficient stock for all items")
+    return true
   end
 end
