@@ -238,7 +238,8 @@ for proj in $projects; do # bash only
     exit_code=0
     set +e
     # Single pass substitution since variables are already resolved in .resolved.env
-    envsubst.sh --strict-allow-empty --from=$top/.resolved.env < $template > $tmp_file
+    # note all secrets should be successfully substituted with '${__GCP_SECRET__VAR_NAME}' strings
+    envsubst.sh --strict-allow-quoted-empty --interpret-quotes --from=$top/.resolved.env < $template > $tmp_file
     exit_code=$?
     set -e
     if [ $exit_code -ne 0 ]; then
@@ -282,7 +283,7 @@ for proj in $projects; do # bash only
       temp_files+="$(pwd)/$tmp_script_file "
       exit_code=0
       set +e
-      envsubst.sh --script --strict-allow-empty --from=$top/.resolved.env < "$script_file" > "$tmp_script_file"
+      envsubst.sh --script --strict-allow-quoted-empty --interpret-quotes --from=$top/.resolved.env < "$script_file" > "$tmp_script_file"
       exit_code=$?
       set -e
       if [ $exit_code -ne 0 ]; then
