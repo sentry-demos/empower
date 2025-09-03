@@ -5,6 +5,24 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Sentry\Laravel\Integration;
 
+
+
+$directories = [
+    '/tmp/app',
+    '/tmp/app/public',
+    '/tmp/framework',
+    '/tmp/framework/cache/data',
+    '/tmp/framework/sessions',
+    '/tmp/framework/views',
+    '/tmp/logs',
+];
+
+foreach ($directories as $directory) {
+    if (!file_exists($directory)) {
+        mkdir($directory, 0755, true);
+    }
+}
+
 $application = Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
