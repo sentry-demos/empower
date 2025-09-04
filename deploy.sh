@@ -34,6 +34,9 @@
 #     same name as the variable it's being assigned to. The secret name can also be different from the 
 #     variable name if specified explicitly using the __GCP_SECRET__(<secret_name>) syntax.
 #
+#   __ENV__ - replaced with the value of the environment variable with the same name as the variable
+#     it's being assigned to.
+#
 #   __IF_DEPLOYING__(<project>, <yes_value>, <no_value>) - replaced with the second or third argument
 #     depending on whether the project specified as the 1st argument is one of the projects being deployed.
 #
@@ -183,6 +186,16 @@ temp_files+="$top/.resolved.env "
 # local port in run_local.sh, SENTRY_ORG for sourcemaps upload, *_*_BACKEND logic, etc
 projects_re="("$(echo $projects | sed 's/ /|/g' | sed 's/|$//')")" # e.g. (react|flask|laravel)
 dynamic_version="$(release.sh)"
+
+# Process __ENV__ magic variables - validate that environment variables exist
+env_vars_needed=$(grep -v '^#' $top/.resolved.env | grep -E '=\${__ENV__}$' | cut -d'=' -f1 | tr '\n' ' ')
+for var_name in $env_vars_needed; do
+  if [ -z "${!var_name}" ]; then
+    echo "[ERROR] Environment variable '$var_name' is not defined but is required by ${var_name}=\${__ENV__} in $env.env" >&2
+    exit 1
+  fi
+done
+
 grep -v '^#' $top/.resolved.env | \
   sed 's/ #.*//' | \
   sed -E 's/\${__GCP_SECRET__\(([^}]*)\)}/${__GCP_SECRET__\1}/g' | \
@@ -190,12 +203,22 @@ grep -v '^#' $top/.resolved.env | \
   sed -E 's/\${__IF_DEPLOYING__\('"$projects_re"',[ ]*([^ ]*)[ ]*,.*\)}/\2/g' | \
   sed -E 's/\${__IF_DEPLOYING__\(.*,.*,[ ]*([^ ]*)[ ]*\)}/\1/g' | \
   sed -E 's/\${__DYNAMIC_VERSION__}/'"$dynamic_version"'/g' > $top/.resolved.tmp
-mv $top/.resolved.tmp $top/.resolved.env
 
-SENTRY_AUTH_TOKEN=$(gcloud secrets versions access latest --secret="SENTRY_AUTH_TOKEN")
-echo "SENTRY_AUTH_TOKEN=$SENTRY_AUTH_TOKEN" >> $top/.resolved.env
+# Now process __ENV__ variables by substituting them with actual environment values
+> $top/.resolved.env
+while IFS='=' read -r var value || [ -n "$var" ]; do
+  # Skip empty lines
+  if [[ -z "$var" && -z "$value" ]]; then
+    echo "" >> $top/.resolved.env
+  elif [[ "$value" == "\${__ENV__}" ]]; then
+    # This is a __ENV__ variable, substitute with actual environment value
+    echo "$var=${!var}" >> $top/.resolved.env
+  else
+    echo "$var=$value" >> $top/.resolved.env
+  fi
+done < $top/.resolved.tmp
 
-# Resolve all variables in .resolved.env
+# Resolve all variables that reference other variables
 while true; do
     prev_content=$(cat $top/.resolved.env)
     envsubst.sh --strict-allow-empty --ignore-prefix=__GCP_SECRET__ --from=$top/.resolved.env < $top/.resolved.env > $top/.resolved.tmp
