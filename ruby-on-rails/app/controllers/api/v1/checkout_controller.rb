@@ -81,18 +81,20 @@ class Api::V1::CheckoutController < ApplicationController
 
     span_logic = transaction.start_child(op: "custom.inventory_vs_cart_logic")
 
-    products_in_inventory.each_with_index { |inv_objs, i|
-      if !enough_inventory?(cart_contents)
+    # Check inventory only for products in the cart
+    cart_contents.each do |product_id, quantity|
+      if !enough_inventory?(product_id, quantity.to_i, products_in_inventory)
         begin
-          raise Exception.new "Not enough inventory for product"
-          STDERR.puts "Not enough inventory for productid " + inv_objs["productid"].to_s
+          Sentry.logger.error("Failed to process payment. Insufficient inventory for product: %{product_id}", product_id: product_id)
+          raise Exception.new "Not enough inventory for product: #{product_id}"
+          STDERR.puts "Not enough inventory for productid " + product_id.to_s
           Sentry.capture_exception(Exception)
           logged = "Error: Not enough inventory"
           render json: {"message": logged}, status: 500
           break # breaks on first error. might be more inventory errors.
         end
       end
-    }
+    end
 
     span_logic.finish
 
@@ -100,7 +102,24 @@ class Api::V1::CheckoutController < ApplicationController
 
   end
 
-  def enough_inventory?(cart_contents)
-    return false
+  def enough_inventory?(product_id, requested_quantity, products_in_inventory)
+    # Find the inventory item for this product
+    inventory_item = products_in_inventory.find { |inv| inv.productid.to_s == product_id.to_s }
+    
+    if inventory_item.nil?
+      Sentry.logger.warn("No inventory found for product: %{product_id}", product_id: product_id)
+      return false
+    end
+    
+    available_quantity = inventory_item.count
+    has_enough = available_quantity >= requested_quantity
+    
+    Sentry.logger.info("Inventory check for product %{product_id}: requested=%{requested}, available=%{available}, sufficient=%{sufficient}", 
+                       product_id: product_id, 
+                       requested: requested_quantity, 
+                       available: available_quantity, 
+                       sufficient: has_enough)
+    
+    return has_enough
   end
 end
