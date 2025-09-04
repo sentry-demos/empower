@@ -101,7 +101,7 @@ if [[ -n "$custom_command" ]]; then
   fi
 fi
 
-if [ ! -f "$env.env" ]; then
+if [ ! -f "$top/$env.env" ]; then
   >&2 echo "[ERROR] Missing file $env.env or invalid environment '$env'."
   exit 1
 fi
@@ -127,7 +127,7 @@ else
   exit 1
 fi
 
-GCP_PROJECT=$(grep '^GCP_PROJECT=' "$env.env" | cut -d'=' -f2-)
+GCP_PROJECT=$(grep '^GCP_PROJECT=' "$top/$env.env" | cut -d'=' -f2-)
 if [ -z "$GCP_PROJECT" ]; then
   echo "[ERROR] GCP_PROJECT must be set in $env.env" >&2
   exit 1
@@ -176,31 +176,31 @@ function wait_check_if_crashed {
 }
 
 # Copy environment file to resolved file
-cp $env.env .resolved.env
-temp_files+="$(pwd)/.resolved.env "
+cp $top/$env.env $top/.resolved.env
+temp_files+="$top/.resolved.env "
 
 # additionally some of the variables are used at build-time, e.g:
 # local port in run_local.sh, SENTRY_ORG for sourcemaps upload, *_*_BACKEND logic, etc
 projects_re="("$(echo $projects | sed 's/ /|/g' | sed 's/|$//')")" # e.g. (react|flask|laravel)
 dynamic_version="$(release.sh)"
-grep -v '^#' .resolved.env | \
+grep -v '^#' $top/.resolved.env | \
   sed 's/ #.*//' | \
   sed -E 's/\${__GCP_SECRET__\(([^}]*)\)}/${__GCP_SECRET__\1}/g' | \
   sed -E 's/^([^=]*)=\${__GCP_SECRET__}/\1=${__GCP_SECRET__\1}/g' | \
   sed -E 's/\${__IF_DEPLOYING__\('"$projects_re"',[ ]*([^ ]*)[ ]*,.*\)}/\2/g' | \
   sed -E 's/\${__IF_DEPLOYING__\(.*,.*,[ ]*([^ ]*)[ ]*\)}/\1/g' | \
-  sed -E 's/\${__DYNAMIC_VERSION__}/'"$dynamic_version"'/g' > .resolved.tmp
-mv .resolved.tmp .resolved.env
+  sed -E 's/\${__DYNAMIC_VERSION__}/'"$dynamic_version"'/g' > $top/.resolved.tmp
+mv $top/.resolved.tmp $top/.resolved.env
 
 SENTRY_AUTH_TOKEN=$(gcloud secrets versions access latest --secret="SENTRY_AUTH_TOKEN")
-echo "SENTRY_AUTH_TOKEN=$SENTRY_AUTH_TOKEN" >> .resolved.env
+echo "SENTRY_AUTH_TOKEN=$SENTRY_AUTH_TOKEN" >> $top/.resolved.env
 
 # Resolve all variables in .resolved.env
 while true; do
-    prev_content=$(cat .resolved.env)
-    envsubst.sh --strict-allow-empty --ignore-prefix=__GCP_SECRET__ --from=.resolved.env < .resolved.env > .resolved.tmp
-    new_content=$(cat .resolved.tmp)
-    mv .resolved.tmp .resolved.env
+    prev_content=$(cat $top/.resolved.env)
+    envsubst.sh --strict-allow-empty --ignore-prefix=__GCP_SECRET__ --from=$top/.resolved.env < $top/.resolved.env > $top/.resolved.tmp
+    new_content=$(cat $top/.resolved.tmp)
+    mv $top/.resolved.tmp $top/.resolved.env
     if [ "$prev_content" = "$new_content" ]; then
         break
     fi
@@ -224,7 +224,7 @@ for proj in $projects; do # bash only
     if [[ "$outfile" =~ ^_\. ]]; then # remove _ prefix if needed
       outfile=$(echo "$outfile" | sed 's/^_//')
     fi
-    if [[ "$env" == "local" && "$outfile" == "app.yaml" ]]; then
+    if [[ "$env" == "local" && $(basename "$outfile") == "app.yaml" ]]; then
       echo "Skipping app.yaml template processing in local environment"
       continue
     fi
