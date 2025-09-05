@@ -11,8 +11,8 @@ CEXP_RATIO = 0.3
 BYPASS_PREFERRED_BACKENDS_RATIO = 0.6 # backends that have a realistic autofixable error
 BYPASS_PREFERRED_BACKENDS = ['flask', 'laravel']
 
-def test_checkout(desktop_web_driver, endpoints, batch_size, backend, random, sleep_length, cexp):
-    for endpoint in endpoints.react_endpoints:
+def test_cexp_checkout(desktop_web_driver, endpoints, batch_size, backend, random, sleep_length, cexp):
+    for endpoint in [endpoints.react_endpoint]:
 
         if random.random() < PRODUCTS_JOIN_RATIO:
             endpoint_products = endpoint + "/products?api=join"

@@ -76,8 +76,9 @@ class Config(NamedTuple):
     mode: str
     browsers: tuple[Browser, ...]
     dsn: str
-    react_endpoints: tuple[str, ...]
-    vue_endpoints: tuple[str, ...]
+    react_endpoint: str
+    nextjs_endpoint: str
+    vue_endpoint: str
 
 
 def _config() -> Config:
@@ -88,8 +89,9 @@ def _config() -> Config:
         mode=contents['mode'],
         browsers=tuple(Browser(**d) for d in contents['browsers']),
         dsn=contents['dsn'],
-        react_endpoints=tuple(contents['react_endpoints']),
-        vue_endpoints=tuple(contents['vue_endpoints']),
+        react_endpoint=contents['react_endpoint'],
+        nextjs_endpoint=contents['nextjs_endpoint'],
+        vue_endpoint=contents['vue_endpoint'],
     )
 
 CONFIG = _config()
