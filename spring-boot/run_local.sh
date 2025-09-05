@@ -7,4 +7,4 @@ function cleanup {
 }
 trap cleanup EXIT
 
-./mvnw clean spring-boot:run -Dserver.port=$SPRINGBOOT_LOCAL_PORT 
+./mvnw clean spring-boot:run -Dspring-boot.run.arguments=--server.port=$SPRINGBOOT_LOCAL_PORT 
