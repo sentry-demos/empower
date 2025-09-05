@@ -51,6 +51,8 @@ const tracingOrigins = [
 
 const history = createBrowserHistory();
 
+const PREFERRED_BACKENDS = ['flask', 'laravel'];
+
 let BACKEND_URL;
 let BACKEND_TYPE;
 let FRONTEND_SLOWDOWN;

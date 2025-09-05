@@ -1,5 +1,5 @@
 ENV['RUBYONRAILS_RAILS_ENV'] ||= 'test'
-ENV['RUBYONRAILS_ENVIRONMENT'] ||= 'local'
+ENV['RUBYONRAILS_SENTRY_ENVIRONMENT'] ||= 'local'
 require_relative '../config/environment'
 require 'rails/test_help'
 

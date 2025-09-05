@@ -271,7 +271,7 @@ for proj in $projects; do # bash only
     fi
     
     # Don't fetch secrets that are not needed to avoid unnecessary errors
-    needed_secrets=$(envsubst.sh --list < $tmp_file | sed 's/^__GCP_SECRET__//')
+    needed_secrets=$(envsubst.sh --list < $tmp_file | grep '^__GCP_SECRET__' | sed 's/^__GCP_SECRET__//')
     # Fill in secrets
     if [ "$needed_secrets" != "" ]; then
       set +e
@@ -384,9 +384,9 @@ for proj in $projects; do # bash only
       ./deploy_project.sh
     else 
       if [ "$proj" == "spring-boot" ]; then
-        mvn clean package appengine:deploy -Dapp.deploy.gcloudignore=.gcloudignore.tmp
+        mvn clean package appengine:deploy
       else
-        gcloud app deploy --version v1 --quiet --ignore-file=.gcloudignore.tmp app.yaml
+        gcloud app deploy --version v1 --quiet app.yaml
       fi
     fi
   fi
