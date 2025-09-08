@@ -305,7 +305,7 @@ for proj in $projects; do # bash only
 
     if [ "$proj" == "spring-boot" ]; then
       ypath="./src/main/appengine/"
-      SERVICE=$app_engine_service SPRINGBOOT_ENV="production" envsubst.sh < $ypath/app.yaml.template > $ypath/app.yaml
+      SERVICE=$app_engine_service SPRINGBOOT_ENV="local" envsubst.sh < $ypath/app.yaml.template > $ypath/app.yaml
       mvn clean package appengine:deploy
     elif [ "$proj" == "aspnetcore" ]; then
       # TODO: envsubst is super easy - this should be the default for all projects
