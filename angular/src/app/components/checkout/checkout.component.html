@@ -1,0 +1,113 @@
+<div class="checkout-container">
+  <h2 class="sentry-unmask">Checkout</h2>
+  
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loader-container">
+    <app-three-dots color="#f6cfb2" [height]="150" [width]="150"></app-three-dots>
+  </div>
+  
+  <!-- Checkout Form (hidden when loading) -->
+  <div *ngIf="!loading && cart.items.length > 0">
+    <!-- Checkout Form -->
+    <form class="checkout-form" (ngSubmit)="onSubmit($event)">
+      <h4 class="sentry-unmask">Contact Information</h4>
+      
+      <label for="email" class="sentry-unmask">Email</label>
+      <input
+        id="email"
+        name="email"
+        type="email"
+        [(ngModel)]="form.email"
+        placeholder="bob@example.com"
+        required
+      />
+
+      <h4 class="sentry-unmask">Shipping Information</h4>
+      
+      <label for="firstName" class="sentry-unmask">First Name</label>
+      <input
+        id="firstName"
+        name="firstName"
+        type="text"
+        [(ngModel)]="form.firstName"
+        placeholder="Bob"
+        required
+      />
+
+      <label for="lastName" class="sentry-unmask">Last Name</label>
+      <input
+        id="lastName"
+        name="lastName"
+        type="text"
+        [(ngModel)]="form.lastName"
+        placeholder="Bobson"
+        required
+      />
+
+      <label for="address" class="sentry-unmask">Address</label>
+      <input
+        id="address"
+        name="address"
+        type="text"
+        [(ngModel)]="form.address"
+        placeholder="123 Main Street"
+        required
+      />
+
+      <label for="city" class="sentry-unmask">City</label>
+      <input
+        id="city"
+        name="city"
+        type="text"
+        [(ngModel)]="form.city"
+        placeholder="Hope Springs"
+        required
+      />
+
+      <label for="country" class="sentry-unmask">Country/Region</label>
+      <input
+        id="country"
+        name="country"
+        type="text"
+        [(ngModel)]="form.country"
+        placeholder="United States of America"
+        required
+      />
+
+      <label for="state" class="sentry-unmask">State</label>
+      <input
+        id="state"
+        name="state"
+        type="text"
+        [(ngModel)]="form.state"
+        placeholder="Indiana"
+        required
+      />
+
+      <label for="zipCode" class="sentry-unmask">Zip Code</label>
+      <input
+        id="zipCode"
+        name="zipCode"
+        type="text"
+        [(ngModel)]="form.zipCode"
+        placeholder="45678"
+        required
+      />
+
+      <input
+        type="submit"
+        class="complete-checkout-btn sentry-unmask"
+        value="Complete order"
+      />
+    </form>
+    
+    <a routerLink="/cart" class="sentry-unmask">
+      Back to cart
+    </a>
+  </div>
+  
+  <div *ngIf="cart.items.length === 0">
+    <p>Your cart is empty. Please add items before checkout.</p>
+    <a routerLink="/products" class="btn">Browse Products</a>
+  </div>
+</div>
