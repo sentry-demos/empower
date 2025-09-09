@@ -132,9 +132,10 @@ public class AppController {
 		logger.info("> /api");
 		setTags(request);
 
+		Sentry.logger().info("[springboot] - Making external API call to Ruby backend");
 		String BACKEND_URL_RUBY = environment.getProperty("empower.ruby_backend");
 		ResponseEntity<String> response = restTemplate.exchange(BACKEND_URL_RUBY + "/api", HttpMethod.GET,new HttpEntity<>(headers), String.class);
-
+		Sentry.logger().info("[springboot] - External API call completed", "response_status", response.getStatusCode().value());
 		return "springboot /api";
 	}
 
@@ -195,7 +196,8 @@ public class AppController {
 	@CrossOrigin
 	@PostMapping("/checkout")
 	public String CheckoutCart(HttpServletRequest request, @RequestBody String payload) throws Exception {
-		
+		Sentry.logger().info("[springboot] - Checkout process started", "payload_size", payload.length());
+    
 		ISpan span = Sentry.getSpan().startChild("Overhead", "Set tags and map payload to Cart object");
 		setTags(request);
 
@@ -204,6 +206,11 @@ public class AppController {
 		ObjectMapper objectMapper = new ObjectMapper();
 
 		Cart cart = objectMapper.readValue(json.get("cart").toString(), Cart.class);
+		
+		Sentry.logger().info("[springboot] - Cart parsed successfully", 
+			"cart_items_count", cart.getItems() != null ? cart.getItems().size() : 0,
+			"cart_total", cart.getTotal(),
+			"quantities_count", cart.getQuantities().size());
 
 		span.finish();
 		
@@ -212,12 +219,14 @@ public class AppController {
 		checkout(cart.getQuantities(), checkoutSpan);
 		
 		checkoutSpan.finish();
+		Sentry.logger().info("[springboot] - Checkout completed successfully");
 		return "Checkout completed";
 	}
 
 	private void checkout(Map<String, Integer> quantities, ISpan span) {
 
 		Map<String, Integer> tempInventory = dbHelper.getInventory(quantities.keySet(), span);
+		Sentry.logger().info("[springboot] - Inventory size: " + tempInventory.size());
 
 		ISpan inventorySpan = span.startChild("Reduce Inventory", "Reduce inventory from Cart quantities");
 		for (String key : quantities.keySet()) {
@@ -225,8 +234,10 @@ public class AppController {
 
 			int currentInventory = tempInventory.get(key);
 			currentInventory = currentInventory - quantities.get(key);
+			Sentry.logger().info("[springboot] - Item " + key + " has quantity " + quantities.get(key) + " and current inventory " + currentInventory);
 			if (!hasInventory()) {
 				String message = "No inventory for item";
+				Sentry.logger().warn("[springboot] - " + message);
 				inventorySpan.setStatus(SpanStatus.fromHttpStatusCode(500, SpanStatus.INTERNAL_ERROR));
 				inventorySpan.finish(); //resolve spans before throwing exception
 				span.finish(); //resolve spans before throwing exception

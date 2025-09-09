@@ -6,6 +6,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
 
 import io.sentry.ISpan;
+import io.sentry.Sentry;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -29,6 +30,7 @@ public class DatabaseHelper {
 	
 	
 	public String mapAllProducts(ISpan span) {
+		Sentry.logger().info("[springboot] - Starting product mapping operation");
 
 		String sql = "SELECT * FROM products";
 		ISpan sqlSpan = span.startChild("db", sql);
@@ -44,7 +46,9 @@ public class DatabaseHelper {
 
 			ja.put(jsonItemObject);
 		}
-		
+		Sentry.logger().info("[springboot] - Products retrieved successfully", 
+			"total_products", allItems.size(),
+			"sql_query", sql);
 		sqlSpan.setTag("totalProducts", String.valueOf(allItems.size()));
 		
 		sqlSpan.finish();
@@ -134,7 +138,10 @@ public class DatabaseHelper {
 	}
 	
 	public Map<String, Integer> getInventory(Set<String> set, ISpan span) {
-		
+		Sentry.logger().info("[springboot] - Retrieving inventory for products", 
+			"product_ids", set.toString(),
+			"product_count", set.size());
+
 		String sql = "SELECT * FROM inventory WHERE productId in " + formatArray(set);
 		ISpan sqlSpan = span.startChild("db", sql);
 		
@@ -146,6 +153,9 @@ public class DatabaseHelper {
 				inventory.put(m.get("productid").toString(), (int) m.get("count"));
 			}
 		}
+		Sentry.logger().info("[springboot] - Inventory retrieved", 
+			"inventory_items_count", inventory.size(),
+			"requested_products", set.size());
 		sqlSpan.finish();
 		
 		return inventory;
