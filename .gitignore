@@ -19,9 +19,6 @@ react/config-overrides.js
 react/build
 next/dist
 
-# Google Cloud SDK (external dependency)
-google-cloud-sdk/
-
 # misc
 .idea
 .vscode
