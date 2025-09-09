@@ -149,6 +149,43 @@ ALTER SEQUENCE public.reviews_id_seq OWNED BY public.reviews.id;
 
 
 --
+-- Name: promo_codes; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.promo_codes (
+    id integer NOT NULL,
+    code character varying(50) NOT NULL,
+    percent_discount integer,
+    max_dollar_savings integer,
+    is_active boolean DEFAULT true,
+    expires_at timestamp without time zone,
+    created_at timestamp without time zone DEFAULT now()
+);
+
+
+ALTER TABLE public.promo_codes OWNER TO postgres;
+
+--
+-- Name: promo_codes_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.promo_codes_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.promo_codes_id_seq OWNER TO postgres;
+
+--
+-- Name: promo_codes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.promo_codes_id_seq OWNED BY public.promo_codes.id;
+
+--
 -- Name: tools; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -215,6 +252,12 @@ ALTER TABLE ONLY public.products ALTER COLUMN id SET DEFAULT nextval('public.pro
 
 ALTER TABLE ONLY public.reviews ALTER COLUMN id SET DEFAULT nextval('public.reviews_id_seq'::regclass);
 
+
+--
+-- Name: promo_codes id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.promo_codes ALTER COLUMN id SET DEFAULT nextval('public.promo_codes_id_seq'::regclass);
 
 --
 -- Name: tools id; Type: DEFAULT; Schema: public; Owner: postgres
@@ -658,6 +701,12 @@ SELECT pg_catalog.setval('public.inventory_id_seq', 181, true);
 
 
 --
+-- Name: promo_codes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.promo_codes_id_seq', 1, true);
+
+--
 -- Name: products_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
@@ -685,6 +734,13 @@ SELECT pg_catalog.setval('public.tools_id_seq', 181, true);
 ALTER TABLE ONLY public.inventory
     ADD CONSTRAINT inventory_pkey PRIMARY KEY (id);
 
+
+--
+-- Name: promo_codes promo_codes_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.promo_codes
+    ADD CONSTRAINT promo_codes_pkey PRIMARY KEY (id);
 
 --
 -- Name: products products_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres

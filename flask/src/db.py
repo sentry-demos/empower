@@ -140,3 +140,18 @@ def get_inventory(cart):
 
 def decrement_inventory(id, count):
     pass
+
+def get_promo_code(code):
+    """Get promo code from database by code string"""
+    try:
+        with sentry_sdk.start_span(op="get_promo_code", description="db.connect"):
+            connection = db.connect()
+        
+        with sentry_sdk.start_span(op="get_promo_code", description="db.query") as span:
+            query = text("SELECT * FROM promo_codes WHERE code = :code AND is_active = true")
+            result = connection.execute(query, code=code).fetchone()
+            span.set_data("promo_code", result)
+        
+        return result
+    except Exception as err:
+        raise DatabaseConnectionError('get_promo_code') from err

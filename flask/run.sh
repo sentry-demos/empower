@@ -48,7 +48,7 @@ fi
 
 # Set up SSH tunnel to the cloud Redis instance
 echo "Setting up SSH tunnel to Redis server at $FLASK_REDIS_SERVER_IP:6379"
-gcloud compute ssh redis-relay --zone=us-central1-a -- -N -L $FLASK_LOCAL_REDISPORT:$FLASK_REDIS_SERVER_IP:6379 &
+gcloud compute ssh redis-relay --zone=us-central1-a --tunnel-through-iap -- -N -L $FLASK_LOCAL_REDISPORT:$FLASK_REDIS_SERVER_IP:6379 &
 
 
 # Give the SSH tunnel time to establish

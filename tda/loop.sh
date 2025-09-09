@@ -52,10 +52,44 @@ trap 'log_signal "SIGIO" 29' IO
 trap 'log_signal "SIGPWR" 30' PWR
 trap 'log_signal "SIGSYS" 31' SYS
 
+# Day tracking file to persist the last day number
+DAY_TRACKING_FILE="/tmp/tda_loop_prev_day"
+
+# Function to get current day number
+get_current_day() {
+    date +%j
+}
+
+# Function to check if day has changed and set ONCE_PER_DAY accordingly
+check_day_change() {
+    local current_day=$(get_current_day)
+    local prev_day=""
+    
+    # Read the previous day number from file if it exists
+    if [ -f "$DAY_TRACKING_FILE" ]; then
+        prev_day=$(cat "$DAY_TRACKING_FILE" 2>/dev/null || echo "")
+    fi
+    
+    # If this is the first run or day has changed, set ONCE_PER_DAY=1
+    if [ -z "$prev_day" ] || [ "$current_day" != "$prev_day" ]; then
+        export ONCE_PER_DAY=1
+        echo "[$(date '+%Y-%m-%d %H:%M:%S')] [loop.sh] Day changed from '$prev_day' to '$current_day', setting ONCE_PER_DAY=1" >> $LOG_FILE 2>/dev/null || true
+    else
+        unset ONCE_PER_DAY
+    fi
+    
+    # Save current day number for next iteration
+    echo "$current_day" > "$DAY_TRACKING_FILE" 2>/dev/null || true
+}
+
 # Log script start
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] loop.sh started with PID $$, command: $*" >> $LOG_FILE 2>/dev/null || true
 
 while true; do 
   echo "[$(date '+%Y-%m-%d %H:%M:%S')] [loop.sh] running: $@" >> $LOG_FILE 2>/dev/null || true
+  
+  # Check if day has changed and set ONCE_PER_DAY accordingly
+  check_day_change
+  
   "$@"
 done
