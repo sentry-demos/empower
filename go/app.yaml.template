@@ -1,0 +1,27 @@
+service: ${SERVICE}
+runtime: go122
+
+instance_class: F2
+
+build_env_variables:
+  GOOGLE_BUILDABLE: ./cmd/server
+
+env_variables:
+  GO_REDISHOST: ${FLASK_REDISHOST}
+  GO_REDISPORT: 6379
+  STATSIG_SERVER_KEY: ${STATSIG_SERVER_KEY}
+  GO_APP_DSN: ${GO_APP_DSN}
+  GO_ENV: ${GO_ENV}
+  GO_RELEASE: ${RELEASE}
+  # Database settings (shared with Flask)
+  DB_HOST: ${DB_HOST}
+  DB_DATABASE: ${DB_DATABASE}
+  DB_USERNAME: ${DB_USERNAME}
+  DB_PASSWORD: ${DB_PASSWORD}
+  DB_CLOUD_SQL_CONNECTION_NAME: ${DB_CLOUD_SQL_CONNECTION_NAME}
+  # Cross-service backend URL parity
+  GO_RUBY_BACKEND: ${RUBY_BACKEND}
+
+vpc_access_connector:
+  name: projects/sales-engineering-sf/locations/us-central1/connectors/empower-plant-connector
+

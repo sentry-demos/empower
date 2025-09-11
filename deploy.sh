@@ -100,7 +100,7 @@ fi
 be_projects=""
 fe_projects=""
 for proj in $projects; do
-  if [[ $proj =~ ^(flask|express|ruby|spring-boot|aspnetcore|laravel|ruby-on-rails|crons-python)$ ]]; then
+  if [[ $proj =~ ^(flask|express|ruby|spring-boot|aspnetcore|laravel|ruby-on-rails|crons-python|go)$ ]]; then
     be_projects+="$proj "
   else
     fe_projects+="$proj "

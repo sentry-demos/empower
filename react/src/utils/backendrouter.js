@@ -8,6 +8,7 @@ const SUPPORTED_BACKEND_TYPES = {
   laravel: process.env.REACT_APP_LARAVEL_BACKEND,
   ruby: process.env.REACT_APP_RUBY_BACKEND,
   rails: process.env.REACT_APP_RUBYONRAILS_BACKEND,
+  go: process.env.REACT_APP_GO_BACKEND,
 };
 
 const determineBackendType = (desiredBackend) => {
