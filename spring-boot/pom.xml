@@ -68,12 +68,27 @@
 			<scope>runtime</scope>
 		</dependency>
 		
+		<!-- Spring Boot DevTools for automatic restart during development -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-devtools</artifactId>
+			<scope>runtime</scope>
+			<optional>true</optional>
+		</dependency>
+		
 		<!-- GCLOUD Dependencies -->
 		<!-- Using CloudSqlJdbcInfoProvider bean to initialize DB connection with spring.cloud.gcp.sql.* values from application.properties -->
 		<dependency>
 			<groupId>com.google.cloud.sql</groupId>
 			<artifactId>postgres-socket-factory</artifactId>
 			<version>1.19.0</version>
+		</dependency>
+		
+		<!-- JUnit 5 for testing -->
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter</artifactId>
+			<scope>test</scope>
 		</dependency>
 				
 	</dependencies>
