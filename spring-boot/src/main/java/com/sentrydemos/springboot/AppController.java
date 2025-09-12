@@ -33,6 +33,8 @@ import org.slf4j.LoggerFactory;
 
 import org.springframework.web.client.RestTemplate;
 
+import static com.sentrydemos.springboot.Utils.getIterator;
+
 @RestController
 public class AppController {
 
@@ -165,6 +167,7 @@ public class AppController {
 		ISpan span = Sentry.getSpan().startChild("Overhead", "Set tags");
 		setTags(request);
 		span.finish();
+		createGetIteratorSpan();
 
 		String fooResourceUrl = "https://application-monitoring-ruby-dot-sales-engineering-sf.appspot.com";
 		ResponseEntity<String> response = restTemplate.exchange(fooResourceUrl + "/api", HttpMethod.GET,new HttpEntity<>(headers), String.class);
@@ -176,9 +179,7 @@ public class AppController {
 	@CrossOrigin
 	@GetMapping("/products-join")
 	public String GetProducts(HttpServletRequest request) {
-		ISpan span = Sentry.getSpan().startChild("Overhead", "Set tags");
 		setTags(request);
-		span.finish();
 
 		String fooResourceUrl = "https://application-monitoring-ruby-dot-sales-engineering-sf.appspot.com";
 		ResponseEntity<String> response = restTemplate.exchange(fooResourceUrl + "/api", HttpMethod.GET,new HttpEntity<>(headers), String.class);
@@ -192,9 +193,9 @@ public class AppController {
 	@PostMapping("/checkout")
 	public String CheckoutCart(HttpServletRequest request, @RequestBody String payload) throws Exception {
 		Sentry.logger().info("[springboot] - Checkout process started", "payload_size", payload.length());
-    
-		ISpan span = Sentry.getSpan().startChild("Overhead", "Set tags and map payload to Cart object");
-		setTags(request);
+    	setTags(request);
+
+		ISpan span = Sentry.getSpan().startChild("map_payload", "Set tags and map payload to Cart object");
 
 		JSONObject json = new JSONObject(payload);
 
@@ -256,5 +257,19 @@ public class AppController {
 	
 	public Boolean hasInventory() {
 		return false;
+	}
+	
+	private void createGetIteratorSpan() {
+		ISpan iteratorSpan = Sentry.getSpan().startChild("get_iterator", "iterator");
+		try {
+			Sentry.logger().info("[springboot] - Calculation started");
+			Thread.sleep(getIterator(16));
+			Sentry.logger().info("[springboot] - Calculation completed");
+				
+		} catch (Exception e) {
+			Sentry.logger().error("[springboot] - Error in function", e);
+		} finally {
+			iteratorSpan.finish();
+		}
 	}
 }
