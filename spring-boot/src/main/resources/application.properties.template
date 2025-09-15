@@ -10,12 +10,6 @@ sentry.enable-tracing=true
 sentry.traces-sample-rate=1.0
 sentry.logs.enabled=true
 
-# Database configuration - using H2 for testing
-#spring.datasource.url=jdbc:h2:mem:testdb
-#spring.datasource.driver-class-name=org.h2.Driver
-#spring.datasource.username=sa
-#spring.datasource.password=
-#spring.h2.console.enabled=true
 spring.datasource.driver-class-name=org.postgresql.Driver
 spring.datasource.initialization-mode=always
 

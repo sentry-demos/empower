@@ -13,7 +13,7 @@ public class Utils {
      */
     public static int getIterator(int n) {
         if (n < 0) {
-            logger.warn("Incorrect input: negative number provided to getIterator");
+            logger.warn("[springboot - logback] - Incorrect input: negative number provided to getIterator");
             return 0;
         } else if (n == 0) {
             return 0;
