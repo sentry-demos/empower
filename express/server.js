@@ -14,18 +14,13 @@
 
 "use strict";
 
-const axios = require("axios");
-const express = require("express");
-const cors = require("cors");
 const Sentry = require("@sentry/node");
+const axios = require("axios");
+const cors = require("cors");
 
 // Imported Functions
 const DB = require("./db");
 const utils = require("./utils");
-
-// [START app]
-const app = express();
-const headers = {};
 
 // Environment variables
 const dsn = process.env.EXPRESS_APP_DSN;
@@ -46,6 +41,8 @@ Sentry.init({
   tracesSampleRate: 1.0,
   profilesSampleRate: 1.0,
   enableTracing: true,
+  debug:true, 
+  integrations: [Sentry.knexIntegration()],
   tracesSampler: (samplingContext) => {
     // sample out transactions from http OPTIONS requests hitting endpoints
     const request = samplingContext.request;
@@ -56,6 +53,12 @@ Sentry.init({
     }
   },
 });
+
+const express = require("express");
+
+// [START app]
+const app = express();
+const headers = {};
 
 // Middleware function to set Sentry context
 const sentryEventContext = function (req, res, next) {
@@ -209,7 +212,6 @@ app.post("/checkout", async (req, res) => {
 });
 
 app.get("/api", (req, res) => {
-  console.log("> /api");
   res.send(`express /api`);
 });
 
