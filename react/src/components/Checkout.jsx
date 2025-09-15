@@ -90,15 +90,8 @@ async function checkout(cart, checkout_span) {
     if (!response.ok) {
       checkout_span.setAttribute("checkout.error", 1);
 
-      if (!response.error || response.status === undefined) {
-        checkout_span.setAttribute("status", response.status);
-
-        throw new Error(
-          [response.status, response.statusText || ' Internal Server Error'].join(
-            ' -'
-          )
-        );
-      } else {
+      if (response.error) {
+        // This is a network error or other error caught by the catch block
         checkout_span.setAttribute("status", "unknown_error");
         if (response.error instanceof TypeError && response.error.message === "Failed to fetch") {
           /* A fetch() promise only rejects when e.g. badly-formed request URL or a network error. It does not reject if
@@ -108,6 +101,15 @@ async function checkout(cart, checkout_span) {
         } else {
           Sentry.captureException(new Error("Checkout request failed: " + response.error));
         }
+      } else {
+        // This is a valid HTTP error response from the server
+        checkout_span.setAttribute("status", response.status);
+
+        throw new Error(
+          [response.status, response.statusText || ' Internal Server Error'].join(
+            ' -'
+          )
+        );
       }
     } else {
       checkout_span.setAttribute("checkout.success", 1)
