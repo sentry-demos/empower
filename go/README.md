@@ -1,9 +1,5 @@
 Empower Go backend (Flask parity)
 
-Endpoints mirror `flask/src/main.py` with intentional delays and quirks preserved. Uses net/http, pgx, Redis, asynq, Sentry, Statsig, and OpenAI placeholder.
-
-Local run: env is provided by top-level `deploy.sh --env=local go` which calls `run.sh`.
-
 Required env (see `validate_env.list`):
 - GO_APP_DSN, GO_ENV, GO_RELEASE
 - GO_RUBY_BACKEND
