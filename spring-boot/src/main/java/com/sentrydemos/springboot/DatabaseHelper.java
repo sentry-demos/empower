@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 
 import io.sentry.ISpan;
 import io.sentry.Sentry;
+import static com.sentrydemos.springboot.SpanUtils.executeWithSpan;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -29,137 +30,130 @@ public class DatabaseHelper {
 	JdbcTemplate jdbcTemplate;
 	
 	
-	public String mapAllProducts(ISpan span) {
-		Sentry.logger().info("[springboot] - Starting product mapping operation");
-
-		String sql = "SELECT * FROM products";
-		ISpan sqlSpan = span.startChild("db", sql);
-		
-		List<Item> allItems = jdbcTemplate.query(sql,
-				(rs, rowNum) -> new Item(rs.getInt("id"), rs.getString("title"), rs.getString("description"),
-						rs.getString("descriptionfull"), rs.getInt("price"), rs.getString("img"),
-						rs.getString("imgcropped"), mapAllReviews(rs.getInt("id"), sqlSpan)));
-		
-		JSONArray ja = new JSONArray();
-		for (Item i : allItems) {
-			JSONObject jsonItemObject = new JSONObject(i);
-
-			ja.put(jsonItemObject);
-		}
-		Sentry.logger().info("[springboot] - Products retrieved successfully", 
-			"total_products", allItems.size(),
-			"sql_query", sql);
-		sqlSpan.setTag("totalProducts", String.valueOf(allItems.size()));
-		
-		sqlSpan.finish();
-		
-		return ja.toString();
+	public String mapAllProducts(ISpan span) throws Exception {
+		return executeWithSpan("db", "SELECT * FROM products", () -> {
+			List<Item> allItems = jdbcTemplate.query("SELECT * FROM products",
+					(rs, rowNum) -> {
+						try {
+							return new Item(rs.getInt("id"), rs.getString("title"), rs.getString("description"),
+									rs.getString("descriptionfull"), rs.getInt("price"), rs.getString("img"),
+									rs.getString("imgcropped"), mapAllReviews(rs.getInt("id"), span));
+						} catch (Exception e) {
+							throw new RuntimeException("Failed to map reviews for product " + rs.getInt("id"), e);
+						}
+					});
+			
+			JSONArray ja = new JSONArray();
+			for (Item i : allItems) {
+				JSONObject jsonItemObject = new JSONObject(i);
+				ja.put(jsonItemObject);
+			}
+			
+			Sentry.logger().info("[springboot] - Products retrieved successfully", 
+				"total_products", allItems.size(),
+				"sql_query", "SELECT * FROM products");
+			
+			return ja.toString();
+		});
 	}
 
-	public List<Review> mapAllReviews(int productId, ISpan span) {		
+	public List<Review> mapAllReviews(int productId, ISpan span) throws Exception {
 		// weekly_promotions is a "sleepy view", run the following query to get current sleep duration:
 		// SELECT pg_get_viewdef('weekly_promotions', true)
 		String sql = "SELECT * FROM reviews, weekly_promotions WHERE productId = " + String.valueOf(productId);
-
-		ISpan sqlSpan = span.startChild("db", sql);
-		List<Review> allReviews = jdbcTemplate.query(sql, (rs, rowNum) -> new Review(rs.getInt("id"), rs.getInt("productid"),
-				rs.getInt("rating"), rs.getInt("customerid"), rs.getString("description"), rs.getString("created"))); 
-		//TODO: sqlSpan.setData() on reviews. setData() currently unavailable
-		sqlSpan.finish();
-		return allReviews;
-
+		
+		return executeWithSpan("db", sql, () -> {
+			List<Review> allReviews = jdbcTemplate.query(sql, (rs, rowNum) -> new Review(rs.getInt("id"), rs.getInt("productid"),
+					rs.getInt("rating"), rs.getInt("customerid"), rs.getString("description"), rs.getString("created")));
+			//TODO: sqlSpan.setData() on reviews. setData() currently unavailable
+			return allReviews;
+		});
 	}
 
-	public String mapAllProductsJoin(ISpan transaction) {
-		
+	public String mapAllProductsJoin(ISpan transaction) throws Exception {
 		String sql = "SELECT * FROM products";
-		ISpan sqlSpan = transaction.startChild("db", sql);
-
-		List<Item> allItems = jdbcTemplate.query(sql,
-				(rs, rowNum) -> new Item(rs.getInt("id"), rs.getString("title"), rs.getString("description"),
-						rs.getString("descriptionfull"), rs.getInt("price"), rs.getString("img"),
-						rs.getString("imgcropped"), null));
 		
-		sqlSpan.setTag("totalProducts", String.valueOf(allItems.size()));
-		
-		sqlSpan.finish();
+		List<Item> allItems = executeWithSpan("db", sql, () -> {
+			List<Item> items = jdbcTemplate.query(sql,
+					(rs, rowNum) -> new Item(rs.getInt("id"), rs.getString("title"), rs.getString("description"),
+							rs.getString("descriptionfull"), rs.getInt("price"), rs.getString("img"),
+							rs.getString("imgcropped"), null));
+			return items;
+		});
 		
 		allItems = getAllItemsRowMapper(allItems, transaction);
 
 		JSONArray ja = new JSONArray();
 		for (Item i : allItems) {
 			JSONObject jsonItemObject = new JSONObject(i);
-
 			ja.put(jsonItemObject);
 		}
 		
 		return ja.toString();
 	}
 	
-	public List<Item> getAllItemsRowMapper(List<Item> items, ISpan transaction) {
+	public List<Item> getAllItemsRowMapper(List<Item> items, ISpan transaction) throws Exception {
 		Map<Integer, List<Review>> reviewsMap = new HashMap<>();
 		String sql = "SELECT reviews.id, products.id AS productid, reviews.rating, reviews.customerId, reviews.description, reviews.created FROM reviews INNER JOIN products ON reviews.productId = products.id";
-		ISpan sqlSpan = transaction.startChild("db", sql);
 		
-		List<Map<String, Object>> resultList = jdbcTemplate.queryForList(sql);
-		for (int i = 0; i < resultList.size(); i++) {
-			Map<String, Object> m = resultList.get(i);
-			
-			//customerId and description are null. TODO: Set SQL table to prevent null values
-			String desc = "";
-			if (m.containsKey("description") && m.get("description") != null) {
-				desc = String.valueOf(m.get("description"));
-			}
-			int custId = 0;
-			if (m.containsKey("customerId") && m.get("customerId") != null) {
-				custId = (int)m.get("customerId");
-			}
+		executeWithSpan("db", sql, () -> {
+			List<Map<String, Object>> resultList = jdbcTemplate.queryForList(sql);
+			for (int i = 0; i < resultList.size(); i++) {
+				Map<String, Object> m = resultList.get(i);
+				
+				//customerId and description are null. TODO: Set SQL table to prevent null values
+				String desc = "";
+				if (m.containsKey("description") && m.get("description") != null) {
+					desc = String.valueOf(m.get("description"));
+				}
+				int custId = 0;
+				if (m.containsKey("customerId") && m.get("customerId") != null) {
+					custId = (int)m.get("customerId");
+				}
 
-        	Review r = new Review((int)m.get("id"), (int)m.get("productid"),
-    				(int)m.get("rating"), custId, desc, m.get("created").toString());
-        	
-        	if (reviewsMap.containsKey((int)m.get("productid"))) {
-        		reviewsMap.get((int)m.get("productid")).add(r);
-        	} else {
-        		List<Review> rl = new ArrayList<Review>();
-        		rl.add(r);
-        		reviewsMap.put((int)m.get("productid"), rl);
-        	}
-		}
-		
-		for (Item i : items) {
-			i.setReviews(reviewsMap.get(i.getId()));
-		}
-		
-		sqlSpan.finish();
+				Review r = new Review((int)m.get("id"), (int)m.get("productid"),
+						(int)m.get("rating"), custId, desc, m.get("created").toString());
+				
+				if (reviewsMap.containsKey((int)m.get("productid"))) {
+					reviewsMap.get((int)m.get("productid")).add(r);
+				} else {
+					List<Review> rl = new ArrayList<Review>();
+					rl.add(r);
+					reviewsMap.put((int)m.get("productid"), rl);
+				}
+			}
+			
+			for (Item i : items) {
+				i.setReviews(reviewsMap.get(i.getId()));
+			}
+		});
 		
 		return items;
-
 	}
 	
-	public Map<String, Integer> getInventory(Set<String> set, ISpan span) {
+	public Map<String, Integer> getInventory(Set<String> set, ISpan span) throws Exception {
 		Sentry.logger().info("[springboot] - Retrieving inventory for products", 
 			"product_ids", set.toString(),
 			"product_count", set.size());
 
 		String sql = "SELECT * FROM inventory WHERE productId in " + formatArray(set);
-		ISpan sqlSpan = span.startChild("db", sql);
 		
-		List<Map<String, Object>> results = jdbcTemplate.queryForList(sql);
+		return executeWithSpan("db", sql, () -> {
+			List<Map<String, Object>> results = jdbcTemplate.queryForList(sql);
 
-		Map<String, Integer> inventory = new HashMap<String, Integer>();
-		for (Map m : results) {
-			if (m.get("productid") != null && m.get("count") != null) {
-				inventory.put(m.get("productid").toString(), (int) m.get("count"));
+			Map<String, Integer> inventory = new HashMap<String, Integer>();
+			for (Map m : results) {
+				if (m.get("productid") != null && m.get("count") != null) {
+					inventory.put(m.get("productid").toString(), (int) m.get("count"));
+				}
 			}
-		}
-		Sentry.logger().info("[springboot] - Inventory retrieved", 
-			"inventory_items_count", inventory.size(),
-			"requested_products", set.size());
-		sqlSpan.finish();
-		
-		return inventory;
-
+			
+			Sentry.logger().info("[springboot] - Inventory retrieved", 
+				"inventory_items_count", inventory.size(),
+				"requested_products", set.size());
+			
+			return inventory;
+		});
 	}
 	
 	private String formatArray(Set<String> set) {

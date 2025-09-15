@@ -35,6 +35,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.web.client.RestTemplate;
 
 import static com.sentrydemos.springboot.Utils.getIterator;
+import static com.sentrydemos.springboot.SpanUtils.executeWithSpan;
 
 @RestController
 public class AppController {
@@ -67,13 +68,6 @@ public class AppController {
 	}
 
 	private void setTags(HttpServletRequest request) {
-		/*
-		 * logger.info("request header names and vals: "); for (Enumeration<?> e =
-		 * request.getHeaderNames(); e.hasMoreElements();) { String nextHeaderName =
-		 * (String) e.nextElement(); String headerValue =
-		 * request.getHeader(nextHeaderName); logger.info("\t" + nextHeaderName + ", " +
-		 * headerValue); }
-		 */
 
 		for (String tag : headerTags) {
 			String header = request.getHeader(tag);
@@ -94,7 +88,7 @@ public class AppController {
 	@CrossOrigin
 	@GetMapping("/")
 	public String index() {
-		logger.info("returning from / call: Greetings from Spring Boot!");
+		logger.info("[springboot - logback] - returning from / call: Greetings from Spring Boot!");
 		return "Greetings from Spring Boot!";
 
 	}
@@ -102,7 +96,7 @@ public class AppController {
 	@CrossOrigin
 	@GetMapping("/success")
 	public String Success(HttpServletRequest request) {
-		logger.info("success");
+		logger.info("[springboot - logback] - success");
 		setTags(request);
 		return "success from springboot";
 
@@ -116,7 +110,7 @@ public class AppController {
 		try {
 			int example = 1 / 0;
 		} catch (Exception e) {
-			logger.error("caught exception", e);
+			logger.error("[springboot - logback] - caught exception", e);
 			return "Fail";
 		}
 		return "Success";
@@ -131,7 +125,7 @@ public class AppController {
 	@CrossOrigin
 	@GetMapping("/api")
 	public String Api(HttpServletRequest request) {
-		logger.info("> /api");
+		logger.info("[springboot - logback] - > /api");
 		setTags(request);
 
 		Sentry.logger().info("[springboot] - Making external API call to Ruby backend");
@@ -158,9 +152,9 @@ public class AppController {
 	@CrossOrigin
 	@GetMapping("/logback")
 	public String Logback() {
-		logger.info("info log");
-		logger.warn("warn log");
-		logger.error("error log");
+		logger.info("[springboot - logback] - info log");
+		logger.warn("[springboot - logback] - warn log");
+		logger.error("[springboot - logback] - error log");
 		return "Made an info, warn, and error log entry.\n"
 				+ "Whether they go to Sentry depends on the application.properties value: sentry.logging.minimum-event-level";
 
@@ -168,22 +162,28 @@ public class AppController {
 
 	@CrossOrigin
 	@GetMapping("/products")
-	public String GetProductsDelay(HttpServletRequest request) {
-		ISpan span = Sentry.getSpan().startChild("Overhead", "Set tags");
-		setTags(request);
-		span.finish();
-		createGetIteratorSpan();
+	public String GetProductsDelay(HttpServletRequest request) throws Exception {
+		try {
+			// Set tags with span tracking
+			executeWithSpan("overhead", "Set tags", () -> setTags(request));
+			
+			// Execute iterator calculation with span tracking
+			executeWithSpan("get_iterator", "Iterator calculation", () -> Thread.sleep(getIterator(16)));
 
-		String fooResourceUrl = "https://application-monitoring-ruby-dot-sales-engineering-sf.appspot.com";
-		ResponseEntity<String> response = restTemplate.exchange(fooResourceUrl + "/api", HttpMethod.GET,new HttpEntity<>(headers), String.class);
+			String fooResourceUrl = "https://application-monitoring-ruby-dot-sales-engineering-sf.appspot.com";
+			ResponseEntity<String> response = restTemplate.exchange(fooResourceUrl + "/api", HttpMethod.GET,new HttpEntity<>(headers), String.class);
 
-		String allProducts = dbHelper.mapAllProducts(Sentry.getSpan());
-		return allProducts;
+			String allProducts = dbHelper.mapAllProducts(Sentry.getSpan());
+			return allProducts;
+		} catch (Exception e) {
+			logger.error("[springboot - logback] - Failed to get products", e);
+			throw new RuntimeException("Failed to retrieve products", e);
+		}
 	}
 
 	@CrossOrigin
 	@GetMapping("/products-join")
-	public String GetProducts(HttpServletRequest request) {
+	public String GetProducts(HttpServletRequest request) throws Exception {
 		setTags(request);
 
 		String fooResourceUrl = "https://application-monitoring-ruby-dot-sales-engineering-sf.appspot.com";
@@ -200,55 +200,52 @@ public class AppController {
 		Sentry.logger().info("[springboot] - Checkout process started", "payload_size", payload.length());
     	setTags(request);
 
-		ISpan span = Sentry.getSpan().startChild("map_payload", "Set tags and map payload to Cart object");
-
-		JSONObject json = new JSONObject(payload);
-
-		ObjectMapper objectMapper = new ObjectMapper();
-
-		Cart cart = objectMapper.readValue(json.get("cart").toString(), Cart.class);
+		// Parse cart with span tracking
+		Cart cart = executeWithSpan("map_payload", "Set tags and map payload to Cart object", () -> {
+			JSONObject json = new JSONObject(payload);
+			ObjectMapper objectMapper = new ObjectMapper();
+			try {
+				Cart parsedCart = objectMapper.readValue(json.get("cart").toString(), Cart.class);
+				
+				Sentry.logger().info("[springboot] - Cart parsed successfully", 
+					"cart_items_count", parsedCart.getItems() != null ? parsedCart.getItems().size() : 0,
+					"cart_total", parsedCart.getTotal(),
+					"quantities_count", parsedCart.getQuantities().size());
+				
+				return parsedCart;
+			} catch (Exception e) {
+				throw new RuntimeException("Failed to parse cart", e);
+			}
+		});
 		
-		Sentry.logger().info("[springboot] - Cart parsed successfully", 
-			"cart_items_count", cart.getItems() != null ? cart.getItems().size() : 0,
-			"cart_total", cart.getTotal(),
-			"quantities_count", cart.getQuantities().size());
-
-		span.finish();
+		// Process checkout with span tracking
+		executeWithSpan("process_order", "Checkout Cart quantities", () -> checkout(cart.getQuantities()));
 		
-		ISpan checkoutSpan = Sentry.getSpan().startChild("Process Order", "Checkout Cart quantities");
-
-		checkout(cart.getQuantities(), checkoutSpan);
-		
-		checkoutSpan.finish();
 		Sentry.logger().info("[springboot] - Checkout completed successfully");
 		return "Checkout completed";
 	}
 
-	private void checkout(Map<String, Integer> quantities, ISpan span) {
-
-		Map<String, Integer> tempInventory = dbHelper.getInventory(quantities.keySet(), span);
+	private void checkout(Map<String, Integer> quantities) throws Exception {
+		Map<String, Integer> tempInventory = dbHelper.getInventory(quantities.keySet(), Sentry.getSpan());
 		Sentry.logger().info("[springboot] - Inventory size: " + tempInventory.size());
 
-		ISpan inventorySpan = span.startChild("Reduce Inventory", "Reduce inventory from Cart quantities");
-		for (String key : quantities.keySet()) {
-			logger.info("Item " + key + " has quantity " + quantities.get(key));
+		executeWithSpan("reduce_inventory", "Reduce inventory from Cart quantities", () -> {
+			for (String key : quantities.keySet()) {
+				logger.info("[springboot - logback] - Item " + key + " has quantity " + quantities.get(key));
 
-			int currentInventory = tempInventory.get(key);
-			currentInventory = currentInventory - quantities.get(key);
-			Sentry.logger().info("[springboot] - Item " + key + " has quantity " + quantities.get(key) + " and current inventory " + currentInventory);
-			if (!hasInventory()) {
-				String message = "No inventory for item";
-				Sentry.logger().warn("[springboot] - " + message);
-				inventorySpan.setStatus(SpanStatus.fromHttpStatusCode(500, SpanStatus.INTERNAL_ERROR));
-				inventorySpan.finish(); //resolve spans before throwing exception
-				span.finish(); //resolve spans before throwing exception
-				throw new RuntimeException(message);
+				int currentInventory = tempInventory.get(key);
+				currentInventory = currentInventory - quantities.get(key);
+				Sentry.logger().info("[springboot] - Item " + key + " has quantity " + quantities.get(key) + " and current inventory " + currentInventory);
+				
+				if (!hasInventory()) {
+					String message = "No inventory for item";
+					Sentry.logger().warn("[springboot] - " + message);
+					throw new RuntimeException(message);
+				}
+
+				tempInventory.put(key, currentInventory);
 			}
-
-			tempInventory.put(key, currentInventory);
-
-		}
-		inventorySpan.finish();
+		});
 	}
 
 	/*
@@ -264,17 +261,4 @@ public class AppController {
 		return false;
 	}
 	
-	private void createGetIteratorSpan() {
-		ISpan iteratorSpan = Sentry.getSpan().startChild("get_iterator", "iterator");
-		try {
-			Sentry.logger().info("[springboot] - Calculation started");
-			Thread.sleep(getIterator(16));
-			Sentry.logger().info("[springboot] - Calculation completed");
-				
-		} catch (Exception e) {
-			Sentry.logger().error("[springboot] - Error in function", e);
-		} finally {
-			iteratorSpan.finish();
-		}
-	}
 }
