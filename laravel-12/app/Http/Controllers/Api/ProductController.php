@@ -30,11 +30,11 @@ class ProductController extends Controller
             $productArray['reviews'] = $product->reviews->map(function ($review) {
                 return [
                     'id' => $review->id,
-                    'productid' => $review->product_id,
+                    'productid' => $review->productid,
                     'rating' => $review->rating,
-                    'customerId' => $review->customer_id,
+                    'customerId' => $review->customerid,
                     'description' => $review->description,
-                    'created' => $review->created_at,
+                    'created' => $review->created,
                 ];
             })->toArray();
             

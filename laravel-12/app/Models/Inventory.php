@@ -10,15 +10,25 @@ class Inventory extends Model
 {
     use HasFactory;
 
+    /**
+     * The table associated with the model.
+     */
+    protected $table = 'inventory';
+
+    /**
+     * Indicates if the model should be timestamped.
+     */
+    public $timestamps = false;
+
     protected $fillable = [
         'sku',
         'count',
-        'product_id',
+        'productid',
     ];
 
     protected $casts = [
         'count' => 'integer',
-        'product_id' => 'integer',
+        'productid' => 'integer',
     ];
 
     /**
@@ -26,7 +36,7 @@ class Inventory extends Model
      */
     public function product(): BelongsTo
     {
-        return $this->belongsTo(Product::class);
+        return $this->belongsTo(Product::class, 'productid');
     }
 
     /**

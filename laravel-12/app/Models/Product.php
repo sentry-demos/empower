@@ -10,6 +10,11 @@ class Product extends Model
 {
     use HasFactory;
 
+    /**
+     * Indicates if the model should be timestamped.
+     */
+    public $timestamps = false;
+
     protected $fillable = [
         'title',
         'description',
@@ -28,7 +33,7 @@ class Product extends Model
      */
     public function reviews(): HasMany
     {
-        return $this->hasMany(Review::class);
+        return $this->hasMany(Review::class, 'productid');
     }
 
     /**
@@ -36,7 +41,7 @@ class Product extends Model
      */
     public function inventory(): HasMany
     {
-        return $this->hasMany(Inventory::class);
+        return $this->hasMany(Inventory::class, 'productid');
     }
 
     /**

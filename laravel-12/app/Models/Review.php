@@ -10,17 +10,22 @@ class Review extends Model
 {
     use HasFactory;
 
+    /**
+     * Indicates if the model should be timestamped.
+     */
+    public $timestamps = false;
+
     protected $fillable = [
-        'product_id',
+        'productid',
         'rating',
-        'customer_id',
+        'customerid',
         'description',
     ];
 
     protected $casts = [
-        'product_id' => 'integer',
+        'productid' => 'integer',
         'rating' => 'integer',
-        'customer_id' => 'integer',
+        'customerid' => 'integer',
     ];
 
     /**
@@ -28,7 +33,7 @@ class Review extends Model
      */
     public function product(): BelongsTo
     {
-        return $this->belongsTo(Product::class);
+        return $this->belongsTo(Product::class, 'productid');
     }
 
     /**
