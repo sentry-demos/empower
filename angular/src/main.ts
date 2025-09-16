@@ -5,13 +5,71 @@ import { AppComponent } from './app/app.component';
 import { appConfig } from './app/app.config';
 import { environment } from './environments/environment';
 
-// Handle SE parameter from URL (like React)
+// Handle parameters from URL (like React)
 const queryParams = new URLSearchParams(window.location.search);
+
+// Set customerType (random like React)
+const customerType = [
+  'medium-plan',
+  'large-plan', 
+  'small-plan',
+  'enterprise',
+][Math.floor(Math.random() * 4)];
+Sentry.setTag('customerType', customerType);
+
+// Handle SE parameter
 const seValue = queryParams.get('se');
 if (seValue) {
   Sentry.setTag('se', seValue);
   sessionStorage.setItem('se', seValue);
 }
+
+// Handle userEmail parameter (like React)
+let email = null;
+if (queryParams.get('userEmail')) {
+  email = queryParams.get('userEmail');
+} else {
+  // Generate random email like React
+  const array = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z'];
+  const a = array[Math.floor(Math.random() * array.length)] || 'a';
+  const b = array[Math.floor(Math.random() * array.length)] || 'b';
+  const c = array[Math.floor(Math.random() * array.length)] || 'c';
+  email = a + b + c + '@example.com';
+}
+Sentry.setUser({ email: email || undefined });
+
+// Store values for use in fetch override
+const globalSe = seValue;
+const globalCustomerType = customerType;
+const globalEmail = email;
+
+// Automatically append `se` header to all backend requests (like React)
+const nativeFetch = window.fetch;
+window.fetch = function (...args) {
+  let url = args[0];
+  // Convert to string if it's a Request or URL object
+  const urlString = typeof url === 'string' ? url : url.toString();
+  // Don't add headers to Sentry requests
+  let ignore_match = urlString.match(
+    /^http[s]:\/\/([^.]+\.ingest\.sentry\.io\/|localhost:9989|127.0.0.1:9989).*/
+  );
+  if (!ignore_match) {
+    args[1] = args[1] || {};
+    const headers: Record<string, string> = { ...(args[1].headers as Record<string, string>) };
+    if (globalSe) headers['se'] = globalSe;
+    if (globalCustomerType) headers['customerType'] = globalCustomerType;
+    if (globalEmail) headers['email'] = globalEmail;
+    args[1].headers = headers;
+  }
+  return nativeFetch.apply(window, args);
+};
+const tracingOrigins = [
+    'localhost',
+    'empower-plant.com',
+    'run.app',
+    'appspot.com',
+    /^\//,
+  ];
 
 // Initialize Sentry with configuration from Angular environment files
 // This is the standard Angular approach (same as React's build-time process.env)
@@ -19,8 +77,15 @@ Sentry.init({
     dsn: environment.sentry.dsn,
     environment: environment.sentry.environment,
     release: environment.sentry.release,
+    tracePropagationTargets: tracingOrigins,
+    tracesSampleRate: 1,
+    replaysSessionSampleRate: 1.0,
+    replaysOnErrorSampleRate: 1,
+    enableLogs: true,
+    debug: true, // Enable debug mode to see Sentry logs in console
+
     integrations: (defaultIntegrations) => [
-        // Filter out the Dedupe integration from the defaults
+        // Filter out the Dedupe integration from the defaults (like React)
         ...defaultIntegrations.filter(integration => integration.name !== "Dedupe"),
         Sentry.browserTracingIntegration(), 
         Sentry.replayIntegration({
@@ -35,11 +100,6 @@ Sentry.init({
             levels: ["log", "warn", "error", "info", "debug"] 
         })
     ],
-    tracesSampleRate: 1,
-    replaysSessionSampleRate: 1.0,
-    replaysOnErrorSampleRate: 1,
-    enableLogs: true,
-    debug: true, // Enable debug mode to see Sentry logs in console
     beforeSend(event) {
         
         // Get SE value from sessionStorage (simpler approach)

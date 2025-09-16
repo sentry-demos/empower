@@ -117,17 +117,8 @@ export class CheckoutComponent implements OnInit {
       // This is the expected behavior - checkout fails to showcase Sentry
       console.error('Checkout error (expected for demo):', error);
       
-      // Capture the error in Sentry for monitoring (this is the demo highlight)
-      Sentry.captureException(error, {
-        tags: {
-          component: 'checkout',
-          action: 'form_submission'
-        },
-        extra: {
-          cart: this.cart,
-          form: this.form
-        }
-      });
+      // Capture the error in Sentry for monitoring (matches React exactly)
+      Sentry.captureException(error);
       
       // Navigate to error page to show the error (like React)
       this.router.navigate(['/error']);
@@ -165,31 +156,29 @@ export class CheckoutComponent implements OnInit {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestBody)
+      })
+      .catch((error) => {
+        // Handle fetch errors like React does - convert to response object
+        return { ok: false, error: error, status: undefined, statusText: undefined };
       });
 
       if (!response.ok) {
-        console.error("Checkout failed with status:", response.status);
-        const error = new Error(`${response.status} - ${response.statusText || 'Internal Server Error'}`);
+        console.error("Checkout failed with status:", (response as any).status);
         
-        // Send HTTP error to Sentry (this is the demo highlight)
-        Sentry.captureException(error, {
-          tags: {
-            component: 'checkout',
-            action: 'api_call',
-            http_status: response.status.toString()
-          },
-          extra: {
-            url: checkoutUrl,
-            status: response.status,
-            statusText: response.statusText,
-            requestBody: requestBody
+        if (!(response as any).error || (response as any).status === undefined) {
+          const error = new Error(`${(response as any).status} - ${(response as any).statusText || 'Internal Server Error'}`);
+          throw error;
+        } else {
+          // Handle network errors like React does
+          if ((response as any).error instanceof TypeError && (response as any).error.message === "Failed to fetch") {
+            throw new Error("Fetch promise rejected in Checkout due to either an actual network issue, malformed URL, etc or CORS headers not set on HTTP 500: " + (response as any).error);
+          } else {
+            throw new Error("Checkout request failed: " + (response as any).error);
           }
-        });
-        
-        throw error;
+        }
       }
 
-      return response;
+      return response as Response;
     } catch (error) {
       console.error("Checkout request failed:", error);
       throw error;
@@ -206,4 +195,5 @@ export class CheckoutComponent implements OnInit {
   getQuantity(itemId: number): number {
     return this.cart.quantities[itemId] || 0;
   }
+
 }
