@@ -221,7 +221,7 @@ public class AppController {
 
 			int currentInventory = tempInventory.get(key);
 			currentInventory = currentInventory - quantities.get(key);
-			if (!hasInventory()) {
+			if (currentInventory < 0) {
 				String message = "No inventory for item";
 				inventorySpan.setStatus(SpanStatus.fromHttpStatusCode(500, SpanStatus.INTERNAL_ERROR));
 				inventorySpan.finish(); //resolve spans before throwing exception
@@ -244,6 +244,10 @@ public class AppController {
 		return "Hello " + fullName;
 	}
 	
+	/*
+	 * DEPRECATED: This method was hardcoded to always return false.
+	 * Inventory checking is now done inline in the checkout method.
+	 */
 	public Boolean hasInventory() {
 		return false;
 	}
