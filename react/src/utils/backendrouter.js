@@ -6,6 +6,7 @@ const SUPPORTED_BACKEND_TYPES = {
   springboot: process.env.REACT_APP_SPRINGBOOT_BACKEND,
   aspnetcore: process.env.REACT_APP_ASPNETCORE_BACKEND,
   laravel: process.env.REACT_APP_LARAVEL_BACKEND,
+  'laravel-12': process.env.REACT_APP_LARAVEL12_BACKEND,
   ruby: process.env.REACT_APP_RUBY_BACKEND,
   rails: process.env.REACT_APP_RUBYONRAILS_BACKEND,
 };

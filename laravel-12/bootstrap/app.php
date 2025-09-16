@@ -31,7 +31,13 @@ $application = Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // Enable CORS for all routes
+        $middleware->validateCsrfTokens(except: [
+            '*'
+        ]);
+        
+        // Add CORS middleware
+        $middleware->append(\App\Http\Middleware\Cors::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         Integration::handles($exceptions);
