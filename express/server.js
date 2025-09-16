@@ -14,6 +14,9 @@
 
 "use strict";
 
+require("./instrument")
+
+const express = require("express");
 const Sentry = require("@sentry/node");
 const axios = require("axios");
 const cors = require("cors");
@@ -23,38 +26,8 @@ const DB = require("./db");
 const utils = require("./utils");
 
 // Environment variables
-const dsn = process.env.EXPRESS_APP_DSN;
-const release = process.env.RELEASE;
-const environment = process.env.EXPRESS_ENV;
 const RUBY_BACKEND = process.env.RUBY_BACKEND;
 const PORT = process.env.PORT;
-
-console.log("> DSN", dsn);
-console.log("> RELEASE", release);
-console.log("> ENVIRONMENT", environment);
-
-// Initialize Sentry
-Sentry.init({
-  dsn: dsn,
-  environment: environment,
-  release: release,
-  tracesSampleRate: 1.0,
-  profilesSampleRate: 1.0,
-  enableTracing: true,
-  debug:true, 
-  integrations: [Sentry.knexIntegration()],
-  tracesSampler: (samplingContext) => {
-    // sample out transactions from http OPTIONS requests hitting endpoints
-    const request = samplingContext.request;
-    if (request && request.method === "OPTIONS") {
-      return 0.0;
-    } else {
-      return 1.0;
-    }
-  },
-});
-
-const express = require("express");
 
 // [START app]
 const app = express();
@@ -222,6 +195,8 @@ app.get("/connect", (req, res) => {
 app.get("/organization", (req, res) => {
   res.send(`express /organization`);
 });
+
+Sentry.setupExpressErrorHandler(app);
 
 // Start server
 app.listen(PORT, () => {
