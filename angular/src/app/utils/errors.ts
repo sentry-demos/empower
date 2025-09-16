@@ -54,10 +54,12 @@ const probability = (n: number): boolean => {
 export const crasher = (): void => {
   const queryParams = new URLSearchParams(window.location.search);
   
+  // Check if there are any query parameters (like React)
   if (queryParams.toString() !== '') {
     const crash = queryParams.get('crash');
     
     if (crash) {
+      console.log('> crash', crash);
       const errnum = queryParams.get('errnum') || 
                      Math.floor(Math.random() * randomErrors.length).toString();
       
@@ -66,6 +68,8 @@ export const crasher = (): void => {
         throwErrorNumber(parseInt(errnum));
       }
     }
+  } else {
+    console.log('> queryParam was', queryParams);
   }
 };
 
