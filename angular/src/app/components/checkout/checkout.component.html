@@ -3,7 +3,7 @@
   
   <!-- Loading State -->
   <div *ngIf="loading" class="loader-container">
-    <app-three-dots color="#f6cfb2" [height]="150" [width]="150"></app-three-dots>
+    <app-three-dots trace="checkout-loading" color="#f6cfb2" [height]="150" [width]="150"></app-three-dots>
   </div>
   
   <!-- Checkout Form (hidden when loading) -->
@@ -98,6 +98,7 @@
         type="submit"
         class="complete-checkout-btn sentry-unmask"
         value="Complete order"
+        trace="checkout-submit-button"
       />
     </form>
     

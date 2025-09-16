@@ -5,11 +5,12 @@ import { FormsModule } from '@angular/forms';
 import { CartService } from './services/cart.service';
 import { ConfigService } from './services/config.service';
 import { crasher } from './utils/errors';
+import * as Sentry from '@sentry/angular';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, Sentry.TraceModule],
   template: `
     <!-- Navigation -->
     <nav id="top-nav" class="show-mobile">

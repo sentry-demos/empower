@@ -35,6 +35,7 @@ import * as Sentry from '@sentry/angular';
   templateUrl: './checkout.component.html',
   styleUrls: ['./checkout.component.css']
 })
+@Sentry.TraceClass({ name: "CheckoutComponent" })
 export class CheckoutComponent implements OnInit {
   // Current cart state (items, quantities, total)
   cart: CartState = { items: [], quantities: {}, total: 0 };
@@ -88,6 +89,7 @@ export class CheckoutComponent implements OnInit {
    * 
    * @param event - The form submission event
    */
+  @Sentry.TraceMethod({ name: "CheckoutComponent.onSubmit" })
   async onSubmit(event: Event): Promise<void> {
     // Prevent the default form submission behavior
     event.preventDefault();
@@ -134,6 +136,7 @@ export class CheckoutComponent implements OnInit {
    * 
    * @returns Promise<Response> - The checkout API response
    */
+  @Sentry.TraceMethod({ name: "CheckoutComponent.processCheckout" })
   private async processCheckout(): Promise<Response> {
     
     const itemsInCart = this.cartService.getCartItemCount();

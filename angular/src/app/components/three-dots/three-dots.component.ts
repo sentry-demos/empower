@@ -1,5 +1,6 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import * as Sentry from '@sentry/angular';
 
 /**
  * ThreeDots Component - Displays an animated loading indicator
@@ -34,6 +35,7 @@ import { CommonModule } from '@angular/common';
   templateUrl: './three-dots.component.html',
   styleUrls: ['./three-dots.component.css']
 })
+@Sentry.TraceClass({ name: "ThreeDotsComponent" })
 export class ThreeDotsComponent {
   // Color of the dots (defaults to a warm orange)
   @Input() color: string = '#f6cfb2';

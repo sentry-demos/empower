@@ -140,9 +140,18 @@ window.fetch = function (...args) {
   }
 };
 
-bootstrapApplication(AppComponent, appConfig)
-.catch(err => {
-    console.error('❌ Angular bootstrap error:', err);
-    // Also send to Sentry
-    Sentry.captureException(err);
-});
+// Track Angular bootstrapping performance
+Sentry.startSpan(
+  {
+    name: "bootstrap-angular-application",
+    op: "ui.angular.bootstrap",
+  },
+  async () => {
+    await bootstrapApplication(AppComponent, appConfig)
+    .catch(err => {
+        console.error('❌ Angular bootstrap error:', err);
+        // Also send to Sentry
+        Sentry.captureException(err);
+    });
+  },
+);
