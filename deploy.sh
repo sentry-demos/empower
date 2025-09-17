@@ -235,7 +235,7 @@ for proj in $projects; do # bash only
       # all other projects
       SERVICE=$app_engine_service envsubst.sh < app.yaml.template > .app.yaml
       cat .app.yaml
-      gcloud app deploy --version v1 --quiet .app.yaml
+      gcloud app deploy --version v1 --verbosity=debug .app.yaml
     fi
   fi
 done
