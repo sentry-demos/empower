@@ -43,7 +43,7 @@ else:
 def get_products():
     results = []
     try:
-        with sentry_sdk.start_span(op="get_products", description="db.connect"):
+        with sentry_sdk.start_span(description="get_products", op="db.connect"):
             connection = db.connect()
 
         n = weighter(operator.le, 12)
@@ -66,7 +66,7 @@ def get_products():
                 result["reviews"].append(dict(review))
             results.append(result)
 
-        with sentry_sdk.start_span(op="serialization", description="json"):
+        with sentry_sdk.start_span(description="combined_reviews.json", op="serialization"):
             result = json.dumps(results, default=str)
         return result
     except Exception as err:
@@ -76,17 +76,17 @@ def get_products():
 def get_products_join():
     results = []
     try:
-        with sentry_sdk.start_span(op="get_products_join", description="db.connect"):
+        with sentry_sdk.start_span(description="get_products_join", op="db.connect"):
             connection = db.connect()
 
-        with sentry_sdk.start_span(op="get_products_join", description="db.query") as span:
+        with sentry_sdk.start_span(description="get_products_join", op="db.query") as span:
             products = connection.execute(
                 "SELECT * FROM products"
             ).fetchall()
             span.set_tag("totalProducts",len(products))
             span.set_data("products",products)
 
-        with sentry_sdk.start_span(op="get_products_join.reviews", description="db.query") as span:
+        with sentry_sdk.start_span(description="get_products_join.reviews", op="db.query") as span:
             reviews = connection.execute(
                 "SELECT reviews.id, products.id AS productid, reviews.rating, reviews.customerId, reviews.description, reviews.created FROM reviews INNER JOIN products ON reviews.productId = products.id"
             ).fetchall()
@@ -94,7 +94,7 @@ def get_products_join():
     except Exception as err:
         raise DatabaseConnectionError('get_products_join') from err
 
-    with sentry_sdk.start_span(op="get_products_join.format_results", description="function") as span:
+    with sentry_sdk.start_span(description="get_products_join.format_results", op="function") as span:
         for product in products:
             result = dict(product)
             result["reviews"] = []
@@ -106,7 +106,7 @@ def get_products_join():
             results.append(result)
         span.set_data("results", results)
 
-    with sentry_sdk.start_span(op="serialization", description="json"):
+    with sentry_sdk.start_span(description="joined_reviews.json", op="serialization"):
         result = json.dumps(results, default=str)
 
     return result
@@ -126,9 +126,9 @@ def get_inventory(cart):
     print("> productIds", productIds)
 
     try:
-        with sentry_sdk.start_span(op="get_inventory", description="db.connect"):
+        with sentry_sdk.start_span(description="get_inventory", op="db.connect"):
             connection = db.connect()
-        with sentry_sdk.start_span(op="get_inventory", description="db.query") as span:
+        with sentry_sdk.start_span(description="get_inventory", op="db.query") as span:
             # Use parameterized query with ANY() to safely handle array of product IDs
             query = text("SELECT * FROM inventory WHERE productId = ANY(:product_ids)")
             inventory = connection.execute(query, product_ids=productIds).fetchall()
@@ -144,10 +144,10 @@ def decrement_inventory(id, count):
 def get_promo_code(code):
     """Get promo code from database by code string"""
     try:
-        with sentry_sdk.start_span(op="get_promo_code", description="db.connect"):
+        with sentry_sdk.start_span(description="get_promo_code", op="db.connect"):
             connection = db.connect()
         
-        with sentry_sdk.start_span(op="get_promo_code", description="db.query") as span:
+        with sentry_sdk.start_span(description="get_promo_code", op="db.query") as span:
             query = text("SELECT * FROM promo_codes WHERE code = :code AND is_active = true")
             result = connection.execute(query, code=code).fetchone()
             span.set_data("promo_code", result)

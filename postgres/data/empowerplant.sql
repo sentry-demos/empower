@@ -783,6 +783,12 @@ ALTER TABLE ONLY public.tools
 -- GRANT ALL ON SCHEMA public TO cloudsqlsuperuser;
 -- GRANT ALL ON SCHEMA public TO PUBLIC;
 
+--
+-- Data for Name: promo_codes; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+INSERT INTO public.promo_codes (id, code, percent_discount, max_dollar_savings, is_active, expires_at, created_at) VALUES (3, 'SAVE20', 20, 50, true, '2025-09-09 00:05:48.263006', '2025-09-07 00:00:00');
+
 
 --
 -- PostgreSQL database dump complete
