@@ -94,11 +94,11 @@ function Checkout({ backend, rageclick, checkout_success, cart }) {
       if (!response.error || response.status === undefined) {
         checkout_span.setAttribute("status", response.status);
 
-        throw new Error(
-          [response.status, response.statusText || ' Internal Server Error'].join(
-            ' -'
-          )
-        );
+        // Handle cases where response.status is undefined
+        const statusCode = response.status !== undefined ? response.status : 'Unknown';
+        const statusText = response.statusText || 'Internal Server Error';
+        
+        throw new Error(`${statusCode} - ${statusText}`);
       } else {
         checkout_span.setAttribute("status", "unknown_error");
         if (response.error instanceof TypeError && response.error.message === "Failed to fetch") {
