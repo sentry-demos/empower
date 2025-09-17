@@ -257,7 +257,7 @@ def checkout():
     try:
         if validate_inventory:
             with sentry_sdk.start_span(op="process_order", description="function"):
-                if len(quantities) == 0:
+                if len(cart['quantities']) == 0:
                     raise Exception("Invalid checkout request: cart is empty")
 
                 quantities = {int(k): v for k, v in cart['quantities'].items()}
