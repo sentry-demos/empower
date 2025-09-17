@@ -49,6 +49,12 @@ jobs:
         with:
           ruby-version: '3.2'
 
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '24'
+
       - name: Setup Sentry CLI
         uses: mathieu-bour/setup-sentry-cli@v1.3.0
         with:
