@@ -198,11 +198,11 @@ done
 
 grep -v '^#' $top/.resolved.env | \
   sed 's/ #.*//' | \
-  sed -E 's/\${__GCP_SECRET__\(([^}]*)\)}/${__GCP_SECRET__\1}/g' | \
-  sed -E 's/^([^=]*)=\${__GCP_SECRET__}/\1=${__GCP_SECRET__\1}/g' | \
-  sed -E 's/\${__IF_DEPLOYING__\('"$projects_re"',[ ]*([^ ]*)[ ]*,.*\)}/\2/g' | \
-  sed -E 's/\${__IF_DEPLOYING__\(.*,.*,[ ]*([^ ]*)[ ]*\)}/\1/g' | \
-  sed -E 's/\${__DYNAMIC_VERSION__}/'"$dynamic_version"'/g' > $top/.resolved.tmp
+  sed -E 's/\$\{__GCP_SECRET__\(([^}]*)\)\}/\$\{__GCP_SECRET__\1\}/g' | \
+  sed -E 's/^([^=]*)=\$\{__GCP_SECRET__\}/\1=\$\{__GCP_SECRET__\1\}/g' | \
+  sed -E 's/\$\{__IF_DEPLOYING__\('"$projects_re"',[ ]*([^ ]*)[ ]*,.*\)\}/\2/g' | \
+  sed -E 's/\$\{__IF_DEPLOYING__\(.*,.*,[ ]*([^ ]*)[ ]*\)\}/\1/g' | \
+  sed -E 's/\$\{__DYNAMIC_VERSION__\}/'"$dynamic_version"'/g' > $top/.resolved.tmp
 
 # Now process __ENV__ variables by substituting them with actual environment values
 > $top/.resolved.env
