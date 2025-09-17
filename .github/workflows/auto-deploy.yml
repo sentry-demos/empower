@@ -3,12 +3,6 @@ name: auto-deploy.yml
 run-name: Deployment triggered by ${{ github.event_name }} / ${{ github.actor }}
 
 on:
-  push:
-    branches:
-      - "master"
-  schedule:
-    - cron: "40 3 * * *" # every day at 8:40pm PDT / 5:40am GMT+2
-    # see https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#schedule
   workflow_dispatch:
 
 # Only run 1 workflow at a time. If new one starts abort any that are already running.
@@ -18,7 +12,6 @@ concurrency:
 
 jobs:
   default-job:
-    if: github.repository_owner == 'sentry-demos' # don't run in forks
     permissions:
       contents: "read"
       id-token: "write"
@@ -111,15 +104,15 @@ jobs:
             # For manual triggers, deploy all projects
             # this is useful to force a 'bounce'
             DEPLOYABLE_PROJECTS=$(./bin/list_deployable_projects.sh)
-            ./deploy.sh $DEPLOYABLE_PROJECTS --env=production
+            ./deploy.sh $DEPLOYABLE_PROJECTS --env=staging
           else
             # For automated triggers, check for changes
             CHANGED_PROJECTS=$(./bin/projects_changed_bw_commits.sh "${{ env.NX_BASE }}" "${{ env.NX_HEAD }}")
             if [[ ! -z "$CHANGED_PROJECTS" ]]; then
-              ./deploy.sh $CHANGED_PROJECTS --env=production
+              ./deploy.sh $CHANGED_PROJECTS --env=staging
             elif [[ `./bin/release.sh` != `./bin/release.sh 1` ]]; then # different release than yesterday
               # currently we create regular calendar releases only for React
-              ./deploy.sh react --env=production
+              ./deploy.sh react --env=staging
             else
               echo "No deployable projects have been changed since last successful deployment. New calendar release is not due either. Nothing to do."
             fi
