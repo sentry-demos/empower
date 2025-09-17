@@ -104,7 +104,7 @@ jobs:
             # For manual triggers, deploy all projects
             # this is useful to force a 'bounce'
             DEPLOYABLE_PROJECTS=$(./bin/list_deployable_projects.sh)
-            ./deploy.sh $DEPLOYABLE_PROJECTS --env=staging
+            bash -x ./deploy.sh $DEPLOYABLE_PROJECTS --env=staging
           else
             # For automated triggers, check for changes
             CHANGED_PROJECTS=$(./bin/projects_changed_bw_commits.sh "${{ env.NX_BASE }}" "${{ env.NX_HEAD }}")
