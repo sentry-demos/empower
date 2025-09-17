@@ -1,17 +1,17 @@
 #!/bin/bash
 
-# deploy.sh - build, upload artifacts, and deploy or run locally any one or multiple projects
+# `deploy` - build, upload artifacts, and deploy or run locally any one or multiple projects
 # using *.env for both build-time and runtime environment configuration, where --env parameter 
 # specifies which *.env file to use. A special case is --env=local which will run each project's
 # 'run_local.sh' script instead of deploying to Google App Engine. If multiple projects are specified on
 # the command-line in this local mode, a webserver will be started for each project.
 #
 # In local mode, you can also specify a custom command to run instead of run_local.sh using the -- separator:
-# Usage: ./deploy.sh --env=local flask                 # uses flask/run_local.sh - a setup similar to production
-# Usage: ./deploy.sh --env=local react -- npm start    # any command after --, e.g. hot reload server or `cat .env`
-# Usage: ./deploy.sh --env=production react            # deploy to production
-# Usage: ./deploy.sh --env=staging express spring-boot # multiple projects
-# Usage: ./deploy.sh --env=local react flask laravel   # wires all 3 together automatically (see local.env)
+# Usage: ./deploy --env=local flask                 # uses flask/run_local.sh - a setup similar to production
+# Usage: ./deploy --env=local react -- npm start    # any command after --, e.g. hot reload server or `cat .env`
+# Usage: ./deploy --env=production react            # deploy to production
+# Usage: ./deploy --env=staging express spring-boot # multiple projects
+# Usage: ./deploy --env=local react flask laravel   # wires all 3 together automatically (see local.env)
 #
 # Runtime configuration is done by substituting variables in all *.template files found anywhere
 # inside each project with the values from *.env file. The output of substitution will be saved in
@@ -78,11 +78,11 @@ done
 
 USAGE="[ERROR] Invalid arguments.\n\
 Usage: \n\
-./deploy.sh --env=local flask                 # uses flask/run_local.sh - a setup similar to production\n\
-./deploy.sh --env=local react -- npm start    # any command after --, e.g. hot reload server or 'cat .env'\n\
-./deploy.sh --env=production react            # deploy to production\n\
-./deploy.sh --env=staging express spring-boot # multiple projects\n\
-./deploy.sh --env=local react flask laravel   # wires all 3 together automatically (see local.env)"
+./deploy --env=local flask                 # uses flask/run_local.sh - a setup similar to production\n\
+./deploy --env=local react -- npm start    # any command after --, e.g. hot reload server or 'cat .env'\n\
+./deploy --env=production react            # deploy to production\n\
+./deploy --env=staging express spring-boot # multiple projects\n\
+./deploy --env=local react flask laravel   # wires all 3 together automatically (see local.env)"
 
 # Validate CLI arguments
 if [[ "$env" == "" || "$projects" == "" ]]; then

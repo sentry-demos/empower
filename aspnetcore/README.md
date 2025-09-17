@@ -8,7 +8,7 @@ See https://learn.microsoft.com/aspnet/core/web-api
    - For example, choose Arm64 if you have an Apple Sillicon (M1) machine, or x64 if you have an Intel processor. 
 
 ```
-./deploy.sh --env=local aspnetcore
+./deploy --env=local aspnetcore
 ```
 
 Open in browser: http://localhost:8091/products
@@ -16,7 +16,7 @@ Open in browser: http://localhost:8091/products
 ## Run locally with front end:
 
 ```
-./deploy.sh --env=local aspnetcore react
+./deploy --env=local aspnetcore react
 ```
 
 Open in browser: http://localhost:3000/?backend=aspnetcore
@@ -26,5 +26,5 @@ Open in browser: http://localhost:3000/?backend=aspnetcore
 
 
 ```
-./deploy.sh --env=production aspnetcore
+./deploy --env=production aspnetcore
 ```

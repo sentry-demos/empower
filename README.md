@@ -87,7 +87,7 @@ projects in the command `react` will magically point to it instead of staging (s
 
 `deploy.sh` does everything including validating that all required values are set in the `*.env`
 
-It is highly recommended that you read the long comment at the top of [deploy.sh](https://github.com/sentry-demos/empower/blob/master/deploy.sh) to get an idea how it works.
+It is highly recommended that you read the long comment at the top of `deploy`](https://github.com/sentry-demos/empower/blob/master/deploy) to get an idea how it works.
 
 ## Run
 
@@ -95,16 +95,16 @@ Pick one of two ways to run the React app:
 
 ### Option 1: Run React app the normal way
 
-Recommended to use this command rather than `npm start`, as deploy.sh uploads source maps and handles crashes more realistically.
+Recommended to use this command rather than `npm start`, as`deploy` uploads source maps and handles crashes more realistically.
 
 ```
 # talks to staging backends
-./deploy.sh react --env=local
+./deploy react --env=local
 ```
 
 ```
 # talks to flask backend running locally, all others - staging
-./deploy.sh react flask --env=local
+./deploy react flask --env=local
 ```
 
 You many need to touch YubiKey or follow OAuth flow in the browser if you're prompted to re-authenticate.
@@ -116,7 +116,7 @@ NOTE: this will cause crashing errors to be tagged in sentry as handled (`handle
 
 ```
 cd react
-../deploy.sh --env=local react --  npm start
+../deploy --env=local react --  npm start
 ```
 
 ## Deploy to Staging
@@ -124,7 +124,7 @@ cd react
 Note: multiple people may be deploying to staging around the same time, you may overrwrite someone's code and vice-versa. If you really want to you can create `my-branch.env` and deploy to it like an environment. But we don't have any automation to cleanup these or monitor costs, so not recommended as a standard process, rather a one-off when needed.
 
 ```
-./deploy.sh react flask vue --env=staging
+./deploy react flask vue --env=staging
 ```
 
 ## Deploy to Prod
@@ -134,7 +134,7 @@ Normally you shouldn't need to do that since all merged changed are deployed aut
 Before proceeding, make sure you don't have any local changes to `production.env`.
 
 ```
-./deploy.sh react --env=production
+./deploy react --env=production
 ```
 
 
@@ -181,7 +181,7 @@ gcloud app logs tail -s <SERVICE>
 
 ## AI Suggestions (nextjs -> flask)
 
-1. Run next and flask (./deploy.sh --env=local next flask)
+1. Run next and flask (./deploy --env=local next flask)
 2. Get suggestion button should show automatically
 
 ## Caches & Queues (flask)
@@ -192,7 +192,7 @@ Our Flask application uses Redis for two primary purposes:
 1. **Caching**: Improves performance by storing frequently accessed data
 2. **Message Queues**: Enables asynchronous task processing via Celery
 
-Running `./deploy.sh --env=local flask` will call `flask/local_run.sh` which manages all necessary processes so you don't need to do anything special:
+Running `./deploy --env=local flask` will call `flask/local_run.sh` which manages all necessary processes so you don't need to do anything special:
 1. SSH tunnel to Redis
 2. Celery worker
 3. Flask development server

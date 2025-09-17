@@ -2,7 +2,7 @@
 
 if [ ! -f .env ]; then
   >&2 echo "[ERROR] Missing .env file. Project deploy scripts are not supposed to be run \
-directly, run the following command instead (from parent dir): ./deploy.sh --env=production crons-python"
+directly, run the following command instead (from parent dir): ./deploy --env=production crons-python"
   exit 1
 fi
 source .env
