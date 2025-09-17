@@ -104,15 +104,15 @@ jobs:
             # For manual triggers, deploy all projects
             # this is useful to force a 'bounce'
             DEPLOYABLE_PROJECTS=$(./bin/list_deployable_projects.sh)
-            bash -x ./deploy.sh $DEPLOYABLE_PROJECTS --env=staging
+            bash -x ./deploy $DEPLOYABLE_PROJECTS --env=staging
           else
             # For automated triggers, check for changes
             CHANGED_PROJECTS=$(./bin/projects_changed_bw_commits.sh "${{ env.NX_BASE }}" "${{ env.NX_HEAD }}")
             if [[ ! -z "$CHANGED_PROJECTS" ]]; then
-              ./deploy.sh $CHANGED_PROJECTS --env=staging
+              ./deploy $CHANGED_PROJECTS --env=staging
             elif [[ `./bin/release.sh` != `./bin/release.sh 1` ]]; then # different release than yesterday
               # currently we create regular calendar releases only for React
-              ./deploy.sh react --env=staging
+              ./deploy react --env=staging
             else
               echo "No deployable projects have been changed since last successful deployment. New calendar release is not due either. Nothing to do."
             fi

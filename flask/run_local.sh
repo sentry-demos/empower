@@ -2,7 +2,7 @@
 
 set -e
 
-# This is not a standalone script. It is called from ../deploy.sh that
+# This is not a standalone script. It is called from ../deploy that
 # sets up the right environemnt variables and files for it.
 
 if [ ! -d ./venv ]; then
@@ -32,7 +32,7 @@ function cleanup {
 trap cleanup EXIT
 
 # Set up SSH tunnel to the cloud Redis instance
-# (deploy.sh ensures we are authenticated with Google Cloud)
+# (`deploy` ensures we are authenticated with Google Cloud)
 echo "Setting up SSH tunnel to Redis server at $FLASK_REDIS_SERVER_IP:6379"
 gcloud compute ssh redis-relay --tunnel-through-iap --zone=us-central1-a -- -N -L $FLASK_LOCAL_REDISPORT:$FLASK_REDIS_SERVER_IP:6379 &
 

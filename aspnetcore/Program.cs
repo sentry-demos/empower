@@ -35,7 +35,7 @@ builder.Services.AddDbContext<HardwareStoreContext>(options =>
 // Initialize Sentry.
 builder.WebHost.UseSentry(options =>
 {
-    // Set the DSN from the environment variable set by the deploy.sh script, if available.
+    // Set the DSN from the environment variable set by the `deploy` script, if available.
     // But don't overwrite any existing DSN with null, as that would disable Sentry.
     var dsn = Environment.GetEnvironmentVariable("ASPNETCORE_DSN");
     if (dsn != null)
@@ -43,7 +43,7 @@ builder.WebHost.UseSentry(options =>
         options.Dsn = dsn;
     }
 
-    // Set the release from the environment variable set by the deploy.sh script, if available.
+    // Set the release from the environment variable set by the `deploy` script, if available.
     options.Release = Environment.GetEnvironmentVariable("ASPNETCORE_RELEASE");
 
     // Enable some features.

@@ -40,7 +40,7 @@ This page allows you to generate errors by triggering them using buttons
 
 ```
 gcloud auth login
-./deploy.sh
+./deploy
 ```
 app.yaml https://cloud.google.com/appengine/docs/standard/nodejs/config/appref
 
