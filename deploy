@@ -298,7 +298,10 @@ for proj in $projects; do # bash only
   if [ "$env" == "local" ]; then
     script_files="build.sh run_local.sh"
   fi
-  
+  if [ -f "deploy_project.sh" ]; then
+    script_files="$script_files deploy_project.sh"
+  fi
+
   for script_file in $script_files; do
     if [ -f "$script_file" ]; then
       echo "Checking what env variables $script_file needs..."
@@ -308,11 +311,11 @@ for proj in $projects; do # bash only
       temp_files+="$(pwd)/$tmp_script_file "
       exit_code=0
       set +e
-      envsubst.sh --script --strict-allow-quoted-empty --interpret-quotes --from=$top/.resolved.env < "$script_file" > "$tmp_script_file"
+      envsubst.sh --script --from=$top/.resolved.env < "$script_file" > "$tmp_script_file"
       exit_code=$?
       set -e
       if [ $exit_code -ne 0 ]; then
-        echo "[ERROR] Failed to process script file: $script_file"
+        echo "[ERROR] Failed to process script file $script_file. This should not happen."
         exit 1
       fi
       
@@ -379,7 +382,7 @@ for proj in $projects; do # bash only
     fi
   else
     if [ -f deploy_project.sh ]; then
-      ./deploy_project.sh
+      gcp_secret_wrapper.sh --pass $script_secrets -- env "${RESOLVED_VARS[@]}" ./deploy_project.sh
     else 
       if [ "$proj" == "spring-boot" ]; then
         mvn clean package appengine:deploy
