@@ -26,7 +26,7 @@ const getProducts = async function () {
     if (span) span.setAttribute("products", products.rows);
 
     // Retrieve Reviews
-    Sentry.startSpan({ op: "db.query.getallreviews"}, () => true);
+    Sentry.startSpan({ op: "mark", description : "Retrieving reviews"}, () => true);
 
     let formattedProducts = [];
     for (const product of products.rows) {

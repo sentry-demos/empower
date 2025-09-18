@@ -82,7 +82,7 @@ async function fetchProducts(req, res) {
     const products = await DB.getProducts();
     
     const span = await Sentry.startSpan(
-      { op: "products.get_iterator", description: "function" },
+      { op: "function", description: "products.get_iterator" },
       async () => {
         await utils.getIteratorProcessor(products);
       }
@@ -134,7 +134,7 @@ app.get("/products-join", async (req, res) => {
       });
 
     const products = await Sentry.startSpan(
-      { op: "products.get_products_join", description: "function" },
+      { op: "function", description: "products.get_products_join" },
       async () => {
         return await DB.getJoinedProducts();
       }
@@ -154,7 +154,7 @@ app.post("/checkout", async (req, res) => {
 
   try {
     const inventory = await Sentry.startSpan(
-      { name: "checkout.get_inventory", op: "function" },
+      { name: "function", op: "checkout.get_inventory" },
       async () => {
         return await DB.getInventory(cart);
       }
@@ -163,7 +163,7 @@ app.post("/checkout", async (req, res) => {
     console.log("> /checkout inventory", inventory);
 
     const quantities = await Sentry.startSpan(
-      { name: "processorder", op: "function" },
+      { name: "function", op: "processorder" },
       () => {
         return cart["quantities"];
       }
