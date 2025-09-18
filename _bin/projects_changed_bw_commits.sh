@@ -4,10 +4,8 @@ set -e
 
 #
 # Returns a space-separated list of projects that have their code changed between two commits,
+# including projects affected by changes in production.env
 #
-
-# TODO: In the future, if/when empower-config is merged into empower, also include projects which
-# have their production env-config changed.
 
 # Parse and validate command-line arguments
 base="$1"
@@ -41,5 +39,44 @@ for item in "${toplevel_changed_array[@]}"; do
     done
   fi
 done
+
+# Check for changes in production.env and identify affected projects
+if git diff --name-only $base $head | grep -q "^production\.env$"; then
+  # Get the changed lines in production.env
+  changed_lines=$(git diff $base $head -- production.env | grep "^[+-]" | grep -v "^[+-][+-][+-]")
+  
+  # Extract prefixes from changed lines and match against deployable projects
+  while IFS= read -r line; do
+    # Remove the +/- prefix and extract the variable name
+    var_name=$(echo "$line" | sed 's/^[+-]//' | cut -d'=' -f1)
+    
+    # Extract the first part before underscore as potential project name
+    prefix=$(echo "$var_name" | cut -d'_' -f1)
+    
+    # Normalize prefix: convert to uppercase and remove non-alphanumeric characters
+    normalized_prefix=$(echo "$prefix" | tr '[:lower:]' '[:upper:]' | tr -cd '[:alnum:]')
+    
+    # Check if this normalized prefix matches any deployable project
+    for deployable in "${all_deployable_projects[@]}"; do
+      # Normalize deployable project name: convert to uppercase and remove non-alphanumeric characters
+      normalized_deployable=$(echo "$deployable" | tr '[:lower:]' '[:upper:]' | tr -cd '[:alnum:]')
+      
+      if [[ "$normalized_prefix" == "$normalized_deployable" ]]; then
+        # Check if this project is not already in the changed_projects array
+        found=false
+        for existing in "${changed_projects[@]}"; do
+          if [[ "$existing" == "$deployable" ]]; then
+            found=true
+            break
+          fi
+        done
+        if [[ "$found" == false ]]; then
+          changed_projects+=("$deployable")
+        fi
+        break
+      fi
+    done
+  done <<< "$changed_lines"
+fi
 
 echo "${changed_projects[@]}"
