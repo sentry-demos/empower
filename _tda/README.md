@@ -75,7 +75,7 @@ kill -9 <PID of the script.sh>
 
 ### TypeError: required field "lineno" missing from alias
 ```
-  File "/Users/kosty/home/empower/tda/env/lib/python3.10/site-packages/_pytest/assertion/rewrite.py", line 360, in _rewrite_test
+  File "/Users/kosty/home/empower/_tda/env/lib/python3.10/site-packages/_pytest/assertion/rewrite.py", line 360, in _rewrite_test
     co = compile(tree, fn_, "exec", dont_inherit=True)
 TypeError: required field "lineno" missing from alias
 ```

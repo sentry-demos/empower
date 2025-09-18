@@ -78,7 +78,7 @@ EXAMPLES:
     echo '${STUFF}${THING}' | envsubst.sh --interpret-quotes
 
     # Strict mode allowing quoted empty values
-    echo '${EMPTY_QUOTED}' | EMPTY_QUOTED="''" ./bin/envsubst.sh --strict-allow-quoted-empty --interpret-quotes
+    echo '${EMPTY_QUOTED}' | EMPTY_QUOTED="''" ./_bin/envsubst.sh --strict-allow-quoted-empty --interpret-quotes
 
 NOTES:
     - Only one of --strict, --strict-allow-empty, or --list can be used at once

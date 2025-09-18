@@ -256,7 +256,7 @@ def backend(random):
 # returns number of "release weeks" since 2022-01-01 (???)
 # see react/src/utils/time.js
 def get_release_week():
-    release = subprocess.run(['../bin/release.sh'], stdout=subprocess.PIPE).stdout.decode().strip()
+    release = subprocess.run(['../_bin/release.sh'], stdout=subprocess.PIPE).stdout.decode().strip()
     year, month, week = map(int, release.split('.'))
     past_years = (year - 22) * 59 - (year - 21) // 4
     return past_years + (month - 1) * 5 + (-1 if month > 2 and year % 4 != 0 else 0) + week

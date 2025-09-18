@@ -211,7 +211,7 @@ class App extends Component {
       sessionStorage.setItem('se', se);
     }
 
-    // see `cexp` fixture in tda/conftest.py
+    // see `cexp` fixture in _tda/conftest.py
     let cexp = queryParams.get('cexp')
     if (cexp) {
       currentScope.setTag('cexp', cexp);

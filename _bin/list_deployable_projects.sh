@@ -3,7 +3,7 @@
 set -e
 
 # non-project directories
-exclude_dirs=(".github" "env-config" "bin" mini-relay)
+exclude_dirs=(.github _bin _mini-relay)
 
 # Read all entries in auto-deploy.exclude file and add them to the exclude_dirs array
 while IFS= read -r line; do

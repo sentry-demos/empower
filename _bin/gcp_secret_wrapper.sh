@@ -6,7 +6,7 @@ PREFIX=""
 PASS_MODE=0
 secrets=()
 
-# ./bin/gcp_secret_wrapper.sh [--prefix=PREFIX] [--pass] [MY_VAR1=MY_SECRET_1 MY_VAR2=MY_SECRET_2] -- <the actual command>
+# ./_bin/gcp_secret_wrapper.sh [--prefix=PREFIX] [--pass] [MY_VAR1=MY_SECRET_1 MY_VAR2=MY_SECRET_2] -- <the actual command>
 # 
 # With --pass flag, the script will not error if no secrets are provided and will just execute the command after --
 

@@ -27,7 +27,7 @@ while IFS= read -r line; do
 done <<< "$toplevel_changed"
 
 # Get all deployable projects using the shared script
-all_deployable_projects=($(./bin/list_deployable_projects.sh))
+all_deployable_projects=($(./_bin/list_deployable_projects.sh))
 
 # Filter changed items to only include deployable projects
 changed_projects=()

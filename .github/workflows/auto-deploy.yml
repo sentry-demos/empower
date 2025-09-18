@@ -116,14 +116,14 @@ jobs:
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             # For manual triggers, deploy all projects
             # this is useful to force a 'bounce'
-            DEPLOYABLE_PROJECTS=$(./bin/list_deployable_projects.sh)
+            DEPLOYABLE_PROJECTS=$(./_bin/list_deployable_projects.sh)
             ./deploy $DEPLOYABLE_PROJECTS --env=production
           else
             # For automated triggers, check for changes
-            CHANGED_PROJECTS=$(./bin/projects_changed_bw_commits.sh "${{ env.NX_BASE }}" "${{ env.NX_HEAD }}")
+            CHANGED_PROJECTS=$(./_bin/projects_changed_bw_commits.sh "${{ env.NX_BASE }}" "${{ env.NX_HEAD }}")
             if [[ ! -z "$CHANGED_PROJECTS" ]]; then
               ./deploy $CHANGED_PROJECTS --env=production
-            elif [[ `./bin/release.sh` != `./bin/release.sh 1` ]]; then # different release than yesterday
+            elif [[ `./_bin/release.sh` != `./_bin/release.sh 1` ]]; then # different release than yesterday
               # currently we create regular calendar releases only for React
               ./deploy react --env=production
             else

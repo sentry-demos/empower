@@ -15,7 +15,7 @@ from typing import Generator
 _PYTEST_ENV = {
     'SLEEP_LENGTH': '0',
     'BACKENDS': 'flask',
-    'TDA_CONFIG': 'tda/config.local.yaml',
+    'TDA_CONFIG': '_tda/config.local.yaml',
 }
 
 
@@ -37,7 +37,7 @@ def _run_q(*cmd: str) -> None:
 
 
 def _discover_tests(args: list[str]) -> list[str]:
-    cmd = ('pytest', 'tda/desktop_web', '--collect-only', '--quiet', *args)
+    cmd = ('pytest', '_tda/desktop_web', '--collect-only', '--quiet', *args)
     _print_cmd(*cmd, **_PYTEST_ENV)
 
     out = subprocess.run(
@@ -52,7 +52,7 @@ def _discover_tests(args: list[str]) -> list[str]:
             f'{out.stdout}{out.stderr}'.rstrip(),
         )
 
-    tests = [s for s in out.stdout.splitlines() if s.startswith('tda/')]
+    tests = [s for s in out.stdout.splitlines() if s.startswith('_tda/')]
     if not tests:
         raise SystemExit('did not discover any tests!')
 
@@ -113,9 +113,9 @@ def _testctx(testname: str) -> Generator[None]:
 
         print('... saving mock data')
         dt = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-        target = os.path.join('mini-relay', 'classified', f'{dt}_{testpart}')
+        target = os.path.join('_mini-relay', 'classified', f'{dt}_{testpart}')
         os.makedirs(os.path.dirname(target), exist_ok=True)
-        shutil.copytree('mini-relay/data', target)
+        shutil.copytree('_mini-relay/data', target)
 
 
 def main() -> int:
@@ -124,7 +124,7 @@ def main() -> int:
     )
     _, rest = parser.parse_known_args()
 
-    if not os.path.exists('tda'):
+    if not os.path.exists('_tda'):
         raise SystemExit('expected to run from root of `empower`')
 
     print('discovering tests...')
