@@ -76,8 +76,9 @@ class Config(NamedTuple):
     mode: str
     browsers: tuple[Browser, ...]
     dsn: str
-    react_endpoints: tuple[str, ...]
-    vue_endpoints: tuple[str, ...]
+    react_endpoint: str
+    nextjs_endpoint: str
+    vue_endpoint: str
 
 
 def _config() -> Config:
@@ -88,8 +89,9 @@ def _config() -> Config:
         mode=contents['mode'],
         browsers=tuple(Browser(**d) for d in contents['browsers']),
         dsn=contents['dsn'],
-        react_endpoints=tuple(contents['react_endpoints']),
-        vue_endpoints=tuple(contents['vue_endpoints']),
+        react_endpoint=contents['react_endpoint'],
+        nextjs_endpoint=contents['nextjs_endpoint'],
+        vue_endpoint=contents['vue_endpoint'],
     )
 
 CONFIG = _config()
@@ -143,13 +145,6 @@ _browser2class = {
     'firefox': FirefoxOptions,
     'safari': SafariOptions
 }
-
-def pytest_addoption(parser):
-    parser.addoption("--dc", action="store", default='us', help="Set Sauce Labs Data Center (US or EU)")
-
-@pytest.fixture
-def data_center(request):
-    return request.config.getoption('--dc')
 
 @pytest.fixture
 def random(request):
@@ -353,15 +348,11 @@ class _ExtraParams:
 class RemoteWithExtraUrlParams(_ExtraParams, webdriver.Remote): pass
 class ChromeWithExtraUrlParams(_ExtraParams, webdriver.Chrome): pass
 
-@pytest.fixture
-def selenium_endpoint(data_center):
-    username = os.environ['SAUCE_USERNAME']
-    access_key = os.environ['SAUCE_ACCESS_KEY']
 
-    if data_center and data_center.lower() == 'eu':
-        return "https://{}:{}@ondemand.eu-central-1.saucelabs.com/wd/hub".format(username, access_key)
-    else:
-        return "https://{}:{}@ondemand.us-west-1.saucelabs.com/wd/hub".format(username, access_key)
+SAUCE_USERNAME = os.environ['SAUCE_USERNAME']
+SAUCE_ACCESS_KEY = os.environ['SAUCE_ACCESS_KEY']
+SELENIUM_ENDPOINT = "https://ondemand.us-west-1.saucelabs.com/wd/hub"
+
 
 def sanitize_se_tag_component(c):
     if not c:
@@ -400,10 +391,9 @@ def se_prefix(request):
 
 
 @contextlib.contextmanager
-def _sauce_browser(request, selenium_endpoint, se):
+def _sauce_browser(request, se):
     try:
         test_name = request.node.name
-        build_tag = os.environ.get('BUILD_TAG', "Application-Monitoring-TDA")
 
         options = _browser2class[request.param.browserName]()
 
@@ -421,12 +411,13 @@ def _sauce_browser(request, selenium_endpoint, se):
             
         options.set_capability('sauce:options', {
             'seleniumVersion': '4.8.0',
-            'build': build_tag,
-            'name': test_name
+            'name': test_name,
+            'username': SAUCE_USERNAME,
+            'accessKey': SAUCE_ACCESS_KEY
         })
 
         browser = RemoteWithExtraUrlParams(
-            command_executor=selenium_endpoint,
+            command_executor=SELENIUM_ENDPOINT,
             options=options,
             keep_alive=True,
             # Note: these tags might not be supported by some frontends, e.g. Vue
@@ -492,7 +483,7 @@ def desktop_web_driver(request, se_prefix):
     if request.param.remote:
         se = f'{se_prefix}-sauce-{request.param.param_display}'
         sentry_sdk.set_tag("se", se)
-        with _sauce_browser(request, request.getfixturevalue('selenium_endpoint'), se) as b:
+        with _sauce_browser(request, se) as b:
             yield b
     else:
         se = f'{se_prefix}-local-{request.param.param_display}'
@@ -501,7 +492,7 @@ def desktop_web_driver(request, se_prefix):
             yield b
 
 @pytest.fixture
-def android_react_native_emu_driver(request, selenium_endpoint, se_prefix):
+def android_react_native_emu_driver(request, se_prefix):
 
     se = f'{se_prefix}-sauce-android10'
     sentry_sdk.set_tag('se', se)
@@ -516,13 +507,14 @@ def android_react_native_emu_driver(request, selenium_endpoint, se_prefix):
             'appium:automationName': 'uiautomator2',
             'sauce:options': {
                 'appiumVersion': '2.0.0',
-                'build': 'RDC-Android-Python-Best-Practice',
-                'name': request.node.name
+                'name': request.node.name,
+                'username': SAUCE_USERNAME,
+                'accessKey': SAUCE_ACCESS_KEY
             },
             'appWaitForLaunch': False
         })
 
-        driver = appiumdriver.Remote(selenium_endpoint, options=options)
+        driver = appiumdriver.Remote(SELENIUM_ENDPOINT, options=options)
         driver.implicitly_wait(20)
 
         sentry_sdk.set_tag("sauceLabsUrl", f"https://app.saucelabs.com/tests/{driver.session_id}")
@@ -539,7 +531,7 @@ def android_react_native_emu_driver(request, selenium_endpoint, se_prefix):
         sentry_sdk.capture_exception(err)
 
 @pytest.fixture
-def android_emu_driver(request, selenium_endpoint, se_prefix):
+def android_emu_driver(request, se_prefix):
 
     se = f'{se_prefix}-sauce-android10'
     sentry_sdk.set_tag('se', se)
@@ -553,13 +545,14 @@ def android_emu_driver(request, selenium_endpoint, se_prefix):
             'app': f'https://github.com/sentry-demos/android/releases/download/{release_version}/app-release.apk',
             'sauce:options': {
                 'appiumVersion': '2.0.0',
-                'build': 'RDC-Android-Python-Best-Practice',
-                'name': request.node.name
+                'name': request.node.name,
+                'username': SAUCE_USERNAME,
+                'accessKey': SAUCE_ACCESS_KEY
             },
             'appWaitForLaunch': False
         })
 
-        driver = appiumdriver.Remote(selenium_endpoint, options=options)
+        driver = appiumdriver.Remote(SELENIUM_ENDPOINT, options=options)
         driver.implicitly_wait(20)
 
         sentry_sdk.set_tag("sauceLabsUrl", f"https://app.saucelabs.com/tests/{driver.session_id}")
@@ -577,7 +570,7 @@ def android_emu_driver(request, selenium_endpoint, se_prefix):
         raise
 
 @pytest.fixture
-def ios_react_native_sim_driver(request, selenium_endpoint, se_prefix):
+def ios_react_native_sim_driver(request, se_prefix):
 
     se = f'{se_prefix}-sauce-ios15.5'
     sentry_sdk.set_tag('se', se)
@@ -591,13 +584,14 @@ def ios_react_native_sim_driver(request, selenium_endpoint, se_prefix):
 
             'sauce:options': {
                 'appiumVersion': '2.0.0',
-                'build': 'RDC-iOS-Python-Best-Practice',
                 'name': request.node.name,
+                'username': SAUCE_USERNAME,
+                'accessKey': SAUCE_ACCESS_KEY
             },
             'appium:app': f'https://github.com/sentry-demos/sentry_react_native/releases/download/{release_version}/sentry_react_native.app.zip',
         })
 
-        driver = appiumdriver.Remote(selenium_endpoint, options=options)
+        driver = appiumdriver.Remote(SELENIUM_ENDPOINT, options=options)
         driver.implicitly_wait(20)
 
         sentry_sdk.set_tag("sauceLabsUrl", f"https://app.saucelabs.com/tests/{driver.session_id}")
@@ -614,7 +608,7 @@ def ios_react_native_sim_driver(request, selenium_endpoint, se_prefix):
         sentry_sdk.capture_exception(err)
 
 @pytest.fixture
-def ios_sim_driver(request, selenium_endpoint, se_prefix):
+def ios_sim_driver(request, se_prefix):
 
     se = f'{se_prefix}-sauce-ios15.5'
     sentry_sdk.set_tag('se', se)
@@ -628,13 +622,14 @@ def ios_sim_driver(request, selenium_endpoint, se_prefix):
 
             'sauce:options': {
                 'appiumVersion': '1.22.3',
-                'build': 'RDC-iOS-Mobile-Native',
                 'name': request.node.name,
+                'username': SAUCE_USERNAME,
+                'accessKey': SAUCE_ACCESS_KEY
             },
             'appium:app': f'https://github.com/sentry-demos/ios/releases/download/{release_version}/EmpowerPlant_release.zip',
         })
 
-        driver = appiumdriver.Remote(selenium_endpoint, options=options)
+        driver = appiumdriver.Remote(SELENIUM_ENDPOINT, options=options)
         driver.implicitly_wait(20)
 
         sentry_sdk.set_tag("sauceLabsUrl", f"https://app.saucelabs.com/tests/{driver.session_id}")
@@ -649,6 +644,46 @@ def ios_sim_driver(request, selenium_endpoint, se_prefix):
 
     except Exception as err:
         sentry_sdk.capture_exception(err)
+
+
+@pytest.fixture
+def android_flutter_driver(request, se_prefix):
+    se = f'{se_prefix}-sauce-android14'
+    sentry_sdk.set_tag('se', se)
+    try:
+
+        options = UiAutomator2Options().load_capabilities({
+            'platformName': 'Android',
+            'appium:deviceName': 'Android GoogleAPI Emulator',
+            'appium:platformVersion': '14.0',
+            'appium:app': f'https://github.com/sentry-demos/flutter/releases/download/1.0.0/flutter-android.apk',
+            'appium:automationName': 'UiAutomator2',
+            'sauce:options': {
+                'appiumVersion': '2.0.0-flutter2',
+                'name': request.node.name,
+                'username': SAUCE_USERNAME,
+                'accessKey': SAUCE_ACCESS_KEY
+            },
+            'appWaitForLaunch': False
+        })
+
+        driver = appiumdriver.Remote(SELENIUM_ENDPOINT, options=options)
+        driver.implicitly_wait(20)
+
+        sentry_sdk.set_tag("sauceLabsUrl", f"https://app.saucelabs.com/tests/{driver.session_id}")
+
+        yield driver
+        sauce_result = "failed" if request.node.rep_call.failed else "passed"
+        driver.execute_script("sauce:job-result={}".format(sauce_result))
+        driver.quit()
+
+        # send to Sentry empower-tda, look for tags: se, sauceLabsUrl
+        sentry_sdk.capture_message("Selenium Session Done")
+
+    except Exception as err:
+        sentry_sdk.capture_exception(err)
+        raise err
+
 
 
 @pytest.hookimpl(hookwrapper=True, tryfirst=True)
