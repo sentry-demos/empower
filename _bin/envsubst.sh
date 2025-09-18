@@ -178,6 +178,19 @@ should_ignore() {
   return 1  # false - should not ignore
 }
 
+get_variable_substitution() {
+  local var_name="$1"
+  
+  # Check if variable is defined before substitution
+  if [ "${!var_name+_}" = "_" ]; then
+    local var_value=$(interpret_quoted_value "${!var_name}")
+    echo "$var_value"
+  else
+    # Variable is undefined, leave as-is (this will happen only in non-strict mode)
+    echo "\${$var_name}"
+  fi
+}
+
 # Helper function to check if a variable is defined or list it
 # Assumes we already checked if the variable should be ignored
 check_var_defined_or_list() {
@@ -233,9 +246,8 @@ envsubst_() {
             output="$output\${$var_name}" # output variable name's characters but not the value
           else
             check_var_defined_or_list "$var_name"
-            # Use quote interpretation if enabled
-            local var_value=$(interpret_quoted_value "${!var_name}")
-            output="$output$var_value" # in --list mode we still do this but discard the output later
+            local substitution_result=$(get_variable_substitution "$var_name")
+            output="$output$substitution_result" # in --list mode we still do this but discard the output later
           fi
           var_name=""
         fi
@@ -265,9 +277,8 @@ envsubst_() {
           output="$output\${$var_name}$char"
         else
           check_var_defined_or_list "$var_name"
-          # Use quote interpretation if enabled
-          local var_value=$(interpret_quoted_value "${!var_name}")
-          output="$output$var_value$char"
+          local substitution_result=$(get_variable_substitution "$var_name")
+          output="$output$substitution_result$char"
         fi
         var_name=""
         in_var=0
@@ -283,9 +294,8 @@ envsubst_() {
       output="$output\${$var_name}"
     else
       check_var_defined_or_list "$var_name"
-      # Use quote interpretation if enabled
-      local var_value=$(interpret_quoted_value "${!var_name}")
-      output="$output$var_value"
+      local substitution_result=$(get_variable_substitution "$var_name")
+      output="$output$substitution_result"
     fi
   fi
 

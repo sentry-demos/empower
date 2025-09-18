@@ -50,7 +50,7 @@ set -e
 
 # use top-level directory (repository root), to ensure this works regardless of current directory
 top=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-export PATH="$PATH:$top/bin"
+export PATH="$PATH:$top/_bin"
 
 # Parse CLI arguments
 projects=""
@@ -176,8 +176,26 @@ function wait_check_if_crashed {
   if ! ps -p $pid > /dev/null
   then
     echo "$0 [ERROR]: $proj/run_local.sh exited early, must be a crash."
+    check_missing_variables "run_local.sh"
     exit 1
   fi
+}
+
+# Function to check for missing variables in a specific script file
+check_missing_variables() {
+  local script_file="$1"
+  tmp_script_file=".${script_file}.tmp" # should already exist by the time this is run
+  
+  # Check for variables defined in script but not present in .resolved.env
+  local script_vars=$(envsubst.sh --script --list < "$tmp_script_file" | grep -v '^__GCP_SECRET__' | tr '\n' ' ')
+  
+    if [ -n "$script_vars" ]; then
+      echo "[WARNING] $script_file potentially missing env variables:"
+      echo "$script_vars" | tr ' ' '\n' | grep -v '^$' | \
+        grep '^[A-Z_][A-Z0-9_]*$' | \
+        grep -v -E '^(PATH|HOME|USER|PWD|SHELL|TERM|LANG|LC_|TMPDIR|TMP|TEMP|IFS)$' | \
+        sed 's/^/$/'
+    fi
 }
 
 # Copy environment file to resolved file
@@ -271,6 +289,7 @@ for proj in $projects; do # bash only
       echo "[ERROR] Failed to process template file: $template"
       exit 1
     fi
+    temp_files+="$(pwd)/$tmp_file "
     
     # Don't fetch secrets that are not needed to avoid unnecessary errors
     needed_secrets=$(envsubst.sh --list < $tmp_file | grep '^__GCP_SECRET__' | sed 's/^__GCP_SECRET__//')
@@ -287,8 +306,6 @@ for proj in $projects; do # bash only
     else
       cp $tmp_file $outfile
     fi
-
-    temp_files+="$(pwd)/$tmp_file "
     temp_files+="$(pwd)/$outfile "
   done
 
@@ -318,6 +335,7 @@ for proj in $projects; do # bash only
         echo "[ERROR] Failed to process script file $script_file. This should not happen."
         exit 1
       fi
+      temp_files+="$(pwd)/$tmp_script_file "
       
       # Step 2: Identify GCP secrets
       current_secrets=$(envsubst.sh --script --list < "$tmp_script_file" | grep '^__GCP_SECRET__' | sed 's/^__GCP_SECRET__//' | tr '\n' ' ')
@@ -338,9 +356,6 @@ for proj in $projects; do # bash only
       else
         echo "No references to GCP secrets found in $script_file"
       fi
-      
-      # Clean up tmp file immediately
-      rm -f "$tmp_script_file"
     fi
   done
 
@@ -361,7 +376,14 @@ for proj in $projects; do # bash only
   unset CI # prevents build failing in GitHub Actions
   # if needed build.sh is responsible for calling sentry-release.sh with appropriate arguments
   echo "Running build.sh with resolved environment..."
+  set +e
   gcp_secret_wrapper.sh --pass $script_secrets -- env "${RESOLVED_VARS[@]}" ./build.sh
+  build_exit_code=$?
+  set -e
+  if [ $build_exit_code -ne 0 ]; then
+    check_missing_variables "build.sh"
+    exit 1
+  fi
 
   # *** DEPLOY OR RUN ***
   if [ "$env" == "local" ]; then
@@ -382,7 +404,14 @@ for proj in $projects; do # bash only
     fi
   else
     if [ -f deploy_project.sh ]; then
+      set +e
       gcp_secret_wrapper.sh --pass $script_secrets -- env "${RESOLVED_VARS[@]}" ./deploy_project.sh
+      deploy_exit_code=$?
+      set -e
+      if [ $deploy_exit_code -ne 0 ]; then
+        check_missing_variables "deploy_project.sh"
+        exit 1
+      fi
     else 
       if [ "$proj" == "spring-boot" ]; then
         mvn clean package appengine:deploy
