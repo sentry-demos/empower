@@ -425,5 +425,21 @@ done
 if [ "$env" == "local" ]; then
   sleep 1
   echo "Server process(es) are running. Press Ctrl+C to terminate..."
-  while true; do sleep 86400; done
+  while true; do
+    # Check if any background processes are still running
+    all_done=true
+    for pid in $run_sh_pids; do
+      if kill -0 $pid 2>/dev/null; then
+        all_done=false
+        break
+      fi
+    done
+
+    if [ "$all_done" = true ]; then
+      echo "All background processes have completed. Exiting..."
+      break
+    fi
+
+    sleep 1
+  done
 fi

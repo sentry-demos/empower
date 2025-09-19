@@ -16,11 +16,10 @@ CELERY_PID=""
 
 
 function cleanup {
-
-  # Kill Celery worker by PID since it doesn't listen on a port
-  # to be detected by stop.sh
+  set +e
+  # Kill Celery worker by PID since it doesn't listen on a port to be detected by stop.sh
   if [ -n "$CELERY_PID" ]; then
-    kill -9 $CELERY_PID 2>/dev/null || true
+    kill -9 $CELERY_PID 2>/dev/null
   fi
 
   # Kill SSH tunnel by port

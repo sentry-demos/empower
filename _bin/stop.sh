@@ -6,10 +6,12 @@
 
 USAGE="Usage: ./stop.sh node 3000"
 
+echo "attempting to stop $1 process listening on port $2"
+
 server_cmd="$1"
 server_port="$2"
 
-if [[ $server_cmd == "" || server_port == "" ]]; then
+if [[ $server_cmd == "" || $server_port == "" ]]; then
     echo "[error] Missing required command-line arguments."
     echo "$USAGE"
 fi
@@ -26,7 +28,6 @@ if [ "$server_pid" != "" ]; then
         kill "$p" 2>/dev/null
     done
 else
-    :
-    #echo "$0: unable to identify process listening on port $server_port. Using 'killall $server_cmd' instead."
+    echo "$0: unable to identify process listening on port $server_port"
     #killall $server_cmd
 fi
