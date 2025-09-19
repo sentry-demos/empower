@@ -115,8 +115,8 @@ SLEEP_LENGTH = os.getenv("SLEEP_LENGTH") or "random_2_1"
 # Currently only used in desktop_web/ tests. Mobile apps have it hardcoded.
 BACKENDS = (os.getenv("BACKENDS") or "flask,express,springboot,laravel,rails,aspnetcore").split(',')
 
-# ONCE_PER_DAY is set by loop.sh when the day changes
-ONCE_PER_DAY = os.getenv("ONCE_PER_DAY")
+# set in loop.sh
+IS_FIRST_RUN_OF_THE_DAY = os.getenv("IS_FIRST_RUN_OF_THE_DAY")
 
 import urllib3
 urllib3.disable_warnings()
@@ -332,8 +332,8 @@ def endpoints():
     return CONFIG
 
 @pytest.fixture
-def once_per_day():
-    return ONCE_PER_DAY is not None
+def is_first_run_of_the_day():
+    return IS_FIRST_RUN_OF_THE_DAY is not None
 
 
 class _ExtraParams:

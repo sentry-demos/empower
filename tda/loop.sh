@@ -60,8 +60,7 @@ get_current_day() {
     date +%j
 }
 
-# Function to check if day has changed and set ONCE_PER_DAY accordingly
-check_day_change() {
+check_is_first_run_of_the_day() {
     local current_day=$(get_current_day)
     local prev_day=""
     
@@ -70,12 +69,12 @@ check_day_change() {
         prev_day=$(cat "$DAY_TRACKING_FILE" 2>/dev/null || echo "")
     fi
     
-    # If this is the first run or day has changed, set ONCE_PER_DAY=1
+    # If this is the first run or day has changed, set IS_FIRST_RUN_OF_THE_DAY=1
     if [ -z "$prev_day" ] || [ "$current_day" != "$prev_day" ]; then
-        export ONCE_PER_DAY=1
-        echo "[$(date '+%Y-%m-%d %H:%M:%S')] [loop.sh] Day changed from '$prev_day' to '$current_day', setting ONCE_PER_DAY=1" >> $LOG_FILE 2>/dev/null || true
+        export IS_FIRST_RUN_OF_THE_DAY=1
+        echo "[$(date '+%Y-%m-%d %H:%M:%S')] [loop.sh] Day changed from '$prev_day' to '$current_day', setting IS_FIRST_RUN_OF_THE_DAY=1" >> $LOG_FILE 2>/dev/null || true
     else
-        unset ONCE_PER_DAY
+        unset IS_FIRST_RUN_OF_THE_DAY
     fi
     
     # Save current day number for next iteration
@@ -88,8 +87,8 @@ echo "[$(date '+%Y-%m-%d %H:%M:%S')] loop.sh started with PID $$, command: $*" >
 while true; do 
   echo "[$(date '+%Y-%m-%d %H:%M:%S')] [loop.sh] running: $@" >> $LOG_FILE 2>/dev/null || true
   
-  # Check if day has changed and set ONCE_PER_DAY accordingly
-  check_day_change
+  # sets IS_FIRST_RUN_OF_THE_DAY accordingly
+  check_is_first_run_of_the_day
   
   "$@"
 done

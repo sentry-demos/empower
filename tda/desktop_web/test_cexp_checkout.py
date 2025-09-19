@@ -17,7 +17,7 @@ CEXP_RATIO = 0.3
 BYPASS_PREFERRED_BACKENDS_RATIO = 0.6 # backends that have a realistic autofixable error
 BYPASS_PREFERRED_BACKENDS = ['flask', 'laravel']
 
-def test_cexp_checkout(desktop_web_driver, endpoints, batch_size, backend, random, sleep_length, cexp, once_per_day):
+def test_cexp_checkout(desktop_web_driver, endpoints, batch_size, backend, random, sleep_length, cexp, is_first_run_of_the_day):
     global _browser_run_count
     
     # Increment counter for each browser run
@@ -56,7 +56,7 @@ def test_cexp_checkout(desktop_web_driver, endpoints, batch_size, backend, rando
 
 
             # Only do for 1 browser (first browser run)
-            if once_per_day and is_first_browser:
+            if is_first_run_of_the_day and is_first_browser:
                 apply_promo_code = True
                 current_backend = 'flask' # not implemented in other backends
                 ce = CExp.CHECKOUT_SUCCESS # avoid getting stuck early in the funnel
