@@ -60,7 +60,7 @@ def test_cexp_checkout(desktop_web_driver, endpoints, batch_size, backend, rando
                 apply_promo_code = True
                 current_backend = 'flask' # not implemented in other backends
                 ce = CExp.CHECKOUT_SUCCESS # avoid getting stuck early in the funnel
-                query_string['userEmail']='MrLogs@example.com'
+                query_string['userEmail']='John.Logs@example.com'
             
             # to generate more flagship errors than Slow DB Query, other performance issues
             checkout_attempts = 1 if ce and ce in [CExp.CHECKOUT_SUCCESS, CExp.ADD_TO_CART_JS_ERROR] else 3
