@@ -8,8 +8,8 @@
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore"
   },
   "dependencies": {
-    "@sentry/vite-plugin": "^2.22.6",
-    "@sentry/vue": "8.36.0",
+    "@sentry/vite-plugin": "^4.1.1",
+    "@sentry/vue": "^10.5.0",
     "bootstrap": "^5.3.3",
     "bootstrap-vue": "^2.23.1",
     "pinia": "^2.2.6",
