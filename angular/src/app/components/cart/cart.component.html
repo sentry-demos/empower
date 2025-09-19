@@ -1,0 +1,49 @@
+<div class="cart-container">
+  <h2 class="sentry-unmask">Cart</h2>
+  
+  <div *ngIf="cart.items.length > 0">
+    <ul class="cart-list">
+      <li *ngFor="let item of cart.items" class="cart-item">
+        <a [routerLink]="['/product', item.id]">
+          <img [src]="item.img" [alt]="item.title" class="sentry-block" />
+        </a>
+        <a [routerLink]="['/product', item.id]">
+          <h4>{{ item.title }}</h4>
+        </a>
+        <p>
+          <span class="sentry-unmask">$</span>{{ item.price }}.00
+        </p>
+        <div class="quantity-adjust">
+          <button
+            (click)="removeProduct(item)"
+            class="sentry-unmask"
+          >
+            –
+          </button>
+          <span>{{ cart.quantities[item.id] || 0 }}</span>
+          <button
+            (click)="addProduct(item)"
+            class="sentry-unmask"
+          >
+            +
+          </button>
+        </div>
+        <p>
+          <span class="sentry-unmask">$</span>{{ item.price * (cart.quantities[item.id] || 0) }}.00
+        </p>
+      </li>
+    </ul>
+    
+    <h3 class="cart-subtotal">
+      <span class="sentry-unmask">Cart Subtotal: $</span>{{ cart.total }}.00
+    </h3>
+    
+    <a routerLink="/checkout" class="btn sentry-unmask">
+      Proceed to checkout
+    </a>
+  </div>
+  
+  <div *ngIf="cart.items.length === 0">
+    <p>Please add items to the cart</p>
+  </div>
+</div>

@@ -7,6 +7,8 @@
 # Engine (default).
 #
 # Usage: ./deploy.sh react flask --env=staging
+#        ./deploy.sh angular --env=local    # Angular defaults to Flask backend
+#        ./deploy.sh angular flask --env=local  # Explicitly include Flask backend
 #
 # Can be run from any directory. In --env=local mode it will start web servers for ALL projects
 # specified on command-line (backends first) and then eventually, upon exit (Ctrl+C), every one
@@ -38,6 +40,11 @@
 #   REACT_APP_<PROJECT>_BACKEND besides being passed into React application runtime these are
 #   substituted with the values of respective REACT_APP_<PROJECT>_BACKEND_LOCAL when --env=local
 #   AND <PROJECT> is included in the list of projects to build from command-line arguments.
+#
+# ANGULAR BACKEND BEHAVIOR:
+#   Angular defaults to Flask backend when no backends are specified in CLI arguments.
+#   Users can switch to Laravel backend at runtime by adding ?backend=laravel to the URL.
+#   This provides the same flexibility as React but with Flask as the default.
 #
 # MIGRATION NOTE:
 #
@@ -103,7 +110,7 @@ for proj in $projects; do
   if [[ $proj =~ ^(flask|express|ruby|spring-boot|aspnetcore|laravel|ruby-on-rails|crons-python)$ ]]; then
     be_projects+="$proj "
   else
-    fe_projects+="$proj "
+    fe_projects+="$proj "  # This will now include 'angular', 'react', 'next', 'vue'
   fi
 done
 projects="$be_projects $fe_projects"
@@ -216,12 +223,12 @@ for proj in $projects; do # bash only
   # via bin/validate_dotenv.sh -> bin/validate_env.sh.
   generated_envs+="$(../env.sh $env) "
 
-
   # We do this because 1) we need RELEASE that's generated in env.sh 2) we need *_APP_*_BACKEND
-  # 3) some projects may require env variables instead of .env (not the case for react, flask & express)
+  # 3) some projects may require env variables instead of .env (not the case for react, angular, flask & express)
   # TODO: double check above comment is still correct, we do this 3 times (once here and twice in env.sh)
   # TODO: support spring-boot which seems to use .properties files
   export $(grep -v '^#' .env | sed 's/ #.*//' | xargs)
+
 
   echo "Setting project to $PROJECT_ID"
   gcloud config set project $PROJECT_ID
@@ -242,6 +249,7 @@ for proj in $projects; do # bash only
       echo "$backend_var=$backend_local" >> .env # append instead of search-replace should be OK
       export "$backend_var=$backend_local"
     done
+    
   fi
 
   CLOUD_SQL_AUTH_PROXY=172.17.0.1
@@ -259,8 +267,8 @@ for proj in $projects; do # bash only
   ./build.sh
 
 
-  if [[ $proj =~ ^(react|next|vue|flask)$ ]]; then # Suspect Commits now require commits associated w/ release
-    if [[ $proj =~ ^(react|next|flask)$ ]]; then
+  if [[ $proj =~ ^(react|next|vue|angular|flask)$ ]]; then # Suspect Commits now require commits associated w/ release
+    if [[ $proj =~ ^(react|next|angular|flask)$ ]]; then
       upload_sourcemaps="false" # using webpack plugin or doesn not apply
     else
       upload_sourcemaps="true"
