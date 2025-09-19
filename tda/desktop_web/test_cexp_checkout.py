@@ -35,7 +35,7 @@ def test_cexp_checkout(desktop_web_driver, endpoints, batch_size, backend, rando
         sentry_sdk.set_tag("endpoint", endpoint_products)
         sentry_sdk.set_tag("batch_size", batch_size)
 
-        for s in range(batch_size):
+        for b in range(batch_size):
             query_string = base_query_string.copy()
             
             if random.random() < CEXP_RATIO: # Determine if this iteration should use CExp flow
@@ -56,7 +56,7 @@ def test_cexp_checkout(desktop_web_driver, endpoints, batch_size, backend, rando
 
 
             # Only do for 1 browser (first browser run)
-            if is_first_run_of_the_day and is_first_browser:
+            if is_first_run_of_the_day and b == 0 and is_first_browser:
                 apply_promo_code = True
                 current_backend = 'flask' # not implemented in other backends
                 ce = CExp.CHECKOUT_SUCCESS # avoid getting stuck early in the funnel
