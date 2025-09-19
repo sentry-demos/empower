@@ -5,6 +5,7 @@ import { AppComponent } from './app/app.component';
 import { appConfig } from './app/app.config';
 import { environment } from './environments/environment';
 
+
 // Handle SE parameter from URL (like React)
 const queryParams = new URLSearchParams(window.location.search);
 const seValue = queryParams.get('se');
@@ -60,8 +61,10 @@ Sentry.init({
         }),
         Sentry.consoleLoggingIntegration({ 
             levels: ["log", "warn", "error", "info", "debug"] 
-        })
+        }),
+        Sentry.featureFlagsIntegration()
     ],
+  
     beforeSend(event) {
         // Get SE value from sessionStorage (like React)
         const se = sessionStorage.getItem('se') || undefined;

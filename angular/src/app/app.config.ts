@@ -4,11 +4,13 @@ import { provideRouter } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
 import * as Sentry from "@sentry/angular";
 import { routes } from './app.routes';
+import { FeatureFlagsService } from './services/feature-flags.service';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(routes), 
     provideHttpClient(),
+    FeatureFlagsService,
     {
       provide: ErrorHandler,
       useValue: Sentry.createErrorHandler(),

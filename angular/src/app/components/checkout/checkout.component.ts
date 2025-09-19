@@ -6,6 +6,7 @@ import { CartService, CartState, CartItem } from '../../services/cart.service';
 import { Product } from '../../services/products.service';
 import { ConfigService, CheckoutForm } from '../../services/config.service';
 import { ThreeDotsComponent } from '../three-dots/three-dots.component';
+import { FeatureFlagsService } from '../../services/feature-flags.service';
 import * as Sentry from '@sentry/angular';
 
 /**
@@ -59,7 +60,8 @@ export class CheckoutComponent implements OnInit {
   constructor(
     private cartService: CartService,
     private configService: ConfigService,
-    private router: Router
+    private router: Router,
+    private featureFlagsService: FeatureFlagsService
   ) {}
 
   ngOnInit(): void {
@@ -110,6 +112,9 @@ export class CheckoutComponent implements OnInit {
     this.loading = true;
 
     try {
+      // Evaluate feature flags exactly as per Sentry documentation
+      this.featureFlagsService.evaluateFeatureFlags();
+      
       // Process the checkout (this will intentionally fail to showcase Sentry)
       await this.processCheckout();
       
