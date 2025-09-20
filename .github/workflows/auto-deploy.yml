@@ -23,6 +23,8 @@ jobs:
       contents: "read"
       id-token: "write"
     runs-on: ubuntu-22.04
+    env:
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
 
     steps:
       - run: |
