@@ -4,7 +4,7 @@
 
 # usage: ./loop.sh command arg1 arg2 ...
 
-LOG_FILE=/var/log/tda-signals.log
+LOG_FILE=/var/log/tda.log
 
 # Signal handling function
 log_signal() {
