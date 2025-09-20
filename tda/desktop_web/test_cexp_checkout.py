@@ -5,10 +5,6 @@ from conftest import CExp, BACKENDS, CONFIG
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
 
-# Global counter to track browser runs for promo code
-_browser_run_count = 0
-
-
 # These parameters are picked to create different volume of issues of each type so that the flagship errors
 # show up at the top of the Issues feed without being crowded out by less important (from demo POV) issues.
 # See: https://github.com/sentry-demos/empower/pull/955
@@ -17,12 +13,8 @@ CEXP_RATIO = 0.3
 BYPASS_PREFERRED_BACKENDS_RATIO = 0.6 # backends that have a realistic autofixable error
 BYPASS_PREFERRED_BACKENDS = ['flask', 'laravel']
 
-def test_cexp_checkout(desktop_web_driver, endpoints, batch_size, backend, random, sleep_length, cexp, is_first_run_of_the_day):
-    global _browser_run_count
-    
-    # Increment counter for each browser run
-    _browser_run_count += 1
-    is_first_browser = _browser_run_count == 1
+def test_cexp_checkout(desktop_web_driver, endpoints, batch_size, backend, random, sleep_length, cexp, is_first_run_of_the_day, current_browser):
+    is_first_browser = CONFIG.browsers.index(current_browser) == 0
     
     for endpoint in [endpoints.react_endpoint]:
             
@@ -61,6 +53,8 @@ def test_cexp_checkout(desktop_web_driver, endpoints, batch_size, backend, rando
                 current_backend = 'flask' # not implemented in other backends
                 ce = CExp.CHECKOUT_SUCCESS # avoid getting stuck early in the funnel
                 query_string['userEmail']='John.Logs@example.com'
+            else:
+                apply_promo_code = False
             
             # to generate more flagship errors than Slow DB Query, other performance issues
             checkout_attempts = 1 if ce and ce in [CExp.CHECKOUT_SUCCESS, CExp.ADD_TO_CART_JS_ERROR] else 3
@@ -127,5 +121,7 @@ def test_cexp_checkout(desktop_web_driver, endpoints, batch_size, backend, rando
             except Exception as err:
                 sentry_sdk.metrics.incr(key="test_checkout.iteration.abandoned", value=1, tags=dict(query_string, reason=f"other({err.__class__.__name__})"))
                 sentry_sdk.capture_exception(err)
+                print(err)
+
 
             time.sleep(sleep_length())

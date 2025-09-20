@@ -1,4 +1,4 @@
-/var/log/tda*.log {
+/var/log/tda.log {
     # Rotate logs daily. Other options: weekly, monthly, size 10M
     daily
     # Keep 7 rotated log files (e.g., 7 days worth if daily).
