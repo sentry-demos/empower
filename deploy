@@ -52,6 +52,9 @@ set -e
 top=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 export PATH="$PATH:$top/_bin"
 
+# Make sure local changes to local.env don't get committed by accident
+git update-index --skip-worktree $top/local.env
+
 # Parse CLI arguments
 projects=""
 env=""
