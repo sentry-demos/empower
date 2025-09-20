@@ -113,11 +113,14 @@ jobs:
       - name: "Set up Google Cloud SDK"
         uses: "google-github-actions/setup-gcloud@v0"
 
+      - name: Configure SSH for GCP Compute
+        run: |
+          eval "$(ssh-agent -s)" && gcloud compute config-ssh && ssh-add ~/.ssh/google_compute_engine
+
       - name: Deploy to production
         run: |
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            # For manual triggers, deploy all projects
-            # this is useful to force a 'bounce'
+            # For manual triggers, deploy all projects. This is useful to force a 'bounce'
             DEPLOYABLE_PROJECTS=$(./_bin/list_deployable_projects.sh)
             ./deploy $DEPLOYABLE_PROJECTS --env=production
           else
