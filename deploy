@@ -311,11 +311,13 @@ for proj in $projects; do # bash only
 
   # Process build.sh and run_local.sh scripts using --script mode
   script_secrets="" # secrets used in at least one of the scripts
-  script_files="build.sh"
-  if [ "$env" == "local" ]; then
-    script_files="build.sh run_local.sh"
+  script_files=""
+  if [ -f "build.sh" ]; then
+    script_files="build.sh"
   fi
-  if [ -f "deploy_project.sh" ]; then
+  if [ "$env" == "local" ]; then
+    script_files="$script_files run_local.sh"
+  elif [ -f "deploy_project.sh" ]; then
     script_files="$script_files deploy_project.sh"
   fi
 
@@ -373,16 +375,16 @@ for proj in $projects; do # bash only
     RESOLVED_VARS+=("$var=$value")
   done < "$top/.resolved.env"
 
-  unset CI # prevents build failing in GitHub Actions
-  # if needed build.sh is responsible for calling sentry-release.sh with appropriate arguments
-  echo "Running build.sh with resolved environment..."
-  set +e
-  gcp_secret_wrapper.sh --pass $script_secrets -- env "${RESOLVED_VARS[@]}" ./build.sh
-  build_exit_code=$?
-  set -e
-  if [ $build_exit_code -ne 0 ]; then
-    check_missing_variables "build.sh"
-    exit 1
+  if [ -f build.sh ] && ([ "$env" == "local" ] || [ ! -f deploy_project.sh ]); then
+    unset CI # prevents build failing in GitHub Actions
+    # if needed build.sh is responsible for calling sentry-release.sh with appropriate arguments
+    echo "Running build.sh with resolved environment..."
+    gcp_secret_wrapper.sh --pass $script_secrets -- env "${RESOLVED_VARS[@]}" ./build.sh
+    build_exit_code=$?
+    if [ $build_exit_code -ne 0 ]; then
+      check_missing_variables "build.sh"
+      exit 1
+    fi
   fi
 
   # *** DEPLOY OR RUN ***
