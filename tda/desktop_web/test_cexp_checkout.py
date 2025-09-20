@@ -53,6 +53,8 @@ def test_cexp_checkout(desktop_web_driver, endpoints, batch_size, backend, rando
                 current_backend = 'flask' # not implemented in other backends
                 ce = CExp.CHECKOUT_SUCCESS # avoid getting stuck early in the funnel
                 query_string['userEmail']='John.Logs@example.com'
+            else:
+                apply_promo_code = False
             
             # to generate more flagship errors than Slow DB Query, other performance issues
             checkout_attempts = 1 if ce and ce in [CExp.CHECKOUT_SUCCESS, CExp.ADD_TO_CART_JS_ERROR] else 3
@@ -119,5 +121,7 @@ def test_cexp_checkout(desktop_web_driver, endpoints, batch_size, backend, rando
             except Exception as err:
                 sentry_sdk.metrics.incr(key="test_checkout.iteration.abandoned", value=1, tags=dict(query_string, reason=f"other({err.__class__.__name__})"))
                 sentry_sdk.capture_exception(err)
+                print(err)
+
 
             time.sleep(sleep_length())
