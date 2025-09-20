@@ -18,7 +18,7 @@ export CLOUDSDK_COMPUTE_ZONE=$CRONSPYTHON_DEPLOY_ZONE
 function ssh_cmd() {
     local host=$1
     shift
-    gcloud compute ssh $host -- "$@" 2>&1 | grep -v '^Connection to .* closed\.' || true
+    gcloud compute ssh --tunnel-through-iap $host -- "$@" 2>&1 | grep -v '^Connection to .* closed\.' || true
 }
 
 function cleanup {

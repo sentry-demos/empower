@@ -2,8 +2,5 @@
 
 vue
 _postgres
-crons-python
 next
 # ^ uses Vercel automation
-_tda
-# ^ rsync/ssh issues w --tunnel-through-iap in GHA vm
