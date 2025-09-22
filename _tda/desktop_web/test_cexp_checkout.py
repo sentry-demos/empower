@@ -1,29 +1,34 @@
 import time
 import sentry_sdk
 from urllib.parse import urlencode
-from conftest import CExp, BACKENDS
+from conftest import CExp, BACKENDS, CONFIG
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
 
-
+# These parameters are picked to create different volume of issues of each type so that the flagship errors
+# show up at the top of the Issues feed without being crowded out by less important (from demo POV) issues.
+# See: https://github.com/sentry-demos/empower/pull/955
 PRODUCTS_JOIN_RATIO = 0.5
 CEXP_RATIO = 0.3
 BYPASS_PREFERRED_BACKENDS_RATIO = 0.6 # backends that have a realistic autofixable error
 BYPASS_PREFERRED_BACKENDS = ['flask', 'laravel']
 
-def test_cexp_checkout(desktop_web_driver, endpoints, batch_size, backend, random, sleep_length, cexp):
+def test_cexp_checkout(desktop_web_driver, endpoints, batch_size, backend, random, sleep_length, cexp, is_first_run_of_the_day, current_browser):
+    is_first_browser = CONFIG.browsers.index(current_browser) == 0
+    
     for endpoint in [endpoints.react_endpoint]:
+            
+        base_query_string = {}
+        endpoint_products = endpoint + "/products"
 
         if random.random() < PRODUCTS_JOIN_RATIO:
-            endpoint_products = endpoint + "/products?api=join"
-        else:
-            endpoint_products = endpoint + "/products"
+            base_query_string['api'] = 'join'
 
         sentry_sdk.set_tag("endpoint", endpoint_products)
         sentry_sdk.set_tag("batch_size", batch_size)
 
-        for s in range(batch_size):
-            url = ""
+        for b in range(batch_size):
+            query_string = base_query_string.copy()
             
             if random.random() < CEXP_RATIO: # Determine if this iteration should use CExp flow
                 current_backend = 'flask'
@@ -39,20 +44,28 @@ def test_cexp_checkout(desktop_web_driver, endpoints, batch_size, backend, rando
                     else:
                         probs[backend_name] = (1.0 - BYPASS_PREFERRED_BACKENDS_RATIO) / (len(BACKENDS) - len(BYPASS_PREFERRED_BACKENDS))
                     
-                
                 current_backend = backend(probabilities=probs)
+
+
+            # Only do for 1 browser (first browser run)
+            if is_first_run_of_the_day and b == 0 and is_first_browser:
+                apply_promo_code = True
+                current_backend = 'flask' # not implemented in other backends
+                ce = CExp.CHECKOUT_SUCCESS # avoid getting stuck early in the funnel
+                query_string['userEmail']='John.Logs@example.com'
+            else:
+                apply_promo_code = False
             
             # to generate more flagship errors than Slow DB Query, other performance issues
             checkout_attempts = 1 if ce and ce in [CExp.CHECKOUT_SUCCESS, CExp.ADD_TO_CART_JS_ERROR] else 3
 
             # TODO make a query_string builder function for sharing this across tests
-            query_string = {
-                'backend': current_backend,
-            }
+            query_string['backend'] = current_backend
             if ce:
                 query_string['cexp'] = ce
-
+            
             url = endpoint_products + '?' + urlencode(query_string)
+
             
             sentry_sdk.metrics.incr(key="test_checkout.iteration.started", value=1, tags=query_string)
 
@@ -94,6 +107,12 @@ def test_cexp_checkout(desktop_web_driver, endpoints, batch_size, backend, rando
                         
                         desktop_web_driver.find_element(By.CSS_SELECTOR, '#email').send_keys("sampleEmail@email.com")
 
+                        # Apply promo code only once per day, only for first browser, only on first checkout attempt
+                        if apply_promo_code and c == 0:
+                            desktop_web_driver.find_element(By.NAME, 'promoCode').send_keys("SAVE20")
+                            desktop_web_driver.find_element(By.NAME, 'applyPromoCode').click()
+                            time.sleep(3)
+
                         desktop_web_driver.find_element(By.CSS_SELECTOR, '.complete-checkout-btn').click()
                         time.sleep(sleep_length())
 
@@ -102,5 +121,7 @@ def test_cexp_checkout(desktop_web_driver, endpoints, batch_size, backend, rando
             except Exception as err:
                 sentry_sdk.metrics.incr(key="test_checkout.iteration.abandoned", value=1, tags=dict(query_string, reason=f"other({err.__class__.__name__})"))
                 sentry_sdk.capture_exception(err)
+                print(err)
+
 
             time.sleep(sleep_length())

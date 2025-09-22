@@ -115,6 +115,9 @@ SLEEP_LENGTH = os.getenv("SLEEP_LENGTH") or "random_2_1"
 # Currently only used in desktop_web/ tests. Mobile apps have it hardcoded.
 BACKENDS = (os.getenv("BACKENDS") or "flask,express,springboot,laravel,rails,aspnetcore").split(',')
 
+# set in loop.sh
+IS_FIRST_RUN_OF_THE_DAY = os.getenv("IS_FIRST_RUN_OF_THE_DAY")
+
 import urllib3
 urllib3.disable_warnings()
 
@@ -327,6 +330,15 @@ def cexp(random):
 @pytest.fixture
 def endpoints():
     return CONFIG
+
+@pytest.fixture(params=CONFIG.browsers, ids=[b.param_display for b in CONFIG.browsers])
+def current_browser(request):
+    """Provides the current browser configuration to test functions"""
+    return request.param
+
+@pytest.fixture
+def is_first_run_of_the_day():
+    return IS_FIRST_RUN_OF_THE_DAY is not None
 
 
 class _ExtraParams:
