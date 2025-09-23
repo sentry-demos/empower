@@ -1,5 +1,7 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
+local.env
+.local.env.last-merge-sha
 **/.env
 **/*.template.tmp
 **/.*.sh.tmp
@@ -86,8 +88,6 @@ ruby/tmp/storage/*
 ruby/public/assets
 # Ignore master key for decrypting credentials and more.
 ruby/config/master.key
-
-local.env.overrides
 
 _tda/env
 

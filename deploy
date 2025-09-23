@@ -52,9 +52,6 @@ set -e
 top=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 export PATH="$PATH:$top/_bin"
 
-# Make sure local changes to local.env don't get committed by accident
-git update-index --skip-worktree $top/local.env
-
 # Parse CLI arguments
 projects=""
 env=""
@@ -107,6 +104,17 @@ if [[ -n "$custom_command" ]]; then
     echo "[ERROR] Custom commands (-- <command>) can only be used with a single project, but $project_count projects were specified: $projects"
     exit 1
   fi
+fi
+
+# Setup git hooks for local.env management if using local environment
+if [[ "$env" == "local" && ! -f "$top/local.env" ]]; then
+  echo "[INFO] local.env not found, setting up git hooks..."
+  "$top/_bin/setup-git-hooks.sh"
+  echo "[INFO] Running post-checkout hook to create local.env from .local.env.base..."
+  "$top/.git/hooks/post-checkout"
+  echo ""
+  echo "Please fill out local.env with your personal DSNs etc and run deploy again."
+  exit 0
 fi
 
 if [ ! -f "$top/$env.env" ]; then
