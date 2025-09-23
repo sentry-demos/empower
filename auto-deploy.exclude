@@ -6,3 +6,5 @@ postgres
 crons-python
 next
 # ^ uses Vercel automation
+angular
+# ^ no integrated with deploy yet
