@@ -52,35 +52,6 @@ trap 'log_signal "SIGIO" 29' IO
 trap 'log_signal "SIGPWR" 30' PWR
 trap 'log_signal "SIGSYS" 31' SYS
 
-# Day tracking file to persist the last day number
-DAY_TRACKING_FILE="/tmp/tda_loop_prev_day"
-
-# Function to get current day number
-get_current_day() {
-    date +%j
-}
-
-check_is_first_run_of_the_day() {
-    local current_day=$(get_current_day)
-    local prev_day=""
-    
-    # Read the previous day number from file if it exists
-    if [ -f "$DAY_TRACKING_FILE" ]; then
-        prev_day=$(cat "$DAY_TRACKING_FILE" 2>/dev/null || echo "")
-    fi
-    
-    # If this is the first run or day has changed, set IS_FIRST_RUN_OF_THE_DAY=1
-    if [ -z "$prev_day" ] || [ "$current_day" != "$prev_day" ]; then
-        export IS_FIRST_RUN_OF_THE_DAY=1
-        echo "[$(date '+%Y-%m-%d %H:%M:%S')] [loop.sh] Day changed from '$prev_day' to '$current_day', setting IS_FIRST_RUN_OF_THE_DAY=1"
-    else
-        unset IS_FIRST_RUN_OF_THE_DAY
-    fi
-    
-    # Save current day number for next iteration
-    echo "$current_day" > "$DAY_TRACKING_FILE" 2>/dev/null || true
-}
-
 # Log script start
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] loop.sh started with PID $$, command: $*"
 
