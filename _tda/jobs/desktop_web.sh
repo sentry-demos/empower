@@ -2,8 +2,8 @@
 
 DAY_TRACKING_FILE="/tmp/tda_loop_prev_day"
 
-local current_day=$(date +%j)
-local prev_day=""
+current_day=$(date +%j)
+prev_day=""
 if [ -f "$DAY_TRACKING_FILE" ]; then
     prev_day=$(cat "$DAY_TRACKING_FILE" 2>/dev/null || echo "")
 fi
