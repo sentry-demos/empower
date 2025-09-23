@@ -8,9 +8,22 @@ const nextConfig = {
 export default withSentryConfig(nextConfig, {
   // For all available options, see:
   // https://github.com/getsentry/sentry-webpack-plugin#options
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          {
+            key: "Document-Policy",
+            value: "js-profiling",
+          },
+        ],
+      },
+    ];
+  },
 
-  org: 'demo',
-  project: 'nextjs',
+  org: 'team-se',
+  project: 'aidan-nextjs',
 
   // Only print logs for uploading source maps in CI
   silent: !process.env.CI,

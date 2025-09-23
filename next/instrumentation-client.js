@@ -12,15 +12,25 @@ const tracingOrigins = [
   /^\//,
   window.location.host,
 ];
+let ENVIRONMENT;
+if (window.location.hostname === 'localhost') {
+  ENVIRONMENT = 'test';
+} else {
+  // App Engine
+  ENVIRONMENT = 'production';
+}
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_DSN,
   tracesSampleRate: 1.0,
   tracePropagationTargets: tracingOrigins,
   profilesSampleRate: 1.0,
   replaysSessionSampleRate: 1.0,
+  environment: ENVIRONMENT,
+  enableLogs: true,
   debug: false,
   integrations: [
-    Sentry.browserProfilingIntegration,
+    Sentry.consoleLoggingIntegration({ levels: ["log", "warn", "error"] }),
+    Sentry.browserProfilingIntegration(),
     Sentry.replayIntegration({
       // Additional configuration goes in here
       // replaysSessionSampleRate and replaysOnErrorSampleRate is now a top-level SDK option
@@ -57,3 +67,38 @@ Sentry.init({
     return event;
   },
 });
+
+    // making fewer emails so event and user counts for an Issue are not the same
+    let array = [
+      'a',
+      'b',
+      'c',
+      'd',
+      'e',
+      'f',
+      'g',
+      'h',
+      'i',
+      'j',
+      'k',
+      'l',
+      'm',
+      'n',
+      'o',
+      'p',
+      'q',
+      'r',
+      's',
+      't',
+      'u',
+      'v',
+      'w',
+      'x',
+      'y',
+      'z',
+    ];
+    let a = array[Math.floor(Math.random() * array.length)];
+    let b = array[Math.floor(Math.random() * array.length)];
+    let c = array[Math.floor(Math.random() * array.length)];
+    let email = a + b + c + '@example.com';
+    Sentry.setUser({ email: email });

@@ -7,7 +7,8 @@ import { vercelWaitUntil } from '@sentry/core';
 export default async function ProductCatalog(props) {
 
   let products = await getProductsRaw();
-  vercelWaitUntil(new Promise(resolve => setTimeout(resolve, 2000)));
+  // Removed 2-second artificial delay that was causing profiling timeouts
+  // vercelWaitUntil(new Promise(resolve => setTimeout(resolve, 2000)));
 
   return (
     <div>
