@@ -4,7 +4,7 @@
 
 # usage: ./loop.sh command arg1 arg2 ...
 
-LOG_FILE=/var/log/tda-signals.log
+LOG_FILE=/var/log/tda.log
 
 # Signal handling function
 log_signal() {
@@ -53,9 +53,13 @@ trap 'log_signal "SIGPWR" 30' PWR
 trap 'log_signal "SIGSYS" 31' SYS
 
 # Log script start
-echo "[$(date '+%Y-%m-%d %H:%M:%S')] loop.sh started with PID $$, command: $*" >> $LOG_FILE 2>/dev/null || true
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] loop.sh started with PID $$, command: $*"
 
 while true; do 
-  echo "[$(date '+%Y-%m-%d %H:%M:%S')] [loop.sh] running: $@" >> $LOG_FILE 2>/dev/null || true
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')] [loop.sh] running: $@"
+  
+  # sets IS_FIRST_RUN_OF_THE_DAY accordingly
+  check_is_first_run_of_the_day
+  
   "$@"
 done

@@ -11,7 +11,7 @@ def test_subscribe(desktop_web_driver, endpoints, batch_size, sleep_length, rand
     A standalone test that navigates to each React endpoint, attempts an email
     subscription, and records success/failure to Sentry metrics.
     """
-    for endpoint in endpoints.react_endpoints:
+    for endpoint in [endpoints.react_endpoint]:
         # Tag each test iteration with the endpoint
         sentry_sdk.set_tag("endpoint", endpoint)
 
