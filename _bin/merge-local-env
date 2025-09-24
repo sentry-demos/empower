@@ -76,6 +76,8 @@ else
         exit 1
     }
     echo "✓ Successfully applied changes from .local.env.base"
+    # Clean up backup file since merge was successful
+    rm -f "$TARGET_FILE.backup"
 fi
 
 # Update the last merge SHA
