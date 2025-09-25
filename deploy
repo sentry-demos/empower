@@ -200,13 +200,15 @@ check_missing_variables() {
   # Check for variables defined in script but not present in .resolved.env
   local script_vars=$(envsubst.sh --script --list < "$tmp_script_file" | grep -v '^__GCP_SECRET__' | tr '\n' ' ')
   
-    if [ -n "$script_vars" ]; then
-      echo "[WARNING] $script_file potentially missing env variables:"
-      echo "$script_vars" | tr ' ' '\n' | grep -v '^$' | \
-        grep '^[A-Z_][A-Z0-9_]*$' | \
-        grep -v -E '^(PATH|HOME|USER|PWD|SHELL|TERM|LANG|LC_|TMPDIR|TMP|TEMP|IFS)$' | \
-        sed 's/^/$/'
-    fi
+  # Filter and check for actual environment variables
+  local filtered_vars=$(echo "$script_vars" | tr ' ' '\n' | grep -v '^$' | \
+    grep '^[A-Z_][A-Z0-9_]*$' | \
+    grep -v -E '^(PATH|HOME|USER|PWD|SHELL|TERM|LANG|LC_|TMPDIR|TMP|TEMP|IFS)$')
+  
+  if [ -n "$filtered_vars" ]; then
+    echo "[WARNING] $script_file potentially missing env variables:"
+    echo "$filtered_vars" | sed 's/^/$/'
+  fi
 }
 
 # Copy environment file to resolved file
