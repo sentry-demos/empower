@@ -6,7 +6,7 @@
     "ng": "ng",
     "start": "npx ng serve",
     "start:local": "npx ng serve",
-    "build": "./build.sh",
+    "build": "ng build",
     "build:ng": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"

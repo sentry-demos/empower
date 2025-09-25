@@ -3,7 +3,7 @@
 // This single file handles all environments (development, staging, production)
 
 export const environment = {
-  production: ['production', 'staging'].includes(process.env['SENTRY_ENVIRONMENT']),
+  production: ['production', 'staging'].includes(process.env['SENTRY_ENVIRONMENT'] || ''),
   
   DSN: process.env['DSN'],
   RELEASE: process.env['RELEASE'],
