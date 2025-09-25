@@ -13,15 +13,15 @@ HOST = os.environ["DB_HOST"]
 DATABASE = os.environ["DB_DATABASE"]
 USERNAME = os.environ["DB_USERNAME"]
 PASSWORD = os.environ["DB_PASSWORD"]
-FLASK_ENV = os.environ["FLASK_ENV"]
+FLASK_ENVIRONMENT = os.environ["FLASK_ENVIRONMENT"]
 PRODUCTS_NUM = 4
 
 class DatabaseConnectionError (Exception):
     pass
 
 
-if FLASK_ENV == "test":
-    print("> ENVIRONMENT test ")
+if FLASK_ENVIRONMENT == "local":
+    print("> ENVIRONMENT local ")
     db = create_engine('postgresql://' + USERNAME + ':' + PASSWORD + '@' + HOST + ':5432/' + DATABASE)
 else:
     CLOUD_SQL_CONNECTION_NAME = os.environ["DB_CLOUD_SQL_CONNECTION_NAME"]

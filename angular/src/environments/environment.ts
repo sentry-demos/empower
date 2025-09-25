@@ -1,16 +1,13 @@
 // Environment configuration for Angular
-// Uses webpack DefinePlugin for production builds
+// Uses webpack DefinePlugin to inject environment variables at build time
+// This single file handles all environments (development, staging, production)
 
 export const environment = {
-  production: false,
+  production: ['production', 'staging'].includes(process.env['SENTRY_ENVIRONMENT']),
   
-  flaskBackend: process.env['ANGULAR_APP_FLASK_BACKEND'] as string,
-  
-  laravelBackend: process.env['ANGULAR_APP_LARAVEL_BACKEND'] as string,
-  
-  sentry: {
-    dsn: process.env['ANGULAR_APP_DSN'] as string,
-    environment: process.env['ANGULAR_APP_ENVIRONMENT'] as string,
-    release: process.env['ANGULAR_APP_RELEASE'] as string,
-  }
+  DSN: process.env['DSN'],
+  RELEASE: process.env['RELEASE'],
+  SENTRY_ENVIRONMENT: process.env['SENTRY_ENVIRONMENT'],
+  BACKEND_URL_FLASK: process.env['BACKEND_URL_FLASK'],
+  BACKEND_URL_LARAVEL: process.env['BACKEND_URL_LARAVEL'],
 };

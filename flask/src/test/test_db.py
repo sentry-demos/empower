@@ -10,7 +10,7 @@
 # os.environ['DB_DATABASE'] = 'test_db'
 # os.environ['DB_USERNAME'] = 'test_user'
 # os.environ['DB_PASSWORD'] = 'test_password'
-# os.environ['FLASK_ENV'] = 'test'
+# os.environ['FLASK_ENVIRONMENT'] = 'local'
 
 # from ..db import get_products, get_products_join, get_inventory, formatArray, DatabaseConnectionError
 
@@ -21,7 +21,7 @@
 #     #     'DB_DATABASE': 'test_db',
 #     #     'DB_USERNAME': 'test_user',
 #     #     'DB_PASSWORD': 'test_password',
-#     #     'FLASK_ENV': 'test',
+#     #     'FLASK_ENVIRONMENT': 'local',
 #     # })
 #     # @patch('..db.db.connect')
 #     # @patch('..db.weighter')
@@ -50,7 +50,7 @@
 #     #     'DB_DATABASE': 'test_db',
 #     #     'DB_USERNAME': 'test_user',
 #     #     'DB_PASSWORD': 'test_password',
-#     #     'FLASK_ENV': 'test',
+#     #     'FLASK_ENVIRONMENT': 'local',
 #     # })
 #     # @patch('..db.db.connect')
 #     # def test_get_products_join_success(self, mock_db_connect):
@@ -77,7 +77,7 @@
 #     #     'DB_DATABASE': 'test_db',
 #     #     'DB_USERNAME': 'test_user',
 #     #     'DB_PASSWORD': 'test_password',
-#     #     'FLASK_ENV': 'test',
+#     #     'FLASK_ENVIRONMENT': 'local',
 #     # })
 #     # @patch('..db.db.connect')
 #     # def test_get_inventory_success(self, mock_db_connect):
@@ -115,7 +115,7 @@
 #     #     'DB_DATABASE': 'test_db',
 #     #     'DB_USERNAME': 'test_user',
 #     #     'DB_PASSWORD': 'test_password',
-#     #     'FLASK_ENV': 'test',
+#     #     'FLASK_ENVIRONMENT': 'local',
 #     # })
 #     # @patch('..db.connect')
 #     # def test_get_products_database_connection_error(self, mock_db_connect):
@@ -129,7 +129,7 @@
 #     #     'DB_DATABASE': 'test_db',
 #     #     'DB_USERNAME': 'test_user',
 #     #     'DB_PASSWORD': 'test_password',
-#     #     'FLASK_ENV': 'test',
+#     #     'FLASK_ENVIRONMENT': 'local',
 #     # })
 #     # @patch('..db.db.connect')
 #     # def test_get_products_join_database_connection_error(self, mock_db_connect):
@@ -143,7 +143,7 @@
 #     #     'DB_DATABASE': 'test_db',
 #     #     'DB_USERNAME': 'test_user',
 #     #     'DB_PASSWORD': 'test_password',
-#     #     'FLASK_ENV': 'test',
+#     #     'FLASK_ENVIRONMENT': 'local',
 #     # })
 #     # @patch('..db.db.connect')
 #     # def test_get_inventory_database_connection_error(self, mock_db_connect):

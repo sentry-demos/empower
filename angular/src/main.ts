@@ -40,9 +40,9 @@ const tracingOrigins = [
 
 // Initialize Sentry with configuration from Angular environment files
 Sentry.init({
-    dsn: environment.sentry.dsn,
-    environment: environment.sentry.environment,
-    release: environment.sentry.release,
+    dsn: environment.ANGULAR_DSN,
+    environment: environment.ANGULAR_SENTRY_ENVIRONMENT,
+    release: environment.ANGULAR_APP_RELEASE,
     tracePropagationTargets: tracingOrigins,
     tracesSampleRate: 1,
     replaysSessionSampleRate: 1.0,

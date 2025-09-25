@@ -1,9 +1,7 @@
 # Projects/directories listed here will be ommitted from auto-deployment to production
 
 vue
-tda
-postgres
-crons-python
+_postgres
 next
 # ^ uses Vercel automation
 angular

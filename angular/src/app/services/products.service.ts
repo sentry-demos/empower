@@ -42,7 +42,7 @@ export interface Review {
  * - TDA test compatibility
  * 
  * Key Features:
- * - Dynamic backend switching (Laravel/Flask)
+ * - Dynamic backend switching
  * - Configurable API endpoints
  * - Error handling and logging
  * - Product data caching

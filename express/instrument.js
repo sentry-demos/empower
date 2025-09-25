@@ -3,9 +3,9 @@ require("dotenv").config();
 const Sentry = require("@sentry/node");
 
 // Environment variables
-const dsn = process.env.EXPRESS_APP_DSN;
-const release = process.env.RELEASE;
-const environment = process.env.EXPRESS_ENV;
+const dsn = process.env.EXPRESS_DSN;
+const release = process.env.EXPRESS_RELEASE;
+const environment = process.env.EXPRESS_ENVIRONMENT;
 
 // Initialize Sentry
 Sentry.init({

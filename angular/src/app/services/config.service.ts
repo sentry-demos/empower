@@ -32,7 +32,7 @@ export interface CheckoutForm {
  * - Manages session storage for demo state
  * - Provides pre-filled form data for demos
  * - Supports different checkout scenarios
- * - Dynamic backend switching (Flask default, Laravel optional)
+ * - Dynamic backend switching
  * 
  * TDA Test Compatibility:
  * - Configuration behavior matches React app for automated testing
@@ -42,9 +42,6 @@ export interface CheckoutForm {
  * 
  * Backend Switching:
  * - Default: Flask backend
- * - Alternative: Laravel backend via ?backend=laravel
- * - Runtime switching without page reload
- * - Environment-aware configuration
  */
 @Injectable({
   providedIn: 'root'
@@ -84,10 +81,8 @@ export class ConfigService {
     // This determines which backend to use for all API calls
     const backendParam = urlParams.get('backend');
     if (backendParam === 'laravel') {
-      // Store Laravel backend preference in session storage
       sessionStorage.setItem('backend', 'laravel');
     } else {
-      // Default to Flask backend (same as React)
       sessionStorage.setItem('backend', 'flask');
     }
     
@@ -177,99 +172,41 @@ export class ConfigService {
    * Uses stored backend preference from session storage (like React)
    * 
    * URL Examples:
-   * - / → Uses Laravel backend (default)
-   * - /?backend=flask → Uses Flask backend
-   * - /?backend=flask&se=wassim → Uses Flask + SE tagging
+   * - / → Uses Flask backend (default)
+   * - /?backend=laravel → Uses Laravel backend
+   * - /?backend=laravel&se=wassim → Uses Laravel + SE tagging
    * 
    * @returns Backend URL string for API calls
    */
   getBackendUrl(): string {
-    // Get backend preference from session storage (like React)
     const backendPreference = sessionStorage.getItem('backend') || 'flask';
     
     if (backendPreference === 'laravel') {
-      // Use Laravel backend
-      return environment.laravelBackend;
+      return environment.BACKEND_URL_LARAVEL;
     }
     
     // Default to Flask backend (Angular default, same as React's Flask default)
-    return environment.flaskBackend;
+    return environment.BACKEND_URL_FLASK;
   }
 
-  /**
-   * Gets the current backend type being used
-   * Uses stored backend preference from session storage (like React)
-   * 
-   * This method is useful for:
-   * - Logging which backend is being used
-   * - Conditional logic based on backend type
-   * - Debugging backend switching issues
-   * - Sentry error context
-   * 
-   * @returns Backend type string ('laravel' or 'flask')
-   */
   getCurrentBackendType(): string {
-    // Get backend preference from session storage (like React)
     const backendPreference = sessionStorage.getItem('backend') || 'flask';
     
-    // Return 'laravel' if explicitly requested, otherwise 'flask' (Angular default)
     return backendPreference === 'laravel' ? 'laravel' : 'flask';
   }
 
-  // Getter methods for configuration
-  /**
-   * Gets the current sales engineer identifier
-   * 
-   * Used for:
-   * - Sentry tagging and organization
-   * - Demo personalization
-   * - TDA test identification
-   * - Session tracking
-   * 
-   * @returns Sales engineer name or null if not set
-   */
   getSe(): string | null {
     return this.se;
   }
 
-  /**
-   * Gets the rage click demo flag
-   * 
-   * Enables demo mode for:
-   * - Detecting unusual user behavior
-   * - Sentry rage click detection
-   * - Demo presentations
-   * 
-   * @returns True if rage click detection is enabled
-   */
   getRageclick(): boolean {
     return this.rageclick;
   }
 
-  /**
-   * Gets the checkout success demo flag
-   * 
-   * Enables demo mode for:
-   * - Successful checkout flow demonstration
-   * - TDA test scenarios
-   * - Demo presentations
-   * 
-   * @returns True if successful checkout demo is enabled
-   */
   getCheckoutSuccess(): boolean {
     return this.checkoutSuccess;
   }
 
-  /**
-   * Gets the error boundary demo flag
-   * 
-   * Enables demo mode for:
-   * - Error boundary functionality demonstration
-   * - Sentry error handling showcase
-   * - Demo presentations
-   * 
-   * @returns True if error boundary demo is enabled
-   */
   getErrorBoundary(): boolean {
     return this.errorBoundary;
   }

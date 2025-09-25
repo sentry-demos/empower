@@ -51,14 +51,6 @@ const tracingOrigins = [
 
 const history = createBrowserHistory();
 
-let ENVIRONMENT;
-if (window.location.hostname === 'localhost') {
-  ENVIRONMENT = 'test';
-} else {
-  // App Engine
-  ENVIRONMENT = 'production';
-}
-    
 const PREFERRED_BACKENDS = ['flask', 'laravel'];
 
 let BACKEND_URL;
@@ -73,6 +65,7 @@ let CHECKOUT_SUCCESS;
 let ERROR_BOUNDARY;
 const DSN = process.env.REACT_APP_DSN;
 const RELEASE = process.env.REACT_APP_RELEASE;
+const ENVIRONMENT = process.env.REACT_APP_ENVIRONMENT;
 
 console.log('ENVIRONMENT', ENVIRONMENT);
 console.log('RELEASE', RELEASE);
@@ -225,7 +218,7 @@ class App extends Component {
       sessionStorage.setItem('se', se);
     }
 
-    // see `cexp` fixture in tda/conftest.py
+    // see `cexp` fixture in _tda/conftest.py
     let cexp = queryParams.get('cexp')
     if (cexp) {
       currentScope.setTag('cexp', cexp);

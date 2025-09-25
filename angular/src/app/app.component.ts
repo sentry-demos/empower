@@ -135,7 +135,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   /**
    * Sends email subscription to backend queue
-   * Uses config service for backend URL (supports Laravel/Flask switching)
+   * Uses config service for backend URL
    */
   async sendToQueue() {
     try {
