@@ -115,8 +115,10 @@ import { useCounterStore } from "../stores/cart";
       store.increaseQuantity(item)
     },
     makeCheckoutRequest: function(requestOptions) {
+      const backendUrl = window.BACKEND_URL + '/checkout';
+      Sentry.logger.debug(`Making checkout request to endpoint: ${backendUrl}`)
       return fetch(
-          "https://application-monitoring-flask-dot-sales-engineering-sf.appspot.com/checkout",
+          backendUrl,
           requestOptions
         ).then(function (response) {
           if (!response.ok) {
@@ -125,8 +127,11 @@ import { useCounterStore } from "../stores/cart";
                 " -- " +
                 (response.statusText || "Internal Server Error")
             );
+            Sentry.logger.error(`Checkout request failed with status: ${response.status}`)
             throw err
+            
           } else {
+            Sentry.logger.trace(`Checkout request successful`)
             return true;
           }
         });
