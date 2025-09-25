@@ -154,7 +154,7 @@ gcloud config set project $GCP_PROJECT
 be_projects=""
 fe_projects=""
 for proj in $projects; do
-  if [[ $proj =~ ^(react|vue|next)$ ]]; then
+  if [[ $proj =~ ^(react|vue|next|angular)$ ]]; then
     fe_projects+="$proj "
   else
     be_projects+="$proj "

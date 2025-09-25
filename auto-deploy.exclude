@@ -4,3 +4,5 @@ vue
 _postgres
 next
 # ^ uses Vercel automation
+angular
+# ^ no integrated with deploy yet

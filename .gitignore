@@ -29,7 +29,6 @@ react/config-overrides.js
 react/build
 next/dist
 
-
 # misc
 .idea
 .vscode

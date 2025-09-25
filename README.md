@@ -3,7 +3,12 @@
 <img width="633" alt="Empower Plant website screenshot" src="https://github.com/sentry-demos/empower/assets/490201/6bce9ad6-d256-4a6d-a49b-e0fe8cdd193c">
 
 
-This is a multi-language/framework project that implements Empower Plant web app. It has one actively maintained frontend, `react`, that can connect to any one of the backend implementations using a query string parameter (e.g. `?backend=express`) and uses `flask` by default.
+This is a multi-language/framework project that implements Empower Plant web app. It has multiple actively maintained frontends:
+- **`react`** - Primary React frontend (default)
+- **`angular`** - Modern Angular 20 frontend with TDA test compatibility
+- **`vue`** - Vue.js frontend
+
+All frontends can connect to any one of the backend implementations using a query string parameter (e.g. `?backend=flask`) and use `flask` by default.
 
 # Usage
 
@@ -44,12 +49,31 @@ While not an Empower React app query param, we also have demo-specific query par
 ## User Feedback
 The [user feedback widget](https://docs.sentry.io/platforms/javascript/user-feedback/#user-feedback-widget) is enabled on all pages, in the bottom-right corner. Submit user feedback from any page to have it [show up in Sentry](https://demo.sentry.io/feedback/?project=5808623&statsPeriod=7d).
 
+## Frontend Applications
+
+### React (Primary)
+- **Status**: Actively maintained, production ready
+- **Documentation**: [react/README.md](./react/README.md)
+- **Features**: Full Sentry integration, multiple backend support
+
+### Angular 20
+- **Status**: Actively maintained, TDA test compatible
+- **Documentation**: [angular/README.md](./angular/README.md)
+- **Deployment Guide**: [angular/DEPLOYMENT.md](./angular/DEPLOYMENT.md)
+- **Features**: Modern Angular framework, Sentry integration, React-matching UI
+
+### Vue.js
+- **Status**: Available but may need updates
+- **Documentation**: [vue/README.md](./vue/README.md)
+
 ## Additional documentation
 
+Note: some of these may be out of date
+
 - project README's in subdirectories (e.g. [react/README.md](./react/README.md)
-- **"empower/deploy.sh"** (internal doc)
+- **"empower/deploy"** (internal doc)
 - See [troubleshooting](./troubleshooting.md)
-- **"Checklist for adding new language/framework demo to Empower"** (internal doc)
+- **"Checklist for adding new language/framework demo to Empower"** (internal documentation)
 - [comment at the top of `deploy.sh` file](https://github.com/sentry-demos/empower/blob/master/deploy.sh#L3-L47).
 
 # Local Setup / Development
