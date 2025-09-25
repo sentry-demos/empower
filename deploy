@@ -211,8 +211,8 @@ check_missing_variables() {
   fi
 }
 
-# Copy environment file to resolved file
-cp $top/$env.env $top/.resolved.env
+# Copy environment file to resolved file and trim trailing whitespace from values
+sed 's/[[:space:]]*$//' $top/$env.env > $top/.resolved.env
 temp_files+="$top/.resolved.env "
 
 # additionally some of the variables are used at build-time, e.g:
@@ -274,7 +274,7 @@ for proj in $projects; do # bash only
   cd $top/$proj
 
   # Substitute variables in templates
-  templates=$(find . -type f -name "*.template" | sed 's|^\./||')
+  templates=$(find . -type f -name "*.template" -not -path "./node_modules/*" | sed 's|^\./||')
   for template in $templates; do
     outfile=${template%.template} # remove .template suffix
     if [[ "$outfile" =~ ^_\. ]]; then # remove _ prefix if needed

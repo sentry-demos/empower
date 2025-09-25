@@ -1,5 +1,5 @@
 env: standard
-service: ${SERVICE}
+service: ${ANGULAR_APP_ENGINE_SERVICE}
 runtime: nodejs20
 
 handlers:
