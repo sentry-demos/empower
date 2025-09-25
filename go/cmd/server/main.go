@@ -209,6 +209,14 @@ func main() {
 	mux := http.NewServeMux()
 
 	// routes
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"service":   "go",
+			"status":    "ok",
+			"endpoints": []string{"/products", "/enqueue", "/checkout", "/success", "/products-join", "/api", "/organization", "/healthz", "/readyz", "/livez"},
+		})
+	})
 	mux.HandleFunc("/enqueue", srv.handleEnqueue)
 	mux.HandleFunc("/suggestion", srv.handleSuggestion)
 	mux.HandleFunc("/checkout", srv.handleCheckout)
@@ -238,9 +246,45 @@ func main() {
 	mux.Handle("/uncompressed_assets/", http.StripPrefix("/uncompressed_assets/", assetHandler("../flask/uncompressed_assets", true)))
 	mux.Handle("/compressed_assets/", http.StripPrefix("/compressed_assets/", assetHandler("../flask/compressed_assets", false)))
 
+	// health endpoints
+	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+	})
+	mux.HandleFunc("/livez", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+	})
+	mux.HandleFunc("/readyz", func(w http.ResponseWriter, r *http.Request) {
+		ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
+		defer cancel()
+		ready := true
+		// simple DB ping
+		if err := srv.db.Ping(ctx); err != nil {
+			ready = false
+		}
+		// simple Redis ping
+		if err := srv.redis.Ping(ctx).Err(); err != nil {
+			ready = false
+		}
+		w.Header().Set("Content-Type", "application/json")
+		if !ready {
+			w.WriteHeader(http.StatusServiceUnavailable)
+		}
+		json.NewEncoder(w).Encode(map[string]bool{"ready": ready})
+	})
+
 	// sentry HTTP middleware + CORS wrapper
 	sentryHandler := sentryhttp.New(sentryhttp.Options{Repanic: true})
-	handler := withCORS(sentryHandler.Handle(mux))
+	// wrap mux with a 404 logger
+	logged := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		rw := &statusRecorder{ResponseWriter: w, status: 200}
+		mux.ServeHTTP(rw, r)
+		if rw.status == http.StatusNotFound {
+			log.Printf("404 Not Found: %s %s", r.Method, r.URL.Path)
+		}
+	})
+	handler := withCORS(sentryHandler.Handle(logged))
 
 	port := os.Getenv("LOCAL_PORT")
 	if port == "" {
@@ -250,6 +294,16 @@ func main() {
 	if err := http.ListenAndServe(":"+port, handler); err != nil {
 		log.Fatal(err)
 	}
+}
+
+type statusRecorder struct {
+	http.ResponseWriter
+	status int
+}
+
+func (r *statusRecorder) WriteHeader(code int) {
+	r.status = code
+	r.ResponseWriter.WriteHeader(code)
 }
 
 func withCORS(next http.Handler) http.Handler {
