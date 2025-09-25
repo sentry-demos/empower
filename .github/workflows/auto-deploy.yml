@@ -113,10 +113,6 @@ jobs:
       - name: "Set up Google Cloud SDK"
         uses: "google-github-actions/setup-gcloud@v3"
 
-      - name: Configure SSH for GCP Compute
-        run: |
-          eval "$(ssh-agent -s)" && gcloud compute config-ssh && ssh-add ~/.ssh/google_compute_engine
-
       - name: Deploy to production
         run: |
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then

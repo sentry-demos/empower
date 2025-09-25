@@ -23,7 +23,14 @@ ps aux | grep ssh-agent | grep -v grep > /dev/null && echo "ssh-agent is running
 rsync --version | head -1
 gcloud --version
 
-gcloud compute config-ssh
+if [[ -n "$CI" ]]; then
+  eval "$(ssh-agent -s)"
+  gcloud compute config-ssh 
+  ssh-add ~/.ssh/google_compute_engine
+else
+  gcloud compute config-ssh 
+fi
+
 gcloud compute ssh --tunnel-through-iap $HOST -- -o StrictHostKeyChecking=accept-new exit
 if [ $? != "0" ]; then
   echo "[ERROR] Can't ssh into destination host. Please run 'gcloud compute config-ssh; gcloud compute ssh --tunnel-through-iap $HOST -- exit' to fix"
@@ -73,6 +80,14 @@ if [ $? != 0 ]; then
   exit 1
 fi
 echo "Log directory permissions set up."
+
+echo "Setting up temporary file permissions..."
+ssh_cmd $HOST 'sudo touch /tmp/tda_loop_prev_day && sudo chown $USER:$USER /tmp/tda_loop_prev_day'
+if [ $? != 0 ]; then
+  echo "[ERROR] Failed to set up temporary file permissions."
+  exit 1
+fi
+echo "Temporary file permissions set up."
 
 # setting permissions with rscync doesn't work, leaves 775 instead of 777 (umask?)
 ssh_cmd $HOST 'find '$DIR' ! -path "*/__pycache__/*" ! -path "*/empower-tda/env/*" ! -path "*/canary.*" -exec sudo chmod 777 {} \;'
