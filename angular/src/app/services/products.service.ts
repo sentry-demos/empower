@@ -83,7 +83,7 @@ export class ProductsService {
    * 
    * @returns Current backend URL string
    */
-  private getBackendUrl(): string {
+  private getBackendUrl(): string | undefined {
     return this.configService.getBackendUrl();
   }
 

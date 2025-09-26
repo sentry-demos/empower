@@ -178,7 +178,7 @@ export class ConfigService {
    * 
    * @returns Backend URL string for API calls
    */
-  getBackendUrl(): string {
+  getBackendUrl(): string | undefined {
     const backendPreference = sessionStorage.getItem('backend') || 'flask';
     
     if (backendPreference === 'laravel') {

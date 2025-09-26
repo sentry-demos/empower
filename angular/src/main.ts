@@ -40,9 +40,9 @@ const tracingOrigins = [
 
 // Initialize Sentry with configuration from Angular environment files
 Sentry.init({
-    dsn: environment.ANGULAR_DSN,
-    environment: environment.ANGULAR_SENTRY_ENVIRONMENT,
-    release: environment.ANGULAR_APP_RELEASE,
+    dsn: environment.DSN,
+    environment: environment.SENTRY_ENVIRONMENT,
+    release: environment.RELEASE,
     tracePropagationTargets: tracingOrigins,
     tracesSampleRate: 1,
     replaysSessionSampleRate: 1.0,
@@ -86,9 +86,9 @@ Sentry.init({
                     seFingerprint = prefix[0];
                 }
                 
-                if (se.startsWith('prod-tda-')) {
+                if (se.startsWith('prod-tda-') && environment.RELEASE) {
                     // Release Health
-                    event.fingerprint = ['{{ default }}', seFingerprint, environment.sentry.release];
+                    event.fingerprint = ['{{ default }}', seFingerprint, environment.RELEASE];
                 } else {
                     // SE Testing
                     event.fingerprint = ['{{ default }}', seFingerprint];
