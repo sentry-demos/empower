@@ -78,6 +78,7 @@ class Config(NamedTuple):
     dsn: str
     react_endpoint: str
     nextjs_endpoint: str
+    angular_endpoint: str
     vue_endpoint: str
 
 
@@ -91,6 +92,7 @@ def _config() -> Config:
         dsn=contents['dsn'],
         react_endpoint=contents['react_endpoint'],
         nextjs_endpoint=contents['nextjs_endpoint'],
+        angular_endpoint=contents['angular_endpoint'],
         vue_endpoint=contents['vue_endpoint'],
     )
 
