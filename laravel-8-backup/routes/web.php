@@ -12,7 +12,7 @@ use App\Product;
 use App\Review;
 use App\Inventory;
 
-Route::get('/products', ['as' => 'products', function () {
+function getProductsWithReviews() {
     $complete_product_with_reviews = array();
     $products = Product::all();
     $reviews = DB::select('SELECT reviews.id, products.id AS productid, reviews.rating, reviews.customerId, reviews.description, reviews.created FROM reviews INNER JOIN products ON reviews.productId = products.id');
@@ -42,8 +42,15 @@ Route::get('/products', ['as' => 'products', function () {
     }
 
     return $complete_product_with_reviews;
+}
+
+Route::get('/products', ['as' => 'products', function () {
+    return getProductsWithReviews();
 }]);
 
+Route::get('/products-join', ['as' => 'products-join', function () {
+    return getProductsWithReviews();
+}]);
 
 Route::get('/handled', ['as' => 'handled', function (Request $request) {
     try {
