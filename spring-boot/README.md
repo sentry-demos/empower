@@ -2,7 +2,7 @@
 Extension to the Empower Plant UI/UX. This project was originally bootstrapped with [Create React App](https://github.com/facebook/create-react-app); this Java Spring Boot backend is available with the query param &backend=springboot, [e.g.] (http://localhost:3000/?se=simon&backend=springboot).
 
 ## Setup
-This uses Java version 21 and Spring Boot version 3.5.3 [spring-boot-starter-parent](https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-parent/3.5.3)
+This uses Java version 17 and Spring Boot version 3.5.3 [spring-boot-starter-parent](https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-parent/3.5.3)
 
 2. Set env-config/*.env with
 ```
