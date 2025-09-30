@@ -4,6 +4,15 @@
 
 import * as Sentry from '@sentry/nextjs';
 
+const tracingOrigins = [
+  'localhost',
+  'empower-plant.com',
+  'run.app',
+  'appspot.com',
+  /^\//,
+  window.location.host,
+];
+
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_DSN,
   tracesSampleRate: 1.0,
