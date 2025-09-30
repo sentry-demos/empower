@@ -241,11 +241,13 @@ When the script is terminated (e.g., with Ctrl+C), it performs cleanup to ensure
 
 - Install Vercel CLI with `intall -g vercel` from command line
 - Create .env.local file in `next` repo. Include the following values
+    ```
     NEXT_PUBLIC_DSN=your-dsn
     NEXT_APP_ENVIRONMENT=test
     NEXT_RELEASE_PACKAGE_NAME=application.monitoring.javascript
     NEXT_SENTRY_PROJECT=your-project
     NEXT_SENTRY_ORG=your-org
+    ```
 - From the empower repo, run `vercel dev` command. App should run on `localhost:3000`
 
 ### Accessing Vercel
