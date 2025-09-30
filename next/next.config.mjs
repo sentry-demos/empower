@@ -23,7 +23,7 @@ export default withSentryConfig(nextConfig, {
   },
 
   org: process.env.SENTRY_ORG,
-  project: process.env.SENTRY_PROJECT,
+  project: process.env.NEXT_SENTRY_PROJECT,
 
   // Only print logs for uploading source maps in CI
   silent: !process.env.CI,
