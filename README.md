@@ -237,16 +237,16 @@ When the script is terminated (e.g., with Ctrl+C), it performs cleanup to ensure
 
 ## Next.js Demo
 
-### Reunning Next.js demo locally
+### Running Next.js demo locally
 
-- install Vercel CLI tool with `intall -g vercel` from command line
+- Install Vercel CLI with `intall -g vercel` from command line
 - Create .env.local file in `next` repo. Include the following values
-   ```NEXT_PUBLIC_DSN=https://b9943feb5e210fbd4de6a8871d9f1db4@o88872.ingest.us.sentry.io/4508135114014720
-   ```NEXT_APP_ENVIRONMENT=test
-   ```NEXT_RELEASE_PACKAGE_NAME=application.monitoring.javascript
-   ```NEXT_SENTRY_PROJECT=aidan-nextjs
-   ```NEXT_SENTRY_ORG=team-se
-- from the empower repo, run `vercel dev` command. App should run on `localhost:3000`
+   NEXT_PUBLIC_DSN=your-dsn
+   NEXT_APP_ENVIRONMENT=test
+   NEXT_RELEASE_PACKAGE_NAME=application.monitoring.javascript
+   NEXT_SENTRY_PROJECT=your-project
+   NEXT_SENTRY_ORG=your-org
+- From the empower repo, run `vercel dev` command. App should run on `localhost:3000`
 
 ### Accessing Vercel
 - The Next.js demo is hosted on Sentry's Vercel account. If you need to access the production configuration of the demo, open a PR adding yourself to this file https://github.com/getsentry/security-as-code/blob/main/rbac/env/prod/role/sso/vercel-member.tf
