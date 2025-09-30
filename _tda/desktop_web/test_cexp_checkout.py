@@ -14,7 +14,9 @@ BYPASS_PREFERRED_BACKENDS_RATIO = 0.6 # backends that have a realistic autofixab
 BYPASS_PREFERRED_BACKENDS = ['flask', 'laravel']
 
 def test_cexp_checkout(desktop_web_driver, endpoints, batch_size, backend, random, sleep_length, cexp, is_first_run_of_the_day, current_browser):
+    sentry_sdk.logger.info(f"test_cexp_checkout: CONFIG.browsers: {CONFIG.browsers}, current_browser: {current_browser}")
     is_first_browser = CONFIG.browsers.index(current_browser) == 0
+    sentry_sdk.logger.info(f"test_cexp_checkout: is_first_browser: {is_first_browser}", extra={"is_first_browser": is_first_browser})
     
     for endpoint in [endpoints.react_endpoint]:
             
@@ -48,6 +50,7 @@ def test_cexp_checkout(desktop_web_driver, endpoints, batch_size, backend, rando
 
 
             # Only do for 1 browser (first browser run)
+            sentry_sdk.logger.info(f"test_cexp_checkout: deciding whether to apply promo code - is_first_run_of_the_day: {is_first_run_of_the_day}, b: {b}, is_first_browser: {is_first_browser}")
             if is_first_run_of_the_day and b == 0 and is_first_browser:
                 apply_promo_code = True
                 current_backend = 'flask' # not implemented in other backends
@@ -55,6 +58,7 @@ def test_cexp_checkout(desktop_web_driver, endpoints, batch_size, backend, rando
                 query_string['userEmail']='John.Logs@example.com'
             else:
                 apply_promo_code = False
+            sentry_sdk.logger.info(f"test_cexp_checkout: deciding whether to apply promo code - apply_promo_code: {apply_promo_code}")
             
             # to generate more flagship errors than Slow DB Query, other performance issues
             checkout_attempts = 1 if ce and ce in [CExp.CHECKOUT_SUCCESS, CExp.ADD_TO_CART_JS_ERROR] else 3
@@ -109,6 +113,7 @@ def test_cexp_checkout(desktop_web_driver, endpoints, batch_size, backend, rando
 
                         # Apply promo code only once per day, only for first browser, only on first checkout attempt
                         if apply_promo_code and c == 0:
+                            sentry_sdk.logger.info(f"test_cexp_checkout: applying promo code, c: {c}")
                             desktop_web_driver.find_element(By.NAME, 'promoCode').send_keys("SAVE20")
                             desktop_web_driver.find_element(By.NAME, 'applyPromoCode').click()
                             time.sleep(3)

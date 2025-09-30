@@ -136,13 +136,23 @@ def get_environment():
         return 'local'
 
 
+def add_scope_tags_as_attributes_to_log(log, tag_names):
+    tags = sentry_sdk.get_current_scope().tags
+    for tag_name in tag_names:
+        if tag_name in tags:
+            log['attributes'][tag_name] = tags[tag_name]
+    return log
+
+
 sentry_sdk.init(
     dsn=CONFIG.dsn,
     traces_sample_rate=0,
     # we don't really use environment for anything, as we'd have to propagate it to all
     # the other services, so instead out of laziness we effectively just encode it as the
     # first part of SE tag ("prod-", or system $USER when running locally).
-    environment=get_environment()
+    environment=get_environment(),
+    enable_logs=True,
+    before_send_log=lambda log, hint: add_scope_tags_as_attributes_to_log(log, ['seleniumSessionId'])
 )
 
 _browser2class = {
@@ -333,10 +343,13 @@ def cexp(random):
 def endpoints():
     return CONFIG
 
-@pytest.fixture(params=CONFIG.browsers, ids=[b.param_display for b in CONFIG.browsers])
+@pytest.fixture
 def current_browser(request):
     """Provides the current browser configuration to test functions"""
-    return request.param
+    # Get the browser configuration from the desktop_web_driver fixture
+    # This avoids duplicate parametrization while maintaining the same interface
+    import builtins
+    return getattr(builtins, '_current_browser_config')
 
 @pytest.fixture
 def is_first_run_of_the_day():
@@ -441,6 +454,7 @@ def _sauce_browser(request, se):
         browser.implicitly_wait(10)
 
         sentry_sdk.set_tag("sauceLabsUrl", f"https://app.saucelabs.com/tests/{browser.session_id}")
+        sentry_sdk.set_tag("seleniumSessionId", browser.session_id)
 
         # This is specifically for SauceLabs plugin.
         # In case test fails after selenium session creation having this here will help track it down.
@@ -494,6 +508,10 @@ def _local_browser(request, se):
 
 @pytest.fixture(params=CONFIG.browsers, ids=[b.param_display for b in CONFIG.browsers])
 def desktop_web_driver(request, se_prefix):
+    # Store the current browser configuration globally so current_browser can access it
+    import builtins
+    builtins._current_browser_config = request.param
+    
     if request.param.remote:
         se = f'{se_prefix}-sauce-{request.param.param_display}'
         sentry_sdk.set_tag("se", se)
