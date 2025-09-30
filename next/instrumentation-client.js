@@ -4,28 +4,13 @@
 
 import * as Sentry from '@sentry/nextjs';
 
-const tracingOrigins = [
-  'localhost',
-  'empower-plant.com',
-  'run.app',
-  'appspot.com',
-  /^\//,
-  window.location.host,
-];
-let ENVIRONMENT;
-if (window.location.hostname === 'localhost') {
-  ENVIRONMENT = 'test';
-} else {
-  // App Engine
-  ENVIRONMENT = 'production';
-}
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_DSN,
   tracesSampleRate: 1.0,
   tracePropagationTargets: tracingOrigins,
   profilesSampleRate: 1.0,
   replaysSessionSampleRate: 1.0,
-  environment: ENVIRONMENT,
+  environment: process.env.NEXT_APP_ENVIRONMENT,
   enableLogs: true,
   debug: false,
   integrations: [

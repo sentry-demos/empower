@@ -119,7 +119,6 @@ export async function checkoutAction(cart) {
 
         for (let inventoryItem of inventory) {
           let id = inventoryItem.id;
-          console.log(inventoryItem.count, cart.quantities[id]);
           if (inventoryItem.count < cart.quantities[id] || cart.quantities[id] >= inventoryItem.count) {
             const error = new Error("Not enough inventory for product")
             throw error;
@@ -127,6 +126,7 @@ export async function checkoutAction(cart) {
         }
       }
       catch (error) {
+        Sentry.logger.info("Failed to validate inventory with cart: ", {items: cart.items, quantities: cart.quantities, total: cart.total});
         Sentry.captureException(error);
         hasError = true;
       }

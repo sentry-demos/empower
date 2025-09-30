@@ -5,13 +5,6 @@
 import * as Sentry from '@sentry/nextjs';
 import { nodeProfilingIntegration } from '@sentry/profiling-node';
 
-// let ENVIRONMENT;
-// if (window.location.hostname === 'localhost') {
-//   ENVIRONMENT = 'test';
-// } else {
-//   // App Engine
-//   ENVIRONMENT = 'production';
-// }
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_DSN,
 
@@ -19,7 +12,7 @@ Sentry.init({
   tracesSampleRate: 1.0,
   profileSessionSampleRate: 1.0,
   replaysSessionSampleRate: 1.0,
-  //environment: ENVIRONMENT,
+  environment: process.env.NEXT_APP_ENVIRONMENT,
   enableLogs: true,
   profileLifecycle: 'trace',
   integrations: [
@@ -29,5 +22,5 @@ Sentry.init({
   ],
 
   // Setting this option to true will print useful information to the console while you're setting up Sentry.
-  debug: true,
+  debug: false,
 });
