@@ -126,7 +126,7 @@ export async function checkoutAction(cart) {
         }
       }
       catch (error) {
-        Sentry.logger.info("Failed to validate inventory with cart: ", {items: cart.items, quantities: cart.quantities, total: cart.total});
+        console.log("Failed to validate inventory with cart: ", cart);
         Sentry.captureException(error);
         hasError = true;
       }
