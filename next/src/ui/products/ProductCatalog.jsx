@@ -2,13 +2,11 @@
 import React from 'react';
 import ProductCard from '@/src/ui/products/ProductCard';
 import { getProductsRaw } from '@/lib/data.js';
-import { vercelWaitUntil } from '@sentry/core';
 
 export default async function ProductCatalog(props) {
 
   let products = await getProductsRaw();
-  // Removed 2-second artificial delay that was causing profiling timeouts
-  // vercelWaitUntil(new Promise(resolve => setTimeout(resolve, 2000)));
+
 
   return (
     <div>

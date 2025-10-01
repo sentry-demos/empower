@@ -2,12 +2,6 @@ import { withSentryConfig } from '@sentry/nextjs';
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  distDir: './dist', // Changes the build output directory to `./dist/`.
-};
-
-export default withSentryConfig(nextConfig, {
-  // For all available options, see:
-  // https://github.com/getsentry/sentry-webpack-plugin#options
   async headers() {
     return [
       {
@@ -21,6 +15,13 @@ export default withSentryConfig(nextConfig, {
       },
     ];
   },
+
+  distDir: './dist', // Changes the build output directory to `./dist/`.
+};
+
+export default withSentryConfig(nextConfig, {
+  // For all available options, see:
+  // https://github.com/getsentry/sentry-webpack-plugin#options
 
   org: process.env.SENTRY_ORG,
   project: process.env.NEXT_SENTRY_PROJECT,
