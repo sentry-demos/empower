@@ -18,8 +18,8 @@ if [ -z "${ANGULAR_SENTRY_ENVIRONMENT}" -o -z "${SENTRY_ORG}" -o -z "${ANGULAR_S
     exit 1
 fi   
 
-# Process source maps for Sentry using the shared script
-echo "Uploading Sentry source maps..."
+# Create Sentry release and deployment (source maps uploaded automatically by webpack plugin)
+echo "📦 Creating Sentry release..."
 sentry-release.sh ${ANGULAR_SENTRY_ENVIRONMENT} ${SENTRY_ORG} ${ANGULAR_SENTRY_PROJECT} ${ANGULAR_RELEASE}
 
 # Verify build output
