@@ -21,35 +21,39 @@ npm start
 npm run build
 ```
 
-### **Development Workflow**
-- **`npm start`**: UI development with localhost backends (start backends separately if needed)
-- **`./deploy.sh angular flask --env=local`**: Full integration testing with local Flask backend
-- **`./deploy.sh angular --env=staging`**: Production-like testing with staging backends
-
 ### **Using Deploy Script (Recommended)**
 ```bash
-# Deploy Angular with Flask backend (default)
-./deploy.sh angular --env=local
+# Deploy Angular with default Flask backend
+./deploy angular --env=local
 
-# Deploy Angular with Laravel backend
-./deploy.sh angular laravel --env=local
+# Deploy Angular with specific backend
+./deploy angular laravel --env=local
+./deploy angular express --env=local
+./deploy angular springboot --env=local
+./deploy angular aspnetcore --env=local
+./deploy angular rails --env=local
 
 # Deploy to staging
-./deploy.sh angular --env=staging
+./deploy angular --env=staging
 
 # Deploy to production
-./deploy.sh angular --env=production
+./deploy angular --env=production
 ```
 
-## 🌐 **Backend Configuration**
+## 🌐 **Backend Support**
 
-### **Default Backend: Flask**
-- **Local**: `http://localhost:8080`
-- **Staging**: `https://staging-flask.empower-plant.com`
+### **Supported Backends (6 total)**
+- **Flask** (default) - Python web framework
+- **Express** - Node.js web framework  
+- **Spring Boot** - Java web framework
+- **ASP.NET Core** - .NET web framework
+- **Laravel** - PHP web framework
+- **Ruby on Rails** - Ruby web framework
 
-### **Alternative Backend: Laravel**
-- **Local**: `http://localhost:8000`
-- **Staging**: `https://staging-laravel.empower-plant.com`
+### **Backend URLs**
+- **Local**: `http://localhost:8080` (Flask), `http://localhost:8088` (Express), etc.
+- **Staging**: `https://staging-flask.empower-plant.com`, `https://staging-express.empower-plant.com`, etc.
+- **Production**: `https://flask.empower-plant.com`, `https://express.empower-plant.com`, etc.
 
 ### **Backend Switching**
 The application supports dynamic backend switching via URL parameters:
@@ -58,8 +62,12 @@ The application supports dynamic backend switching via URL parameters:
 # Use Flask (default)
 http://localhost:4200/
 
-# Switch to Laravel
+# Switch to different backends
 http://localhost:4200/?backend=laravel
+http://localhost:4200/?backend=express
+http://localhost:4200/?backend=springboot
+http://localhost:4200/?backend=aspnetcore
+http://localhost:4200/?backend=rails
 
 # Combine with other parameters
 http://localhost:4200/?backend=laravel&se=wassim
@@ -81,10 +89,10 @@ http://localhost:4200/?backend=laravel&se=wassim
 - **Demo Features**: Identical demo functionality
 
 ### **Backend Flexibility**
-- **Multiple Backends**: Support for Laravel, Flask, and more
-- **Dynamic Switching**: Runtime backend selection
-- **Environment Aware**: Automatic configuration per environment
-- **Deploy Script Integration**: Seamless deployment workflow
+- **Multiple Backends**: Support for all 6 backends (Flask, Express, Spring Boot, ASP.NET Core, Laravel, Ruby on Rails)
+- **Dynamic Switching**: Runtime backend selection via URL parameters
+- **Environment Aware**: Automatic configuration per environment (local, staging, production)
+- **Deploy Script Integration**: Seamless deployment workflow with backend selection
 
 ## 🏗️ **Project Structure**
 
@@ -102,6 +110,7 @@ src/
 │   │   ├── config.service.ts # Configuration & backend switching
 │   │   └── products.service.ts # Product data
 │   └── utils/              # Utility functions
+│       ├── backend-router.ts # Backend selection and URL resolution
 │       ├── errors.ts       # Error handling utilities
 │       └── sentry-utils.ts # Sentry helper functions
 ├── environments/            # Environment configuration
@@ -123,24 +132,32 @@ The deploy script provides automated deployment with environment variable manage
 5. **Local Deployment**: Starts local server for development
 
 ### **Backend Priority**
-1. **Specified Backends**: If `./deploy.sh angular laravel` is used, Laravel backend is configured
+1. **Specified Backends**: If `./deploy angular laravel` is used, Laravel backend is configured
 2. **Default Backend**: Flask is always set as default backend
-3. **Runtime Switching**: Users can switch between available backends via URL parameters
+3. **Runtime Switching**: Users can switch between all 6 backends via URL parameters
 
 ### **Environment Variables**
 
-The deploy script automatically sets these environment variables:
+The deploy script automatically sets these environment variables for all backends:
 
 #### **Local Environment**
 ```bash
-ANGULAR_APP_FLASK_BACKEND=http://localhost:8080
-ANGULAR_APP_LARAVEL_BACKEND=http://localhost:8000
+BACKEND_URL_FLASK=http://localhost:8080
+BACKEND_URL_EXPRESS=http://localhost:8088
+BACKEND_URL_SPRINGBOOT=http://localhost:8090
+BACKEND_URL_ASPNETCORE=http://localhost:8091
+BACKEND_URL_LARAVEL=http://localhost:8000
+BACKEND_URL_RUBYONRAILS=http://localhost:5000
 ```
 
 #### **Staging Environment**
 ```bash
-ANGULAR_APP_FLASK_BACKEND=https://staging-flask.empower-plant.com
-ANGULAR_APP_LARAVEL_BACKEND=https://staging-laravel.empower-plant.com
+BACKEND_URL_FLASK=https://staging-flask.empower-plant.com
+BACKEND_URL_EXPRESS=https://staging-express.empower-plant.com
+BACKEND_URL_SPRINGBOOT=https://staging-springboot.empower-plant.com
+BACKEND_URL_ASPNETCORE=https://staging-aspnetcore.empower-plant.com
+BACKEND_URL_LARAVEL=https://staging-laravel.empower-plant.com
+BACKEND_URL_RUBYONRAILS=https://staging-rails.empower-plant.com
 ```
 
 ## 🔍 **Testing**
@@ -156,8 +173,13 @@ ANGULAR_APP_LARAVEL_BACKEND=https://staging-laravel.empower-plant.com
 # Test Flask backend (default)
 http://localhost:4200/
 
-# Test Laravel backend
+# Test all backends
+http://localhost:4200/?backend=flask
+http://localhost:4200/?backend=express
+http://localhost:4200/?backend=springboot
+http://localhost:4200/?backend=aspnetcore
 http://localhost:4200/?backend=laravel
+http://localhost:4200/?backend=rails
 
 # Test SE tagging
 http://localhost:4200/?se=wassim
@@ -208,23 +230,23 @@ npm run lint
 ## 🔗 **Related Projects**
 
 - **React Frontend**: Reference implementation for TDA compatibility
-- **Laravel Backend**: Default backend service
-- **Flask Backend**: Alternative backend service
+- **Backend Services**: Flask, Express, Spring Boot, ASP.NET Core, Laravel, Ruby on Rails
 - **TDA Tests**: Automated testing framework
 
 ## 📝 **Notes**
 
 - **Backend Default**: Flask (same as React's Flask default)
+- **Backend Support**: All 6 backends supported with dynamic switching
 - **SE Tagging**: Supports `?se=wassim` for Sentry organization
-- **Environment Handling**: Uses hardcoded values with webpack integration ready
+- **Environment Handling**: Webpack integration with environment variable injection
 - **Error Handling**: Intentional backend errors for demo purposes
 - **TDA Compatibility**: Maintains exact match with React application
 
 ## 🆘 **Troubleshooting**
 
 ### **Common Issues**
-1. **Backend not switching**: Check URL parameter `?backend=laravel`
-2. **Sentry not working**: Verify environment configuration
+1. **Backend not switching**: Check URL parameter `?backend=<backend_name>` (flask, express, springboot, aspnetcore, laravel, rails)
+2. **Sentry not working**: Verify environment configuration and SENTRY_AUTH_TOKEN
 3. **Build failures**: Check Node.js version matches `.nvmrc`
 
 ### **Getting Help**
