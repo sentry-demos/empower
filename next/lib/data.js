@@ -9,7 +9,7 @@ import { cookies } from 'next/headers';
 
 const prisma = new PrismaClient();
 
-export async function getIterator(n = 40) {
+export async function getIterator(n = 20) {
   if (n <= 0) {
     return 0;
   }
