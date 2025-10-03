@@ -26,7 +26,7 @@ function cleanup {
 trap cleanup EXIT
 
 echo "Configuring ssh..."
-if [[ -n "$CI" ]]; then
+if [[ -n "$CI" && ( -z "$SSH_AUTH_SOCK" || ! -S "$SSH_AUTH_SOCK" ) ]]; then
   eval "$(ssh-agent -s)"
   gcloud compute config-ssh 
   ssh-add ~/.ssh/google_compute_engine
@@ -55,7 +55,7 @@ if ssh_cmd $HOST '[[ -d '"$DIR/env"' ]] && [[ ! -z `ls -A '"$DIR/env"'` ]]'; the
 fi
 
 echo "Copying code to remote directory..."
-export RSYNC_RSH='ssh -o "ProxyCommand gcloud compute start-iap-tunnel '$HOST' %p --listen-on-stdin --verbosity=warning"'
+export RSYNC_RSH='ssh -o "ProxyCommand gcloud compute start-iap-tunnel '$HOST' %p --listen-on-stdin --verbosity=warning" -o "StrictHostKeyChecking=accept-new"'
 rsync -rz --exclude env * .env $HOST:$DIR/
 if [ $? != 0 ]; then
   echo "[ERROR] Failed to rsync code to remote directory."
