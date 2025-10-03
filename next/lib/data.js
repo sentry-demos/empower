@@ -9,7 +9,7 @@ import { cookies } from 'next/headers';
 
 const prisma = new PrismaClient();
 
-export async function getIterator(n = 20) {
+export async function getIterator(n = 35) {
   if (n <= 0) {
     return 0;
   }
@@ -126,7 +126,12 @@ export async function checkoutAction(cart) {
         }
       }
       catch (error) {
-        console.log("Failed to validate inventory with cart: ", cart);
+        Sentry.logger.warn("Failed to validate inventory", {
+          total:cart.total,
+          items:cart.items,
+          quantities:cart.quantities,
+          inventory:inventory, 
+        });
         Sentry.captureException(error);
         hasError = true;
       }
