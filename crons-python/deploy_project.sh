@@ -10,7 +10,6 @@ source .env
 HOST="$CRONSPYTHON_DEPLOY_HOST"
 DIR="$CRONSPYTHON_DEPLOY_DIR"
 CRONTAB_USER=$CRONSPYTHON_CRONTAB_USER
-GCP_PROJECT=sales-engineering-sf
 
 export CLOUDSDK_CORE_PROJECT=$GCP_PROJECT
 export CLOUDSDK_COMPUTE_ZONE=$CRONSPYTHON_DEPLOY_ZONE
@@ -18,7 +17,7 @@ export CLOUDSDK_COMPUTE_ZONE=$CRONSPYTHON_DEPLOY_ZONE
 function ssh_cmd() {
     local host=$1
     shift
-    gcloud compute ssh --tunnel-through-iap $host -- "$@" 2>&1 | grep -v '^Connection to .* closed\.' || true
+    gcloud compute ssh --tunnel-through-iap $host -- "$@"
 }
 
 function cleanup {
@@ -35,7 +34,7 @@ else
   gcloud compute config-ssh 
 fi
 echo "Checking ssh connection can be established..."
-ssh_cmd $HOST exit
+gcloud compute ssh --tunnel-through-iap $HOST -- -o StrictHostKeyChecking=accept-new exit
 if [ $? != "0" ]; then
   echo "[ERROR] Can't ssh into destination host. Please make sure your gcloud is set up correctly and you \
 have the right IAM permissions in sales-engingeering-sf GCP project."
