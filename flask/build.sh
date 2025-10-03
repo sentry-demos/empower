@@ -1,3 +1,3 @@
 #!/bin/bash
 
-# Nothing to do
+sentry-release.sh ${FLASK_ENVIRONMENT} ${SENTRY_ORG} ${FLASK_SENTRY_PROJECT} ${FLASK_RELEASE}

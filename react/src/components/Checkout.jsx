@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import measureRequestDuration from '../utils/measureRequestDuration';
 import './checkout.css';
@@ -27,6 +27,7 @@ function Checkout({ backend, rageclick, checkout_success, cart }) {
       country: '',
       state: '',
       zipCode: '',
+      promoCode: '',
     };
   } else {
     initialFormValues = {
@@ -39,12 +40,15 @@ function Checkout({ backend, rageclick, checkout_success, cart }) {
       country: 'United States of America',
       state: 'CA',
       zipCode: '94122',
+      promoCode: 'SAVE20',
     };
   }
   const [form, setForm] = useState(initialFormValues);
+  const [promoMessage, setPromoMessage] = useState('');
+  const [promoLoading, setPromoLoading] = useState(false);
 
 
-async function checkout(cart, checkout_span) {
+  async function checkout(cart, checkout_span) {
     console.log("Checkout called with cart:", cart);
     console.log("Checkout span:", checkout_span);
     const itemsInCart = countItemsInCart(cart);
@@ -116,15 +120,54 @@ async function checkout(cart, checkout_span) {
 
     return response;
   }
-  function generateUrl(product_id) {
-    return product_id;
-  }
 
   function handleInputChange(event) {
     const target = event.target;
     const value = target.type === 'checkbox' ? target.checked : target.value;
     const name = target.name;
     setForm({ ...form, [name]: value });
+  }
+
+  async function handleApplyPromoCode(event) {
+    Sentry.startSpan({
+      op: 'function',
+      name: 'handleApplyPromoCode',
+    }, async (span) => {
+      event.preventDefault();
+
+      console.info(`applying promo code '${form.promoCode}'...`);
+      
+      if (!form.promoCode.trim()) {
+        setPromoMessage('Please enter a promo code');
+        return;
+      }
+
+      setPromoLoading(true);
+      setPromoMessage('');
+
+        try {
+          // Always use Flask backend for promo code functionality
+          const flaskBackend = process.env.REACT_APP_FLASK_BACKEND;
+          const response = await fetch(flaskBackend + '/apply-promo-code', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ value: form.promoCode.trim() }),
+          });
+
+          if (response.ok) {
+            setPromoMessage('Promo successfully applied!');
+          } else {
+            const responseBody = await response.json();
+            console.error(`failed to apply promo code: HTTP ${response.status} | body: `, responseBody);
+            setPromoMessage('Unknown error applying promo code');
+          }
+        } catch (error) {
+          console.error('Error applying promo code:', error);
+          setPromoMessage('Unknown error when applying promo');
+        } finally {
+          setPromoLoading(false);
+        }
+    });
   }
 
   async function handleSubmit(event) {
@@ -288,6 +331,46 @@ async function checkout(cart, checkout_span) {
               defaultValue={form.zipCode}
               placeholder="45678"
             />
+
+            <h4 className="sentry-unmask">Promo Code</h4>
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+              <input
+                id="promoCode"
+                name="promoCode"
+                type="text"
+                onChange={handleInputChange}
+                defaultValue={form.promoCode}
+                placeholder="Enter promo code"
+                style={{ flex: 1 }}
+              />
+              <button
+                name="applyPromoCode"
+                type="button"
+                onClick={handleApplyPromoCode}
+                disabled={promoLoading}
+                className="sentry-unmask"
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#007bff',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: promoLoading ? 'not-allowed' : 'pointer',
+                  fontSize: '1.25rem',
+                  marginTop: '0px'
+                }}
+              >
+                {promoLoading ? 'Applying...' : 'Apply'}
+              </button>
+            </div>
+            {promoMessage && (
+              <div className="sentry-unmask" style={{
+                color: promoMessage.includes('successfully') ? 'green' : 'red',
+                fontSize: '15.4px'
+              }}>
+                {promoMessage}
+              </div>
+            )}
 
             <input
               type="submit"

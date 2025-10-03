@@ -2,7 +2,7 @@
 
 if [ ! -f .env ]; then
   >&2 echo "[ERROR] Missing .env file. Project deploy scripts are not supposed to be run \
-directly, run the following command instead (from parent dir): ./deploy.sh --env=production crons-python"
+directly, run the following command instead (from parent dir): ./deploy --env=production crons-python"
   exit 1
 fi
 source .env
@@ -18,7 +18,7 @@ export CLOUDSDK_COMPUTE_ZONE=$CRONSPYTHON_DEPLOY_ZONE
 function ssh_cmd() {
     local host=$1
     shift
-    gcloud compute ssh $host -- "$@" 2>&1 | grep -v '^Connection to .* closed\.' || true
+    gcloud compute ssh --tunnel-through-iap $host -- "$@" 2>&1 | grep -v '^Connection to .* closed\.' || true
 }
 
 function cleanup {

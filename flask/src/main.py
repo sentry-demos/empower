@@ -5,13 +5,14 @@ import requests
 import time
 import redis
 import logging
+from datetime import datetime
 from flask import Flask, json, jsonify, request, make_response, send_from_directory
 from openai import OpenAI
 from flask_caching import Cache
 from statsig.statsig_user import StatsigUser
 from statsig import statsig, StatsigOptions, StatsigEnvironmentTier
 import dotenv
-from .db import decrement_inventory, get_products, get_products_join, get_inventory
+from .db import decrement_inventory, get_products, get_products_join, get_inventory, get_promo_code
 from .utils import parseHeaders, get_iterator, evaluate_statsig_flags
 from .queues.tasks import sendEmail
 import sentry_sdk
@@ -31,7 +32,7 @@ pests = ["aphids", "thrips", "spider mites", "lead miners", "scale", "whiteflies
 RELEASE = None
 DSN = None
 ENVIRONMENT = None
-RUBY_BACKEND = None
+BACKEND_URL_RUBY = None
 RUN_SLOW_PROFILE = None
 
 NORMAL_SLOW_PROFILE = 2 # seconds
@@ -73,13 +74,13 @@ def traces_sampler(sampling_context):
 
 class MyFlask(Flask):
     def __init__(self, import_name, *args, **kwargs):
-        global RELEASE, DSN, ENVIRONMENT, RUBY_BACKEND, RUN_SLOW_PROFILE;
+        global RELEASE, DSN, ENVIRONMENT, BACKEND_URL_RUBY, RUN_SLOW_PROFILE, redis_client, cache;
         dotenv.load_dotenv()
 
-        RELEASE = os.environ["RELEASE"]
-        DSN = os.environ["FLASK_APP_DSN"]
-        ENVIRONMENT = os.environ["FLASK_ENV"]
-        RUBY_BACKEND = os.environ["RUBY_BACKEND"]
+        RELEASE = os.environ["FLASK_RELEASE"]
+        DSN = os.environ["FLASK_DSN"]
+        ENVIRONMENT = os.environ["FLASK_ENVIRONMENT"]
+        BACKEND_URL_RUBY = os.environ["BACKEND_URL_RUBY"]
 
         RUN_SLOW_PROFILE = True
         if "RUN_SLOW_PROFILE" in os.environ:
@@ -105,7 +106,27 @@ class MyFlask(Flask):
             }
         )
 
+        statsig.initialize(os.environ["STATSIG_SERVER_KEY"])
+
         super(MyFlask, self).__init__(import_name, *args, **kwargs)
+
+        redis_host = os.environ["FLASK_REDISHOST"]
+        redis_port = int(os.environ["FLASK_REDISPORT"])
+
+        cache_config = {
+            "DEBUG": True,
+            "CACHE_TYPE": "RedisCache",
+            "CACHE_DEFAULT_TIMEOUT": 300,
+            "CACHE_REDIS_HOST": redis_host,
+            "CACHE_REDIS_PORT": redis_port,
+            "CACHE_KEY_PREFIX": None
+        }
+
+        self.config.from_mapping(cache_config)
+        cache = Cache(self)
+
+        redis_client = redis.Redis(host=redis_host, port=redis_port, decode_responses=True)
+
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -156,24 +177,6 @@ class CORSWSGIWrapper:
 app = MyFlask(__name__)
 app = CORSWSGIWrapper(app)
 
-statsig.initialize(os.environ.get("STATSIG_SERVER_KEY"))
-
-redis_host = os.environ.get("FLASK_REDISHOST", "localhost")
-redis_port = int(os.environ.get("FLASK_LOCAL_REDISPORT", 6379))
-
-cache_config = {
-    "DEBUG": True,
-    "CACHE_TYPE": "RedisCache",
-    "CACHE_DEFAULT_TIMEOUT": 300,
-    "CACHE_REDIS_HOST": redis_host,
-    "CACHE_REDIS_PORT": redis_port,
-    "CACHE_KEY_PREFIX": None
-}
-
-app.config.from_mapping(cache_config)
-cache = Cache(app)
-
-redis_client = redis.Redis(host=redis_host, port=redis_port, decode_responses=True)
 
 @app.route('/enqueue', methods=['POST'])
 def enqueue():
@@ -272,7 +275,7 @@ def checkout():
                         out_of_stock.append(title)
     except Exception as err:
 
-        logger.warning('Failed to validate inventory with cart: %s', cart)
+        logger.error('Failed to validate inventory with cart: %s', cart)
         raise Exception("Error validating enough inventory for product") from err
 
     if len(out_of_stock) == 0:
@@ -374,7 +377,7 @@ def get_api_request(key, delay):
       try:
           with sentry_sdk.start_span(op="/api_request", description="function"):
               headers = parseHeaders(RUBY_CUSTOM_HEADERS, request.headers)
-              r = requests.get(RUBY_BACKEND + "/api", headers=headers)
+              r = requests.get(BACKEND_URL_RUBY + "/api", headers=headers)
               r.raise_for_status()  # returns an HTTPError object if an error has occurred during the process
 
               time_delta = time.time() - start_time
@@ -409,7 +412,7 @@ def products_join():
 
     try:
         headers = parseHeaders(RUBY_CUSTOM_HEADERS, request.headers)
-        r = requests.get(RUBY_BACKEND + "/api", headers=headers)
+        r = requests.get(BACKEND_URL_RUBY + "/api", headers=headers)
         r.raise_for_status()  # returns an HTTPError object if an error has occurred during the process
         logger.info('Processing /products-join - backend API call successful')
     except Exception as err:
@@ -472,6 +475,57 @@ def showSuggestion():
     logger.info('Processing /showSuggestion - OpenAI key availability checked')
 
     return jsonify({"response": has_openai_key}), 200
+
+@app.route('/apply-promo-code', methods=['POST'])
+def apply_promo_code():
+    logger.info('[/apply-promo-code] request received')
+
+    try:
+        body = json.loads(request.data)
+        promo_code = body.get('value', '').strip()
+        
+        if not promo_code:
+            logger.warning('[/apply-promo-code] bad request - missing value parameter')
+            return '', 400
+        
+        promo_code_data = get_promo_code(promo_code)
+        
+        if not promo_code_data:
+            logger.warning('[/apply-promo-code] code not found: %s', promo_code)
+            return jsonify({
+                "error": {
+                    "code": "not_found",
+                    "message": "Promo code not found."
+                }
+            }), 404
+        
+        promo_dict = dict(promo_code_data)
+        logger.info('[/apply-promo-code] code found: %s', promo_dict)
+        
+        if promo_dict.get('expires_at') and promo_dict['expires_at'] <= datetime.now():
+            logger.warning('[/apply-promo-code] code has expired: %s', promo_code)
+            return jsonify({
+                "error": {
+                    "code": "expired",
+                    "message": "Provided coupon code has expired."
+                }
+            }), 410 # Look what a clever HTTP response code! Good luck FE dev :D
+        
+        logger.info('[/apply-promo-code] valid code found: %s', promo_dict)
+        
+        return jsonify({
+            "success": True,
+            "promo_code": {
+                "code": promo_dict['code'],
+                "percent_discount": promo_dict['percent_discount'],
+                "max_dollar_savings": promo_dict['max_dollar_savings']
+            }
+        }), 200
+        
+    except Exception as err:
+        sentry_sdk.capture_exception(err)
+        return '', 500
+
 
 @app.route('/product/0/info', methods=['GET'])
 def product_info():

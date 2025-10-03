@@ -1,0 +1,18 @@
+const webpack = require('webpack');
+const path = require('path');
+
+module.exports = {
+  // This webpack config will be used by Angular CLI via @angular-builders/custom-webpack
+  plugins: [
+    new webpack.DefinePlugin({
+      // Define environment variables that will be available in the Angular app (through environment.ts)
+      'process.env': {
+        'DSN': '"${ANGULAR_DSN}"',
+        'RELEASE': '"${ANGULAR_RELEASE}"',
+        'SENTRY_ENVIRONMENT': '"${ANGULAR_SENTRY_ENVIRONMENT}"',
+        'BACKEND_URL_FLASK': '"${FLASK_URL}"',
+        'BACKEND_URL_LARAVEL': '"${LARAVEL_URL}"',
+      }
+    })
+  ]
+};
