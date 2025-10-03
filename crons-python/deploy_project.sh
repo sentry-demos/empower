@@ -26,12 +26,15 @@ function cleanup {
 }
 trap cleanup EXIT
 
-echo "Checking ssh connection can be established..."
-ssh_cmd $HOST exit
-if [ $? != "0" ]; then
-  echo "Running 'glcoud compute config-ssh' ..." 
-  gcloud compute config-ssh
+echo "Configuring ssh..."
+if [[ -n "$CI" ]]; then
+  eval "$(ssh-agent -s)"
+  gcloud compute config-ssh 
+  ssh-add ~/.ssh/google_compute_engine
+else
+  gcloud compute config-ssh 
 fi
+echo "Checking ssh connection can be established..."
 ssh_cmd $HOST exit
 if [ $? != "0" ]; then
   echo "[ERROR] Can't ssh into destination host. Please make sure your gcloud is set up correctly and you \
