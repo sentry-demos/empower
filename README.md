@@ -225,6 +225,10 @@ When the script is terminated (e.g., with Ctrl+C), it performs cleanup to ensure
 
 ## Next.js Demo
 
+### Accessing Vercel
+- The Next.js demo is hosted on Sentry's Vercel account. To run the the demo locally or access the production configuration of the demo, open a PR adding yourself to this file https://github.com/getsentry/security-as-code/blob/main/rbac/env/prod/role/sso/vercel-member.tf
+
+
 ### Running Next.js demo locally
 
 - Install Vercel CLI with `intall -g vercel` from command line
@@ -236,7 +240,7 @@ When the script is terminated (e.g., with Ctrl+C), it performs cleanup to ensure
     NEXT_SENTRY_PROJECT=your-project
     NEXT_SENTRY_ORG=your-org
     ```
-- From the empower repo, run `vercel dev` command. App should run on `localhost:3000`
+- Once you have Vercel access run `vercel dev` command from the `empower` repo
+- Following the prompts, select the Sentry org from and the empower project. A vercel config file will be created the first time you do this.
+- App should run on `localhost:3000`
 
-### Accessing Vercel
-- The Next.js demo is hosted on Sentry's Vercel account. If you need to access the production configuration of the demo, open a PR adding yourself to this file https://github.com/getsentry/security-as-code/blob/main/rbac/env/prod/role/sso/vercel-member.tf

@@ -16,7 +16,7 @@ Sentry.init({
   enableLogs: true,
   profileLifecycle: 'trace',
   integrations: [
-    Sentry.consoleLoggingIntegration({ levels: ["log", "warn", "error"] }),
+    Sentry.consoleLoggingIntegration({ levels: ["log", "warn", "error", "info"] }),
     Sentry.prismaIntegration(),
     nodeProfilingIntegration()
   ],
