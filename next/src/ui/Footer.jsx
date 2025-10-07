@@ -14,7 +14,6 @@ function Footer() {
   const errorBoundary = searchParams.get('error_boundary');
 
   const handleSubmit = (event) => {
-    console.log("error boundary = ", errorBoundary);
     event.preventDefault();
     console.log('Email:', email);
     setSubscribed(true);
@@ -34,7 +33,6 @@ function Footer() {
         body: JSON.stringify({ email }),
       });
       const data = await resp.json();
-      console.log(data);
     } catch (err) {
       console.error('Error adding to queue:', err);
     }

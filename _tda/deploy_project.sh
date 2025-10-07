@@ -23,7 +23,7 @@ ps aux | grep ssh-agent | grep -v grep > /dev/null && echo "ssh-agent is running
 rsync --version | head -1
 gcloud --version
 
-if [[ -n "$CI" ]]; then
+if [[ -n "$CI" && ( -z "$SSH_AUTH_SOCK" || ! -S "$SSH_AUTH_SOCK" ) ]]; then
   eval "$(ssh-agent -s)"
   gcloud compute config-ssh 
   ssh-add ~/.ssh/google_compute_engine
