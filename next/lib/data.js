@@ -110,6 +110,8 @@ export async function checkoutAction(cart) {
 
       console.log("> /checkout inventory", inventory)
       let hasError = false;
+      let itemId;
+      let currentInventory
       try {
         if (inventory.length === 0 || cart.quantities.length === 0) {
           const error = new Error("Not enough inventory for product")
@@ -118,19 +120,20 @@ export async function checkoutAction(cart) {
         }
 
         for (let inventoryItem of inventory) {
-          let id = inventoryItem.id;
-          if (inventoryItem.count < cart.quantities[id] || cart.quantities[id] >= inventoryItem.count) {
+          itemId = inventoryItem.id;
+          currentInventory = inventoryItem.count;
+          if (currentInventory < cart.quantities[itemId] || cart.quantities[itemId] >= currentInventory) {
             const error = new Error("Not enough inventory for product")  
             throw error;
           }
         }
       }
       catch (error) {
-        Sentry.logger.warn("Failed to validate inventory", {
+        Sentry.logger.info("Failed to validate inventory", {
           total:cart.total,
-          items:cart.items,
-          quantities:cart.quantities,
-          inventory:inventory, 
+          itemId:itemId,
+          inventory:currentInventory,
+          quantity:cart.quantities[itemId],
         });
         Sentry.captureException(error);
         hasError = true;
