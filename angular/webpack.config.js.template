@@ -10,8 +10,13 @@ module.exports = {
         'DSN': '"${ANGULAR_DSN}"',
         'RELEASE': '"${ANGULAR_RELEASE}"',
         'SENTRY_ENVIRONMENT': '"${ANGULAR_SENTRY_ENVIRONMENT}"',
+        // Backend URLs - 6 backends supported (like React)
         'BACKEND_URL_FLASK': '"${FLASK_URL}"',
+        'BACKEND_URL_EXPRESS': '"${EXPRESS_URL}"',
+        'BACKEND_URL_SPRINGBOOT': '"${SPRINGBOOT_URL}"',
+        'BACKEND_URL_ASPNETCORE': '"${ASPNETCORE_URL}"',
         'BACKEND_URL_LARAVEL': '"${LARAVEL_URL}"',
+        'BACKEND_URL_RUBYONRAILS': '"${RUBYONRAILS_URL}"',
       }
     })
   ]
