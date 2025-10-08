@@ -78,6 +78,7 @@ Sentry.init({
   environment: ENVIRONMENT,
   tracesSampleRate: 1.0,
   tracePropagationTargets: tracingOrigins,
+  propagateTraceparent: true, // Sentry <-> OTLP distributed tracing
   profilesSampleRate: 1.0,
   replaysSessionSampleRate: 1.0,
   debug: true,
