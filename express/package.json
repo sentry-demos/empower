@@ -14,21 +14,20 @@
     "url": "https://github.com/GoogleCloudPlatform/nodejs-docs-samples.git"
   },
   "engines": {
-    "node": "18.x.x"
+    "node": "20.x.x"
   },
   "author": "Google Inc.",
   "license": "Apache-2.0",
   "dependencies": {
-    "@sentry/cli": "^1.68.0",
-    "@sentry/node": "^7.51.0",
-    "@sentry/profiling-node": "^0.3.0",
-    "@sentry/tracing": "^7.41.0",
-    "axios": "^0.26.0",
+    "@sentry/cli": "^2.50.2",
+    "@sentry/node": "^10.1.0",
+    "@sentry/profiling-node": "^10.1.0",
+    "axios": "^1.6.8",
     "cors": "^2.8.5",
-    "dotenv": "^10.0.0",
-    "express": "^4.17.1",
-    "knex": "^0.95.11",
-    "pg": "^8.7.1"
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "knex": "^3.1.0",
+    "pg": "^8.11.3"
   },
   "devDependencies": {
     "mocha": "^8.0.0",

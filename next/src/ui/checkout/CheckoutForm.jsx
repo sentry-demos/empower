@@ -1,25 +1,44 @@
 'use client'
 
 import React, { useState } from 'react';
-import * as Sentry from '@sentry/nextjs';
 import { connect } from 'react-redux';
-import { ThreeDots } from 'react-loader-spinner';
 import ThreeDotLoader from '../ThreeDotLoader';
+import Cookies from 'js-cookie';
 
 
 export function CheckoutForm({ cart, checkoutAction }) {
   const [loading, setLoading] = useState(false);
-  const [form, setForm] = useState({
-    email: 'plant.lover@example.com',
-    subscribe: '',
-    firstName: 'Jane',
-    lastName: 'Greenthumb',
-    address: '123 Main Street',
-    city: 'San Francisco',
-    country: 'United States of America',
-    state: 'CA',
-    zipCode: '94122',
-  });
+  let initialFormValues;
+  const se = Cookies.get("se");
+  console.log("> se", se);
+  const seTdaPrefixRegex = /[^-]+-tda-[^-]+-/;
+  if (se && seTdaPrefixRegex.test(se)) {
+    // we want form actually filled out in TDA for a realistic-looking Replay
+    initialFormValues = {
+      email: '',
+      subscribe: '',
+      firstName: '',
+      lastName: '',
+      address: '',
+      city: '',
+      country: '',
+      state: '',
+      zipCode: '',
+    };
+  } else {
+    initialFormValues = {
+      email: 'plant.love@example.com',
+      subscribe: '',
+      firstName: 'Jane',
+      lastName: 'Greenthumb',
+      address: '123 Main Street',
+      city: 'San Francisco',
+      country: 'United States of America',
+      state: 'CA',
+      zipCode: '94122',
+    };
+  }
+  const [form, setForm] = useState(initialFormValues);
 
   function handleInputChange(event) {
     const target = event.target;
@@ -38,7 +57,6 @@ export function CheckoutForm({ cart, checkoutAction }) {
           behavior: 'auto',
         });
 
-        Sentry.metrics.increment('checkout.click');
         console.log("> cart", cart);
         // Server Action within a client component
         // Reference: https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions-and-mutations

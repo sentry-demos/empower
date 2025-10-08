@@ -9,18 +9,38 @@ import { cookies } from 'next/headers';
 
 const prisma = new PrismaClient();
 
+export async function getIterator(n = 35) {
+  if (n <= 0) {
+    return 0;
+  }
+  // Add artificial delay
+  const start = Date.now();
+  while (Date.now() - start < 100) {
+    // Busy wait for 100ms
+  }
+  return getIterator(n - 1) + 1;
+}
+
 export async function getProductsRaw() {
+
+  const cookiesStore = await cookies();
+  const se = cookiesStore.get("se");
+  if(se) {
+    Sentry.getCurrentScope().setTag("se", se.value);
+  }
+
+  let products = [];
   try {
-    console.log("Fetching products...");
+
+    console.debug("Fetching products...");
     // Artificial slowdown for demoing
     const sleepDuration = 2;
     const data = await query(
       `SELECT * FROM products WHERE id IN (
-          SELECT id FROM products, pg_sleep($1)
-      )`, 
-      [sleepDuration] // Use parameterized queries to prevent SQL injection
+          SELECT id FROM products
+      )`
     );
-    const products = data.rows
+    products = data.rows
     for (let i = 0; i < products.length; ++i) {
       // product_bundles is a "sleepy view", run the following query to get current sleep duration:
       // SELECT pg_get_viewdef('product_bundles', true)
@@ -29,11 +49,18 @@ export async function getProductsRaw() {
       products[i].reviews = product_reviews.rows;
     }
     console.log("products: ", products);
-    return products;
   } catch (error) {
     console.error("Database Error:", error)
     // do sentry stuff
-  }
+  } 
+
+  await Sentry.startSpan({name: "get_iterator"}, async () => {
+    await getIterator();
+  });
+
+  return products;
+
+
 }
 
 export async function getProductsOnly() {
@@ -52,7 +79,6 @@ export async function getProduct(index) {
   const i = Number(index);
   try {
     console.log("Fetching product...");
-    console.log(i);
     const product = await prisma.products.findUnique({
       where: { id: i }
     });
@@ -84,6 +110,8 @@ export async function checkoutAction(cart) {
 
       console.log("> /checkout inventory", inventory)
       let hasError = false;
+      let itemId;
+      let currentInventory
       try {
         if (inventory.length === 0 || cart.quantities.length === 0) {
           const error = new Error("Not enough inventory for product")
@@ -92,15 +120,21 @@ export async function checkoutAction(cart) {
         }
 
         for (let inventoryItem of inventory) {
-          let id = inventoryItem.id;
-          console.log(inventoryItem.count, cart.quantities[id]);
-          if (inventoryItem.count < cart.quantities[id] || cart.quantities[id] >= inventoryItem.count) {
-            const error = new Error("Not enough inventory for product")
+          itemId = inventoryItem.id;
+          currentInventory = inventoryItem.count;
+          if (currentInventory < cart.quantities[itemId] || cart.quantities[itemId] >= currentInventory) {
+            const error = new Error("Not enough inventory for product")  
             throw error;
           }
         }
       }
       catch (error) {
+        Sentry.logger.info("Failed to validate inventory", {
+          total:cart.total,
+          itemId:itemId,
+          inventory:currentInventory,
+          quantity:cart.quantities[itemId],
+        });
         Sentry.captureException(error);
         hasError = true;
       }
@@ -112,7 +146,6 @@ export async function checkoutAction(cart) {
 
 
 export async function getInventory(cart) { 
-  console.log("> getInventory");
 
   const quantities = cart['quantities'];
   console.log("> quantities", quantities);

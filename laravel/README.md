@@ -30,7 +30,6 @@ This is a modernized e-commerce demo application built with Laravel 12.x, part o
   - ProductTest: 10 tests (model behavior)
   - InventoryTest: 15 tests (stock management)  
   - OrderServiceTest: 5 tests (business logic)
-
 ✅ Feature Tests: 7 passing
   - ProductApiTest: 7 tests (API endpoints)
 
@@ -54,6 +53,17 @@ Total: 39 PASSING tests with 81 assertions
 - [ ] API documentation
 - [ ] Deployment guide
 - [ ] Replace old Laravel 8.x demo
+
+## First-time Setup
+1. Install [php](https://www.php.net/downloads).
+2. Install [Composer](https://getcomposer.org/download/)
+3. Install [Laravel](composer global require laravel/installer)
+4. Install [artisan](https://github.com/artisan-roaster-scope/artisan/releases/tag/v2.8.2)
+5. In `laravel` folder, run `composer install` to install dependencies from `composer.json`
+6. Set your DSN key, projectID, and Sentry OrganizationID in `.env`
+7. Run `./deploy --env=local react laravel` to spin up both the React FE + Laravel BE
+8. Configure Sentry based on [Laravel SDK docs](https://docs.sentry.io/platforms/php/guides/laravel/) including confirming the "My first Sentry error!" Exception is thrown in Sentry by hitting the `/debug-sentry' endpoint (described in the docs).
+9. Use `http://localhost:8000/handled` and `http://localhost:8000/unhandled` to trigger errors
 
 ## Features
 

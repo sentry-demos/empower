@@ -1,4 +1,7 @@
 using Sentry.Extensibility;
+using DotNetEnv;
+
+Env.Load();
 
 // Create the web application builder.
 var builder = WebApplication.CreateBuilder(args);
@@ -32,16 +35,16 @@ builder.Services.AddDbContext<HardwareStoreContext>(options =>
 // Initialize Sentry.
 builder.WebHost.UseSentry(options =>
 {
-    // Set the DSN from the environment variable set by the deploy.sh script, if available.
+    // Set the DSN from the environment variable set by the `deploy` script, if available.
     // But don't overwrite any existing DSN with null, as that would disable Sentry.
-    var dsn = Environment.GetEnvironmentVariable("ASPNETCORE_APP_DSN");
+    var dsn = Environment.GetEnvironmentVariable("ASPNETCORE_DSN");
     if (dsn != null)
     {
         options.Dsn = dsn;
     }
 
-    // Set the release from the environment variable set by the deploy.sh script, if available.
-    options.Release = Environment.GetEnvironmentVariable("RELEASE");
+    // Set the release from the environment variable set by the `deploy` script, if available.
+    options.Release = Environment.GetEnvironmentVariable("ASPNETCORE_RELEASE");
 
     // Enable some features.
     options.TracesSampleRate = 1.0;
@@ -55,7 +58,10 @@ builder.WebHost.UseSentry(options =>
     }
 
     // https://docs.sentry.io/platforms/dotnet/guides/aspnetcore/#captureblockingcalls
-    options.CaptureBlockingCalls = true;
+    // Disabling until we make some improvements:
+    // https://github.com/getsentry/sentry-dotnet/issues/4263
+    // https://github.com/getsentry/sentry-dotnet/issues/4262
+    // options.CaptureBlockingCalls = true;
 
     options.MaxRequestBodySize = RequestSize.Always; // Capture request body
 });
@@ -69,6 +75,28 @@ var app = builder.Build();
 // Add middleware components, including Sentry Tracing.
 app.UseMiddleware<AppMiddleware>();
 app.UseCors();
+
+// Add global exception handler to ensure CORS headers are applied to error responses
+app.Use(async (context, next) =>
+{
+    try
+    {
+        await next();
+    }
+    catch (Exception ex)
+    {
+        // Ensure CORS headers are applied even when exceptions occur
+        context.Response.Headers.Add("Access-Control-Allow-Origin", "*");
+        
+        // Set error response
+        context.Response.StatusCode = 500;
+        context.Response.ContentType = "application/json";
+        
+        var errorResponse = new { error = "Internal Server Error" };
+        await context.Response.WriteAsJsonAsync(errorResponse);
+    }
+});
+
 app.UseSentryTracing();
 app.MapControllers();
 

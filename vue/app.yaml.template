@@ -1,6 +1,6 @@
   
 env: standard
-service: ${SERVICE}
+service: ${VUE_APP_ENGINE_SERVICE}
 runtime: nodejs20
 
 handlers:

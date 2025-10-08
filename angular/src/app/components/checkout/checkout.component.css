@@ -1,0 +1,185 @@
+/* Loader container for smooth loading experience */
+.loader-container {
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+}
+
+.checkout-container {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.checkout-container h2 {
+  border-bottom: 1px solid;
+  padding: 0 0 1rem;
+}
+
+.checkout-form {
+  margin: 2rem auto;
+  max-width: 80%;
+  text-align: left;
+}
+
+@media screen and (min-width: 1200px) {
+  .checkout-form {
+    max-width: 50%;
+  }
+}
+
+.checkout-form input {
+  display: block;
+  width: 100%;
+}
+
+.checkout-form input[type='checkbox'] {
+  display: inline-block;
+  width: auto;
+}
+
+.checkout-form h4 {
+  margin: 3rem auto 1rem;
+}
+
+input[type='submit'].complete-checkout-btn {
+  font-size: 1.25rem;
+  margin-top: 3rem;
+}
+
+/* Form layout styles - exact React copy */
+.checkout-form label {
+  display: block;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  font-weight: bold;
+}
+
+/* Input field styles - exact React copy */
+.checkout-form input[type='text'],
+.checkout-form input[type='email'] {
+  padding: 0.5rem;
+  display: block;
+  margin: 0.5rem auto 1rem;
+  line-height: 1.5;
+  font-size: 1.25rem;
+  border: 1px solid;
+  border-radius: 0.25em;
+  box-sizing: border-box;
+}
+
+.checkout-form input[type='checkbox'] {
+  margin-right: 0.5rem;
+}
+
+.checkout-form input[type='checkbox'] + label {
+  display: inline;
+  margin-left: 0.5rem;
+}
+
+/* Half-width fields - exact React layout */
+.half-width {
+  width: 48% !important;
+  display: inline-block;
+  margin-right: 2%;
+}
+
+.half-width:last-child {
+  margin-right: 0;
+}
+
+/* Back to cart link styling */
+.checkout-container a[routerLink="/cart"] {
+  display: inline-block;
+  margin-top: 2rem;
+  color: #002626;
+  text-decoration: underline;
+}
+
+.checkout-container a[routerLink="/cart"]:hover {
+  color: #666;
+}
+
+/* Cart Summary Section Styles */
+.checkout-container .cart-container {
+  font-family: Arial, sans-serif;
+  text-align: center;
+  color: #2f2f2f;
+  padding: 20px;
+  margin-bottom: 2rem;
+}
+
+.checkout-container .cart-container h3 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.checkout-container .cart-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  margin-top: 1.5rem;
+  text-align: left;
+}
+
+.checkout-container .cart-item .item-image,
+.checkout-container .cart-item .item-thumbnail {
+  width: 100px !important;
+  max-width: 100px !important;
+  height: auto !important;
+  margin-right: 1rem;
+  border-radius: 0.25rem;
+  flex-shrink: 0;
+}
+
+/* General rule for any image in checkout cart */
+.checkout-container .cart-item img {
+  width: 100px !important;
+  max-width: 100px !important;
+  height: auto !important;
+  margin-right: 1rem;
+  border-radius: 0.25rem;
+  flex-shrink: 0;
+}
+
+.checkout-container .cart-item .item-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.checkout-container .cart-item .item-title {
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin: 0;
+}
+
+.checkout-container .cart-item .item-price,
+.checkout-container .cart-item .item-total {
+  font-size: 1rem;
+  margin: 0;
+}
+
+.checkout-container .cart-item .item-quantity {
+  display: flex;
+  align-items: center;
+  margin: 0;
+}
+
+.checkout-container .cart-item .item-quantity span {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.checkout-container .cart-summary {
+  margin-top: 2rem;
+  text-align: right;
+}
+
+.checkout-container .cart-summary h4 {
+  font-size: 1.3rem;
+  margin: 0;
+  color: #002626;
+}

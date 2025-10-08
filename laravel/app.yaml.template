@@ -1,5 +1,5 @@
 env: standard
-service: ${SERVICE}
+service: ${LARAVEL_APP_ENGINE_SERVICE}
 runtime: php83
 env_variables:
   APP_STORAGE: "/tmp"

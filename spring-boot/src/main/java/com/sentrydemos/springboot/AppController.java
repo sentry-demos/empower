@@ -2,6 +2,7 @@ package com.sentrydemos.springboot;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -40,6 +41,9 @@ public class AppController {
 
 	private HttpHeaders headers = new HttpHeaders();
 	private final RestTemplate restTemplate;
+
+	@Autowired
+	private Environment environment;
 
 	public AppController(RestTemplate restTemplate) {
 		this.restTemplate = restTemplate;
@@ -128,8 +132,8 @@ public class AppController {
 		logger.info("> /api");
 		setTags(request);
 
-		String RUBY_BACKEND = "https://application-monitoring-ruby-dot-sales-engineering-sf.appspot.com";
-		ResponseEntity<String> response = restTemplate.exchange(RUBY_BACKEND + "/api", HttpMethod.GET,new HttpEntity<>(headers), String.class);
+		String BACKEND_URL_RUBY = environment.getProperty("empower.ruby_backend");
+		ResponseEntity<String> response = restTemplate.exchange(BACKEND_URL_RUBY + "/api", HttpMethod.GET,new HttpEntity<>(headers), String.class);
 
 		return "springboot /api";
 	}

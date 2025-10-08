@@ -1,0 +1,44 @@
+.checkout-container-complete {
+  text-align: center;
+  margin: 0 auto;
+  padding-top: 20vh;
+  max-width: 35rem;
+}
+
+.checkout-container-complete h2 {
+  margin-bottom: 1rem;
+  color: #002626;
+}
+
+.checkout-container-complete p {
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+  color: #002626;
+}
+
+.checkout-container-complete a {
+  color: #002626;
+  text-decoration: underline;
+}
+
+.checkout-container-complete a:hover {
+  color: #666;
+}
+
+#contact-us {
+  background-color: #002626;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.25em;
+  font-size: 1rem;
+  font-family: 'Poppins', sans-serif;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-top: 1rem;
+}
+
+#contact-us:hover {
+  background-color: #dddc4e;
+  color: #002626;
+}

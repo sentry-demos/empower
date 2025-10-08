@@ -4,7 +4,9 @@ import ProductCard from '@/src/ui/products/ProductCard';
 import { getProductsRaw } from '@/lib/data.js';
 
 export default async function ProductCatalog(props) {
+
   let products = await getProductsRaw();
+
 
   return (
     <div>

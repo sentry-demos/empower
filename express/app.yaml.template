@@ -1,2 +1,2 @@
-service: ${SERVICE}
-runtime: nodejs18
+service: ${EXPRESS_APP_ENGINE_SERVICE}
+runtime: nodejs20
