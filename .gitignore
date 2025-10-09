@@ -93,6 +93,9 @@ _tda/env
 
 next/.env.sentry-build-plugin
 
+# Sentry
+.sentryclirc
+
 # .NET
 aspnetcore/bin
 aspnetcore/obj
