@@ -26,13 +26,13 @@ function cleanup {
 trap cleanup EXIT
 
 echo "Configuring ssh..."
-if [[ -n "$CI" && ( -z "$SSH_AUTH_SOCK" || ! -S "$SSH_AUTH_SOCK" ) ]]; then
-  echo "Running in CI, ssh-agent is not running, starting it..."
+if [[ -n "$CI" ]]; then
+  echo "Running in CI, starting ssh-agent (not attempting to check if it's already running)..."
   eval "$(ssh-agent -s)"
   gcloud compute config-ssh 
   ssh-add ~/.ssh/google_compute_engine
 else
-  echo "Not running in CI or ssh-agent is already running."
+  echo "Not running in CI"
   gcloud compute config-ssh 
 fi
 echo "Checking ssh connection can be established..."
