@@ -4,7 +4,7 @@ vue
 _postgres
 next
 # ^ uses Vercel automation
-angular
-# ^ no integrated with deploy yet
 laravel-8-backup
 # ^ only backup
+crons-python
+# ^ deploy broken
