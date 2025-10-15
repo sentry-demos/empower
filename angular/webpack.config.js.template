@@ -1,8 +1,9 @@
 const webpack = require('webpack');
-const path = require('path');
+const { sentryWebpackPlugin } = require('@sentry/webpack-plugin');
 
 module.exports = {
   // This webpack config will be used by Angular CLI via @angular-builders/custom-webpack
+  devtool: 'source-map', // Ensure source maps are generated
   plugins: [
     new webpack.DefinePlugin({
       // Define environment variables that will be available in the Angular app (through environment.ts)
@@ -18,6 +19,20 @@ module.exports = {
         'BACKEND_URL_LARAVEL': '"${LARAVEL_URL}"',
         'BACKEND_URL_RUBYONRAILS': '"${RUBYONRAILS_URL}"',
       }
+    }),
+    // Sentry webpack plugin for automatic source map upload
+    sentryWebpackPlugin({
+      authToken: process.env.SENTRY_AUTH_TOKEN,
+      org: '${SENTRY_ORG}',
+      project: '${ANGULAR_SENTRY_PROJECT}',
+      release: {
+        name: '${ANGULAR_RELEASE}',
+      },
+      sourcemaps: {
+        assets: './dist/empower-angular/**',
+        filesToDeleteAfterUpload: './dist/empower-angular/**/*.map',
+      },
+      telemetry: false,
     })
   ]
 };
