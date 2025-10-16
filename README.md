@@ -49,23 +49,6 @@ While not an Empower React app query param, we also have demo-specific query par
 ## User Feedback
 The [user feedback widget](https://docs.sentry.io/platforms/javascript/user-feedback/#user-feedback-widget) is enabled on all pages, in the bottom-right corner. Submit user feedback from any page to have it [show up in Sentry](https://demo.sentry.io/feedback/?project=5808623&statsPeriod=7d).
 
-## Frontend Applications
-
-### React (Primary)
-- **Status**: Actively maintained, production ready
-- **Documentation**: [react/README.md](./react/README.md)
-- **Features**: Full Sentry integration, multiple backend support
-
-### Angular 20
-- **Status**: Actively maintained, TDA test compatible
-- **Documentation**: [angular/README.md](./angular/README.md)
-- **Deployment Guide**: [angular/DEPLOYMENT.md](./angular/DEPLOYMENT.md)
-- **Features**: Modern Angular framework, Sentry integration, React-matching UI
-
-### Vue.js
-- **Status**: Available but may need updates
-- **Documentation**: [vue/README.md](./vue/README.md)
-
 ## Additional documentation
 
 Note: some of these may be out of date
