@@ -19,6 +19,17 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: "20"
+
+      - id: "auth"
+        name: "Authenticate Google Cloud"
+        uses: "google-github-actions/auth@v3"
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER}}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: "Set up Google Cloud SDK"
+        uses: "google-github-actions/setup-gcloud@v3"
+
       # Need to run "npm run build" command for bundle analysis: https://docs.codecov.com/docs/webpack-quick-start
       - name: Build React and run tests
         run: |
