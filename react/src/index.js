@@ -36,6 +36,7 @@ import CompleteError from './components/CompleteError';
 import Employee from './components/Employee';
 import Home from './components/Home';
 import NotFound from './components/NotFound';
+import NotEnoughInventory from './components/NotEnoughInventory';
 import Product from './components/Product';
 import Products from './components/Products';
 import ProductsJoin from './components/ProductsJoin';
@@ -380,6 +381,7 @@ class App extends Component {
                 path="/products-join"
                 element={<ProductsJoin backend={BACKEND_URL} />}
               ></Route>
+              <Route path="/not-enough-inventory" element={<NotEnoughInventory />} />NotEnoughInventory
               <Route path="*" element={<NotFound />} />
             </SentryRoutes>
           </div>
