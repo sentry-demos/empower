@@ -8,5 +8,3 @@ laravel-8-backup
 # ^ only backup
 crons-python
 # ^ deploy broken
-laravel
-# ^ broken
