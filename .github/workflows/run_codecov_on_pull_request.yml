@@ -6,6 +6,9 @@ on:
       - master
   pull_request:
 
+permissions:
+  id-token: write
+
 jobs:
   codecov:
     runs-on: ubuntu-22.04
