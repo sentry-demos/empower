@@ -12,6 +12,9 @@ permissions:
 jobs:
   codecov:
     runs-on: ubuntu-22.04
+    env:
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+      
     steps:
       - name: Check out this repository code
         uses: actions/checkout@v4
