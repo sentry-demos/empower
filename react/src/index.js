@@ -320,7 +320,14 @@ class App extends Component {
     };
 
     // Crasher parses query params sent by /tests for triggering crashes for Release Health
-    crasher();
+    try {
+      crasher();
+    } catch (error) {
+      // Log the error but don't let it crash the app
+      console.error('Crasher error caught:', error);
+      // Re-throw to allow Sentry to capture it
+      throw error;
+    }
   }
 
   render() {
