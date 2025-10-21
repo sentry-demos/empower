@@ -35,4 +35,4 @@ spring.cloud.gcp.sql.instance-connection-name=${DB_CLOUD_SQL_CONNECTION_NAME}
 # local only, should be empty when running in GAE
 ${SPRINGBOOT_DATASOURCE_URL_PROPERTY}
 
-empower.ruby_backend=${RUBY_URL}
+empower.rubyonrails_backend=${RUBYONRAILS_URL}

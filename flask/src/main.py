@@ -32,7 +32,7 @@ pests = ["aphids", "thrips", "spider mites", "lead miners", "scale", "whiteflies
 RELEASE = None
 DSN = None
 ENVIRONMENT = None
-BACKEND_URL_RUBY = None
+BACKEND_URL_RUBYONRAILS = None
 RUN_SLOW_PROFILE = None
 
 NORMAL_SLOW_PROFILE = 2 # seconds
@@ -74,13 +74,13 @@ def traces_sampler(sampling_context):
 
 class MyFlask(Flask):
     def __init__(self, import_name, *args, **kwargs):
-        global RELEASE, DSN, ENVIRONMENT, BACKEND_URL_RUBY, RUN_SLOW_PROFILE, redis_client, cache;
+        global RELEASE, DSN, ENVIRONMENT, BACKEND_URL_RUBYONRAILS, RUN_SLOW_PROFILE, redis_client, cache;
         dotenv.load_dotenv()
 
         RELEASE = os.environ["FLASK_RELEASE"]
         DSN = os.environ["FLASK_DSN"]
         ENVIRONMENT = os.environ["FLASK_ENVIRONMENT"]
-        BACKEND_URL_RUBY = os.environ["BACKEND_URL_RUBY"]
+        BACKEND_URL_RUBYONRAILS = os.environ["BACKEND_URL_RUBYONRAILS"]
 
         RUN_SLOW_PROFILE = True
         if "RUN_SLOW_PROFILE" in os.environ:
@@ -377,7 +377,7 @@ def get_api_request(key, delay):
       try:
           with sentry_sdk.start_span(op="/api_request", description="function"):
               headers = parseHeaders(RUBY_CUSTOM_HEADERS, request.headers)
-              r = requests.get(BACKEND_URL_RUBY + "/api", headers=headers)
+              r = requests.get(BACKEND_URL_RUBYONRAILS + "/api", headers=headers)
               r.raise_for_status()  # returns an HTTPError object if an error has occurred during the process
 
               time_delta = time.time() - start_time
@@ -412,7 +412,7 @@ def products_join():
 
     try:
         headers = parseHeaders(RUBY_CUSTOM_HEADERS, request.headers)
-        r = requests.get(BACKEND_URL_RUBY + "/api", headers=headers)
+        r = requests.get(BACKEND_URL_RUBYONRAILS + "/api", headers=headers)
         r.raise_for_status()  # returns an HTTPError object if an error has occurred during the process
         logger.info('Processing /products-join - backend API call successful')
     except Exception as err:
