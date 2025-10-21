@@ -147,7 +147,7 @@ function Checkout({ backend, rageclick, checkout_success, cart }) {
 
         try {
           // Always use Flask backend for promo code functionality
-          const flaskBackend = process.env.REACT_APP_FLASK_BACKEND;
+          const flaskBackend = process.env.REACT_APP_BACKEND_URL_FLASK;
           const response = await fetch(flaskBackend + '/apply-promo-code', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
