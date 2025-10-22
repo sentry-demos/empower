@@ -132,8 +132,8 @@ public class AppController {
 		logger.info("> /api");
 		setTags(request);
 
-		String BACKEND_URL_RUBY = environment.getProperty("empower.ruby_backend");
-		ResponseEntity<String> response = restTemplate.exchange(BACKEND_URL_RUBY + "/api", HttpMethod.GET,new HttpEntity<>(headers), String.class);
+		String BACKEND_URL_RUBYONRAILS = environment.getProperty("empower.rubyonrails_backend");
+		ResponseEntity<String> response = restTemplate.exchange(BACKEND_URL_RUBYONRAILS + "/api", HttpMethod.GET,new HttpEntity<>(headers), String.class);
 
 		return "springboot /api";
 	}
@@ -170,7 +170,7 @@ public class AppController {
 		setTags(request);
 		span.finish();
 
-		String fooResourceUrl = "https://application-monitoring-ruby-dot-sales-engineering-sf.appspot.com";
+		String fooResourceUrl = environment.getProperty("empower.rubyonrails_backend");
 		ResponseEntity<String> response = restTemplate.exchange(fooResourceUrl + "/api", HttpMethod.GET,new HttpEntity<>(headers), String.class);
 
 		String allProducts = dbHelper.mapAllProducts(scopes.getSpan());
@@ -184,7 +184,7 @@ public class AppController {
 		setTags(request);
 		span.finish();
 
-		String fooResourceUrl = "https://application-monitoring-ruby-dot-sales-engineering-sf.appspot.com";
+		String fooResourceUrl = environment.getProperty("empower.rubyonrails_backend");
 		ResponseEntity<String> response = restTemplate.exchange(fooResourceUrl + "/api", HttpMethod.GET,new HttpEntity<>(headers), String.class);
 
 		
