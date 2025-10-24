@@ -333,10 +333,13 @@ def cexp(random):
 def endpoints():
     return CONFIG
 
-@pytest.fixture(params=CONFIG.browsers, ids=[b.param_display for b in CONFIG.browsers])
+@pytest.fixture
 def current_browser(request):
     """Provides the current browser configuration to test functions"""
-    return request.param
+    # Get the browser configuration from the desktop_web_driver fixture
+    # This avoids duplicate parametrization while maintaining the same interface
+    import builtins
+    return getattr(builtins, '_current_browser_config')
 
 @pytest.fixture
 def is_first_run_of_the_day():
@@ -494,6 +497,10 @@ def _local_browser(request, se):
 
 @pytest.fixture(params=CONFIG.browsers, ids=[b.param_display for b in CONFIG.browsers])
 def desktop_web_driver(request, se_prefix):
+    # Store the current browser configuration globally so current_browser can access it
+    import builtins
+    builtins._current_browser_config = request.param
+    
     if request.param.remote:
         se = f'{se_prefix}-sauce-{request.param.param_display}'
         sentry_sdk.set_tag("se", se)
