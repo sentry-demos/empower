@@ -4,8 +4,6 @@ vue
 _postgres
 next
 # ^ uses Vercel automation
-laravel-8-backup
-# ^ only backup
 crons-python
 # ^ deploy broken
 ruby
