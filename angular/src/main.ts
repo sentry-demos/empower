@@ -4,6 +4,10 @@ import { bootstrapApplication } from '@angular/platform-browser';
 import { AppComponent } from './app/app.component';
 import { appConfig } from './app/app.config';
 import { environment } from './environments/environment';
+import {
+  determineBackendType,
+  determineBackendUrl,
+} from './app/utils/backend-router';
 
 
 // Handle SE parameter from URL (like React)
@@ -12,6 +16,12 @@ const seValue = queryParams.get('se');
 if (seValue) {
   sessionStorage.setItem('se', seValue);
 }
+
+// Handle backend parameter from URL (like React)
+const backendTypeParam = queryParams.get('backend');
+const backendType = determineBackendType(backendTypeParam);
+const backendUrl = determineBackendUrl(backendType);
+console.log(`> backendType: ${backendType} | backendUrl: ${backendUrl}`);
 
 // Handle userEmail parameter (like React)
 let email = null;
@@ -109,6 +119,9 @@ Sentry.init({
 if (seValue) {
   Sentry.setTag('se', seValue);
 }
+
+// Set backendType tag in Sentry context (like React)
+Sentry.setTag('backendType', backendType);
 
 // Store values for use in fetch override
 const globalSe = seValue;
