@@ -111,7 +111,7 @@ def test_cexp_checkout(desktop_web_driver, endpoints, batch_size, backend, rando
                         if apply_promo_code and c == 0:
                             desktop_web_driver.find_element(By.NAME, 'promoCode').send_keys("SAVE20")
                             desktop_web_driver.find_element(By.NAME, 'applyPromoCode').click()
-                            time.sleep(3)
+                            time.sleep(10)
 
                         desktop_web_driver.find_element(By.CSS_SELECTOR, '.complete-checkout-btn').click()
                         time.sleep(sleep_length())
