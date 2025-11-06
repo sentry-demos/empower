@@ -307,7 +307,7 @@ class App extends Component {
       }
       let res = nativeFetch.apply(window, args);
       if (args[0].includes('/apply-promo-code')) { 
-        await new Promise(resolve => setTimeout(resolve, 1000)); // to avoid log lines reordering due to clock drift between FE/BE
+        await new Promise(resolve => setTimeout(resolve, 1500)); // to avoid log lines reordering due to clock drift between FE/BE
       }
       return res;
     };
