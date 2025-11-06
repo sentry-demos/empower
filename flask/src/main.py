@@ -573,6 +573,7 @@ def sentry_event_context():
     se = request.headers.get('se')
     customerType = request.headers.get('customerType')
     email = request.headers.get('email')
+    cexp = request.headers.get('cexp')
 
     # Log request context information
     logger.debug('Setting up request context')
@@ -591,3 +592,6 @@ def sentry_event_context():
 
     if email not in [None, "undefined"]:
         sentry_sdk.set_user({"email": email})
+
+    if cexp not in [None, "undefined"]:
+        sentry_sdk.set_tag("cexp", cexp)
