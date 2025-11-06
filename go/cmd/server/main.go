@@ -18,7 +18,6 @@ import (
 	sentry "github.com/getsentry/sentry-go"
 	sentryhttp "github.com/getsentry/sentry-go/http"
 
-	// use a lightweight queue abstraction to avoid external version issues; we will use Redis list for parity
 	"github.com/jackc/pgx/v5/pgxpool"
 	redis "github.com/redis/go-redis/v9"
 	openai "github.com/sashabaranov/go-openai"
@@ -67,9 +66,9 @@ func initSentry() {
 
 		TracesSampler: sentry.TracesSampler(func(ctx sentry.SamplingContext) float64 {
 			if ctx.Span.Name == "OPTIONS /" || strings.Contains(ctx.Span.Name, "OPTIONS") {
-				return 0.0 // Don't sample OPTIONS requests
+				return 0.0
 			}
-			return 1.0 // Sample everything else
+			return 1.0
 		}),
 
 		BeforeSend: func(event *sentry.Event, hint *sentry.EventHint) *sentry.Event {
@@ -184,6 +183,7 @@ func parseBoolEnv(key string, def bool) bool {
 }
 
 func main() {
+	defer sentry.Flush(2 * time.Second)
 	initSentry()
 	initStatsig()
 
@@ -191,7 +191,6 @@ func main() {
 	pool := initDB(ctx)
 	rdb := initRedis()
 
-	// OpenAI client
 	oaKey := os.Getenv("OPENAI_API_KEY")
 	var oaClient *openai.Client
 	if oaKey != "" {
@@ -235,10 +234,13 @@ func main() {
 	mux.HandleFunc("/product/0/info", func(w http.ResponseWriter, r *http.Request) {
 		// Let Sentry HTTP middleware handle transaction creation automatically
 		// This is crucial for N+1 detection to work properly
+		logger := sentry.NewLogger(r.Context())
 
-		log.Printf("got /product/0/info request with id: %s", r.URL.Query().Get("id"))
+		logger.Info().Emit("Received /product/0/info endpoint request")
 
 		time.Sleep(550 * time.Millisecond)
+
+		logger.Info().Emit("Completed /product/0/info request")
 
 		w.Header().Set("Content-Type", "text/plain")
 		fmt.Fprint(w, "go /product/0/info")
@@ -284,7 +286,9 @@ func main() {
 			log.Printf("404 Not Found: %s %s", r.Method, r.URL.Path)
 		}
 	})
-	handler := withCORS(sentryHandler.Handle(logged))
+	// Apply middleware chain: CORS -> Sentry HTTP -> Sentry context -> logging
+	// Note: sentryContextMiddleware must be INSIDE sentryHandler to access the hub
+	handler := withCORS(sentryHandler.Handle(sentryContextMiddleware(logged)))
 
 	port := os.Getenv("LOCAL_PORT")
 	if port == "" {
@@ -318,6 +322,30 @@ func withCORS(next http.Handler) http.Handler {
 	})
 }
 
+// sentryContextMiddleware enriches Sentry events with request context
+// Matches Flask's @app.before_request sentry_event_context() behavior
+func sentryContextMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hub := sentry.GetHubFromContext(r.Context())
+
+		if se := r.Header.Get("se"); se != "" && se != "undefined" {
+			hub.Scope().SetTag("se", se)
+		} else if se := r.URL.Query().Get("se"); se != "" && se != "undefined" {
+			hub.Scope().SetTag("se", se)
+		}
+
+		if customerType := r.Header.Get("customerType"); customerType != "" && customerType != "undefined" {
+			hub.Scope().SetTag("customerType", customerType)
+		}
+
+		if email := r.Header.Get("email"); email != "" && email != "undefined" {
+			hub.Scope().SetUser(sentry.User{Email: email})
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
 func assetHandler(dir string, disableCompression bool) http.Handler {
 	fs := http.FileServer(http.Dir(dir))
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -337,28 +365,40 @@ type enqueuePayload struct {
 
 func (s *server) handleEnqueue(w http.ResponseWriter, r *http.Request) {
 	hub := sentry.GetHubFromContext(r.Context())
+	logger := sentry.NewLogger(r.Context())
+
+	logger.Info().Emit("Received /enqueue endpoint request")
 
 	var p enqueuePayload
 	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
+		logger.Error().Emitf("Error decoding request body: %v", err)
 		hub.CaptureException(fmt.Errorf("enqueue decode error: %w", err))
 		http.Error(w, "bad request", 400)
 		return
 	}
 	q := "celery-new-subscriptions"
 	if err := s.redis.RPush(r.Context(), q, p.Email).Err(); err != nil {
+		logger.Error().Emitf("Redis enqueue error: %v", err)
 		hub.CaptureException(fmt.Errorf("redis enqueue error: %w", err))
 		http.Error(w, "enqueue failed", 500)
 		return
 	}
-	log.Printf("enqueued email: %s", p.Email)
+
+	logger.Info().Emit("Completed /enqueue request - email task enqueued")
 	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
 }
 
 func (s *server) handleSuggestion(w http.ResponseWriter, r *http.Request) {
 	hub := sentry.GetHubFromContext(r.Context())
+	logger := sentry.NewLogger(r.Context())
+
+	logger.Info().Emit("Received /suggestion endpoint request")
 
 	catalog := r.URL.Query().Get("catalog")
 	geo := r.URL.Query().Get("geo")
+
+	logger.Info().Emit("Processing /suggestion - starting AI pipeline")
+
 	prompt := fmt.Sprintf("You are witty plant salesman. Here is your catalog of plants: %s. Provide a suggestion based on the user's location. Pick one plant from the catalog provided. Keep your response short and concise. Try to incorporate the weather and current season.", catalog)
 	suggestion := ""
 	if s.openaiClient != nil {
@@ -367,6 +407,7 @@ func (s *server) handleSuggestion(w http.ResponseWriter, r *http.Request) {
 			if model == "" {
 				model = "gpt-4o-mini"
 			}
+
 			req := openai.ChatCompletionRequest{
 				Model: model,
 				Messages: []openai.ChatCompletionMessage{
@@ -385,6 +426,8 @@ func (s *server) handleSuggestion(w http.ResponseWriter, r *http.Request) {
 			suggestion = resp.Choices[0].Message.Content
 		}(r.Context())
 	}
+
+	logger.Info().Emit("Completed /suggestion request - AI suggestion generated")
 	json.NewEncoder(w).Encode(map[string]string{"suggestion": suggestion})
 }
 
@@ -399,8 +442,8 @@ func (s *server) handleCheckout(w http.ResponseWriter, r *http.Request) {
 
 	hub := sentry.GetHubFromContext(r.Context())
 	logger := sentry.NewLogger(r.Context())
+	start := time.Now()
 
-	logger.Info().Emit("got checkout request")
 	logger.Info().Emit("Received /checkout endpoint request")
 
 	type order struct {
@@ -468,7 +511,7 @@ func (s *server) handleCheckout(w http.ResponseWriter, r *http.Request) {
 				for k, v := range m {
 					if f, ok := v.(float64); ok {
 						if id, _ := strconv.Atoi(k); id > 0 {
-							quantities[id] = int(f) // ← Go panic: assignment to entry in nil map
+							quantities[id] = int(f) // Go panic: assignment to entry in nil map
 						}
 					}
 				}
@@ -504,16 +547,20 @@ func (s *server) handleCheckout(w http.ResponseWriter, r *http.Request) {
 		if len(outOfStock) > 0 {
 			log.Printf("Out of stock items: %v", outOfStock)
 		}
+
+		logger.Info().Emitf("checkout counts: fulfilled=%d out_of_stock=%d", fulfilledCount, len(outOfStock))
 	}
 
-	logger.Info().Emit("Checkout successful")
+	logger.Info().Emitf("Completed /checkout request in %s", time.Since(start))
 	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
 }
 
 func (s *server) handleProducts(w http.ResponseWriter, r *http.Request) {
-	defer sentry.RecoverWithContext(r.Context())
-
 	hub := sentry.GetHubFromContext(r.Context())
+	logger := sentry.NewLogger(r.Context())
+	start := time.Now()
+
+	logger.Info().Emit("Received /products endpoint request")
 
 	if transaction := sentry.TransactionFromContext(r.Context()); transaction != nil {
 		transaction.Name = "products"
@@ -525,8 +572,6 @@ func (s *server) handleProducts(w http.ResponseWriter, r *http.Request) {
 		defer transaction.Finish()
 		r = r.WithContext(transaction.Context())
 	}
-
-	log.Printf("got /products request")
 
 	cacheKey := strconv.Itoa(rand.Intn(100))
 	fetchPromotions := r.URL.Query().Get("fetch_promotions") != ""
@@ -544,14 +589,16 @@ func (s *server) handleProducts(w http.ResponseWriter, r *http.Request) {
 	functionSpan := sentry.StartSpan(r.Context(), "function", sentry.WithDescription("/products.get_products"))
 	functionSpan.SetTag("function.name", "get_products")
 
-	timingSpan := sentry.StartSpan(functionSpan.Context(), "metric.timing", sentry.WithDescription("products.get_products.execution_time"))
-	rows, err := s.getProducts(timingSpan.Context())
-	timingSpan.Finish()
+	// Pass the request context (not a span context) to avoid "span ID does not exist" errors
+	// The transaction is in r.Context() and will be available throughout the call
+	rows, err := s.getProducts(r.Context())
+	functionSpan.Finish()
 
 	if err != nil {
-		log.Printf("handleProducts: database error: %v", err)
-		hub.CaptureException(err)
-		panic(fmt.Errorf("products database error: %w", err))
+		logger.Error().Emitf("Processing /products - error occurred: %v", err)
+		hub.CaptureException(fmt.Errorf("products database error: %w", err))
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
 	}
 
 	if s.runSlow {
@@ -564,14 +611,14 @@ func (s *server) handleProducts(w http.ResponseWriter, r *http.Request) {
 		slowSpan.Finish()
 	}
 
-	log.Printf("cache_key: %s", cacheKey)
 	s.getAPIRequest(cacheKey, rubyDelay, r.Context())
-
 	var productsArray []map[string]interface{}
 	if err := json.Unmarshal([]byte(rows), &productsArray); err == nil {
+		logger.Info().Emitf("Completed /products request in %s products_count=%d", time.Since(start), len(productsArray))
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(productsArray)
 	} else {
+		logger.Info().Emitf("Completed /products request in %s", time.Since(start))
 		w.Header().Set("Content-Type", "application/json")
 		w.Write([]byte(rows))
 	}
@@ -581,15 +628,26 @@ func (s *server) handleProductsJoin(w http.ResponseWriter, r *http.Request) {
 	defer sentry.RecoverWithContext(r.Context())
 
 	hub := sentry.GetHubFromContext(r.Context())
+	logger := sentry.NewLogger(r.Context())
+
+	logger.Info().Emit("Received /products-join endpoint request")
 
 	rows, err := s.getProductsJoin(r.Context())
 	if err != nil {
-		log.Printf("handleProductsJoin: database error: %v", err)
+		logger.Error().Emitf("Processing /products-join - error getting data: %v", err)
 		hub.CaptureException(err)
 		http.Error(w, "db error", 500)
 		return
 	}
-	_ = s.proxyRuby(r)
+
+	logger.Info().Emit("Processing /products-join - data retrieved")
+
+	if err := s.proxyRuby(r); err != nil {
+		logger.Error().Emit("Processing /products-join - backend API call failed")
+	} else {
+		logger.Info().Emit("Processing /products-join - backend API call successful")
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.Write([]byte(rows))
 }
@@ -605,10 +663,14 @@ func (s *server) handleHandled(w http.ResponseWriter, r *http.Request) {
 	defer sentry.RecoverWithContext(r.Context())
 
 	hub := sentry.GetHubFromContext(r.Context())
+	logger := sentry.NewLogger(r.Context())
+
+	logger.Info().Emit("Received /handled endpoint request")
 
 	func() {
 		defer func() {
 			if err := recover(); err != nil {
+				logger.Error().Emit("Processing /handled - intentional exception occurred")
 				hub.CaptureException(fmt.Errorf("%v", err))
 			}
 		}()
@@ -625,6 +687,9 @@ func (s *server) handleHandled(w http.ResponseWriter, r *http.Request) {
 
 func (s *server) handleUnhandled(w http.ResponseWriter, r *http.Request) {
 	defer sentry.RecoverWithContext(r.Context())
+
+	logger := sentry.NewLogger(r.Context())
+	logger.Info().Emit("Received /unhandled endpoint request")
 
 	obj := make(map[string]interface{})
 	_ = obj["keyDoesnt  Exist"].(string)
@@ -739,12 +804,17 @@ func (s *server) getProducts(ctx context.Context) (string, error) {
 	if transaction == nil {
 		// If no transaction exists, this is a problem - spans won't be detected
 		log.Printf("WARNING: No Sentry transaction found in context for N+1 detection")
-	} else {
-		log.Printf("SUCCESS: Found Sentry transaction '%s' for N+1 detection", transaction.Name)
+		return "", fmt.Errorf("no transaction in context")
 	}
+	log.Printf("SUCCESS: Found Sentry transaction '%s' for N+1 detection", transaction.Name)
 
-	span := sentry.StartSpan(ctx, "db", sentry.WithDescription("connect"))
+	// Use transaction context for creating all spans
+	// This ensures spans are siblings at the transaction level for N+1 detection
+	transactionCtx := transaction.Context()
+
+	span := sentry.StartSpan(transactionCtx, "db", sentry.WithDescription("connect"))
 	span.SetTag("db.operation", "connect")
+	// Use original ctx for DB operations (for cancellation, timeouts, etc.)
 	conn, err := s.db.Acquire(ctx)
 	if err != nil {
 		span.Finish()
@@ -756,19 +826,22 @@ func (s *server) getProducts(ctx context.Context) (string, error) {
 	parameterizedProductsQuery := "SELECT * FROM products WHERE id IN (SELECT id FROM products, pg_sleep(%s))"
 	actualProductsQuery := "SELECT * FROM products WHERE id IN (SELECT id from products)"
 
-	productsSpan := sentry.StartSpan(ctx, "db", sentry.WithDescription(parameterizedProductsQuery))
+	productsSpan := sentry.StartSpan(transactionCtx, "db.query", sentry.WithDescription(parameterizedProductsQuery))
 	productsSpan.SetTag("db.operation", "select")
+	productsSpan.SetTag("db.system", "postgresql")
 	productsSpan.SetData("db.statement", parameterizedProductsQuery)
 
 	time.Sleep(25 * time.Millisecond)
 
+	// Use original ctx for DB operations (for cancellation, timeouts, etc.)
 	products, err := conn.Query(ctx, actualProductsQuery)
 	if err != nil {
 		productsSpan.Finish()
 		return "", err
 	}
 	defer products.Close()
-	productsSpan.Finish()
+
+	// Don't finish productsSpan yet - we need it as parent for review spans
 	type product struct {
 		M       map[string]interface{}
 		Reviews []map[string]interface{}
@@ -793,13 +866,18 @@ func (s *server) getProducts(ctx context.Context) (string, error) {
 		actualQuery := fmt.Sprintf("SELECT * FROM reviews, product_bundles WHERE productId = %d", pid)
 		log.Printf("Creating N+1 span %d: %s (parameterized: %s)", pid, actualQuery, parameterizedQuery)
 
-		reviewSpan := sentry.StartSpan(ctx, "db", sentry.WithDescription(parameterizedQuery))
+		// Create review spans at transaction level (siblings, not nested)
+		// This allows Sentry to detect the N+1 pattern by seeing multiple similar spans at the same level
+		// Use transactionCtx (from transaction) to avoid "span ID does not exist" errors
+		reviewSpan := sentry.StartSpan(transactionCtx, "db.query", sentry.WithDescription(parameterizedQuery))
 		reviewSpan.SetTag("db.operation", "select")
+		reviewSpan.SetTag("db.system", "postgresql")
 		reviewSpan.SetData("db.statement", parameterizedQuery) // Use parameterized for grouping
 		reviewSpan.SetData("productId", pid)                   // Store actual value as metadata
 
 		time.Sleep(30 * time.Millisecond)
 
+		// Use original ctx for DB operations (for cancellation, timeouts, etc.)
 		revs, err := s.db.Query(ctx, "SELECT * FROM reviews, product_bundles WHERE productId = $1", pid)
 		if err != nil {
 			reviewSpan.Finish()
@@ -823,7 +901,10 @@ func (s *server) getProducts(ctx context.Context) (string, error) {
 		list = append(list, product{M: pm, Reviews: rlist})
 	}
 
-	serializationSpan := sentry.StartSpan(ctx, "serialize", sentry.WithDescription("json"))
+	// Now finish the productsSpan after all review queries
+	productsSpan.Finish()
+
+	serializationSpan := sentry.StartSpan(transactionCtx, "serialize", sentry.WithDescription("json"))
 	serializationSpan.SetTag("format", "json")
 	out := []map[string]interface{}{}
 	for _, p := range list {
@@ -933,18 +1014,25 @@ func (s *server) proxyRuby(r *http.Request) error {
 }
 
 func (s *server) getAPIRequest(key string, delay float64, ctx context.Context) string {
+	logger := sentry.NewLogger(ctx)
 	start := time.Now()
+
+	logger.Info().Emit("Processing /products - starting API request")
+
 	cached, err := s.redis.Get(ctx, "ruby.api.cache:"+key).Result()
 	if err == nil && cached != "" {
-		log.Printf("> cache hit: %s", key)
+		logger.Info().Emit("Processing /products - cache hit for API request")
 		return cached
 	}
-	log.Printf("> cache miss: %s", key)
+
+	logger.Info().Emit("Processing /products - cache miss for API request")
+
 	sleep := delay - time.Since(start).Seconds()
 	if sleep > 0 {
 		time.Sleep(time.Duration(sleep*1000) * time.Millisecond)
 	}
 	if key == "7" {
+		logger.Info().Emit("Processing /products - caching API response")
 		s.redis.Set(ctx, "ruby.api.cache:"+key, key, 0)
 	}
 	return key

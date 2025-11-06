@@ -25,8 +25,12 @@ func initSentry() {
 		Dsn:              mustEnv("GO_APP_DSN"),
 		Release:          mustEnv("GO_RELEASE"),
 		Environment:      mustEnv("GO_ENV"),
+		EnableTracing:    true,
+		EnableLogs:       true,
 		TracesSampleRate: 1.0,
-		Debug:            false,
+		// Note: ProfilesSampleRate not available in current Go SDK version
+		// Flask equivalent: profiles_sample_rate: 1.0
+		Debug: false,
 	})
 }
 
