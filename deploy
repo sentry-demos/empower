@@ -382,7 +382,7 @@ for proj in $projects; do # bash only
     RESOLVED_VARS+=("$var=$value")
   done < "$top/.resolved.env"
 
-  if [ -f build.sh ] && ([ "$env" == "local" ] || [ ! -f deploy_project.sh ] || [ "$proj" == "angular" ]); then
+  if [ -f build.sh ] && ([ "$env" == "local" ] || [ ! -f deploy_project.sh ]); then
     unset CI # prevents build failing in GitHub Actions
     # if needed build.sh is responsible for calling sentry-release.sh with appropriate arguments
     echo "Running build.sh with resolved environment..."
