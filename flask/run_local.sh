@@ -32,8 +32,8 @@ trap cleanup EXIT
 
 # Set up SSH tunnel to the cloud Redis instance
 # (`deploy` ensures we are authenticated with Google Cloud)
-echo "Setting up SSH tunnel to Redis server at $FLASK_REDIS_SERVER_IP:6379"
-gcloud compute ssh redis-relay --tunnel-through-iap --zone=us-central1-a -- -N -L $FLASK_LOCAL_REDISPORT:$FLASK_REDIS_SERVER_IP:6379 &
+echo "Setting up SSH tunnel to Redis server at $REDIS_SERVER_IP:6379"
+gcloud compute ssh redis-relay --tunnel-through-iap --zone=us-central1-a -- -N -L $FLASK_LOCAL_REDISPORT:$REDIS_SERVER_IP:6379 &
 
 
 # Give the SSH tunnel time to establish

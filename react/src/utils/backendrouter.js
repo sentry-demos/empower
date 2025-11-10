@@ -8,6 +8,7 @@ const SUPPORTED_BACKEND_TYPES = {
   laravel: process.env.REACT_APP_BACKEND_URL_LARAVEL,
   ruby: process.env.REACT_APP_BACKEND_URL_RUBYONRAILS,
   rails: process.env.REACT_APP_BACKEND_URL_RUBYONRAILS,
+  'flask-otlp': process.env.REACT_APP_BACKEND_URL_FLASKOTLP,
 };
 
 const determineBackendType = (desiredBackend) => {
