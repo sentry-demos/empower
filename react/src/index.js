@@ -67,6 +67,7 @@ const DSN = process.env.REACT_APP_DSN;
 const RELEASE = process.env.REACT_APP_RELEASE;
 const ENVIRONMENT = process.env.REACT_APP_ENVIRONMENT;
 
+
 console.log('ENVIRONMENT', ENVIRONMENT);
 console.log('RELEASE', RELEASE);
 
