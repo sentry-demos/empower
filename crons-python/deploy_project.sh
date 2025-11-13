@@ -67,7 +67,7 @@ echo "Code copied."
 
 if [[ $reqs_changed == "1" || $env_nonempty == "0" ]]; then
   echo "re-installing requirements (because requirements.txt changed OR 'env' directory does not exist or is empty)..."
-  # Host must have python3.8 and virtualenv installed
+  # Host must have python3.12 and virtualenv installed
   ssh_cmd $HOST 'cd '$DIR' && ./build.sh'
   if [ $? != 0 ]; then
     echo "[ERROR] failed to install requirements on destination host"

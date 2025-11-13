@@ -108,3 +108,7 @@ aspnetcore/*.suo
 /laravel/storage/*.key
 /laravel/vendor
 .sentryclirc
+
+# crons-python
+/crons-python/crons-python.log
+/crons-python/env
