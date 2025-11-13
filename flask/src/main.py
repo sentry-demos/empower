@@ -347,7 +347,7 @@ def products():
                                     except:
                                         productsJSON = json.loads(rows)
     except Exception as err:
-        logger.error('Processing /products - error occurred')
+        logger.warn('Processing /products - error occurred')
         sentry_sdk.capture_exception(err)
         raise (err)
 
@@ -406,7 +406,7 @@ def products_join():
             rows = get_products_join()
             logger.info('Processing /products-join - data retrieved')
     except Exception as err:
-        logger.error('Processing /products-join - error getting data')
+        logger.warn('Processing /products-join - error getting data')
         sentry_sdk.capture_exception(err)
         raise (err)
 
@@ -416,7 +416,7 @@ def products_join():
         r.raise_for_status()  # returns an HTTPError object if an error has occurred during the process
         logger.info('Processing /products-join - backend API call successful')
     except Exception as err:
-        logger.error('Processing /products-join - backend API call failed')
+        logger.warn('Processing /products-join - backend API call failed')
         sentry_sdk.capture_exception(err)
 
     return rows
