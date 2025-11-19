@@ -205,8 +205,6 @@ app = CORSWSGIWrapper(app)
 def checkout():
     logger.info('Received /checkout endpoint request')
 
-
-
     try:
         evaluate_statsig_flags()
     except Exception as e:
@@ -222,27 +220,19 @@ def checkout():
 
     inventory = []
     try:
-        with tracer.start_as_current_span(
-            "checkout.get_inventory",
-            attributes={
-                "sentry.op": "function"
-            }
-        ):
-            inventory = get_inventory(cart)
+        inventory = get_inventory(cart)
     except Exception as err:
         logger.warn('Failed to get inventory')
         raise (err)
-
-
 
     fulfilled_count = 0
     out_of_stock = [] # list of items that are out of stock
     try:
         if validate_inventory:
             with tracer.start_as_current_span(
-                "process_order",
+                "checkout.process_order",
                 attributes={
-                    "sentry.op": "function"
+                    "sentry.op": "code.block"
                 }
             ):
                 if len(quantities) == 0:
@@ -309,9 +299,9 @@ def products():
     try:
         logger.info('Processing /products - calling get_products()')
         with tracer.start_as_current_span(
-            "/products.get_products",
+            "products.get_and_process_products",
             attributes={
-                "sentry.op": "function"
+                "sentry.op": "code.block"
             }
         ):
             rows = get_products()
@@ -320,10 +310,12 @@ def products():
                 start_time = time.time()
                 productsJSON = json.loads(rows)
                 descriptions = [product["description"] for product in productsJSON]
+                # this is improper convention (op and name switched up)
+                # keeping it to avoid breaking changes in the demo
                 with tracer.start_as_current_span(
                     "/get_iterator",
                     attributes={
-                        "sentry.op": "function"
+                        "sentry.op": "code.block"
                     }
                 ):
                     loop = get_iterator(len(descriptions) * 6 + (2 if fetch_promotions else -1))
@@ -350,57 +342,51 @@ def products():
     logger.info('Completed /products request')
 
 
-    get_api_request(cache_key, ruby_delay_time)
+    get_api_response_with_caching(cache_key, ruby_delay_time)
 
     return rows
 
-
-def get_api_request(key, delay):
+@tracer.start_as_current_span(name="get_api_response_with_caching")
+def get_api_response_with_caching(key, delay):
     start_time = time.time()
     logger.info('Processing /products - starting API request')
 
-    with tracer.start_as_current_span(
-        "/ruby_cached_api_request",
-        attributes={
-            "sentry.op": "function"
-        }
-    ):
-      cached_response = redis_client.get("ruby.api.cache:" + str(key))
+    cached_response = redis_client.get("ruby.api.cache:" + str(key))
 
-      if cached_response is not None:
-          logger.info('Processing /products - cache hit for API request')
+    if cached_response is not None:
+        logger.info('Processing /products - cache hit for API request')
 
-          return cached_response
+        return cached_response
 
-      logger.info('Processing /products - cache miss for API request')
+    logger.info('Processing /products - cache miss for API request')
 
 
-      try:
-          with tracer.start_as_current_span(
-              "/api_request",
-              attributes={
-                  "sentry.op": "function"
-              }
-          ):
-              headers = parseHeaders(RUBY_CUSTOM_HEADERS, request.headers)
-              r = requests.get(BACKEND_URL_RUBYONRAILS + "/api", headers=headers)
-              r.raise_for_status()  # returns an HTTPError object if an error has occurred during the process
+    try:
+        with tracer.start_as_current_span(
+            "call_api_on_cache_miss",
+            attributes={
+                "sentry.op": "code.block"
+            }
+        ):
+            headers = parseHeaders(RUBY_CUSTOM_HEADERS, request.headers)
+            r = requests.get(BACKEND_URL_RUBYONRAILS + "/api", headers=headers)
+            r.raise_for_status()  # returns an HTTPError object if an error has occurred during the process
 
-              time_delta = time.time() - start_time
-              sleep_time = delay - time_delta
-              if sleep_time > 0:
+            time_delta = time.time() - start_time
+            sleep_time = delay - time_delta
+            if sleep_time > 0:
                 time.sleep(sleep_time)
 
-              # For demo show we want to show cache misses so only save 1 / 100
-              if key == 7:
+            # For demo show we want to show cache misses so only save 1 / 100
+            if key == 7:
                 logger.info('Processing /products - caching API response')
                 redis_client.set("ruby.api.cache:" + str(key), key)
 
-      except Exception as err:
-          logger.error('Processing /products - API request failed')
-          sentry_sdk.capture_exception(err)
+    except Exception as err:
+        logger.error('Processing /products - API request failed')
+        sentry_sdk.capture_exception(err)
 
-      return key
+    return key
 
 
 @app.route('/products-join', methods=['GET'])
@@ -408,14 +394,8 @@ def products_join():
     logger.info('Received /products-join endpoint request')
 
     try:
-        with tracer.start_as_current_span(
-            "/products_join.get_products_join",
-            attributes={
-                "sentry.op": "function"
-            }
-        ):
-            rows = get_products_join()
-            logger.info('Processing /products-join - data retrieved')
+        rows = get_products_join()
+        logger.info('Processing /products-join - data retrieved')
     except Exception as err:
         logger.warn('Processing /products-join - error getting data')
         sentry_sdk.capture_exception(err)

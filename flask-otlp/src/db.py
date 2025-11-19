@@ -44,6 +44,7 @@ else:
     )
 
 # N+1 because a sql query for every product n
+@tracer.start_as_current_span(name="get_products")
 def get_products():
     results = []
     try:
@@ -77,7 +78,7 @@ def get_products():
             results.append(result)
 
         with tracer.start_as_current_span(
-            "combined_reviews.json",
+            "get_products.combined_reviews.json",
             attributes={
                 "sentry.op": "serialization"
             }
@@ -88,6 +89,7 @@ def get_products():
         raise DatabaseConnectionError('get_products') from err
 
 # 2 sql queries max, then sort in memory
+@tracer.start_as_current_span(name="get_products_join")
 def get_products_join():
     results = []
     try:
@@ -132,7 +134,7 @@ def get_products_join():
     with tracer.start_as_current_span(
         "get_products_join.format_results",
         attributes={
-            "sentry.op": "function"
+            "sentry.op": "code.block"
         }
     ) as span:
         for product in products:
@@ -156,6 +158,7 @@ def get_products_join():
 
     return result
 
+@tracer.start_as_current_span(name="get_inventory")
 def get_inventory(cart):
     print("> get_inventory")
 
@@ -199,6 +202,7 @@ def get_inventory(cart):
 def decrement_inventory(id, count):
     pass
 
+@tracer.start_as_current_span(name="get_promo_code")
 def get_promo_code(code):
     """Get promo code from database by code string"""
     try:
