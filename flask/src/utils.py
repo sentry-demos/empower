@@ -3,6 +3,7 @@ from pytz import timezone
 from random import choices
 import random
 import string
+import sentry_sdk
 from statsig import statsig, StatsigUser
 
 # https://www.postgresql.org/docs/9.0/functions-datetime.html
@@ -18,7 +19,7 @@ weights2 = [0.04, 0.06, 0.1, 0.14, 0.5, 0.16]
 # the 'condition' is either "greater than or equal to" or "less than or equal to"
 # The delay value in seconds is according to a logarithmic distribution of 1 to 10"
 def weighter(condition, hour):
-    current_hour = datetime.now(timezone('America/Los_Angeles')).hour
+    current_hour = datetime.now().hour
     time_to_sleep = choices(times, weights1) if condition(current_hour, hour)  else choices(times, weights2)
     return time_to_sleep[0]
 
