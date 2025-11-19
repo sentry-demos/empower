@@ -3,6 +3,7 @@ from pytz import timezone
 from random import choices
 import random
 import string
+import sentry_sdk
 from statsig import statsig, StatsigUser
 
 # https://www.postgresql.org/docs/9.0/functions-datetime.html
@@ -29,7 +30,11 @@ def parseHeaders(keys, headers):
         parsedHeaders[key] = value
     return parsedHeaders
 
+@sentry_sdk.trace
 def get_iterator(n):
+    return _get_iterator(n)
+
+def _get_iterator(n):
     #fibonacci
     if n < 0:
         print("Incorrect input")
@@ -38,7 +43,7 @@ def get_iterator(n):
     elif n == 1 or n == 2:
         return 1
     else:
-        return get_iterator(n-1) + get_iterator(n-2)
+        return _get_iterator(n-1) + _get_iterator(n-2)
 
 def yuval(text):
     return ""

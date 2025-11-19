@@ -209,7 +209,7 @@ def suggestion():
 
   @ai_track("Suggestion Pipeline")
   def suggestion_pipeline():
-    with sentry_sdk.start_transaction(op="Suggestion AI", description="Suggestion ai pipeline"):
+    with sentry_sdk.start_transaction(op="Suggestion AI", name="Suggestion ai pipeline"):
       response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=
@@ -247,8 +247,7 @@ def checkout():
 
     inventory = []
     try:
-        with sentry_sdk.start_span(op="/checkout.get_inventory", description="function"):
-            inventory = get_inventory(cart)
+        inventory = get_inventory(cart)
     except Exception as err:
         logger.error('Failed to get inventory')
         raise (err)
@@ -259,7 +258,7 @@ def checkout():
     out_of_stock = [] # list of items that are out of stock
     try:
         if validate_inventory:
-            with sentry_sdk.start_span(op="process_order", description="function"):
+            with sentry_sdk.start_span(op="code.block", name="checkout.process_order"):
                 if len(quantities) == 0:
                     raise Exception("Invalid checkout request: cart is empty")
 
@@ -322,14 +321,14 @@ def products():
         ruby_delay_time = 0.5
 
     try:
-        with sentry_sdk.start_span(op="/products.get_products", description="function"):
+        with sentry_sdk.start_span(op="code.block", name="products.get_and_process_products"):
             rows = get_products()
 
             if RUN_SLOW_PROFILE:
                 start_time = time.time()
                 productsJSON = json.loads(rows)
                 descriptions = [product["description"] for product in productsJSON]
-                with sentry_sdk.start_span(op="/get_iterator", description="function"):
+                with sentry_sdk.start_span(op="code.block", name="products.iterate_over_products"):
                     loop = get_iterator(len(descriptions) * 6 + (2 if fetch_promotions else -1))
 
                     for i in range(loop * 10):
@@ -353,48 +352,46 @@ def products():
 
     logger.info('Completed /products request')
 
-
-    get_api_request(cache_key, ruby_delay_time)
+    get_api_response_with_caching(cache_key, ruby_delay_time)
 
     return rows
 
-
-def get_api_request(key, delay):
+@sentry_sdk.trace
+def get_api_response_with_caching(key, delay):
     start_time = time.time()
     logger.info('Processing /products - starting API request')
 
-    with sentry_sdk.start_span(op="/ruby_cached_api_request", description="function"):
-      cached_response = redis_client.get("ruby.api.cache:" + str(key))
+    cached_response = redis_client.get("ruby.api.cache:" + str(key))
 
-      if cached_response is not None:
-          logger.info('Processing /products - cache hit for API request')
+    if cached_response is not None:
+        logger.info('Processing /products - cache hit for API request')
 
-          return cached_response
+        return cached_response
 
-      logger.info('Processing /products - cache miss for API request')
+    logger.info('Processing /products - cache miss for API request')
 
 
-      try:
-          with sentry_sdk.start_span(op="/api_request", description="function"):
-              headers = parseHeaders(RUBY_CUSTOM_HEADERS, request.headers)
-              r = requests.get(BACKEND_URL_RUBYONRAILS + "/api", headers=headers)
-              r.raise_for_status()  # returns an HTTPError object if an error has occurred during the process
+    try:
+        with sentry_sdk.start_span(op="code.block", name="service API request (cache miss)"):
+            headers = parseHeaders(RUBY_CUSTOM_HEADERS, request.headers)
+            r = requests.get(BACKEND_URL_RUBYONRAILS + "/api", headers=headers)
+            r.raise_for_status()  # returns an HTTPError object if an error has occurred during the process
 
-              time_delta = time.time() - start_time
-              sleep_time = delay - time_delta
-              if sleep_time > 0:
+            time_delta = time.time() - start_time
+            sleep_time = delay - time_delta
+            if sleep_time > 0:
                 time.sleep(sleep_time)
 
-              # For demo show we want to show cache misses so only save 1 / 100
-              if key == 7:
+            # For demo show we want to show cache misses so only save 1 / 100
+            if key == 7:
                 logger.info('Processing /products - caching API response')
                 redis_client.set("ruby.api.cache:" + str(key), key)
 
-      except Exception as err:
-          logger.error('Processing /products - API request failed')
-          sentry_sdk.capture_exception(err)
+    except Exception as err:
+        logger.error('Processing /products - API request failed')
+        sentry_sdk.capture_exception(err)
 
-      return key
+    return key
 
 
 @app.route('/products-join', methods=['GET'])
@@ -402,9 +399,8 @@ def products_join():
     logger.info('Received /products-join endpoint request')
 
     try:
-        with sentry_sdk.start_span(op="/products-join.get_products_join", description="function"):
-            rows = get_products_join()
-            logger.info('Processing /products-join - data retrieved')
+        rows = get_products_join()
+        logger.info('Processing /products-join - data retrieved')
     except Exception as err:
         logger.error('Processing /products-join - error getting data')
         sentry_sdk.capture_exception(err)
