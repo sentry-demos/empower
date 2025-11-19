@@ -328,22 +328,25 @@ def products():
                 start_time = time.time()
                 productsJSON = json.loads(rows)
                 descriptions = [product["description"] for product in productsJSON]
-                loop = get_iterator(len(descriptions) * 6 + (2 if fetch_promotions else -1))
+                # this is improper convention (op and name switched up)
+                # keeping it to avoid breaking changes in the demo
+                with sentry_sdk.start_span(op="/get_iterator", name="code.block"):
+                    loop = get_iterator(len(descriptions) * 6 + (2 if fetch_promotions else -1))
 
-                for i in range(loop * 10):
-                    time_delta = time.time() - start_time
-                    if time_delta > timeout_seconds:
-                        break
+                    for i in range(loop * 10):
+                        time_delta = time.time() - start_time
+                        if time_delta > timeout_seconds:
+                            break
 
-                    for i, description in enumerate(descriptions):
-                        for pest in pests:
-                            if in_stock_only and productsJSON[i] not in product_inventory:
-                                continue
-                            if pest in description:
-                                try:
-                                    del productsJSON[i:i + 1]
-                                except:
-                                    productsJSON = json.loads(rows)
+                        for i, description in enumerate(descriptions):
+                            for pest in pests:
+                                if in_stock_only and productsJSON[i] not in product_inventory:
+                                    continue
+                                if pest in description:
+                                    try:
+                                        del productsJSON[i:i + 1]
+                                    except:
+                                        productsJSON = json.loads(rows)
     except Exception as err:
         logger.error('Processing /products - error occurred')
         sentry_sdk.capture_exception(err)
