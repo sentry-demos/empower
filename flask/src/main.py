@@ -328,23 +328,22 @@ def products():
                 start_time = time.time()
                 productsJSON = json.loads(rows)
                 descriptions = [product["description"] for product in productsJSON]
-                with sentry_sdk.start_span(op="code.block", name="products.iterate_over_products"):
-                    loop = get_iterator(len(descriptions) * 6 + (2 if fetch_promotions else -1))
+                loop = get_iterator(len(descriptions) * 6 + (2 if fetch_promotions else -1))
 
-                    for i in range(loop * 10):
-                        time_delta = time.time() - start_time
-                        if time_delta > timeout_seconds:
-                            break
+                for i in range(loop * 10):
+                    time_delta = time.time() - start_time
+                    if time_delta > timeout_seconds:
+                        break
 
-                        for i, description in enumerate(descriptions):
-                            for pest in pests:
-                                if in_stock_only and productsJSON[i] not in product_inventory:
-                                    continue
-                                if pest in description:
-                                    try:
-                                        del productsJSON[i:i + 1]
-                                    except:
-                                        productsJSON = json.loads(rows)
+                    for i, description in enumerate(descriptions):
+                        for pest in pests:
+                            if in_stock_only and productsJSON[i] not in product_inventory:
+                                continue
+                            if pest in description:
+                                try:
+                                    del productsJSON[i:i + 1]
+                                except:
+                                    productsJSON = json.loads(rows)
     except Exception as err:
         logger.error('Processing /products - error occurred')
         sentry_sdk.capture_exception(err)
@@ -372,7 +371,7 @@ def get_api_response_with_caching(key, delay):
 
 
     try:
-        with sentry_sdk.start_span(op="code.block", name="service API request (cache miss)"):
+        with sentry_sdk.start_span(op="code.block", name="call_api_on_cache_miss"):
             headers = parseHeaders(RUBY_CUSTOM_HEADERS, request.headers)
             r = requests.get(BACKEND_URL_RUBYONRAILS + "/api", headers=headers)
             r.raise_for_status()  # returns an HTTPError object if an error has occurred during the process
