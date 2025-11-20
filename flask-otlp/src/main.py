@@ -25,9 +25,11 @@ from sentry_sdk.integrations.otlp import OTLPIntegration
 from celery import Celery, states
 from celery.exceptions import Ignore
 from opentelemetry import trace
-from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace import TracerProvider, ReadableSpan
+from opentelemetry.sdk.trace.export import SpanProcessor
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.semconv.resource import ResourceAttributes
+from opentelemetry.context import Context
 from opentelemetry.instrumentation.flask import FlaskInstrumentor
 from opentelemetry.instrumentation.redis import RedisInstrumentor
 from opentelemetry.instrumentation.requests import RequestsInstrumentor
@@ -92,8 +94,45 @@ def redis_request_hook(span, instance, args, kwargs):
             # Set the key as an attribute
             span.set_attribute("db.redis.key", key)
             
-            # Update the span name to include the key
-            span.update_name(f"{command} '{key}'")
+            # Set db.statement - this is what Sentry uses for sentry.description in the UI
+            span.set_attribute("db.statement", f"{command} '{key}'")
+
+
+# NOTE: this succeeds at sending the profile to Sentry, but it seems like it's not showing up
+# in the UI because it's not being attached to any span or transaction.
+class SentryProfilerSpanProcessor(SpanProcessor):
+    """
+    Custom SpanProcessor that starts Sentry profiler on top-level span start
+    and stops it when the span ends.
+    """
+    
+    def on_start(self, span: ReadableSpan, parent_context: Context = None) -> None:
+        """Called when a span is started"""
+        # Check if this is a top-level span (no parent)
+        if not span.parent:
+            try:
+                sentry_sdk.profiler.start_profiler()
+                logger.debug(f"Started Sentry profiler for top-level span: {span.name}")
+            except Exception as e:
+                logger.warning(f"Failed to start Sentry profiler: {e}")
+    
+    def on_end(self, span: ReadableSpan) -> None:
+        """Called when a span is ended"""
+        # Check if this is a top-level span (no parent)
+        if not span.parent:
+            try:
+                sentry_sdk.profiler.stop_profiler()
+                logger.debug(f"Stopped Sentry profiler for top-level span: {span.name}")
+            except Exception as e:
+                logger.warning(f"Failed to stop Sentry profiler: {e}")
+    
+    def shutdown(self) -> None:
+        """Called when the processor is shutdown"""
+        pass
+    
+    def force_flush(self, timeout_millis: int = 30000) -> bool:
+        """Called to force flush any pending spans"""
+        return True
 
 
 class MyFlask(Flask):
@@ -128,15 +167,20 @@ class MyFlask(Flask):
                 r"https://.*sales-engineering-sf\.appspot.com.*",
             ],
             before_send=before_send,
-            _experiments={
-                "profiles_sample_rate": 1.0,
-            }
+            profile_session_sample_rate=1.0,
+            profile_lifecycle="manual"
         )
 
         # Get tracer for this application
         # OTLPIntegration automatically sets up the TracerProvider, so we just get the tracer
         global tracer
         tracer = trace.get_tracer(__name__)
+        
+        # Add custom SpanProcessor to hook into span lifecycle for profiling
+        tracer_provider = trace.get_tracer_provider()
+        if hasattr(tracer_provider, 'add_span_processor'):
+            tracer_provider.add_span_processor(SentryProfilerSpanProcessor())
+            logger.info("Added SentryProfilerSpanProcessor to TracerProvider")
 
         statsig.initialize(os.environ["STATSIG_SERVER_KEY"])
 
@@ -329,8 +373,6 @@ def products():
                 start_time = time.time()
                 productsJSON = json.loads(rows)
                 descriptions = [product["description"] for product in productsJSON]
-                # this is improper convention (op and name switched up)
-                # keeping it to avoid breaking changes in the demo
                 with tracer.start_as_current_span(
                     "/get_iterator",
                     attributes={
