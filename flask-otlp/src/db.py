@@ -48,14 +48,7 @@ else:
 def get_products():
     results = []
     try:
-        with tracer.start_as_current_span(
-            "get_products",
-            attributes={
-                "db.system": "postgresql",
-                "db.operation": "connect"
-            }
-        ):
-            connection = db.connect()
+        connection = db.connect()
 
         n = weighter(operator.le, 12)
         # adjust by number of products to get the same timeout as we had in the past

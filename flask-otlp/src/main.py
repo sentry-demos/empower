@@ -12,7 +12,7 @@ from flask_caching import Cache
 from statsig.statsig_user import StatsigUser
 from statsig import statsig, StatsigOptions, StatsigEnvironmentTier
 import dotenv
-from .db import decrement_inventory, get_products, get_products_join, get_inventory, get_promo_code
+from .db import decrement_inventory, get_products, get_products_join, get_inventory, get_promo_code, db
 from .utils import parseHeaders, get_iterator, evaluate_statsig_flags
 import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
@@ -31,6 +31,7 @@ from opentelemetry.semconv.resource import ResourceAttributes
 from opentelemetry.instrumentation.flask import FlaskInstrumentor
 from opentelemetry.instrumentation.redis import RedisInstrumentor
 from opentelemetry.instrumentation.requests import RequestsInstrumentor
+from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
 
 RUBY_CUSTOM_HEADERS = ['se', 'customerType', 'email']
 pests = ["aphids", "thrips", "spider mites", "lead miners", "scale", "whiteflies", "earwigs", "cutworms", "mealybugs",
@@ -80,6 +81,21 @@ def traces_sampler(sampling_context):
         return 1.0
 
 
+def redis_request_hook(span, instance, args, kwargs):
+    """Custom request hook to capture Redis keys in spans"""
+    if span and span.is_recording() and args:
+        # args is a tuple like ('GET', 'mykey') or ('SET', 'mykey', 'value', 'EX', 5)
+        if len(args) >= 2:
+            command = args[0] if isinstance(args[0], str) else str(args[0])
+            key = args[1] if isinstance(args[1], str) else str(args[1])
+            
+            # Set the key as an attribute
+            span.set_attribute("db.redis.key", key)
+            
+            # Update the span name to include the key
+            span.update_name(f"{command} '{key}'")
+
+
 class MyFlask(Flask):
     def __init__(self, import_name, *args, **kwargs):
         global RELEASE, DSN, ENVIRONMENT, BACKEND_URL_RUBYONRAILS, RUN_SLOW_PROFILE, redis_client, cache, tracer;
@@ -127,7 +143,10 @@ class MyFlask(Flask):
         # Instrument with OpenTelemetry BEFORE creating clients
         # This ensures all connections are properly traced
         RequestsInstrumentor().instrument()
-        RedisInstrumentor().instrument()
+        RedisInstrumentor().instrument(request_hook=redis_request_hook)
+        
+        # Instrument the existing database engine (created at import time in db.py)
+        SQLAlchemyInstrumentor().instrument(engine=db)
         
         super(MyFlask, self).__init__(import_name, *args, **kwargs)
 
