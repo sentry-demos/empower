@@ -167,26 +167,11 @@ def get_inventory(cart):
     print("> productIds", productIds)
 
     try:
-        with tracer.start_as_current_span(
-            "get_inventory",
-            attributes={
-                "db.system": "postgresql",
-                "db.operation": "connect"
-            }
-        ):
-            connection = db.connect()
-        with tracer.start_as_current_span(
-            "get_inventory",
-            attributes={
-                "db.system": "postgresql",
-                "db.operation": "query",
-                "db.statement": "SELECT * FROM inventory WHERE productId = ANY(:product_ids)"
-            }
-        ) as span:
-            # Use parameterized query with ANY() to safely handle array of product IDs
-            query = text("SELECT * FROM inventory WHERE productId = ANY(:product_ids)")
-            inventory = connection.execute(query, product_ids=productIds).fetchall()
-            span.set_attribute("inventory",str(inventory))
+        connection = db.connect()
+        # Use parameterized query with ANY() to safely handle array of product IDs
+        query = text("SELECT * FROM inventory WHERE productId = ANY(:product_ids)")
+        inventory = connection.execute(query, product_ids=productIds).fetchall()
+        trace.get_current_span().set_attribute("inventory", str(inventory))
     except Exception as err:
         raise DatabaseConnectionError('get_inventory') from err
 

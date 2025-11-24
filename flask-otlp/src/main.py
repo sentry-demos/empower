@@ -160,7 +160,8 @@ class MyFlask(Flask):
                 SqlalchemyIntegration(),
                 RedisIntegration(cache_prefixes=["flask.", "ruby."]),
                 StatsigIntegration(),
-                OTLPIntegration()
+                OTLPIntegration(),
+                LoggingIntegration(event_level=None) # don't send ERROR level logs as events/errors
             ],
             trace_propagation_targets=[
                 r"https://.*\.empower-plant\.com.*",
