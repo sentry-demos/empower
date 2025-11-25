@@ -189,7 +189,6 @@ public class AppController {
 		String fooResourceUrl = environment.getProperty("empower.rubyonrails_backend");
 		ResponseEntity<String> response = restTemplate.exchange(fooResourceUrl + "/api", HttpMethod.GET,new HttpEntity<>(headers), String.class);
 
-		
 		String allProducts = dbHelper.mapAllProductsJoin(Sentry.getSpan());
 		return allProducts;
 	}
@@ -245,7 +244,6 @@ public class AppController {
 
 				tempInventory.put(key, currentInventory);
 			}
-			return null;
 		});
 	}
 
