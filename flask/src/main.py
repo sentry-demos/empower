@@ -96,7 +96,8 @@ class MyFlask(Flask):
                 FlaskIntegration(),
                 SqlalchemyIntegration(),
                 RedisIntegration(cache_prefixes=["flask.", "ruby."]),
-                StatsigIntegration()
+                StatsigIntegration(),
+                LoggingIntegration(event_level=None) # don't send ERROR level logs as events/errors
             ],
             traces_sample_rate=1.0,
             before_send=before_send,
