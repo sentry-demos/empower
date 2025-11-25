@@ -1,6 +1,6 @@
 x-base-env: &x-base-env
   RELEASE: 2023+compose
-  RUBY_URL: http://ruby:4567
+  RUBYONRAILS_URL: http://ruby-on-rails:4567
   DB_HOST: postgres
   DB_USERNAME: postgres
   DB_PASSWORD: postgres
@@ -20,10 +20,10 @@ services:
     init: true
     ports: [8080:8080]
   ruby:
-    build: ruby
+    build: ruby-on-rails
     environment:
       <<: *x-base-env
-      RUBY_DSN: http://ruby@mini-relay:9989/4
+      RUBYONRAILS_DSN: http://ruby-on-rails@mini-relay:9989/4
     init: true
   mini-relay:
     build: mini-relay

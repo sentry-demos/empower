@@ -1,13 +1,12 @@
 const DEFAULT_BACKEND = 'flask';
 
 const SUPPORTED_BACKEND_TYPES = {
-  flask: process.env.NEXT_PUBLIC_BACKEND_URL_FLASK,
-  express: process.env.REACT_APP_BACKEND_URL_EXPRESS,
-  springboot: process.env.REACT_APP_BACKEND_URL_SPRINGBOOT,
-  aspnetcore: process.env.REACT_APP_BACKEND_URL_ASPNETCORE,
-  laravel: process.env.REACT_APP_BACKEND_URL_LARAVEL,
-  ruby: process.env.REACT_APP_BACKEND_URL_RUBY,
-  rails: process.env.REACT_APP_BACKEND_URL_RUBYONRAILS,
+  flask: process.env.NEXT_PUBLIC_FLASK_BACKEND,
+  express: process.env.NEXT_PUBLIC_EXPRESS_BACKEND,
+  springboot: process.env.NEXT_PUBLIC_SPRINGBOOT_BACKEND,
+  aspnetcore: process.env.NEXT_PUBLIC_ASPNETCORE_BACKEND,
+  laravel: process.env.NEXT_PUBLIC_LARAVEL_BACKEND,
+  rails: process.env.NEXT_PUBLIC_RUBYONRAILS_BACKEND,
 };
 
 const determineBackendType = (desiredBackend) => {

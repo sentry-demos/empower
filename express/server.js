@@ -26,7 +26,7 @@ const DB = require("./db");
 const utils = require("./utils");
 
 // Environment variables
-const BACKEND_URL_RUBY = process.env.BACKEND_URL_RUBY;
+const BACKEND_URL_RUBYONRAILS = process.env.BACKEND_URL_RUBYONRAILS;
 const PORT = process.env.PORT;
 
 // [START app]
@@ -69,7 +69,7 @@ async function fetchProducts(req, res) {
     // This /api call must happen before the DB.products() call or else it's a broken subtrace
     // (if you do it after DB.Products())
     await axios
-      .get(BACKEND_URL_RUBY + "/api", { headers: headers })
+      .get(BACKEND_URL_RUBYONRAILS + "/api", { headers: headers })
       .then((response) => {
         console.log("> response", response.data);
         return;
@@ -123,7 +123,7 @@ app.get("/products-join", async (req, res) => {
     // This /api call must happen before the DB.products() call or else it's a broken subtrace
     // (if you do it after DB.Products())
     await axios
-      .get(BACKEND_URL_RUBY + "/api", { headers: headers })
+      .get(BACKEND_URL_RUBYONRAILS + "/api", { headers: headers })
       .then((response) => {
         console.log("> response", response.data);
         return;

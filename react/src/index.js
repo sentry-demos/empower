@@ -78,6 +78,7 @@ Sentry.init({
   environment: ENVIRONMENT,
   tracesSampleRate: 1.0,
   tracePropagationTargets: tracingOrigins,
+  propagateTraceparent: true, // Sentry <-> OTLP distributed tracing
   profilesSampleRate: 1.0,
   replaysSessionSampleRate: 1.0,
   debug: true,
@@ -299,15 +300,14 @@ class App extends Component {
       );
       if (!ignore_match) {
         Sentry.withScope(function (scope) {
-          let se, customerType, email;
-          [se, customerType] = [scope._tags.se, scope._tags.customerType];
-          email = scope._user.email;
-          args[1].headers = { ...args[1].headers, se, customerType, email };
+          let se, customerType, email, cexp;
+          [se, customerType, email, cexp] = [scope._tags.se, scope._tags.customerType, scope._user.email, scope._tags.cexp];
+          args[1].headers = { ...args[1].headers, se, customerType, email, cexp };
         });
       }
       let res = nativeFetch.apply(window, args);
       if (args[0].includes('/apply-promo-code')) { 
-        await new Promise(resolve => setTimeout(resolve, 1000)); // to avoid log lines reordering due to clock drift between FE/BE
+        await new Promise(resolve => setTimeout(resolve, 1500)); // to avoid log lines reordering due to clock drift between FE/BE
       }
       return res;
     };

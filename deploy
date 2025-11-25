@@ -90,12 +90,6 @@ if [[ "$env" == "" || "$projects" == "" ]]; then
   exit 1
 fi
 
-# Validate custom command usage
-if [[ -n "$custom_command" && "$env" != "local" ]]; then
-  echo "[ERROR] Custom commands (-- <command>) are only allowed in local mode (--env=local)"
-  exit 1
-fi
-
 # Validate that custom commands are only used with a single project
 if [[ -n "$custom_command" ]]; then
   # Count the number of projects (trim whitespace and count words)
@@ -404,7 +398,7 @@ for proj in $projects; do # bash only
   if [ "$env" == "local" ]; then
     if [[ -n "$custom_command" ]]; then
       echo "Running custom command '$custom_command $custom_command_args' with resolved environment..."
-      # Note: we assume no secrets inside the custom command, any secrets used must be in *.template files
+      echo "[WARNING] we assume no secrets directly referenced by the custom command itself, any secrets used must be in *.template files"
       env "${RESOLVED_VARS[@]}" $custom_command $custom_command_args &
       pid="$!"
     else

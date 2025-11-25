@@ -18,17 +18,13 @@ def test_cexp_checkout(desktop_web_driver, endpoints, batch_size, backend, rando
     
     for endpoint in [endpoints.react_endpoint]:
             
-        base_query_string = {}
         endpoint_products = endpoint + "/products"
-
-        if random.random() < PRODUCTS_JOIN_RATIO:
-            base_query_string['api'] = 'join'
 
         sentry_sdk.set_tag("endpoint", endpoint_products)
         sentry_sdk.set_tag("batch_size", batch_size)
 
         for b in range(batch_size):
-            query_string = base_query_string.copy()
+            query_string = {}
             
             if random.random() < CEXP_RATIO: # Determine if this iteration should use CExp flow
                 current_backend = 'flask'
@@ -55,6 +51,9 @@ def test_cexp_checkout(desktop_web_driver, endpoints, batch_size, backend, rando
                 query_string['userEmail']='John.Logs@example.com'
             else:
                 apply_promo_code = False
+
+            if ce not in [CExp.PRODUCTS_EXTREMELY_SLOW, CExp.PRODUCTS_BE_ERROR] and random.random() < PRODUCTS_JOIN_RATIO:
+                query_string['api'] = 'join'
             
             # to generate more flagship errors than Slow DB Query, other performance issues
             checkout_attempts = 1 if ce and ce in [CExp.CHECKOUT_SUCCESS, CExp.ADD_TO_CART_JS_ERROR] else 3
@@ -111,7 +110,7 @@ def test_cexp_checkout(desktop_web_driver, endpoints, batch_size, backend, rando
                         if apply_promo_code and c == 0:
                             desktop_web_driver.find_element(By.NAME, 'promoCode').send_keys("SAVE20")
                             desktop_web_driver.find_element(By.NAME, 'applyPromoCode').click()
-                            time.sleep(3)
+                            time.sleep(10)
 
                         desktop_web_driver.find_element(By.CSS_SELECTOR, '.complete-checkout-btn').click()
                         time.sleep(sleep_length())

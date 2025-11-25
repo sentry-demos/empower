@@ -4,5 +4,9 @@ vue
 _postgres
 next
 # ^ uses Vercel automation
-angular
-# ^ no integrated with deploy yet
+crons-python
+# ^ deploy broken
+ruby
+laravel
+react
+# ^ https://sentry.slack.com/archives/C05FA9D2PDM/p1762791055111179?thread_ts=1762786681.679119&cid=C05FA9D2PDM

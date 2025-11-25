@@ -25,7 +25,7 @@ RUN \
     REACT_APP_BACKEND_URL_FLASK=http://localhost:8080 \
     REACT_APP_BACKEND_URL_LARAVEL=http://localhost:8000 \
     REACT_APP_BACKEND_URL_RUBYONRAILS=http://localhost:5000 \
-    REACT_APP_BACKEND_URL_RUBY=http://localhost:4567 \
+    REACT_APP_BACKEND_URL_RUBYONRAILS=http://localhost:4567 \
     REACT_APP_BACKEND_URL_SPRINGBOOT=http://localhost:8090 \
         ./build.sh
 

@@ -6,7 +6,7 @@ from selenium.common.exceptions import NoSuchElementException
 
 
 def test_basic_checkout(desktop_web_driver, endpoints, random, sleep_length, cexp):
-    for endpoint in [endpoints.nextjs_endpoint]:
+    for endpoint in [endpoints.nextjs_endpoint, endpoints.angular_endpoint]:
 
         endpoint_products = endpoint + "/products"
 

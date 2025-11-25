@@ -49,23 +49,6 @@ While not an Empower React app query param, we also have demo-specific query par
 ## User Feedback
 The [user feedback widget](https://docs.sentry.io/platforms/javascript/user-feedback/#user-feedback-widget) is enabled on all pages, in the bottom-right corner. Submit user feedback from any page to have it [show up in Sentry](https://demo.sentry.io/feedback/?project=5808623&statsPeriod=7d).
 
-## Frontend Applications
-
-### React (Primary)
-- **Status**: Actively maintained, production ready
-- **Documentation**: [react/README.md](./react/README.md)
-- **Features**: Full Sentry integration, multiple backend support
-
-### Angular 20
-- **Status**: Actively maintained, TDA test compatible
-- **Documentation**: [angular/README.md](./angular/README.md)
-- **Deployment Guide**: [angular/DEPLOYMENT.md](./angular/DEPLOYMENT.md)
-- **Features**: Modern Angular framework, Sentry integration, React-matching UI
-
-### Vue.js
-- **Status**: Available but may need updates
-- **Documentation**: [vue/README.md](./vue/README.md)
-
 ## Additional documentation
 
 Note: some of these may be out of date
@@ -221,6 +204,26 @@ Running `./deploy --env=local flask` will call `flask/local_run.sh` which manage
 2. Celery worker
 3. Flask development server
 
-#### Production/Staging Environment
+When the script is terminated (e.g., with Ctrl+C), it performs cleanup to ensure all processes are properly terminated.
 
-In production/staging, we use a Google Cloud Redis instance that doesn't expose a public IP address for security reasons. The application connects directly to this Redis instance within the GCP network.
+## Next.js Demo
+
+### Accessing Vercel
+- The Next.js demo is hosted on Sentry's Vercel account. To run the the demo locally or access the production configuration of the demo, open a PR adding yourself to this file https://github.com/getsentry/security-as-code/blob/main/rbac/env/prod/role/sso/vercel-member.tf
+
+
+### Running Next.js demo locally
+
+- Install Vercel CLI with `intall -g vercel` from command line
+- Create .env.local file in `next` repo. Include the following values
+    ```
+    NEXT_PUBLIC_DSN=your-dsn
+    NEXT_APP_ENVIRONMENT=test
+    NEXT_RELEASE_PACKAGE_NAME=application.monitoring.javascript
+    NEXT_SENTRY_PROJECT=your-project
+    NEXT_SENTRY_ORG=your-org
+    ```
+- Once you have Vercel access run `vercel dev` command from the `empower` repo
+- Following the prompts, select the Sentry org from and the empower project. A vercel config file will be created the first time you do this.
+- App should run on `localhost:3000`
+

@@ -10,7 +10,6 @@ source .env
 HOST="$CRONSPYTHON_DEPLOY_HOST"
 DIR="$CRONSPYTHON_DEPLOY_DIR"
 CRONTAB_USER=$CRONSPYTHON_CRONTAB_USER
-GCP_PROJECT=sales-engineering-sf
 
 export CLOUDSDK_CORE_PROJECT=$GCP_PROJECT
 export CLOUDSDK_COMPUTE_ZONE=$CRONSPYTHON_DEPLOY_ZONE
@@ -18,7 +17,7 @@ export CLOUDSDK_COMPUTE_ZONE=$CRONSPYTHON_DEPLOY_ZONE
 function ssh_cmd() {
     local host=$1
     shift
-    gcloud compute ssh --tunnel-through-iap $host -- "$@" 2>&1 | grep -v '^Connection to .* closed\.' || true
+    gcloud compute ssh --tunnel-through-iap $host -- "$@"
 }
 
 function cleanup {
@@ -26,13 +25,18 @@ function cleanup {
 }
 trap cleanup EXIT
 
-echo "Checking ssh connection can be established..."
-ssh_cmd $HOST exit
-if [ $? != "0" ]; then
-  echo "Running 'glcoud compute config-ssh' ..." 
-  gcloud compute config-ssh
+echo "Configuring ssh..."
+if [[ -n "$CI" ]]; then
+  echo "Running in CI, starting ssh-agent (not attempting to check if it's already running)..."
+  eval "$(ssh-agent -s)"
+  gcloud compute config-ssh 
+  ssh-add ~/.ssh/google_compute_engine
+else
+  echo "Not running in CI"
+  gcloud compute config-ssh 
 fi
-ssh_cmd $HOST exit
+echo "Checking ssh connection can be established..."
+gcloud compute ssh --tunnel-through-iap $HOST -- -o StrictHostKeyChecking=accept-new exit
 if [ $? != "0" ]; then
   echo "[ERROR] Can't ssh into destination host. Please make sure your gcloud is set up correctly and you \
 have the right IAM permissions in sales-engingeering-sf GCP project."
@@ -53,7 +57,7 @@ if ssh_cmd $HOST '[[ -d '"$DIR/env"' ]] && [[ ! -z `ls -A '"$DIR/env"'` ]]'; the
 fi
 
 echo "Copying code to remote directory..."
-export RSYNC_RSH='ssh -o "ProxyCommand gcloud compute start-iap-tunnel '$HOST' %p --listen-on-stdin --verbosity=warning"'
+export RSYNC_RSH='ssh -o "ProxyCommand gcloud compute start-iap-tunnel '$HOST' %p --listen-on-stdin --verbosity=warning" -o "StrictHostKeyChecking=accept-new"'
 rsync -rz --exclude env * .env $HOST:$DIR/
 if [ $? != 0 ]; then
   echo "[ERROR] Failed to rsync code to remote directory."

@@ -78,6 +78,7 @@ class Config(NamedTuple):
     dsn: str
     react_endpoint: str
     nextjs_endpoint: str
+    angular_endpoint: str
     vue_endpoint: str
 
 
@@ -91,6 +92,7 @@ def _config() -> Config:
         dsn=contents['dsn'],
         react_endpoint=contents['react_endpoint'],
         nextjs_endpoint=contents['nextjs_endpoint'],
+        angular_endpoint=contents['angular_endpoint'],
         vue_endpoint=contents['vue_endpoint'],
     )
 
@@ -113,7 +115,7 @@ BATCH_SIZE = os.getenv("IS_CANARY") and "1" or (os.getenv("BATCH_SIZE") or "1")
 SLEEP_LENGTH = os.getenv("SLEEP_LENGTH") or "random_2_1"
 
 # Currently only used in desktop_web/ tests. Mobile apps have it hardcoded.
-BACKENDS = (os.getenv("BACKENDS") or "flask,express,springboot,laravel,rails,aspnetcore").split(',')
+BACKENDS = (os.getenv("BACKENDS") or "flask,express,springboot,laravel,rails,aspnetcore,flask-otlp").split(',')
 
 # set in loop.sh
 IS_FIRST_RUN_OF_THE_DAY = os.getenv("IS_FIRST_RUN_OF_THE_DAY")
@@ -331,10 +333,13 @@ def cexp(random):
 def endpoints():
     return CONFIG
 
-@pytest.fixture(params=CONFIG.browsers, ids=[b.param_display for b in CONFIG.browsers])
+@pytest.fixture
 def current_browser(request):
     """Provides the current browser configuration to test functions"""
-    return request.param
+    # Get the browser configuration from the desktop_web_driver fixture
+    # This avoids duplicate parametrization while maintaining the same interface
+    import builtins
+    return getattr(builtins, '_current_browser_config')
 
 @pytest.fixture
 def is_first_run_of_the_day():
@@ -492,6 +497,10 @@ def _local_browser(request, se):
 
 @pytest.fixture(params=CONFIG.browsers, ids=[b.param_display for b in CONFIG.browsers])
 def desktop_web_driver(request, se_prefix):
+    # Store the current browser configuration globally so current_browser can access it
+    import builtins
+    builtins._current_browser_config = request.param
+    
     if request.param.remote:
         se = f'{se_prefix}-sauce-{request.param.param_display}'
         sentry_sdk.set_tag("se", se)

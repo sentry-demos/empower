@@ -10,7 +10,7 @@
 #     'FLASK_RELEASE': 'test-release',
 #     'FLASK_DSN': 'https://xxxxyyyyy@o11111.sentry.io/11111',
 #     'FLASK_ENVIRONMENT': 'local',
-#     'BACKEND_URL_RUBY': 'http://test-backend',
+#     'BACKEND_URL_RUBYONRAILS': 'http://test-backend',
 #     'RUN_SLOW_PROFILE': 'false',
 # })
 # class TestMain(unittest.TestCase):
