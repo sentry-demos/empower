@@ -1,6 +1,6 @@
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
-import com.sentrydemos.springboot.Utils;
+import com.sentrydemos.springboot.utils.Utils;
 
 public class UtilsTest {
 

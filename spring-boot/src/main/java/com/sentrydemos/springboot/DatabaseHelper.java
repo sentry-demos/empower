@@ -2,12 +2,12 @@ package com.sentrydemos.springboot;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
 
 import io.sentry.ISpan;
 import io.sentry.Sentry;
-import static com.sentrydemos.springboot.SpanUtils.executeWithSpan;
+
+import static com.sentrydemos.springboot.utils.SpanUtils.executeWithSpan;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -17,13 +17,10 @@ import java.util.Set;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Component
 public class DatabaseHelper {
 
-	private final Logger logger = LoggerFactory.getLogger(Application.class);
 	//Leverage Item & Review class getters to map DB results into JSONObject/JSONArray
 	
 	@Autowired
@@ -126,6 +123,7 @@ public class DatabaseHelper {
 			for (Item i : items) {
 				i.setReviews(reviewsMap.get(i.getId()));
 			}
+			return null;
 		});
 		
 		return items;

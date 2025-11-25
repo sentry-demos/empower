@@ -1,7 +1,6 @@
 package com.sentrydemos.springboot;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
 import jakarta.annotation.PostConstruct;
 import org.springframework.http.HttpEntity;
@@ -16,9 +15,7 @@ import org.springframework.http.ResponseEntity;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.sentry.ISpan;
 import io.sentry.Sentry;
-import io.sentry.SpanStatus;
 import io.sentry.protocol.User;
 // Removed IScopes import as it's not available in current Sentry configuration
 
@@ -34,8 +31,10 @@ import org.slf4j.LoggerFactory;
 
 import org.springframework.web.client.RestTemplate;
 
-import static com.sentrydemos.springboot.Utils.getIterator;
-import static com.sentrydemos.springboot.SpanUtils.executeWithSpan;
+import com.sentrydemos.springboot.utils.SpanUtils;
+
+import static com.sentrydemos.springboot.utils.SpanUtils.executeWithSpan;
+import static com.sentrydemos.springboot.utils.Utils.getIterator;
 
 @RestController
 public class AppController {
@@ -129,11 +128,10 @@ public class AppController {
 		setTags(request);
 
 		Sentry.logger().info("[springboot] - Making external API call to Ruby backend");
-		String BACKEND_URL_RUBYONRAILS = environment.getProperty("empower.rubyonrails_backend");
-		ResponseEntity<String> response = restTemplate.exchange(BACKEND_URL_RUBYONRAILS + "/api", HttpMethod.GET,new HttpEntity<>(headers), String.class);
+		String BACKEND_URL_RUBY = environment.getProperty("empower.ruby_backend");
+		ResponseEntity<String> response = restTemplate.exchange(BACKEND_URL_RUBY + "/api", HttpMethod.GET,new HttpEntity<>(headers), String.class);
 		Sentry.logger().info("[springboot] - External API call completed", "response_status", response.getStatusCode().value());
 		
-
 		return "springboot /api";
 	}
 
@@ -172,8 +170,8 @@ public class AppController {
 			// Execute iterator calculation with span tracking
 			executeWithSpan("get_iterator", "Iterator calculation", () -> Thread.sleep(getIterator(16)));
 
-		  String fooResourceUrl = environment.getProperty("empower.rubyonrails_backend");
-		  ResponseEntity<String> response = restTemplate.exchange(fooResourceUrl + "/api", HttpMethod.GET,new HttpEntity<>(headers), String.class);
+			String fooResourceUrl = environment.getProperty("empower.ruby_backend");
+			ResponseEntity<String> response = restTemplate.exchange(fooResourceUrl + "/api", HttpMethod.GET,new HttpEntity<>(headers), String.class);
 
 			String allProducts = dbHelper.mapAllProducts(Sentry.getSpan());
 			return allProducts;
@@ -231,7 +229,7 @@ public class AppController {
 		Map<String, Integer> tempInventory = dbHelper.getInventory(quantities.keySet(), Sentry.getSpan());
 		Sentry.logger().info("[springboot] - Inventory size: " + tempInventory.size());
 
-		executeWithSpan("reduce_inventory", "Reduce inventory from Cart quantities", () -> {
+		SpanUtils.executeWithSpan("reduce_inventory", "Reduce inventory from Cart quantities", () -> {
 			for (String key : quantities.keySet()) {
 				logger.info("[springboot - logback] - Item " + key + " has quantity " + quantities.get(key));
 
@@ -247,6 +245,7 @@ public class AppController {
 
 				tempInventory.put(key, currentInventory);
 			}
+			return null;
 		});
 	}
 
