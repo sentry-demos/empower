@@ -128,7 +128,7 @@ public class AppController {
 		setTags(request);
 
 		Sentry.logger().info("[springboot] - Making external API call to Ruby backend");
-		String BACKEND_URL_RUBY = environment.getProperty("empower.ruby_backend");
+		String BACKEND_URL_RUBY = environment.getProperty("empower.rubyonrails_backend");
 		ResponseEntity<String> response = restTemplate.exchange(BACKEND_URL_RUBY + "/api", HttpMethod.GET,new HttpEntity<>(headers), String.class);
 		Sentry.logger().info("[springboot] - External API call completed", "response_status", response.getStatusCode().value());
 		
@@ -170,7 +170,7 @@ public class AppController {
 			// Execute iterator calculation with span tracking
 			executeWithSpan("get_iterator", "Iterator calculation", () -> Thread.sleep(getIterator(16)));
 
-			String fooResourceUrl = environment.getProperty("empower.ruby_backend");
+			String fooResourceUrl = environment.getProperty("empower.rubyonrails_backend");
 			ResponseEntity<String> response = restTemplate.exchange(fooResourceUrl + "/api", HttpMethod.GET,new HttpEntity<>(headers), String.class);
 
 			String allProducts = dbHelper.mapAllProducts(Sentry.getSpan());
