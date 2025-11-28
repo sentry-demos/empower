@@ -119,10 +119,10 @@
 			<extensions>true</extensions>
 		<configuration>
 			<includeSourceContext>true</includeSourceContext>
-			<org>${env.SENTRY_ORG}</org>
-			<project>${env.SPRINGBOOT_SENTRY_PROJECT}</project>
-			<authToken>${env.SENTRY_AUTH_TOKEN}</authToken>
-			<release>${env.SPRINGBOOT_RELEASE}</release>
+			<org>${SENTRY_ORG}</org>
+			<project>${SPRINGBOOT_SENTRY_PROJECT}</project>
+			<authToken>${SENTRY_AUTH_TOKEN}</authToken>
+			<release>${SPRINGBOOT_RELEASE}</release>
 		</configuration>
 			<executions>
 				<execution>
