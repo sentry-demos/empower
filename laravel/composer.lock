@@ -854,6 +854,7 @@
         },
         {
             "name": "guzzlehttp/psr7",
+            "version": "2.7.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/guzzle/psr7.git",
@@ -3356,6 +3357,7 @@
                 "captainhook/captainhook": "^5.25",
                 "captainhook/plugin-composer": "^5.3",
                 "paragonie/random-lib": "^2",
+                "php-mock/php-mock": "^2.6",
                 "php-mock/php-mock-mockery": "^1.5",
                 "php-parallel-lint/php-parallel-lint": "^1.4.0",
                 "phpbench/phpbench": "^1.2.14",
@@ -3365,8 +3367,7 @@
                 "phpstan/phpstan-phpunit": "^2.0",
                 "phpunit/phpunit": "^9.6",
                 "slevomat/coding-standard": "^8.18",
-                "squizlabs/php_codesniffer": "^3.13",
-                "php-mock/php-mock": "^2.6"
+                "squizlabs/php_codesniffer": "^3.13"
             },
             "suggest": {
                 "ext-bcmath": "Enables faster math with arbitrary-precision integers using BCMath.",
