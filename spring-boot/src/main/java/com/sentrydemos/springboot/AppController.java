@@ -3,9 +3,7 @@ package com.sentrydemos.springboot;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import jakarta.annotation.PostConstruct;
-import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -29,7 +27,7 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestClient;
 
 import com.sentrydemos.springboot.utils.SpanUtils;
 
@@ -43,13 +41,13 @@ public class AppController {
 	private List<String> headerTags = new ArrayList<>();
 
 	private HttpHeaders headers = new HttpHeaders();
-	private final RestTemplate restTemplate;
+	private final RestClient restClient;
 
 	@Autowired
 	private Environment environment;
 
-	public AppController(RestTemplate restTemplate) {
-		this.restTemplate = restTemplate;
+	public AppController(RestClient restClient) {
+		this.restClient = restClient;
 	}
 	
 	@Autowired
@@ -129,7 +127,11 @@ public class AppController {
 
 		Sentry.logger().info("[springboot] - Making external API call to Ruby backend");
 		String BACKEND_URL_RUBY = environment.getProperty("empower.rubyonrails_backend");
-		ResponseEntity<String> response = restTemplate.exchange(BACKEND_URL_RUBY + "/api", HttpMethod.GET,new HttpEntity<>(headers), String.class);
+		ResponseEntity<String> response = restClient.get()
+			.uri(BACKEND_URL_RUBY + "/api")
+			.headers(h -> h.addAll(headers))
+			.retrieve()
+			.toEntity(String.class);
 		Sentry.logger().info("[springboot] - External API call completed", "response_status", response.getStatusCode().value());
 		
 		return "springboot /api";
@@ -171,7 +173,11 @@ public class AppController {
 			executeWithSpan("get_iterator", "Iterator calculation", () -> Thread.sleep(getIterator(16)));
 
 			String fooResourceUrl = environment.getProperty("empower.rubyonrails_backend");
-			ResponseEntity<String> response = restTemplate.exchange(fooResourceUrl + "/api", HttpMethod.GET,new HttpEntity<>(headers), String.class);
+			ResponseEntity<String> response = restClient.get()
+				.uri(fooResourceUrl + "/api")
+				.headers(h -> h.addAll(headers))
+				.retrieve()
+				.toEntity(String.class);
 
 			String allProducts = dbHelper.mapAllProducts(Sentry.getSpan());
 			return allProducts;
@@ -187,7 +193,11 @@ public class AppController {
 		setTags(request);
 
 		String fooResourceUrl = environment.getProperty("empower.rubyonrails_backend");
-		ResponseEntity<String> response = restTemplate.exchange(fooResourceUrl + "/api", HttpMethod.GET,new HttpEntity<>(headers), String.class);
+		ResponseEntity<String> response = restClient.get()
+			.uri(fooResourceUrl + "/api")
+			.headers(h -> h.addAll(headers))
+			.retrieve()
+			.toEntity(String.class);
 
 		String allProducts = dbHelper.mapAllProductsJoin(Sentry.getSpan());
 		return allProducts;

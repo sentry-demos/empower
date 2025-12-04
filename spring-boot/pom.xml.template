@@ -62,14 +62,12 @@
 		</dependency>
 		
 		<!-- Spring Boot DevTools for automatic restart during development -->
-		<!-- TEMPORARILY DISABLED - investigating classloader issue
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-devtools</artifactId>
 			<scope>runtime</scope>
 			<optional>true</optional>
 		</dependency>
-		-->
 		
 		<!-- GCLOUD Dependencies -->
 		<!-- Using CloudSqlJdbcInfoProvider bean to initialize DB connection with spring.cloud.gcp.sql.* values from application.properties -->
