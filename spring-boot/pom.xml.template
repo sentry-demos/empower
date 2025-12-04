@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.5.3</version>
+		<version>3.4.0</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.sentrydemos</groupId>
@@ -62,12 +62,14 @@
 		</dependency>
 		
 		<!-- Spring Boot DevTools for automatic restart during development -->
+		<!-- TEMPORARILY DISABLED - investigating classloader issue
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-devtools</artifactId>
 			<scope>runtime</scope>
 			<optional>true</optional>
 		</dependency>
+		-->
 		
 		<!-- GCLOUD Dependencies -->
 		<!-- Using CloudSqlJdbcInfoProvider bean to initialize DB connection with spring.cloud.gcp.sql.* values from application.properties -->
@@ -119,10 +121,10 @@
 			<extensions>true</extensions>
 		<configuration>
 			<includeSourceContext>true</includeSourceContext>
-			<org>${env.SENTRY_ORG}</org>
-			<project>${env.SPRINGBOOT_SENTRY_PROJECT}</project>
-			<authToken>${env.SENTRY_AUTH_TOKEN}</authToken>
-			<release>${env.SPRINGBOOT_RELEASE}</release>
+			<org>${SENTRY_ORG}</org>
+			<project>${SPRINGBOOT_SENTRY_PROJECT}</project>
+			<authToken>${SENTRY_AUTH_TOKEN}</authToken>
+			<release>${SPRINGBOOT_RELEASE}</release>
 		</configuration>
 			<executions>
 				<execution>
