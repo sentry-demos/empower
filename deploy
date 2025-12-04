@@ -58,11 +58,14 @@ env=""
 custom_command=""
 custom_command_args=""
 found_separator=false
+debug=false
 
 for arg in "$@"; do
   if [[ $arg = --env=* ]]; then
     env=$(echo $arg | cut -d '=' -f 2)
     echo "env = $env"
+  elif [[ $arg = "--debug" ]]; then
+    debug=true
   elif [[ $arg = "--" ]]; then
     found_separator=true
   elif [[ $found_separator = true ]]; then
@@ -76,13 +79,20 @@ for arg in "$@"; do
   fi
 done
 
+# Enable debug mode if requested
+if [[ "$debug" = true ]]; then
+  echo "[DEBUG] Debug mode enabled - verbose output and temp files preserved"
+  set -x
+fi
+
 USAGE="[ERROR] Invalid arguments.\n\
 Usage: \n\
 ./deploy --env=local flask                 # uses flask/run_local.sh - a setup similar to production\n\
 ./deploy --env=local react -- npm start    # any command after --, e.g. hot reload server or 'cat .env'\n\
 ./deploy --env=production react            # deploy to production\n\
 ./deploy --env=staging express spring-boot # multiple projects\n\
-./deploy --env=local react flask laravel   # wires all 3 together automatically (see local.env)"
+./deploy --env=local react flask laravel   # wires all 3 together automatically (see local.env)\n\
+./deploy --env=local --debug flask         # enable 'set -x' tracing and preserve temp files"
 
 # Validate CLI arguments
 if [[ "$env" == "" || "$projects" == "" ]]; then
@@ -164,7 +174,11 @@ function cleanup {
     fi
   done
   if [ "$temp_files" != "" ]; then
-    rm -f $temp_files # bash only (passed as separate args)
+    if [[ "$debug" = true ]]; then
+      echo "[DEBUG] Preserving temporary files: $temp_files"
+    else
+      rm -f $temp_files # bash only (passed as separate args)
+    fi
   fi
 }
 trap cleanup EXIT
