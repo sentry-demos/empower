@@ -167,6 +167,7 @@ done
 projects="$be_projects $fe_projects"
 
 function cleanup {
+  echo "Cleaning up..."
   for pid in $run_sh_pids; do
     # each run_local.sh has it's own cleanup function
     if ps -p $pid > /dev/null; then
@@ -436,11 +437,7 @@ for proj in $projects; do # bash only
         exit 1
       fi
     else 
-      if [ "$proj" == "spring-boot" ]; then
-        mvn clean package appengine:deploy
-      else
-        gcloud app deploy --version v1 --quiet app.yaml
-      fi
+      gcloud app deploy --version v1 --quiet app.yaml
     fi
   fi
 done
