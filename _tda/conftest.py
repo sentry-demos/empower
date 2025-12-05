@@ -115,7 +115,7 @@ BATCH_SIZE = os.getenv("IS_CANARY") and "1" or (os.getenv("BATCH_SIZE") or "1")
 SLEEP_LENGTH = os.getenv("SLEEP_LENGTH") or "random_2_1"
 
 # Currently only used in desktop_web/ tests. Mobile apps have it hardcoded.
-BACKENDS = (os.getenv("BACKENDS") or "flask,express,springboot,laravel,rails,aspnetcore,flask-otlp").split(',')
+BACKENDS = (os.getenv("BACKENDS") or "flask,express,springboot,laravel,rails,aspnetcore,flask-otlp,springboot-otlp").split(',')
 
 # set in loop.sh
 IS_FIRST_RUN_OF_THE_DAY = os.getenv("IS_FIRST_RUN_OF_THE_DAY")

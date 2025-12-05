@@ -1,0 +1,154 @@
+package com.sentrydemos.springboot;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Component;
+
+import io.sentry.Sentry;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+@Component
+public class DatabaseHelper {
+
+	//Leverage Item & Review class getters to map DB results into JSONObject/JSONArray
+	
+	@Autowired
+	JdbcTemplate jdbcTemplate;
+	
+	
+	public String mapAllProducts() throws Exception {
+		List<Item> allItems = jdbcTemplate.query("SELECT * FROM products",
+				(rs, rowNum) -> {
+					try {
+						return new Item(rs.getInt("id"), rs.getString("title"), rs.getString("description"),
+								rs.getString("descriptionfull"), rs.getInt("price"), rs.getString("img"),
+								rs.getString("imgcropped"), mapAllReviews(rs.getInt("id")));
+					} catch (Exception e) {
+						throw new RuntimeException("Failed to map reviews for product " + rs.getInt("id"), e);
+					}
+				});
+		
+		JSONArray ja = new JSONArray();
+		for (Item i : allItems) {
+			JSONObject jsonItemObject = new JSONObject(i);
+			ja.put(jsonItemObject);
+		}
+		
+		Sentry.logger().info("[springboot] - Products retrieved successfully", 
+			"total_products", allItems.size(),
+			"sql_query", "SELECT * FROM products");
+		
+		return ja.toString();
+	}
+
+	public List<Review> mapAllReviews(int productId) throws Exception {
+		// weekly_promotions is a "sleepy view", run the following query to get current sleep duration:
+		// SELECT pg_get_viewdef('weekly_promotions', true)
+		String sql = "SELECT * FROM reviews, weekly_promotions WHERE productId = " + String.valueOf(productId);
+		
+		
+		List<Review> allReviews = jdbcTemplate.query(sql, (rs, rowNum) -> new Review(rs.getInt("id"), rs.getInt("productid"),
+				rs.getInt("rating"), rs.getInt("customerid"), rs.getString("description"), rs.getString("created")));
+		return allReviews;
+	}
+
+	public String mapAllProductsJoin() throws Exception {
+		String sql = "SELECT * FROM products";
+		
+		List<Item> allItems = jdbcTemplate.query(sql,
+				(rs, rowNum) -> new Item(rs.getInt("id"), rs.getString("title"), rs.getString("description"),
+						rs.getString("descriptionfull"), rs.getInt("price"), rs.getString("img"),
+						rs.getString("imgcropped"), null));
+		
+		allItems = getAllItemsRowMapper(allItems);
+
+		JSONArray ja = new JSONArray();
+		for (Item i : allItems) {
+			JSONObject jsonItemObject = new JSONObject(i);
+			ja.put(jsonItemObject);
+		}
+		
+		return ja.toString();
+	}
+	
+	public List<Item> getAllItemsRowMapper(List<Item> items) throws Exception {
+		Map<Integer, List<Review>> reviewsMap = new HashMap<>();
+		String sql = "SELECT reviews.id, products.id AS productid, reviews.rating, reviews.customerId, reviews.description, reviews.created FROM reviews INNER JOIN products ON reviews.productId = products.id";
+		
+		List<Map<String, Object>> resultList = jdbcTemplate.queryForList(sql);
+		for (int i = 0; i < resultList.size(); i++) {
+			Map<String, Object> m = resultList.get(i);
+			
+			//customerId and description are null. TODO: Set SQL table to prevent null values
+			String desc = "";
+			if (m.containsKey("description") && m.get("description") != null) {
+				desc = String.valueOf(m.get("description"));
+			}
+			int custId = 0;
+			if (m.containsKey("customerId") && m.get("customerId") != null) {
+				custId = (int)m.get("customerId");
+			}
+
+			Review r = new Review((int)m.get("id"), (int)m.get("productid"),
+					(int)m.get("rating"), custId, desc, m.get("created").toString());
+			
+			if (reviewsMap.containsKey((int)m.get("productid"))) {
+				reviewsMap.get((int)m.get("productid")).add(r);
+			} else {
+				List<Review> rl = new ArrayList<Review>();
+				rl.add(r);
+				reviewsMap.put((int)m.get("productid"), rl);
+			}
+		}
+		
+		for (Item i : items) {
+			i.setReviews(reviewsMap.get(i.getId()));
+		}
+		
+		return items;
+	}
+	
+	public Map<String, Integer> getInventory(Set<String> set) throws Exception {
+		Sentry.logger().info("[springboot] - Retrieving inventory for products", 
+			"product_ids", set.toString(),
+			"product_count", set.size());
+
+		String sql = "SELECT * FROM inventory WHERE productId in " + formatArray(set);
+		
+		List<Map<String, Object>> results = jdbcTemplate.queryForList(sql);
+
+		Map<String, Integer> inventory = new HashMap<String, Integer>();
+		for (Map m : results) {
+			if (m.get("productid") != null && m.get("count") != null) {
+				inventory.put(m.get("productid").toString(), (int) m.get("count"));
+			}
+		}
+		
+		Sentry.logger().info("[springboot] - Inventory retrieved", 
+			"inventory_items_count", inventory.size(),
+			"requested_products", set.size());
+		
+		return inventory;
+	}
+	
+	private String formatArray(Set<String> set) {
+		StringBuilder sb = new StringBuilder("(");
+		
+		String prefix = "";
+		for (String productId : set) {
+			sb.append(prefix + productId);
+			prefix = ",";
+		}
+		sb.append(")");
+		return sb.toString();
+	}
+	
+}

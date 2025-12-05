@@ -9,6 +9,7 @@ const SUPPORTED_BACKEND_TYPES = {
   ruby: process.env.REACT_APP_BACKEND_URL_RUBYONRAILS,
   rails: process.env.REACT_APP_BACKEND_URL_RUBYONRAILS,
   'flask-otlp': process.env.REACT_APP_BACKEND_URL_FLASKOTLP,
+  'springboot-otlp': process.env.REACT_APP_BACKEND_URL_SPRINGBOOTOTLP,
 };
 
 const determineBackendType = (desiredBackend) => {
