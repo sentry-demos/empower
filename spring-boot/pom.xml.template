@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>2.7.18</version>
+		<version>3.4.0</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.sentrydemos</groupId>
@@ -18,17 +18,17 @@
 	</properties>
 
 	<dependencies>
-		<!-- Sentry Spring Boot SDK -->
+		<!-- Sentry Spring Boot SDK for Jakarta EE -->
 		<dependency>
 			<groupId>io.sentry</groupId>
-			<artifactId>sentry-spring-boot-starter</artifactId>
-			<version>8.3.0</version>
+			<artifactId>sentry-spring-boot-starter-jakarta</artifactId>
+			<version>8.18.0</version>
 		</dependency>
 		<!-- Sentry Logback SDK -->
 		<dependency>
 		    <groupId>io.sentry</groupId>
 		    <artifactId>sentry-logback</artifactId>
-		    <version>8.3.0</version>
+		    <version>8.18.0</version>
 		</dependency>
 		<!-- Capture Sentry Transaction -->
 		<dependency>
@@ -58,15 +58,30 @@
 		<dependency>
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
-			<version>42.5.5</version>
+			<version>42.7.2</version>
+		</dependency>
+		
+		<!-- Spring Boot DevTools for automatic restart during development -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-devtools</artifactId>
+			<scope>runtime</scope>
+			<optional>true</optional>
 		</dependency>
 		
 		<!-- GCLOUD Dependencies -->
 		<!-- Using CloudSqlJdbcInfoProvider bean to initialize DB connection with spring.cloud.gcp.sql.* values from application.properties -->
 		<dependency>
-			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-gcp-starter-sql-postgresql</artifactId>
-			<version>1.2.8.RELEASE</version>
+			<groupId>com.google.cloud.sql</groupId>
+			<artifactId>postgres-socket-factory</artifactId>
+			<version>1.19.0</version>
+		</dependency>
+		
+		<!-- JUnit 5 for testing -->
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter</artifactId>
+			<scope>test</scope>
 		</dependency>
 				
 	</dependencies>
@@ -77,16 +92,46 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 			</plugin>
-			<!-- Google Cloud Platform deploy -->
 			<plugin>
-				<groupId>com.google.cloud.tools</groupId>
-				<artifactId>appengine-maven-plugin</artifactId>
-				<version>2.4.1</version>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.12.1</version>
 				<configuration>
-					<projectId>GCLOUD_CONFIG</projectId>
-					<version>GCLOUD_CONFIG</version>
+					<source>17</source>
+					<target>17</target>
 				</configuration>
 			</plugin>
-		</plugins>
-	</build>
+		<!-- Google Cloud Platform deploy -->
+		<plugin>
+			<groupId>com.google.cloud.tools</groupId>
+			<artifactId>appengine-maven-plugin</artifactId>
+			<version>2.4.1</version>
+			<configuration>
+				<projectId>GCLOUD_CONFIG</projectId>
+				<version>GCLOUD_CONFIG</version>
+			</configuration>
+		</plugin>
+		<!-- Sentry Maven Plugin for source context -->
+		<plugin>
+			<groupId>io.sentry</groupId>
+			<artifactId>sentry-maven-plugin</artifactId>
+			<version>0.10.0</version>
+			<extensions>true</extensions>
+		<configuration>
+			<includeSourceContext>true</includeSourceContext>
+			<org>${SENTRY_ORG}</org>
+			<project>${SPRINGBOOT_SENTRY_PROJECT}</project>
+			<authToken>${SENTRY_AUTH_TOKEN}</authToken>
+			<release>${SPRINGBOOT_RELEASE}</release>
+		</configuration>
+			<executions>
+				<execution>
+					<goals>
+						<goal>uploadSourceBundle</goal>
+					</goals>
+				</execution>
+			</executions>
+		</plugin>
+	</plugins>
+</build>
 </project>
