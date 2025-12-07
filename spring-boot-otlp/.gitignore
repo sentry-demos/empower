@@ -1,0 +1,31 @@
+# Maven build output
+target/
+
+# Downloaded agent JARs for local development
+lib/
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+.project
+.classpath
+.settings/
+
+# Log files
+*.log
+log/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment files
+.env
+*.env.local
+
+# Generated files from templates
+pom.xml
+application.properties
+app.yaml
+
