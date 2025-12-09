@@ -14,6 +14,7 @@ from statsig import statsig, StatsigOptions, StatsigEnvironmentTier
 import dotenv
 from .db import decrement_inventory, get_products, get_products_join, get_inventory, get_promo_code
 from .utils import parseHeaders, get_iterator, evaluate_statsig_flags
+from .cart_utils import CartValidationError, normalize_quantities, resolve_item_title
 from .queues.tasks import sendEmail
 import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
@@ -260,10 +261,7 @@ def checkout():
     try:
         if validate_inventory:
             with sentry_sdk.start_span(op="code.block", name="checkout.process_order"):
-                if len(quantities) == 0:
-                    raise Exception("Invalid checkout request: cart is empty")
-
-                quantities = {int(k): v for k, v in cart['quantities'].items()}
+                quantities = normalize_quantities(cart)
                 inventory_dict = {x.productid: x for x in inventory}
                 for product_id in quantities:
                     inventory_count = inventory_dict[product_id].count if product_id in inventory_dict else 0
@@ -271,8 +269,12 @@ def checkout():
                         decrement_inventory(inventory_dict[product_id].id, quantities[product_id])
                         fulfilled_count += 1
                     else:
-                        title = list(filter(lambda x: x['id'] == product_id, cart['items']))[0]['title']
+                        title = resolve_item_title(cart.get('items', []), product_id)
                         out_of_stock.append(title)
+    except CartValidationError as err:
+
+        logger.error('Invalid cart payload for checkout: %s', cart)
+        raise Exception(str(err)) from err
     except Exception as err:
 
         logger.error('Failed to validate inventory with cart: %s', cart)
