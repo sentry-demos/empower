@@ -18,7 +18,9 @@ const referenceError = () => {
   throw new ReferenceError('undefinedVariable is not defined');  // Same as React
 };
 
-const syntaxError = () => eval('foo bar');  // Same as React
+const syntaxError = () => {
+  throw new SyntaxError('Intentional syntax error triggered via crash parameter');  // Same as React
+};
 
 const rangeError = () => {
   throw new RangeError('Parameter must be between 1 and 100');  // Same as React
