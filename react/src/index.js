@@ -14,7 +14,7 @@ import {
   createRoutesFromChildren,
   matchRoutes,
 } from 'react-router-dom';
-import { crasher } from './utils/errors';
+import { runCrasherSafely } from './utils/errors';
 import {
   determineBackendType,
   determineBackendUrl,
@@ -313,7 +313,17 @@ class App extends Component {
     };
 
     // Crasher parses query params sent by /tests for triggering crashes for Release Health
-    crasher();
+    runCrasherSafely((error) => {
+      const crashSearchParams = history.location.search;
+
+      Sentry.withScope((scope) => {
+        scope.setTag('crash-trigger', 'query-param');
+        scope.setExtra('crash.search', crashSearchParams);
+        Sentry.captureException(error);
+      });
+
+      console.warn('Suppressed crash triggered via query params', error);
+    });
   }
 
   render() {

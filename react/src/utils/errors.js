@@ -53,6 +53,20 @@ const crasher = () => {
   }
 };
 
+const runCrasherSafely = (onError) => {
+  try {
+    crasher();
+    return null;
+  } catch (error) {
+    if (typeof onError === 'function') {
+      onError(error);
+      return error;
+    }
+
+    throw error;
+  }
+};
+
 // Useful for fingerprinting examples and R&D. You can check `if (exception instanceof UnhandledException)`
 // Based on the official example https://docs.sentry.io/platforms/javascript/usage/sdk-fingerprinting/#group-errors-with-greater-granularity
 class UnhandledException extends Error {
@@ -61,4 +75,4 @@ class UnhandledException extends Error {
   }
 }
 
-export { crasher, UnhandledException };
+export { crasher, UnhandledException, runCrasherSafely };
