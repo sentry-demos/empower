@@ -4,7 +4,16 @@ const history = createBrowserHistory();
 // ERRORS
 const notAFunctionError = () => {
   const someArray = [{ func: function () {} }];
-  someArray[1].func();
+  const entry = someArray[1];
+
+  if (!entry || typeof entry.func !== 'function') {
+    console.warn(
+      '[crasher] notAFunctionError fallback: attempted to call missing func'
+    );
+    return someArray[0].func();
+  }
+
+  entry.func();
 };
 const referenceError = () => {
   throw new ReferenceError('undefinedVariable is not defined');
