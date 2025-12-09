@@ -181,6 +181,7 @@ class App extends Component {
         response: [],
       },
     };
+    this.crashTimeoutId = null;
 
     let queryParams = new URLSearchParams(history.location.search);
 
@@ -312,8 +313,25 @@ class App extends Component {
       return res;
     };
 
-    // Crasher parses query params sent by /tests for triggering crashes for Release Health
-    crasher();
+  }
+
+  componentDidMount() {
+    // Defer intentional crashes so React finishes mounting before we throw.
+    if (typeof window === 'undefined' || typeof window.setTimeout !== 'function') {
+      crasher();
+      return;
+    }
+
+    // Crasher parses query params sent by /tests for triggering crashes for Release Health.
+    this.crashTimeoutId = window.setTimeout(() => {
+      crasher();
+    }, 0);
+  }
+
+  componentWillUnmount() {
+    if (this.crashTimeoutId) {
+      window.clearTimeout(this.crashTimeoutId);
+    }
   }
 
   render() {
