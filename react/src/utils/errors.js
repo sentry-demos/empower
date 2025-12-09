@@ -3,8 +3,17 @@ const history = createBrowserHistory();
 
 // ERRORS
 const notAFunctionError = () => {
-  const someArray = [{ func: function () {} }];
-  someArray[1].func();
+  const someArray = [
+    { func: function () {} },
+    { func: 'definitely-not-a-function' },
+  ];
+  const maybeFunc = someArray[1].func;
+
+  if (typeof maybeFunc !== 'function') {
+    throw new TypeError('Attempted to call a non-function value');
+  }
+
+  maybeFunc();
 };
 const referenceError = () => {
   throw new ReferenceError('undefinedVariable is not defined');
