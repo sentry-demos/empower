@@ -39,11 +39,29 @@ var probability = function (n) {
   return !!n && Math.random() <= n;
 };
 
+const truthyCrashAuthorizationValues = new Set(['true', '1', 'yes']);
+
+const isCrashAuthorized = (queryParams) => {
+  const authorizationFlag = queryParams.get('crash_authorized');
+  if (!authorizationFlag) {
+    return false;
+  }
+
+  return truthyCrashAuthorizationValues.has(authorizationFlag.toLowerCase());
+};
+
 const crasher = () => {
   const queryParams = new URLSearchParams(history.location.search);
   if (queryParams !== '') {
     const crash = queryParams.get('crash');
     if (crash) {
+      if (!isCrashAuthorized(queryParams)) {
+        console.warn(
+          'Ignoring crash query parameter because crash_authorized flag is missing or false'
+        );
+        return;
+      }
+
       console.log('> crash', crash);
       const errnum =
         queryParams.get('errnum') ||

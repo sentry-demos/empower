@@ -14,10 +14,13 @@ describe('Errors module', () => {
     Math.random = originalMathRandom;
   });
 
-  const setQueryParams = (obj) => {
-    // const searchParams = new URLSearchParams(params);
-    // history.push({ search: searchParams.toString() });
-    jest.spyOn(URLSearchParams.prototype, 'get').mockImplementation((key) => obj[key]);
+  const setQueryParams = (overrides = {}) => {
+    const params = { crash_authorized: 'true', ...overrides };
+    jest
+      .spyOn(URLSearchParams.prototype, 'get')
+      .mockImplementation((key) =>
+        Object.prototype.hasOwnProperty.call(params, key) ? params[key] : null
+      );
   };
 
   test('should throw a notAFunctionError when "crash" is true and errnum is 0', () => {
@@ -43,6 +46,11 @@ describe('Errors module', () => {
   test('should throw an UnhandledException when "crash" is true and errnum is 4', () => {
     setQueryParams({ crash: 'true', errnum: '4' });
     expect(() => crasher()).toThrow(UnhandledException);
+  });
+
+  test('should ignore crash parameter when it is not authorized', () => {
+    setQueryParams({ crash: 'true', errnum: '0', crash_authorized: null });
+    expect(() => crasher()).not.toThrow();
   });
 
 // This test is failing, need to look into this later

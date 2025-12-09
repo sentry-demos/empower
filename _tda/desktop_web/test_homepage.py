@@ -45,7 +45,8 @@ def test_homepage(desktop_web_driver, endpoints, random, batch_size, backend, sl
                 query_string = {
                     'backend': backend(),
                     'crash': "%s" % (crash),
-                    'errnum': "%d" % (errnum)
+                    'errnum': "%d" % (errnum),
+                    'crash_authorized': 'true'
                 }
                 url = endpoint + '?' + urlencode(query_string)
 
