@@ -1,4 +1,4 @@
-import { crasher, UnhandledException } from '../utils/errors';
+import { crasher, UnhandledException, runCrasherSafely } from '../utils/errors';
 import { createBrowserHistory } from 'history';
 
 describe('Errors module', () => {
@@ -63,5 +63,12 @@ describe('Errors module', () => {
     setQueryParams({ crash: '0.1' });
     Math.random = jest.fn(() => 0.2); // This should not cause the error to be thrown
     expect(() => crasher()).not.toThrow();
+  });
+
+  test('runCrasherSafely should delegate errors to handler instead of throwing', () => {
+    setQueryParams({ crash: 'true', errnum: '1' });
+    const handler = jest.fn();
+    expect(() => runCrasherSafely(handler)).not.toThrow();
+    expect(handler).toHaveBeenCalledWith(expect.any(ReferenceError));
   });
 });
