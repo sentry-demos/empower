@@ -26,8 +26,29 @@ const randomErrors = [
   unhandledError,
 ];
 
+const getNormalizedIndex = (value) => {
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  const parsed = Number.parseInt(value, 10);
+  if (Number.isNaN(parsed)) {
+    return null;
+  }
+
+  // Ensure index stays within bounds even if the parsed number is large or negative
+  return Math.abs(parsed) % randomErrors.length;
+};
+
 const throwErrorNumber = (i) => {
-  randomErrors[i % randomErrors.length]();
+  const normalizedIndex =
+    getNormalizedIndex(i) ??
+    Math.floor(Math.random() * randomErrors.length);
+
+  const errorFn = randomErrors[normalizedIndex];
+  if (typeof errorFn === 'function') {
+    errorFn();
+  }
 };
 
 // if n is 0.2 then this will return false 20% of the time
@@ -42,8 +63,8 @@ const crasher = () => {
     if (crash) {
       console.log('> crash', crash);
       const errnum =
-        queryParams.get('errnum') ||
-        parseInt(Math.random() * randomErrors.length);
+        getNormalizedIndex(queryParams.get('errnum')) ??
+        Math.floor(Math.random() * randomErrors.length);
       if (crash === 'true' || probability(parseFloat(crash))) {
         throwErrorNumber(errnum);
       }
