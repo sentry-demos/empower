@@ -26,8 +26,21 @@ const randomErrors = [
   unhandledError,
 ];
 
+const getRandomErrorIndex = () => Math.floor(Math.random() * randomErrors.length);
+
+const normalizeIndex = (value) => {
+  if (!Number.isFinite(value)) {
+    return getRandomErrorIndex();
+  }
+  return Math.abs(Math.floor(value)) % randomErrors.length;
+};
+
 const throwErrorNumber = (i) => {
-  randomErrors[i % randomErrors.length]();
+  const normalizedIndex = normalizeIndex(i);
+  const errorFn = randomErrors[normalizedIndex];
+  if (typeof errorFn === 'function') {
+    errorFn();
+  }
 };
 
 // if n is 0.2 then this will return false 20% of the time
@@ -41,9 +54,12 @@ const crasher = () => {
     const crash = queryParams.get('crash');
     if (crash) {
       console.log('> crash', crash);
-      const errnum =
-        queryParams.get('errnum') ||
-        parseInt(Math.random() * randomErrors.length);
+      const errnumParam = queryParams.get('errnum');
+      const parsedErrnum =
+        errnumParam !== null ? Number.parseInt(errnumParam, 10) : NaN;
+      const errnum = Number.isNaN(parsedErrnum)
+        ? getRandomErrorIndex()
+        : parsedErrnum;
       if (crash === 'true' || probability(parseFloat(crash))) {
         throwErrorNumber(errnum);
       }
