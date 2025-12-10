@@ -303,11 +303,12 @@ def success():
 def products():
     logger.info('Received /products endpoint request')
 
-    cache_key = str(random.randrange(100))
-
-    product_inventory = None
+    # Use a deterministic cache key based on request parameters
     fetch_promotions = request.args.get('fetch_promotions')
     in_stock_only = request.args.get('in_stock_only')
+    cache_key = f"products_{fetch_promotions}_{in_stock_only}"
+
+    product_inventory = None
     timeout_seconds = (EXTREMELY_SLOW_PROFILE if fetch_promotions else NORMAL_SLOW_PROFILE)
 
     logger.info('Processing /products')
@@ -316,7 +317,9 @@ def products():
     # However, we want to keep the total trace time the same to preserve web vitals (+ other) functionality in sentry
     # Cache hits should keep the current delay, while cache misses will move 0.5 over to the ruby span
     ruby_delay_time = 0
-    if (cache_key != "7"):
+    # Check if we have a cached response
+    has_cache = redis_client.exists("ruby.api.cache:" + cache_key)
+    if not has_cache:
         timeout_seconds -= 0.5
         ruby_delay_time = 0.5
 
@@ -384,10 +387,9 @@ def get_api_response_with_caching(key, delay):
             if sleep_time > 0:
                 time.sleep(sleep_time)
 
-            # For demo show we want to show cache misses so only save 1 / 100
-            if key == 7:
-                logger.info('Processing /products - caching API response')
-                redis_client.set("ruby.api.cache:" + str(key), key)
+            # Cache the response to improve performance on subsequent requests
+            logger.info('Processing /products - caching API response')
+            redis_client.set("ruby.api.cache:" + str(key), key)
 
     except Exception as err:
         logger.error('Processing /products - API request failed')
