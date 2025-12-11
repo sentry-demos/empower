@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.http.ResponseEntity;
 
@@ -115,8 +116,13 @@ public class AppController {
 
 	@CrossOrigin
 	@GetMapping("/unhandled")
-	public String UnhandledError() {
-		throw new RuntimeException("Unhandled Exception!");
+	public String UnhandledError(@RequestParam(name = "simulate", defaultValue = "false") boolean simulate) {
+		if (simulate) {
+			throw new RuntimeException("Unhandled Exception!");
+		}
+
+		logger.info("[springboot - logback] - /unhandled invoked without simulation flag");
+		return "Pass simulate=true to trigger the demo unhandled exception.";
 	}
 
 	@CrossOrigin
