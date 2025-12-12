@@ -45,6 +45,7 @@
 echo "[debug] Bash version: $BASH_VERSION" >&2
 gcloud --version
 mvn --version
+composer --version
 
 set -e
 
