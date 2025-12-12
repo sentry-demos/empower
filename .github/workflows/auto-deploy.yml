@@ -58,7 +58,7 @@ jobs:
           java-version: '24'
 
       - name: Set up PHP
-        uses: actions/setup-php@v5
+        uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
 
