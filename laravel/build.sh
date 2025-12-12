@@ -2,6 +2,9 @@
 
 set -e
 
+
+composer install
+
 php artisan optimize:clear
 php artisan optimize
 
