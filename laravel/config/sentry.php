@@ -8,7 +8,7 @@
 return [
 
     // @see https://docs.sentry.io/product/sentry-basics/dsn-explainer/
-    'dsn' => env('LARAVEL_APP_DSN'),
+    'dsn' => env('LARAVEL_DSN'),
 
     // @see https://spotlightjs.com/
     // 'spotlight' => env('SENTRY_SPOTLIGHT', false),
