@@ -25,4 +25,4 @@ Route::get('/unhandled', [ProductController::class, 'unhandled']);
 Route::get('/maybe-cached', [ProductController::class, 'maybe_cached']);
 
 // Email routes, testing async jobs
-Route::get('/enqueue', [EmailController::class, 'enqueue']); 
+Route::get('/enqueue', [EmailController::class, 'enqueue']);
