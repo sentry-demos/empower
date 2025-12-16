@@ -19,7 +19,7 @@ class EmailController extends Controller
      * Get all products with reviews
      * Extracted from the original /products route
      */
-    public function enqueue(): JsonResponse
+    public function enqueue(Request $request): JsonResponse
     {
         // Validate the request first
         $request->validate([
