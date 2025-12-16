@@ -96,9 +96,9 @@ function Checkout({ backend, rageclick, checkout_success, cart }) {
       checkout_span.setAttribute("checkout.error", 1);
 
       if (!response.error || response.status === undefined) {
-        checkout_span.setAttribute("status", response.status); 
+        checkout_span.setAttribute("status", response.status);
 
-        throw new Error(
+        throw new Error( 
           [response.status, response.statusText || ' Internal Server Error'].join(
             ' -'
           )
