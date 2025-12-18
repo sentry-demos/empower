@@ -10,8 +10,11 @@ export class UnhandledException extends Error {
 
 // ERRORS - EXACTLY matching React implementation
 const notAFunctionError = () => {
-  const someArray: any[] = [];
-  someArray[1].func();  // This will throw TypeError: Cannot read properties of undefined
+  const someArray: Array<{ func: any }> = [
+    { func: () => {} },
+    { func: 'not-a-function' },
+  ];
+  someArray[1].func();  // This now throws TypeError: someArray[1].func is not a function
 };
 
 const referenceError = () => {

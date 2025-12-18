@@ -77,7 +77,10 @@ export default {
 
     notAFunctionError: function() {
       console.log("notAFunctionError");
-      var someArray = [{ func: function() {} }];
+      var someArray = [
+        { func: function() {} },
+        { func: "not-a-function" }
+      ];
       someArray[1].func();
     },
     uriError: function() {
