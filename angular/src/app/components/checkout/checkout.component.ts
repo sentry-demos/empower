@@ -91,7 +91,6 @@ export class CheckoutComponent implements OnInit {
    * 
    * @param event - The form submission event
    */
-  @Sentry.TraceMethod({ name: "CheckoutComponent.onSubmit" })
   async onSubmit(event: Event): Promise<void> {
     // Prevent the default form submission behavior
     event.preventDefault();
@@ -102,95 +101,131 @@ export class CheckoutComponent implements OnInit {
       return;
     }
 
-    // Scroll to top (like React)
-    window.scrollTo({
-      top: 0,
-      behavior: 'auto'
-    });
+    // Wrap in a Sentry span for proper tracing (like React does with 'Submit Checkout Form')
+    await Sentry.startSpan(
+      {
+        name: 'Submit Checkout Form',
+        op: 'ui.action.click',
+        forceTransaction: true, // Create a new transaction like React does
+      },
+      async () => {
+        // Scroll to top (like React)
+        window.scrollTo({
+          top: 0,
+          behavior: 'auto'
+        });
 
-    // Set loading state for smooth experience (like React)
-    this.loading = true;
+        // Set loading state for smooth experience (like React)
+        this.loading = true;
 
-    try {
-      // Evaluate feature flags exactly as per Sentry documentation
-      this.featureFlagsService.evaluateFeatureFlags();
-      
-      // Process the checkout (this will intentionally fail to showcase Sentry)
-      await this.processCheckout();
-      
-      // If successful, navigate to complete page (like React)
-      this.router.navigate(['/complete']);
-    } catch (error) {
-      // This is the expected behavior - checkout fails to showcase Sentry
-      console.error('Checkout error (expected for demo):', error);
-      
-      // Capture the error in Sentry for monitoring (matches React exactly)
-      Sentry.captureException(error);
-      
-      // Navigate to error page to show the error (like React)
-      this.router.navigate(['/error']);
-    } finally {
-      // Always reset loading state
-      this.loading = false;
-    }
+        let hadError = false;
+
+        try {
+          // Evaluate feature flags exactly as per Sentry documentation
+          this.featureFlagsService.evaluateFeatureFlags();
+          
+          // Process the checkout (this will intentionally fail to showcase Sentry)
+          await this.processCheckout();
+          
+        } catch (error) {
+          // This is the expected behavior - checkout fails to showcase Sentry
+          console.error('Checkout error (expected for demo):', error);
+          
+          // Capture the error in Sentry for monitoring (matches React exactly)
+          Sentry.captureException(error);
+          
+          hadError = true;
+        } finally {
+          // Always reset loading state
+          this.loading = false;
+        }
+
+        // Navigate based on result (like React)
+        if (hadError) {
+          this.router.navigate(['/error']);
+        } else {
+          this.router.navigate(['/complete']);
+        }
+      }
+    );
   }
 
   /**
    * Makes actual API call to backend like React does
    * The backend will intentionally fail to showcase Sentry error monitoring
+   * Uses Sentry.startSpan() to ensure proper trace propagation (like React)
    * 
    * @returns Promise<Response> - The checkout API response
    */
-  @Sentry.TraceMethod({ name: "CheckoutComponent.processCheckout" })
   private async processCheckout(): Promise<Response> {
-    
-    const itemsInCart = this.cartService.getCartItemCount();
+    // Wrap the entire checkout process in a Sentry span (like React does)
+    return await Sentry.startSpan(
+      {
+        name: 'processCheckout',
+        op: 'function',
+      },
+      async (span) => {
+        const itemsInCart = this.cartService.getCartItemCount();
 
-    // Get backend URL from config service (supports Laravel/Flask switching)
-    const backendUrl = this.configService.getBackendUrl();
-    const backendType = this.configService.getCurrentBackendType();
-    const checkoutUrl = `${backendUrl}/checkout?v2=true`;
-    
-
-    const requestBody = {
-      cart: this.cart,
-      form: this.form,
-      validate_inventory: this.configService.getCheckoutSuccess() ? "false" : "true"
-    };
-
-
-    try {
-      const response = await fetch(checkoutUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody)
-      })
-      .catch((error) => {
-        // Handle fetch errors like React does - convert to response object
-        return { ok: false, error: error, status: undefined, statusText: undefined };
-      });
-
-      if (!response.ok) {
-        console.error("Checkout failed with status:", (response as any).status);
+        // Get backend URL from config service (supports Laravel/Flask switching)
+        const backendUrl = this.configService.getBackendUrl();
+        const backendType = this.configService.getCurrentBackendType();
+        const checkoutUrl = `${backendUrl}/checkout?v2=true`;
         
-        if (!(response as any).error || (response as any).status === undefined) {
-          const error = new Error(`${(response as any).status} - ${(response as any).statusText || 'Internal Server Error'}`);
-          throw error;
-        } else {
-          // Handle network errors like React does
-          if ((response as any).error instanceof TypeError && (response as any).error.message === "Failed to fetch") {
-            throw new Error("Fetch promise rejected in Checkout due to either an actual network issue, malformed URL, etc or CORS headers not set on HTTP 500: " + (response as any).error);
+        // Set span attributes (like React does)
+        span?.setAttribute('checkout.click', 1);
+        span?.setAttribute('items_at_checkout', itemsInCart);
+        span?.setAttribute('checkout.order.total', this.cart.total);
+        span?.setAttribute('backendType', backendType);
+
+        const requestBody = {
+          cart: this.cart,
+          form: this.form,
+          validate_inventory: this.configService.getCheckoutSuccess() ? "false" : "true"
+        };
+
+        try {
+          const response = await fetch(checkoutUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
+          })
+          .catch((error) => {
+            // Handle fetch errors like React does - convert to response object
+            return { ok: false, error: error, status: undefined, statusText: undefined };
+          });
+
+          if (!response.ok) {
+            console.error("Checkout failed with status:", (response as any).status);
+            
+            // Set error attribute on span (like React)
+            span?.setAttribute('checkout.error', 1);
+            
+            if (!(response as any).error || (response as any).status === undefined) {
+              span?.setAttribute('status', (response as any).status);
+              const error = new Error(`${(response as any).status} - ${(response as any).statusText || 'Internal Server Error'}`);
+              throw error;
+            } else {
+              // Handle network errors like React does
+              span?.setAttribute('status', 'unknown_error');
+              if ((response as any).error instanceof TypeError && (response as any).error.message === "Failed to fetch") {
+                throw new Error("Fetch promise rejected in Checkout due to either an actual network issue, malformed URL, etc or CORS headers not set on HTTP 500: " + (response as any).error);
+              } else {
+                throw new Error("Checkout request failed: " + (response as any).error);
+              }
+            }
           } else {
-            throw new Error("Checkout request failed: " + (response as any).error);
+            // Set success attribute on span (like React)
+            span?.setAttribute('checkout.success', 1);
           }
+
+          return response as Response;
+        } catch (error) {
+          console.error("Checkout request failed:", error);
+          throw error;
         }
       }
-
-      return response as Response;
-    } catch (error) {
-      console.error("Checkout request failed:", error);
-      throw error;
-    }
+    );
   }
 
   /**

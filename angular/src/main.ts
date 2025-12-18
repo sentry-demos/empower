@@ -1,6 +1,7 @@
 import * as Sentry from "@sentry/angular";
 import 'zone.js';
 import { bootstrapApplication } from '@angular/platform-browser';
+import { Router } from '@angular/router';
 import { AppComponent } from './app/app.component';
 import { appConfig } from './app/app.config';
 import { environment } from './environments/environment';
@@ -77,7 +78,11 @@ Sentry.init({
     integrations: (defaultIntegrations) => [
         // Filter out the Dedupe integration from the defaults (like React)
         ...defaultIntegrations.filter(integration => integration.name !== "Dedupe"),
-        Sentry.browserTracingIntegration(), 
+        Sentry.browserTracingIntegration({
+            // Enable Angular Router instrumentation to capture route names (like React Router)
+            instrumentNavigation: true,
+            instrumentPageLoad: true,
+        }), 
         Sentry.replayIntegration({
             blockAllMedia: false,
             networkDetailAllowUrls: [/.*/],
