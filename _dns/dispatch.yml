@@ -1,0 +1,63 @@
+dispatch:
+  - url: "angular.empower-plant.com/*"
+    service: angular
+
+  - url: "aspnetcore.empower-plant.com/*"
+    service: aspnetcore
+
+  - url: "empower-plant.com/*"
+    service: application-monitoring-react
+  
+  - url: "express.empower-plant.com/*"
+    service: application-monitoring-node
+  
+  - url: "flask-otlp.empower-plant.com/*"
+    service: flask-otlp
+
+  - url: "flask.empower-plant.com/*"
+    service: application-monitoring-flask
+  
+  - url: "go.empower-plant.com/*"
+    service: go
+  
+  - url: "laravel.empower-plant.com/*"
+    service: laravel
+
+  - url: "ruby-on-rails.empower-plant.com/*"
+    service: application-monitoring-rails
+  
+  - url: "spring-boot.empower-plant.com/*"
+    service: springboot
+    
+  # ---- STAGING ----
+
+  - url: "staging-angular.empower-plant.com/*"
+    service: staging-angular
+
+  - url: "staging-aspnetcore.empower-plant.com/*"
+    service: staging-aspnetcore
+
+  - url: "staging-express.empower-plant.com/*"
+    service: staging-application-monitoring-node
+
+  - url: "staging-flask-otlp.empower-plant.com/*"
+    service: staging-flask-otlp
+
+  - url: "staging-flask.empower-plant.com/*"
+    service: staging-application-monitoring-flask
+  
+  - url: "staging-go.empower-plant.com/*"
+    service: staging-go
+  
+  - url: "staging-laravel.empower-plant.com/*"
+    service: staging-application-monitoring-laravel
+
+  - url: "staging-react.empower-plant.com/*"
+    service: staging-application-monitoring-react
+
+  - url: "staging-ruby-on-rails.empower-plant.com/*"
+    service: staging-application-monitoring-rails
+
+  - url: "staging-spring-boot.empower-plant.com/*"
+    service: staging-springboot
+    
