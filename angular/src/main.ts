@@ -27,6 +27,9 @@ console.log(`> backendType: ${backendType} | backendUrl: ${backendUrl}`);
 let email = null;
 if (queryParams.get('userEmail')) {
   email = queryParams.get('userEmail');
+} else if (seValue && !seValue.startsWith('prod-tda-')) {
+  // Use SE value as email prefix if available (like React)
+  email = seValue + '@example.com';
 } else {
   // Generate random email like React
   const array = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z'];
@@ -35,6 +38,17 @@ if (queryParams.get('userEmail')) {
   const c = array[Math.floor(Math.random() * array.length)] || 'c';
   email = a + b + c + '@example.com';
 }
+
+// Generate random customerType (like React)
+const customerType = [
+  'medium-plan',
+  'large-plan',
+  'small-plan',
+  'enterprise',
+][Math.floor(Math.random() * 4)] || 'medium-plan';
+
+// Store customerType in sessionStorage for access in components
+sessionStorage.setItem('customerType', customerType);
 
 
 // TODO: Temporarily disabled window.fetch override to fix deployment issue
@@ -123,11 +137,18 @@ if (seValue) {
 // Set backendType tag in Sentry context (like React)
 Sentry.setTag('backendType', backendType);
 
+// Set customerType tag in Sentry context (like React)
+Sentry.setTag('customerType', customerType);
+
+// Set user email in Sentry context (like React)
+Sentry.setUser({ email: email ?? undefined });
+
 // Store values for use in fetch override
 const globalSe = seValue;
 const globalEmail = email;
+const globalCustomerType = customerType;
 
-// Automatically append SE and email headers to all backend requests (like React)
+// Automatically append SE, customerType, and email headers to all backend requests (like React)
 const nativeFetch = window.fetch;
 window.fetch = function (...args) {
   try {
@@ -144,6 +165,7 @@ window.fetch = function (...args) {
       args[1] = args[1] || {};
       const headers: Record<string, string> = { ...(args[1].headers as Record<string, string>) };
       if (globalSe) headers['se'] = globalSe;
+      if (globalCustomerType) headers['customerType'] = globalCustomerType;
       if (globalEmail) headers['email'] = globalEmail;
       args[1].headers = headers;
     }
