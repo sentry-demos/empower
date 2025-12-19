@@ -1,7 +1,6 @@
-  
 env: standard
-service: ${SERVICE}
-runtime: nodejs18
+service: ${REACT_APP_ENGINE_SERVICE}
+runtime: nodejs20
 
 handlers:
   - url: /static

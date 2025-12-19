@@ -1,0 +1,109 @@
+#!/bin/bash
+
+# Git-based merge system for local.env management
+# Simply applies changes from local.env.base to local.env and reports conflicts
+
+set -e
+
+# Get the repository root directory
+REPO_ROOT=$(git rev-parse --show-toplevel)
+BASE_FILE="$REPO_ROOT/.local.env.base"
+TARGET_FILE="$REPO_ROOT/local.env"
+LAST_MERGE_SHA_FILE="$REPO_ROOT/.local.env.last-merge-sha"
+
+# Check if .local.env.base exists
+if [ ! -f "$BASE_FILE" ]; then
+    echo "Warning: .local.env.base not found, skipping merge"
+    exit 0
+fi
+
+# Create local.env from .local.env.base if it doesn't exist
+if [ ! -f "$TARGET_FILE" ]; then
+    echo "$(git rev-parse HEAD)" > "$LAST_MERGE_SHA_FILE"
+    echo "✓ Initialized merge tracking for new local.env"
+    cp "$BASE_FILE" "$TARGET_FILE"
+    echo "✓ Created local.env from .local.env.base"
+    exit 0
+fi
+
+# Initialize last merge SHA if it doesn't exist
+if [ ! -f "$LAST_MERGE_SHA_FILE" ]; then
+    echo "Initializing merge tracking..."
+    oldest_commit=$(git log --reverse --format="%H" -- .local.env.base | head -1)
+    if [ -z "$oldest_commit" ]; then
+        echo "Error: No git history found for .local.env.base"
+        exit 1
+    fi
+    echo "$oldest_commit" > "$LAST_MERGE_SHA_FILE"
+    echo "✓ Initialized merge tracking with commit: $oldest_commit"
+fi
+
+# Get the last merge SHA
+last_merge_sha=$(cat "$LAST_MERGE_SHA_FILE")
+current_base_sha=$(git rev-parse HEAD)
+
+# Check if .local.env.base has changed since last merge
+if [ "$current_base_sha" = "$last_merge_sha" ]; then
+    echo "No changes detected in .local.env.base since last merge"
+    exit 0
+fi
+
+echo "Detected changes in .local.env.base, applying merge..."
+
+# Create backup
+cp "$TARGET_FILE" "$TARGET_FILE.backup"
+
+# Get the content from the commits
+git show "$last_merge_sha:.local.env.base" > /tmp/base_last_merged 2>/dev/null || {
+    echo "Error: Could not access .local.env.base at commit $last_merge_sha"
+    exit 1
+}
+git show "$current_base_sha:.local.env.base" > /tmp/base_current 2>/dev/null || {
+    echo "Error: Could not access .local.env.base at commit $current_base_sha"
+    exit 1
+}
+
+# Use git merge-file for intelligent three-way merge
+# This preserves local customizations while applying upstream changes
+if diff -q /tmp/base_last_merged /tmp/base_current > /dev/null 2>&1; then
+    echo "No changes needed - files are identical"
+else
+    echo "Applying changes from .local.env.base..."
+    
+    # git merge-file performs a 3-way merge:
+    # - /tmp/base_last_merged: the common ancestor (old base)
+    # - "$TARGET_FILE": current file (with local changes)
+    # - /tmp/base_current: their changes (new base)
+    if git merge-file -p "$TARGET_FILE" /tmp/base_last_merged /tmp/base_current > /tmp/merged_result 2>/dev/null; then
+        # Merge succeeded without conflicts
+        mv /tmp/merged_result "$TARGET_FILE"
+        echo "✓ Successfully applied changes from .local.env.base"
+        rm -f "$TARGET_FILE.backup"
+    else
+        # Merge had conflicts - check if it's fatal or just markers
+        merge_exit=$?
+        if [ $merge_exit -eq 1 ]; then
+            # Exit code 1 means conflicts were found but file was generated with conflict markers
+            mv /tmp/merged_result "$TARGET_FILE"
+            echo "⚠️  CONFLICT: Merge completed with conflict markers"
+            echo "   Backup saved as: $TARGET_FILE.backup"
+            echo "   Please review and resolve conflicts marked with <<<<<<< ======= >>>>>>>"
+            exit 1
+        else
+            # Exit code > 1 means merge failed completely
+            echo "⚠️  CONFLICT: Merge failed"
+            echo "   Backup saved as: $TARGET_FILE.backup"
+            echo "   Manual intervention required to resolve conflicts"
+            exit 1
+        fi
+    fi
+fi
+
+# Update the last merge SHA
+echo "$current_base_sha" > "$LAST_MERGE_SHA_FILE"
+echo "✓ Updated merge tracking to commit: $current_base_sha"
+
+# Clean up temp files
+rm -f /tmp/base_last_merged /tmp/base_current /tmp/merged_result
+
+exit 0

@@ -9,7 +9,7 @@ import os
 dotenv.load_dotenv()
 
 # set in ../env-config/*.env
-DSN = os.environ["CRONSPYTHON_APP_DSN"]
+DSN = os.environ["CRONSPYTHON_DSN"]
 MONITOR_SLUG = os.environ["CRONSPYTHON_MONITOR_SLUG"]
 FAILURE_PERCENT_CHANCE = 5 
 STUCK_PERCENT_CHANCE = 5 

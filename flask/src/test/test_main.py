@@ -7,10 +7,10 @@
 
 # # Patch the environment variables before importing the app
 # @patch.dict('os.environ', {
-#     'RELEASE': 'test-release',
-#     'FLASK_APP_DSN': 'https://xxxxyyyyy@o11111.sentry.io/11111',
-#     'FLASK_ENV': 'test',
-#     'RUBY_BACKEND': 'http://test-backend',
+#     'FLASK_RELEASE': 'test-release',
+#     'FLASK_DSN': 'https://xxxxyyyyy@o11111.sentry.io/11111',
+#     'FLASK_ENVIRONMENT': 'local',
+#     'BACKEND_URL_RUBYONRAILS': 'http://test-backend',
 #     'RUN_SLOW_PROFILE': 'false',
 # })
 # class TestMain(unittest.TestCase):

@@ -1,7 +1,7 @@
 name: mock-data.yml
 on:
-  push:
-    branches: [master, test-me-*]
+  #push:
+  #  branches: [master, test-me-*]
   #pull_request:
 
 jobs:
@@ -13,6 +13,6 @@ jobs:
     - uses: actions/setup-python@v4
       with:
         python-version: 3.12
-    - run: pip install -r tda/requirements.txt
-    - run: python3 -uS mini-relay/run_tests.py
-    - run: tree mini-relay/classified
+    - run: pip install -r _tda/requirements.txt
+    - run: python3 -uS _mini-relay/run_tests.py
+    - run: tree _mini-relay/classified

@@ -1,13 +1,12 @@
 # Projects/directories listed here will be ommitted from auto-deployment to production
 
 vue
-laravel
-tda
-postgres
-crons-python
+_postgres
 next
 # ^ uses Vercel automation
-spring-boot
-# ^ java 8 no longer supported by GCP
-aspnetcore
-# ^ broken build/deploy
+crons-python
+# ^ deploy broken
+ruby
+react
+# ^ https://sentry.slack.com/archives/C05FA9D2PDM/p1762791055111179?thread_ts=1762786681.679119&cid=C05FA9D2PDM
+# ^ still broken

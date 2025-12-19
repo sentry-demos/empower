@@ -4,12 +4,9 @@
   "private": true,
   "dependencies": {
     "@prisma/client": "^5.21.1",
-    "@prisma/instrumentation": "^5.21.1",
     "@reduxjs/toolkit": "^2.2.8",
-    "@sentry/core": "^9.10.1",
-    "@sentry/nextjs": "^9.10.1",
-    "@sentry/profiling-node": "^9.10.1",
-    "@sentry/utils": "^8.36.0-beta.0",
+    "@sentry/nextjs": "^10.17.0",
+    "@sentry/profiling-node": "^10.17.0",
     "@testing-library/jest-dom": "~5.11.4",
     "@testing-library/react": "~11.1.0",
     "@testing-library/user-event": "~12.1.10",
@@ -46,7 +43,7 @@
   },
   "engines": {
     "npm": ">=10.0.0 <11.0.0",
-    "node": ">=18.0.0 <19.0.0"
+    "node": ">=22.0.0"
   },
   "eslintConfig": {
     "extends": [
@@ -84,7 +81,7 @@
     "redux-mock-store": "^1.5.4"
   },
   "volta": {
-    "node": "18.19.1",
+    "node": "22.13.1",
     "npm": "10.5.0"
   }
 }

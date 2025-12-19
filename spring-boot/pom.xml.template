@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>3.4.0</version>
+		<relativePath/> <!-- lookup parent from repository -->
+	</parent>
+	<groupId>com.sentrydemos</groupId>
+	<artifactId>springboot</artifactId>
+	<version>1.0.0-SNAPSHOT</version>
+	<name>spring-boot</name>
+	<description>Demo project for Spring Boot</description>
+	<properties>
+		<java.version>17</java.version>
+	</properties>
+
+	<dependencies>
+		<!-- Sentry Spring Boot SDK for Jakarta EE -->
+		<dependency>
+			<groupId>io.sentry</groupId>
+			<artifactId>sentry-spring-boot-starter-jakarta</artifactId>
+			<version>8.18.0</version>
+		</dependency>
+		<!-- Sentry Logback SDK -->
+		<dependency>
+		    <groupId>io.sentry</groupId>
+		    <artifactId>sentry-logback</artifactId>
+		    <version>8.18.0</version>
+		</dependency>
+		<!-- Capture Sentry Transaction -->
+		<dependency>
+		    <groupId>org.springframework.boot</groupId>
+		    <artifactId>spring-boot-starter-aop</artifactId>
+		</dependency>
+		<!-- Required for REST calls -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web</artifactId>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.json/json -->
+		<dependency>
+			<groupId>org.json</groupId>
+			<artifactId>json</artifactId>
+			<version>20220924</version>
+		</dependency>
+		
+		<!-- All below dependencies are for DB connections -->
+		<!-- Spring JDBC jdbcTemplate-->
+		<dependency>
+		    <groupId>org.springframework.boot</groupId>
+		    <artifactId>spring-boot-starter-jdbc</artifactId>
+		</dependency>
+		
+		<!--  SQL Server JDBC postgresql driver org.postgresql.Driver -->
+		<dependency>
+			<groupId>org.postgresql</groupId>
+			<artifactId>postgresql</artifactId>
+			<version>42.7.2</version>
+		</dependency>
+		
+		<!-- Spring Boot DevTools for automatic restart during development -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-devtools</artifactId>
+			<scope>runtime</scope>
+			<optional>true</optional>
+		</dependency>
+		
+		<!-- GCLOUD Dependencies -->
+		<!-- Using CloudSqlJdbcInfoProvider bean to initialize DB connection with spring.cloud.gcp.sql.* values from application.properties -->
+		<dependency>
+			<groupId>com.google.cloud.sql</groupId>
+			<artifactId>postgres-socket-factory</artifactId>
+			<version>1.19.0</version>
+		</dependency>
+		
+		<!-- JUnit 5 for testing -->
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter</artifactId>
+			<scope>test</scope>
+		</dependency>
+				
+	</dependencies>
+	
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.12.1</version>
+				<configuration>
+					<source>17</source>
+					<target>17</target>
+				</configuration>
+			</plugin>
+		<!-- Google Cloud Platform deploy -->
+		<plugin>
+			<groupId>com.google.cloud.tools</groupId>
+			<artifactId>appengine-maven-plugin</artifactId>
+			<version>2.4.1</version>
+			<configuration>
+				<projectId>GCLOUD_CONFIG</projectId>
+				<version>GCLOUD_CONFIG</version>
+			</configuration>
+		</plugin>
+		<!-- Sentry Maven Plugin for source context -->
+		<plugin>
+			<groupId>io.sentry</groupId>
+			<artifactId>sentry-maven-plugin</artifactId>
+			<version>0.10.0</version>
+			<extensions>true</extensions>
+		<configuration>
+			<includeSourceContext>true</includeSourceContext>
+			<org>${SENTRY_ORG}</org>
+			<project>${SPRINGBOOT_SENTRY_PROJECT}</project>
+			<authToken>${SENTRY_AUTH_TOKEN}</authToken>
+			<release>${SPRINGBOOT_RELEASE}</release>
+		</configuration>
+			<executions>
+				<execution>
+					<goals>
+						<goal>uploadSourceBundle</goal>
+					</goals>
+				</execution>
+			</executions>
+		</plugin>
+	</plugins>
+</build>
+</project>
