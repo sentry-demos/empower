@@ -1,0 +1,28 @@
+# Load Balancer URL Map Configuration
+
+load_balancer:
+  name: empower-lb
+  url_map: empower-url-map
+  target_proxy: empower-https-proxy
+  forwarding_rule: empower-forwarding-rule
+  ssl_cert: empower-ssl-cert
+  region: ${GCP_REGION}
+
+# Services routed through Load Balancer (App Engine backends)
+services:
+  - host: "${GO_SUBDOMAIN}.${DOMAIN}"
+    service: staging-express
+    #service: ${GO_APP_ENGINE_SERVICE}
+  
+  - host: "${SPRINGBOOTOTLP_SUBDOMAIN}.${DOMAIN}"
+    service: ${SPRINGBOOTOTLP_APP_ENGINE_SERVICE}
+  
+  - host: "${REACT_SUBDOMAIN}.${DOMAIN}"
+    service: ${REACT_APP_ENGINE_SERVICE}
+
+# Custom DNS records managed directly in Google Cloud DNS (not routed through LB)
+dns_records:
+  - name: "nextjs.${DOMAIN}"
+    type: CNAME
+    ttl: 300
+    value: "cname.vercel-dns.com."
