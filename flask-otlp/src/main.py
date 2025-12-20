@@ -345,7 +345,7 @@ def products():
 
     cache_key = str(random.randrange(100))
 
-    product_inventory = None
+    product_inventory = set()  # Initialize as empty set for efficient lookup
     fetch_promotions = request.args.get('fetch_promotions')
     in_stock_only = request.args.get('in_stock_only')
     timeout_seconds = (EXTREMELY_SLOW_PROFILE if fetch_promotions else NORMAL_SLOW_PROFILE)
@@ -389,7 +389,7 @@ def products():
 
                         for i, description in enumerate(descriptions):
                             for pest in pests:
-                                if in_stock_only and productsJSON[i] not in product_inventory:
+                                if in_stock_only and productsJSON[i].get('id') not in product_inventory:
                                     continue
                                 if pest in description:
                                     try:
