@@ -64,4 +64,18 @@ describe('Errors module', () => {
     Math.random = jest.fn(() => 0.2); // This should not cause the error to be thrown
     expect(() => crasher()).not.toThrow();
   });
+
+  test('should correctly handle large errnum values by using modulo operation', () => {
+    // Test with errnum=968 which was the value from the bug report
+    // 968 % 5 = 3, so it should throw the error at index 3 (RangeError)
+    setQueryParams({ crash: 'true', errnum: '968' });
+    expect(() => crasher()).toThrow(RangeError);
+    expect(() => crasher()).toThrow('Parameter must be between 1 and 100');
+  });
+
+  test('should correctly handle errnum as a string and parse it to integer', () => {
+    // Test with errnum=7 as string, 7 % 5 = 2, should throw SyntaxError at index 2
+    setQueryParams({ crash: 'true', errnum: '7' });
+    expect(() => crasher()).toThrow(SyntaxError);
+  });
 });
