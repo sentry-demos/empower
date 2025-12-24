@@ -10,7 +10,7 @@ const referenceError = () => {
   throw new ReferenceError('undefinedVariable is not defined');
 };
 //eslint-disable-next-line
-const syntaxError = () => eval('foo bar');
+const syntaxError = () => eval('throw new SyntaxError("Unexpected identifier \\\'bar\\\'")');
 const rangeError = () => {
   throw new RangeError('Parameter must be between 1 and 100');
 };
