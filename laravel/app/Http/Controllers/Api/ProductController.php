@@ -24,6 +24,25 @@ class ProductController extends Controller
      */
     public function index(): JsonResponse
     {
+        // Generate random number to determine cache key strategy
+        $randomValue = rand(0, 99);
+        
+        // in 50% of cases, use a random cache key so that we will have a cache miss
+        if ($randomValue < 50) {
+            $cacheKey = 'products-random-' . Str::random(16);
+        } else {
+            $cacheKey = 'products-cached';
+        }
+        
+        // Attempt to retrieve from cache
+        $cachedData = Cache::get($cacheKey);
+        
+        if ($cachedData !== null) {
+            // Cache hit - return cached data
+            return response()->json($cachedData);
+        }
+        
+        // Cache miss - fetch from database
         $products = Product::with('reviews')->get();
         
         // Transform to match original format
@@ -41,7 +60,10 @@ class ProductController extends Controller
             })->toArray();
             
             return $productArray;
-        });
+        })->toArray();
+        
+        // Store in cache (1 hour TTL for fixed key, random keys will never be retrieved anyway)
+        Cache::put($cacheKey, $completeProductsWithReviews, 3600);
 
         return response()->json($completeProductsWithReviews);
     }

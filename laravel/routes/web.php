@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\EmailController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\ProductController;
 
@@ -28,3 +29,9 @@ Route::get('/connect', function () {
 Route::get('/debug-sentry', function () {
     throw new Exception('My first Sentry error!');
 });
+
+// Cache testing routes (for Sentry integration)
+Route::get('/maybe-cached', [ProductController::class, 'maybe_cached']);
+
+// Email routes, testing async jobs
+Route::post('/enqueue', [EmailController::class, 'enqueue']); 
