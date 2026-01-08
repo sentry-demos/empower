@@ -26,7 +26,13 @@ class DatabaseConnectionError (Exception):
 
 if FLASKOTLP_ENVIRONMENT == "local":
     print("> ENVIRONMENT local ")
-    db = create_engine('postgresql://' + USERNAME + ':' + PASSWORD + '@' + HOST + ':5432/' + DATABASE)
+    db = create_engine(
+        'postgresql://' + USERNAME + ':' + PASSWORD + '@' + HOST + ':5432/' + DATABASE,
+        pool_size=5,
+        max_overflow=10,
+        pool_recycle=300,  # Recycle connections after 5 minutes
+        pool_pre_ping=True  # Test connections before using them
+    )
 else:
     CLOUD_SQL_CONNECTION_NAME = os.environ["DB_CLOUD_SQL_CONNECTION_NAME"]
     print("> ENVIRONMENT production ")
@@ -40,7 +46,11 @@ else:
             query={
                 'unix_sock': '/cloudsql/{}/.s.PGSQL.5432'.format(CLOUD_SQL_CONNECTION_NAME)
             }
-        )
+        ),
+        pool_size=5,
+        max_overflow=10,
+        pool_recycle=300,  # Recycle connections after 5 minutes
+        pool_pre_ping=True  # Test connections before using them
     )
 
 # N+1 because a sql query for every product n
@@ -49,34 +59,36 @@ def get_products():
     results = []
     try:
         connection = db.connect()
+        try:
+            n = weighter(operator.le, 12)
+            # adjust by number of products to get the same timeout as we had in the past
+            # before pg_sleep() was moved out of SELECT clause.
+            n *= PRODUCTS_NUM
+            query = text("SELECT * FROM products WHERE id IN (SELECT id from products, pg_sleep(:sleep_duration))")
+            products = connection.execute(query, sleep_duration=n).fetchall()
 
-        n = weighter(operator.le, 12)
-        # adjust by number of products to get the same timeout as we had in the past
-        # before pg_sleep() was moved out of SELECT clause.
-        n *= PRODUCTS_NUM
-        query = text("SELECT * FROM products WHERE id IN (SELECT id from products, pg_sleep(:sleep_duration))")
-        products = connection.execute(query, sleep_duration=n).fetchall()
+            for product in products:
+                # product_bundles is a "sleepy view", run the following query to get current sleep duration:
+                # SELECT pg_get_viewdef('product_bundles', true)
+                query = text("SELECT * FROM reviews, product_bundles WHERE productId = :x")
+                reviews = connection.execute(query, x=product.id).fetchall()
 
-        for product in products:
-            # product_bundles is a "sleepy view", run the following query to get current sleep duration:
-            # SELECT pg_get_viewdef('product_bundles', true)
-            query = text("SELECT * FROM reviews, product_bundles WHERE productId = :x")
-            reviews = connection.execute(query, x=product.id).fetchall()
+                result = dict(product)
+                result["reviews"] = []
 
-            result = dict(product)
-            result["reviews"] = []
+                for review in reviews:
+                    result["reviews"].append(dict(review))
+                results.append(result)
 
-            for review in reviews:
-                result["reviews"].append(dict(review))
-            results.append(result)
-
-        with tracer.start_as_current_span(
-            "get_products.combined_reviews.json",
-            attributes={
-                "sentry.op": "serialization"
-            }
-        ):
-            result = json.dumps(results, default=str)
+            with tracer.start_as_current_span(
+                "get_products.combined_reviews.json",
+                attributes={
+                    "sentry.op": "serialization"
+                }
+            ):
+                result = json.dumps(results, default=str)
+        finally:
+            connection.close()
         return result
     except Exception as err:
         raise DatabaseConnectionError('get_products') from err
@@ -95,32 +107,35 @@ def get_products_join():
         ):
             connection = db.connect()
 
-        with tracer.start_as_current_span(
-            "get_products_join",
-            attributes={
-                "db.system": "postgresql",
-                "db.operation": "query",
-                "db.statement": "SELECT * FROM products"
-            }
-        ) as span:
-            products = connection.execute(
-                "SELECT * FROM products"
-            ).fetchall()
-            span.set_attribute("totalProducts",len(products))
-            span.set_attribute("products",str(products))
+        try:
+            with tracer.start_as_current_span(
+                "get_products_join",
+                attributes={
+                    "db.system": "postgresql",
+                    "db.operation": "query",
+                    "db.statement": "SELECT * FROM products"
+                }
+            ) as span:
+                products = connection.execute(
+                    "SELECT * FROM products"
+                ).fetchall()
+                span.set_attribute("totalProducts",len(products))
+                span.set_attribute("products",str(products))
 
-        with tracer.start_as_current_span(
-            "get_products_join.reviews",
-            attributes={
-                "db.system": "postgresql",
-                "db.operation": "query",
-                "db.statement": "SELECT reviews.id, products.id AS productid..."
-            }
-        ) as span:
-            reviews = connection.execute(
-                "SELECT reviews.id, products.id AS productid, reviews.rating, reviews.customerId, reviews.description, reviews.created FROM reviews INNER JOIN products ON reviews.productId = products.id"
-            ).fetchall()
-            span.set_attribute("reviews",str(reviews))
+            with tracer.start_as_current_span(
+                "get_products_join.reviews",
+                attributes={
+                    "db.system": "postgresql",
+                    "db.operation": "query",
+                    "db.statement": "SELECT reviews.id, products.id AS productid..."
+                }
+            ) as span:
+                reviews = connection.execute(
+                    "SELECT reviews.id, products.id AS productid, reviews.rating, reviews.customerId, reviews.description, reviews.created FROM reviews INNER JOIN products ON reviews.productId = products.id"
+                ).fetchall()
+                span.set_attribute("reviews",str(reviews))
+        finally:
+            connection.close()
     except Exception as err:
         raise DatabaseConnectionError('get_products_join') from err
 
@@ -168,10 +183,13 @@ def get_inventory(cart):
 
     try:
         connection = db.connect()
-        # Use parameterized query with ANY() to safely handle array of product IDs
-        query = text("SELECT * FROM inventory WHERE productId = ANY(:product_ids)")
-        inventory = connection.execute(query, product_ids=productIds).fetchall()
-        trace.get_current_span().set_attribute("inventory", str(inventory))
+        try:
+            # Use parameterized query with ANY() to safely handle array of product IDs
+            query = text("SELECT * FROM inventory WHERE productId = ANY(:product_ids)")
+            inventory = connection.execute(query, product_ids=productIds).fetchall()
+            trace.get_current_span().set_attribute("inventory", str(inventory))
+        finally:
+            connection.close()
     except Exception as err:
         raise DatabaseConnectionError('get_inventory') from err
 
@@ -193,17 +211,20 @@ def get_promo_code(code):
         ):
             connection = db.connect()
         
-        with tracer.start_as_current_span(
-            "get_promo_code",
-            attributes={
-                "db.system": "postgresql",
-                "db.operation": "query",
-                "db.statement": "SELECT * FROM promo_codes WHERE code = :code AND is_active = true"
-            }
-        ) as span:
-            query = text("SELECT * FROM promo_codes WHERE code = :code AND is_active = true")
-            result = connection.execute(query, code=code).fetchone()
-            span.set_attribute("promo_code", str(result))
+        try:
+            with tracer.start_as_current_span(
+                "get_promo_code",
+                attributes={
+                    "db.system": "postgresql",
+                    "db.operation": "query",
+                    "db.statement": "SELECT * FROM promo_codes WHERE code = :code AND is_active = true"
+                }
+            ) as span:
+                query = text("SELECT * FROM promo_codes WHERE code = :code AND is_active = true")
+                result = connection.execute(query, code=code).fetchone()
+                span.set_attribute("promo_code", str(result))
+        finally:
+            connection.close()
         
         return result
     except Exception as err:
