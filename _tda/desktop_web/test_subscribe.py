@@ -17,6 +17,7 @@ def test_subscribe(desktop_web_driver, endpoints, batch_size, sleep_length, rand
 
         # Flask and laravel backends are the only ones that support email subscriptions queueing
         for backend in ['flask', 'laravel']:
+            sentry_sdk.set_tag("backend", backend)
             query_string = {
                 'backend': backend
             }
@@ -33,7 +34,7 @@ def test_subscribe(desktop_web_driver, endpoints, batch_size, sleep_length, rand
 
                     # Locate the email input field and enter a sample address
                     email_input = desktop_web_driver.find_element(By.CSS_SELECTOR, '#email-subscribe')
-                    email_input.send_keys("mySampleEmail@example.com")
+                    email_input.send_keys(f"sample-{backend}-{i}@example.com")
 
                     # Locate and click the "Subscribe" button
                     subscribe_btn = desktop_web_driver.find_element(By.CSS_SELECTOR, '.subscribe-button')
