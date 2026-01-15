@@ -6,7 +6,7 @@
 # 'run_local.sh' script instead of deploying to Google App Engine. If multiple projects are specified on
 # the command-line in this local mode, a webserver will be started for each project.
 #
-# In local mode, you can also specify a custom command to run instead of run_local.sh using the -- separator:
+# You can also specify a custom command to run instead of the default using the -- separator:
 # Usage: ./deploy --env=local flask                 # uses flask/run_local.sh - a setup similar to production
 # Usage: ./deploy --env=local react -- npm start    # any command after --, e.g. hot reload server or `cat .env`
 # Usage: ./deploy --env=production react            # deploy to production
@@ -411,17 +411,21 @@ for proj in $projects; do # bash only
   fi
 
   # *** DEPLOY OR RUN ***
-  if [ "$env" == "local" ]; then
-    if [[ -n "$custom_command" ]]; then
-      echo "Running custom command '$custom_command $custom_command_args' with resolved environment..."
-      echo "[WARNING] we assume no secrets directly referenced by the custom command itself, any secrets used must be in *.template files"
-      env "${RESOLVED_VARS[@]}" $custom_command $custom_command_args &
-      pid="$!"
-    else
-      echo "Running run_local.sh with resolved environment..."
-      gcp_secret_wrapper.sh --pass $script_secrets -- env "${RESOLVED_VARS[@]}" ./run_local.sh &
-      pid="$!"
+  if [[ -n "$custom_command" ]]; then
+    echo "Running custom command '$custom_command $custom_command_args' with resolved environment..."
+    echo "[WARNING] we assume no secrets directly referenced by the custom command itself, any secrets used must be in *.template files"
+    set +e
+    env "${RESOLVED_VARS[@]}" $custom_command $custom_command_args
+    cmd_exit_code=$?
+    set -e
+    if [ $cmd_exit_code -ne 0 ]; then
+      echo "[ERROR] Custom command exited with code $cmd_exit_code"
+      exit 1
     fi
+  elif [ "$env" == "local" ]; then
+    echo "Running run_local.sh with resolved environment..."
+    gcp_secret_wrapper.sh --pass $script_secrets -- env "${RESOLVED_VARS[@]}" ./run_local.sh &
+    pid="$!"
     run_sh_pids+="$pid " # for later cleanup
 
     if [[ "$projects" != *"$proj " ]]; then # not last one
