@@ -22,6 +22,7 @@ const ChatWidget = () => {
   const typingSpanRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const inactivityTimeoutRef = useRef(null);
+  const initTimeoutsRef = useRef([]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -40,6 +41,9 @@ const ChatWidget = () => {
       clearTimeout(inactivityTimeoutRef.current);
       inactivityTimeoutRef.current = null;
     }
+    // Clear any pending initialization timeouts
+    initTimeoutsRef.current.forEach(timeoutId => clearTimeout(timeoutId));
+    initTimeoutsRef.current = [];
     
     // Record how the session ended
     if (chatSpanRef.current) {
@@ -116,10 +120,14 @@ const ChatWidget = () => {
 
   useEffect(() => {
     if (isOpen && conversationState === 'initial') {
+      // Clear any existing init timeouts
+      initTimeoutsRef.current.forEach(timeoutId => clearTimeout(timeoutId));
+      initTimeoutsRef.current = [];
+      
       // Show typing indicator
       setMessages([{ type: 'typing', id: generateMessageId() }]);
       
-      setTimeout(() => {
+      const timeout1 = setTimeout(() => {
         // Remove typing indicator and show welcome message
         addBotMessage("Hi, I can help you pick the right plants for your home", () => {
           setMessages([
@@ -132,16 +140,19 @@ const ChatWidget = () => {
         });
         
         // Show second message after a brief pause
-        setTimeout(() => {
+        const timeout2 = setTimeout(() => {
           // Show typing indicator
           setMessages(prev => [...prev, { type: 'typing', id: generateMessageId() }]);
           
-          setTimeout(() => {
+          const timeout3 = setTimeout(() => {
             addBotMessage('How much light does your room get?');
             setConversationState('awaiting_light');
           }, 1000);
+          initTimeoutsRef.current.push(timeout3);
         }, 500);
+        initTimeoutsRef.current.push(timeout2);
       }, 1000);
+      initTimeoutsRef.current.push(timeout1);
     }
   }, [isOpen, conversationState, addBotMessage]);
 
