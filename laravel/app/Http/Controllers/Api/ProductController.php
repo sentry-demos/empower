@@ -43,12 +43,16 @@ class ProductController extends Controller
         }
         
         // Cache miss - fetch from database
-        $products = Product::with('reviews')->get();
-        
+        // N+1 query: first get all products, then query reviews for each product individually
+        $products = Product::all();
+
         // Transform to match original format
+        // This causes N+1 queries - for each product, a separate query is made to fetch reviews
         $completeProductsWithReviews = $products->map(function ($product) {
             $productArray = $product->toArray();
-            $productArray['reviews'] = $product->reviews->map(function ($review) {
+            // Accessing $product->reviews triggers a lazy load query for each product
+            $reviews = DB::table('reviews')->where('productid', $product->id)->get();
+            $productArray['reviews'] = $reviews->map(function ($review) {
                 return [
                     'id' => $review->id,
                     'productid' => $review->productid,
@@ -58,7 +62,7 @@ class ProductController extends Controller
                     'created' => $review->created,
                 ];
             })->toArray();
-            
+
             return $productArray;
         })->toArray();
         
