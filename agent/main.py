@@ -1,19 +1,4 @@
-"""Main FastAPI application for the AI Agent.
-
-The application includes an integrated API tester that runs as a background task
-during the FastAPI lifespan. The tester periodically calls various API endpoints
-to simulate realistic usage patterns.
-
-Configuration:
-- API_TESTER_ENABLED: Enable/disable the API tester (default: true)
-- API_TESTER_BASE_INTERVAL_MS: Base interval between calls in milliseconds
-  (default: 120000)
-- API_TESTER_JITTER_PERCENT: Percentage of jitter to add to intervals
-  (default: 30)
-"""
-
-from contextlib import asynccontextmanager
-from typing import AsyncGenerator
+"""Main FastAPI application for the AI Agent."""
 
 import os
 import sentry_sdk
@@ -25,7 +10,6 @@ from sentry_sdk.integrations.openai import OpenAIIntegration
 from sentry_sdk.integrations.openai_agents import OpenAIAgentsIntegration
 
 from app.api.routes import router
-from app.jobs import api_tester
 from config import settings
 
 sentry_sdk.init(
@@ -42,28 +26,6 @@ sentry_sdk.init(
 )
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    """Application lifespan context manager."""
-    print("🚀 Starting Simple Plant Care API...")
-
-    # Start the API tester background task
-    try:
-        await api_tester.start()
-    except Exception as e:
-        print(f"⚠️  API tester failed to start: {e}")
-
-    yield
-
-    # Stop the API tester background task
-    try:
-        await api_tester.stop()
-    except Exception as e:
-        print(f"⚠️  API tester failed to stop gracefully: {e}")
-
-    print("🛑 Shutting down Simple Plant Care API...")
-
-
 # Create FastAPI app
 app = FastAPI(
     title="Simple Plant Care API",
@@ -71,7 +33,6 @@ app = FastAPI(
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
-    lifespan=lifespan,
 )
 
 # Add CORS middleware
