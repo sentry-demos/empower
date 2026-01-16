@@ -1,0 +1,23 @@
+services:
+  plant-agent:
+    build: .
+    ports:
+      - "${API_PORT}:${API_PORT}"
+    environment:
+      - OPENAI_API_KEY=${AGENT_OPENAI_API_KEY} # looks like OpenAI SDK expects this variable name
+      - API_HOST=0.0.0.0
+      - API_PORT=${API_PORT}
+      - API_RELOAD=false
+      - MAX_TOKENS=1000
+      - MCP_URL=${MCP_URL}
+      - AGENT_DSN=${AGENT_DSN}
+      - AGENT_SENTRY_ENVIRONMENT=${AGENT_SENTRY_ENVIRONMENT}
+    volumes:
+      - .:/app
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${API_PORT}/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

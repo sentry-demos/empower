@@ -4,6 +4,7 @@ import './chatWidget.css';
 import agentIcon from '../assets/empower-agent.png';
 
 const CHAT_SESSION_INACTIVITY_TIMEOUT_MS = 15000;
+const AGENT_URL = process.env.REACT_APP_BACKEND_URL_AGENT;
 
 let messageIdCounter = 0;
 const generateMessageId = () => `msg-${Date.now()}-${++messageIdCounter}`;
@@ -262,7 +263,7 @@ const ChatWidget = () => {
         
         if (chatSpanRef.current) {
           await Sentry.withActiveSpan(chatSpanRef.current, async () => {
-            response = await fetch('https://empower-agent.sentry.gg/api/v1/buy-plants', {
+            response = await fetch(`${AGENT_URL}/api/v1/buy-plants`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -275,7 +276,7 @@ const ChatWidget = () => {
             data = await response.json();
           });
         } else {
-          response = await fetch('https://empower-agent.sentry.gg/api/v1/buy-plants', {
+          response = await fetch(`${AGENT_URL}/api/v1/buy-plants`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
