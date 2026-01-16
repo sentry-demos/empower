@@ -1,2 +1,2 @@
-sentry-sdk==2.4.0
+sentry-sdk==2.44.0
 python-dotenv==1.0.0
