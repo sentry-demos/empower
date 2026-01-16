@@ -95,7 +95,7 @@ function Checkout({ backend, rageclick, checkout_success, cart }) {
     if (!response.ok) {
       checkout_span.setAttribute("checkout.error", 1);
 
-      if (!response.error || response.status === undefined) {
+      if (response.error || response.status === undefined) {
         checkout_span.setAttribute("status", response.status);
 
         throw new Error( 
