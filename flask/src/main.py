@@ -7,7 +7,6 @@ import redis
 import logging
 from datetime import datetime
 from flask import Flask, json, jsonify, request, make_response, send_from_directory
-from openai import OpenAI
 from flask_caching import Cache
 from statsig.statsig_user import StatsigUser
 from statsig import statsig, StatsigOptions, StatsigEnvironmentTier
@@ -20,7 +19,6 @@ from sentry_sdk.integrations.flask import FlaskIntegration
 from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 from sentry_sdk.integrations.redis import RedisIntegration
 from sentry_sdk.integrations.logging import LoggingIntegration
-from sentry_sdk.ai.monitoring import ai_track
 from sentry_sdk.integrations.statsig import StatsigIntegration
 from celery import Celery, states
 from celery.exceptions import Ignore
@@ -53,7 +51,7 @@ def before_send(event, hint):
             # Now that TDA puts platform/browser and test path into SE tag we want to prevent
             # creating separate issues for those. See https://github.com/sentry-demos/empower/pull/332
             se_fingerprint = prefix[0]
-
+            
         if se.startswith('prod-tda-'):
             event['fingerprint'] = ['{{ default }}', se_fingerprint, RELEASE]
         else:
@@ -64,8 +62,7 @@ def before_send(event, hint):
 
 def traces_sampler(sampling_context):
     sentry_sdk.set_context("sampling_context", sampling_context)
-    wsgi_environ = sampling_context.get('wsgi_environ', {})
-    REQUEST_METHOD = wsgi_environ.get('REQUEST_METHOD', 'GET')
+    REQUEST_METHOD = sampling_context['wsgi_environ']['REQUEST_METHOD']
     if REQUEST_METHOD == 'OPTIONS':
         return 0.0
     else:
@@ -190,41 +187,6 @@ def enqueue():
     logger.info('Completed /enqueue request - email task enqueued')
 
     return jsonify({"status": "success"}), 200
-
-
-@app.route('/suggestion', methods=['GET'])
-def suggestion():
-  logger.info('Received /suggestion endpoint request')
-
-  client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
-
-  catalog = request.args.get('catalog')
-  geo = request.args.get('geo')
-
-  logger.info('Processing /suggestion - starting AI pipeline')
-
-  prompt = f'''You are witty plant salesman. Here is your catalog of plants: {catalog}.
-    Provide a suggestion based on the user\'s location. Pick one plant from the catalog provided.
-    Keep your response short and concise. Try to incorporate the weather and current season.'''
-
-  @ai_track("Suggestion Pipeline")
-  def suggestion_pipeline():
-    with sentry_sdk.start_transaction(op="Suggestion AI", name="Suggestion ai pipeline"):
-      response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=
-        [
-          { "role" : "system", "content": prompt },
-          { "role": "user", "content": geo }
-        ]).choices[0].message.content
-      return response
-
-  response = suggestion_pipeline()
-
-  logger.info('Completed /suggestion request - AI suggestion generated')
-
-  return jsonify({"suggestion": response}), 200
 
 
 @app.route('/checkout', methods=['POST'])
@@ -465,15 +427,6 @@ def connect():
     logger.info('Received /connect endpoint request')
     return "flask /connect"
 
-
-@app.route('/showSuggestion', methods=['GET'])
-def showSuggestion():
-    logger.info('Received /showSuggestion endpoint request')
-
-    has_openai_key = os.getenv("OPENAI_API_KEY") is not None
-    logger.info('Processing /showSuggestion - OpenAI key availability checked')
-
-    return jsonify({"response": has_openai_key}), 200
 
 @app.route('/apply-promo-code', methods=['POST'])
 def apply_promo_code():

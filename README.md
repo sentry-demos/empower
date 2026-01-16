@@ -186,10 +186,6 @@ gcloud app logs tail -s <SERVICE>
 
 `gcloud app deploy` does not support `--update-env-vars RELEASE=$RELEASE` like `gcloud run deploy` does with Cloud Run
 
-## AI Suggestions (nextjs -> flask)
-
-1. Run next and flask (./deploy --env=local next flask)
-2. Get suggestion button should show automatically
 
 ## Caches & Queues (flask)
 
@@ -226,4 +222,3 @@ When the script is terminated (e.g., with Ctrl+C), it performs cleanup to ensure
 - Once you have Vercel access run `vercel dev` command from the `empower` repo
 - Following the prompts, select the Sentry org from and the empower project. A vercel config file will be created the first time you do this.
 - App should run on `localhost:3000`
-
