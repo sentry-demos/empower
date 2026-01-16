@@ -14,7 +14,7 @@ class Settings(BaseSettings):
 
     # API settings
     api_host: str = os.environ["API_HOST"]
-    api_port: int = int(os.environ["API_PORT"])
+    api_port: int = int(os.environ["PORT"])
     api_reload: bool = os.environ["API_RELOAD"].lower() == "true"
 
     # API tester settings

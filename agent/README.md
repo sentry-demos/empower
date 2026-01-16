@@ -127,7 +127,7 @@ Set these environment variables:
 - `OPENAI_API_KEY`: Your OpenAI API key (required)
 - `light_model`: Model for the agent (default: "gpt-4o-mini")
 - `API_HOST`: API host (default: "0.0.0.0")
-- `API_PORT`: API port (default: 8000)
+- `PORT`: API port (default: 8000)
 
 ## Development
 
