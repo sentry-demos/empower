@@ -268,7 +268,7 @@ def products():
 
     cache_key = str(random.randrange(100))
 
-    product_inventory = None
+    product_inventory = []
     fetch_promotions = request.args.get('fetch_promotions')
     in_stock_only = request.args.get('in_stock_only')
     timeout_seconds = (EXTREMELY_SLOW_PROFILE if fetch_promotions else NORMAL_SLOW_PROFILE)
@@ -291,6 +291,21 @@ def products():
                 start_time = time.time()
                 productsJSON = json.loads(rows)
                 descriptions = [product["description"] for product in productsJSON]
+                
+                # Fetch inventory if in_stock_only filter is requested
+                if in_stock_only:
+                    try:
+                        # Create a minimal cart structure to fetch all product inventory
+                        product_ids = {str(product["id"]): 1 for product in productsJSON}
+                        cart = {'quantities': product_ids}
+                        inventory_data = get_inventory(cart)
+                        # Store in-stock product IDs in a set for efficient lookup
+                        product_inventory = {inv.productid for inv in inventory_data if inv.count > 0}
+                    except Exception as inv_err:
+                        logger.warning('Failed to fetch inventory for in_stock_only filter: %s', inv_err)
+                        sentry_sdk.capture_exception(inv_err)
+                        product_inventory = []
+                
                 # this is improper convention (op and name switched up)
                 # keeping it to avoid breaking changes in the demo
                 with sentry_sdk.start_span(op="/get_iterator", name="code.block"):
@@ -303,7 +318,7 @@ def products():
 
                         for i, description in enumerate(descriptions):
                             for pest in pests:
-                                if in_stock_only and productsJSON[i] not in product_inventory:
+                                if in_stock_only and productsJSON[i]["id"] not in product_inventory:
                                     continue
                                 if pest in description:
                                     try:
