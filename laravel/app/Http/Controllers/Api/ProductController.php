@@ -64,7 +64,11 @@ class ProductController extends Controller
         $completeProductsWithReviews = $products->map(function ($product) {
             $productArray = $product->toArray();
             // Accessing $product->reviews triggers a lazy load query for each product
-            $reviews = DB::table('reviews')->where('productid', $product->id)->get();
+            // product_bundles is a "sleepy view", joining it mimics the Flask behavior
+            $reviews = DB::table('reviews')
+                ->crossJoin('product_bundles')
+                ->where('reviews.productid', $product->id)
+                ->get();
             $productArray['reviews'] = $reviews->map(function ($review) {
                 return [
                     'id' => $review->id,
