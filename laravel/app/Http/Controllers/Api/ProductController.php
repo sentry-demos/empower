@@ -119,12 +119,11 @@ class ProductController extends Controller
     /**
      * Get all products with reviews, after making a request to the Ruby backend
      */
-    public function index_joined(Request $request): JsonResponse
+    public function products_join(Request $request): JsonResponse
     {
         Log::info('Received /products-join endpoint request');
 
-
-        $result = $this->index();
+        $result = $this->index($request);
 
         $rubyBackendUrl = env('BACKEND_URL_RUBYONRAILS');
 
