@@ -12,7 +12,6 @@ sqlalchemy==1.4.49
 redis==5.0.1
 Werkzeug==3.0.3
 flask_caching==2.3.0
-openai==1.52.2
 tiktoken==0.8.0
 celery==5.4.0
 statsig==0.57.1

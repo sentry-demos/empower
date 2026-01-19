@@ -1,0 +1,21 @@
+# Core dependencies
+fastapi==0.116.1
+uvicorn[standard]==0.35.0
+openai-agents==0.3.0
+pydantic==2.10.3
+pydantic-settings==2.7.0
+python-dotenv==1.0.1
+sentry-sdk[fastapi]==2.49.0
+eval_type_backport==0.2.2
+
+# Development dependencies
+pytest==8.3.4
+pytest-asyncio==1.2.0
+black==25.1.0
+isort==6.0.1
+flake8==7.1.1
+mypy==1.13.0
+pre-commit==4.0.1
+
+# Testing dependencies
+httpx==0.28.1

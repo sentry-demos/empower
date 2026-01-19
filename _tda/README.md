@@ -4,68 +4,30 @@ https://github.com/sentry-demos/empower/pull/173
 # Test Data Automation
 Runs automted tests against Sentry demos on GCP, in order to generate errors and transactions to be sent to Sentry.io.
 
-
-** Some of the doc below is out of date **
-
 ## Components / Moving parts
 - `conftest.py` -> Sauce Labs configuration (browsers) for frontend_tests
-- `backend_tests/backend_test.py` -> Hits /handled, /unhandled/, + /checkout backend demo APIs
 - Selectors for button elements in the React Native app can be found via connecting an Appium Inspector to your Saucelabs instance.
 - [SauceLabs Inspector](https://github.com/appium/appium-inspector) download and launch this Desktop program, get the JSON config from someone.
 
-# Tests
+# How to run locally to verify a new test works
 
-## Setup
+Run just 1 test locally:
 ```
-python3 -m venv env
-source env/bin/activate
-pip install -r requirements.txt
+./deploy _tda --env=local -- ./run_local.sh desktop_web/test_ai_agent.py
 ```
 
-Update your endpoint (URL) in `endpoints.yaml` -> (http://application-monitoring-react-dot-sales-engineering-sf.appspot.com/ <-- '/' at end)
-
-Saucelabs Authentication
+Run entire suite locally:
 ```
-export SAUCE_USERNAME=<>
-export SAUCE_ACCESS_KEY=<>
+./deploy _tda --env=local
 ```
 
+# How to deploy to production
+
+This will take care of everything
 ```
-chmod u+x tests/script.sh
+./deploy _tda --env=production
 ```
 
-Make a .env and put DSN in there if you want catch errors for the pytests failing (not the Apps themselves having errors)
-
-## FrontEnd / Selenium (`desktop_web` directory)
-Pulls up Sentry frontend in various browsers in parallel via selenium scripts.
-Test case will add items to cart and then click checkout
-
-```
-py.test -s -n 4 desktop_web
-```
-
-`-n` is for number of threads
-
-How to run one test:
-```
-py.test -s -n 4 desktop_web/test_homepage.py
-py.test -s -n 4 mobile_native/android_react_native/test_homescreen_react_native_android.py
-py.test -s -n 4 mobile_native/ios_react_native/test_uncaughtthrownerror_react_native_ios.py
-```
-
-# To run "continuously" in VM
-Use an isolated VM since it's constantly occupying +2 threads simultaneously
-```
-source .virtualenv/bin/activate
-nohup ./mobile_native.sh >/dev/null 2>&1 &
-nohup ./desktop_web.sh >/dev/null 2>&1 &
-```
-
-How to stop it
-```
-ps fjx
-kill -9 <PID of the script.sh>
-```
 # Troubleshooting
 
 ### ssh: Could not resolve hostname empower-tda-and-crons-staging.us-central1-a.sales-engineering-sf: nodename nor servname provided, or not known

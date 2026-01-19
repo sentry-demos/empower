@@ -16,6 +16,14 @@ use Exception;
 
 class ProductController extends Controller
 {
+    private const PESTS = [
+        "aphids", "thrips", "spider mites", "lead miners", "scale",
+        "whiteflies", "earwigs", "cutworms", "mealybugs", "fungus gnats"
+    ];
+
+    private const NORMAL_SLOW_PROFILE = 2; // seconds
+    private const EXTREMELY_SLOW_PROFILE = 24;
+
     public function __construct(
         private OrderService $orderService
     ) {}
@@ -24,8 +32,13 @@ class ProductController extends Controller
      * Get all products with reviews
      * Extracted from the original /products route
      */
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
+        $fetchPromotions = $request->query('fetch_promotions');
+        $inStockOnly = $request->query('in_stock_only');
+        $runSlowProfile = env('RUN_SLOW_PROFILE', true);
+        $timeoutSeconds = $fetchPromotions ? self::EXTREMELY_SLOW_PROFILE : self::NORMAL_SLOW_PROFILE;
+
         // Generate random number to determine cache key strategy
         $randomValue = rand(0, 99);
         
@@ -45,12 +58,20 @@ class ProductController extends Controller
         }
         
         // Cache miss - fetch from database
-        $products = Product::with('reviews')->get();
-        
+        // N+1 query: first get all products, then query reviews for each product individually
+        $products = Product::all();
+
         // Transform to match original format
+        // This causes N+1 queries - for each product, a separate query is made to fetch reviews
         $completeProductsWithReviews = $products->map(function ($product) {
             $productArray = $product->toArray();
-            $productArray['reviews'] = $product->reviews->map(function ($review) {
+            // Accessing $product->reviews triggers a lazy load query for each product
+            // product_bundles is a "sleepy view", joining it mimics the Flask behavior
+            $reviews = DB::table('reviews')
+                ->crossJoin('product_bundles')
+                ->where('reviews.productid', $product->id)
+                ->get();
+            $productArray['reviews'] = $reviews->map(function ($review) {
                 return [
                     'id' => $review->id,
                     'productid' => $review->productid,
@@ -60,10 +81,35 @@ class ProductController extends Controller
                     'created' => $review->created,
                 ];
             })->toArray();
-            
+
             return $productArray;
         })->toArray();
-        
+
+        // Simulate computation-heavy work when RUN_SLOW_PROFILE is enabled
+        if ($runSlowProfile) {
+            $startTime = microtime(true);
+            $descriptions = array_column($completeProductsWithReviews, 'description');
+            $loop = count($descriptions) * 6 + ($fetchPromotions ? 2 : -1);
+
+            for ($i = 0; $i < $loop * 10; $i++) {
+                $timeDelta = microtime(true) - $startTime;
+                if ($timeDelta > $timeoutSeconds) {
+                    break;
+                }
+
+                foreach ($descriptions as $index => $description) {
+                    foreach (self::PESTS as $pest) {
+                        if ($inStockOnly && !isset($completeProductsWithReviews[$index])) {
+                            continue;
+                        }
+                        if (str_contains($description ?? '', $pest)) {
+                            array_splice($completeProductsWithReviews, $index, 1);
+                        }
+                    }
+                }
+            }
+        }
+
         // Store in cache (1 hour TTL for fixed key, random keys will never be retrieved anyway)
         Cache::put($cacheKey, $completeProductsWithReviews, 3600);
 

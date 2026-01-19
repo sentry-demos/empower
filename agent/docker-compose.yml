@@ -1,0 +1,25 @@
+# Note: this file is not used by Cloud Run, only locally
+# that's why we have to set all environment variables in deploy_project.sh as well as here
+services:
+  plant-agent:
+    build: .
+    ports:
+      - "${PORT}:${PORT}"
+    environment:
+      - AGENT_DSN=${AGENT_DSN}
+      - AGENT_SENTRY_ENVIRONMENT=${AGENT_SENTRY_ENVIRONMENT}
+      - API_HOST=0.0.0.0
+      - API_RELOAD=true
+      - MAX_TOKENS=1000
+      - MCP_URL=${MCP_URL}
+      - OPENAI_API_KEY=${AGENT_OPENAI_API_KEY} # looks like OpenAI SDK expects this variable name
+      - PORT=${PORT}
+    volumes:
+      - .:/app
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${PORT}/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
