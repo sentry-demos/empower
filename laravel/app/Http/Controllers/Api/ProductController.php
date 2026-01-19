@@ -127,21 +127,25 @@ class ProductController extends Controller
 
         $rubyBackendUrl = env('BACKEND_URL_RUBYONRAILS');
 
-        try {
-            $headers = [];
-            $customHeaders = ['se', 'customerType', 'email'];
-            foreach ($customHeaders as $header) {
-                if ($request->hasHeader($header)) {
-                    $headers[$header] = $request->header($header);
+        if (!empty($rubyBackendUrl)) {
+            try {
+                $headers = [];
+                $customHeaders = ['se', 'customerType', 'email'];
+                foreach ($customHeaders as $header) {
+                    if ($request->hasHeader($header)) {
+                        $headers[$header] = $request->header($header);
+                    }
                 }
-            }
 
-            $response = Http::withHeaders($headers)->get($rubyBackendUrl . '/api');
-            $response->throw();
-            Log::info('Processing /products-join - backend API call successful');
-        } catch (\Throwable $err) {
-            Log::error('Processing /products-join - backend API call failed');
-            report($err);
+                $response = Http::withHeaders($headers)->get($rubyBackendUrl . '/api');
+                $response->throw();
+                Log::info('Processing /products-join - backend API call successful');
+            } catch (\Throwable $err) {
+                Log::error('Processing /products-join - backend API call failed');
+                report($err);
+            }
+        } else {
+            Log::warning('BACKEND_URL_RUBYONRAILS not configured, skipping backend call');
         }
 
         return $result;
