@@ -129,14 +129,20 @@ jobs:
           $(gcloud info --format="value(basic.python_location)") -m pip install numpy
 
       - name: Deploy to production
+        env:
+          INPUT_PROJECT: ${{ github.event.inputs.project }}
         run: |
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             # For manual triggers
-            SPECIFIED_PROJECT="${{ github.event.inputs.project }}"
-            if [[ -n "$SPECIFIED_PROJECT" && "$SPECIFIED_PROJECT" != "all" ]]; then
+            if [[ -n "$INPUT_PROJECT" && "$INPUT_PROJECT" != "all" ]]; then
+              # Validate project name contains only safe characters (alphanumeric, hyphen, underscore)
+              if [[ ! "$INPUT_PROJECT" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+                echo "Error: Invalid project name. Only alphanumeric characters, hyphens, and underscores are allowed."
+                exit 1
+              fi
               # Deploy only the specified project
-              echo "Deploying specified project: $SPECIFIED_PROJECT"
-              ./deploy $SPECIFIED_PROJECT --env=production
+              echo "Deploying specified project: $INPUT_PROJECT"
+              ./deploy "$INPUT_PROJECT" --env=production
             else
               # Deploy all projects. This is useful to force a 'bounce'
               DEPLOYABLE_PROJECTS=$(./_bin/list_deployable_projects.sh)
