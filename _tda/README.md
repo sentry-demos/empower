@@ -58,3 +58,4 @@ Note that handled errors will not increment the crash counts in Release Health. 
 https://appium.io/docs/en/commands/device/app/launch-app/
 
 Test names must begin with a prefix of `test_` or else they won't run.
+
