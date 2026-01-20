@@ -1,6 +1,7 @@
 import * as Sentry from '@sentry/react';
 import plantsBackground from '../assets/plants-background-img.jpg';
 import Button from './ButtonLink';
+import ChatWidget from './ChatWidget';
 import { useEffect } from 'react';
 
 const divStyle = {
@@ -32,6 +33,7 @@ function Home({ frontendSlowdown, backend }) {
           Browse products
         </Button>
       </div>
+      <ChatWidget />
     </div>
   );
 }

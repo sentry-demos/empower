@@ -63,18 +63,6 @@ export async function getProductsRaw() {
 
 }
 
-export async function getProductsOnly() {
-  try {
-    console.log("Fetching products...");
-    const products = await prisma.products.findMany();
-
-    return products;
-  } catch (error) {
-    console.error("Database Error:", error)
-    // do sentry stuff
-  }
-}
-
 export async function getProduct(index) {
   const i = Number(index);
   try {
@@ -157,7 +145,7 @@ export async function getInventory(cart) {
   let inventory;
   try {
     inventory = await prisma.inventory.findMany({
-      where: { id: { in: productIds } }
+      where: { id : { in : productIds } }
     });
   } catch (error) {
     console.log("Database Error:", error);
