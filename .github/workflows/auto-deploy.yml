@@ -1,6 +1,6 @@
 name: auto-deploy.yml
 # Deploys to Google App Engine upon commit to master branch and on schedule at midnight UTC
-run-name: Deployment triggered by ${{ github.event_name }} / ${{ github.actor }}
+run-name: Deployment triggered by ${{ github.event_name }} / ${{ github.actor }}${{ github.event.inputs.project && format(' ({0})', github.event.inputs.project) || '' }}
 
 on:
   push:
@@ -10,6 +10,12 @@ on:
     - cron: "40 3 * * *" # every day at 8:40pm PDT / 5:40am GMT+2
     # see https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#schedule
   workflow_dispatch:
+    inputs:
+      project:
+        description: 'Project to deploy (leave empty or "all" to deploy all projects)'
+        required: false
+        default: ''
+        type: string
 
 # Only run 1 workflow at a time. If new one starts abort any that are already running.
 concurrency:
@@ -125,9 +131,18 @@ jobs:
       - name: Deploy to production
         run: |
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            # For manual triggers, deploy all projects. This is useful to force a 'bounce'
-            DEPLOYABLE_PROJECTS=$(./_bin/list_deployable_projects.sh)
-            ./deploy $DEPLOYABLE_PROJECTS --env=production
+            # For manual triggers
+            SPECIFIED_PROJECT="${{ github.event.inputs.project }}"
+            if [[ -n "$SPECIFIED_PROJECT" && "$SPECIFIED_PROJECT" != "all" ]]; then
+              # Deploy only the specified project
+              echo "Deploying specified project: $SPECIFIED_PROJECT"
+              ./deploy $SPECIFIED_PROJECT --env=production
+            else
+              # Deploy all projects. This is useful to force a 'bounce'
+              DEPLOYABLE_PROJECTS=$(./_bin/list_deployable_projects.sh)
+              echo "Deploying all projects: $DEPLOYABLE_PROJECTS"
+              ./deploy $DEPLOYABLE_PROJECTS --env=production
+            fi
           else
             # For automated triggers, check for changes
             CHANGED_PROJECTS=$(./_bin/projects_changed_bw_commits.sh "${{ env.NX_BASE }}" "${{ env.NX_HEAD }}")
