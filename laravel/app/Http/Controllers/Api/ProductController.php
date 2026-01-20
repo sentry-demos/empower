@@ -10,6 +10,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Exception;
 
 class ProductController extends Controller
@@ -112,6 +114,41 @@ class ProductController extends Controller
         Cache::put($cacheKey, $completeProductsWithReviews, 3600);
 
         return response()->json($completeProductsWithReviews);
+    }
+
+    /**
+     * Get all products with reviews, after making a request to the Ruby backend
+     */
+    public function products_join(Request $request): JsonResponse
+    {
+        Log::info('Received /products-join endpoint request');
+
+        $result = $this->index($request);
+
+        $rubyBackendUrl = env('BACKEND_URL_RUBYONRAILS');
+
+        if (!empty($rubyBackendUrl)) {
+            try {
+                $headers = [];
+                $customHeaders = ['se', 'customerType', 'email'];
+                foreach ($customHeaders as $header) {
+                    if ($request->hasHeader($header)) {
+                        $headers[$header] = $request->header($header);
+                    }
+                }
+
+                $response = Http::withHeaders($headers)->get($rubyBackendUrl . '/api');
+                $response->throw();
+                Log::info('Processing /products-join - backend API call successful');
+            } catch (\Throwable $err) {
+                Log::error('Processing /products-join - backend API call failed');
+                report($err);
+            }
+        } else {
+            Log::warning('BACKEND_URL_RUBYONRAILS not configured, skipping backend call');
+        }
+
+        return $result;
     }
 
     /**
