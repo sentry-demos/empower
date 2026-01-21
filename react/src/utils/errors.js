@@ -14,8 +14,14 @@ const syntaxError = () => eval('foo bar');
 const rangeError = () => {
   throw new RangeError('Parameter must be between 1 and 100');
 };
+const smallRangeError = () => {
+  throw new RangeError('Parameter must be between 1 and 10');
+};
 const unhandledError = () => {
   throw new UnhandledException('unhandled error');
+};
+const inventoryError = () => {
+  throw new InventoryException('unhandled error');
 };
 
 const randomErrors = [
@@ -23,7 +29,9 @@ const randomErrors = [
   referenceError,
   syntaxError,
   rangeError,
+  smallRangeError,
   unhandledError,
+  inventoryError,
 ];
 
 const throwErrorNumber = (i) => {
@@ -61,4 +69,11 @@ class UnhandledException extends Error {
   }
 }
 
-export { crasher, UnhandledException };
+class InventoryException extends Error {
+  constructor(message, functionName) {
+    super(message);
+  }
+}
+
+
+export { crasher, UnhandledException, InventoryException };
