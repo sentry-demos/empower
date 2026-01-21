@@ -19,6 +19,3 @@ ENV/
 # Local development only
 docker-compose.yml
 run_local.sh
-
-# Do NOT ignore .env - it's needed for Cloud Run
-# (it's generated from _.env.template by the deploy script)

@@ -1,7 +1,16 @@
 """Configuration management for the AI Agent application."""
 
+from pathlib import Path
+
+from dotenv import load_dotenv
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Load .env into os.environ so other libraries (OpenAI SDK, Sentry) can access their env vars
+# Use explicit path relative to this file's location
+# override=True ensures .env values take precedence over any existing env vars
+env_path = Path(__file__).parent / ".env"
+load_dotenv(env_path, override=True)
 
 
 class Settings(BaseSettings):
