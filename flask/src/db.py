@@ -150,12 +150,28 @@ def get_promo_code(code):
     try:
         with sentry_sdk.start_span(name="get_promo_code", op="db.connect"):
             connection = db.connect()
-        
+
         with sentry_sdk.start_span(name="get_promo_code", op="db.query") as span:
             query = text("SELECT * FROM promo_codes WHERE code = :code AND is_active = true")
             result = connection.execute(query, code=code).fetchone()
             span.set_data("promo_code", result)
-        
+
         return result
     except Exception as err:
         raise DatabaseConnectionError('get_promo_code') from err
+
+@sentry_sdk.trace
+def search_products(search_term):
+    """Search products by title"""
+    try:
+        with sentry_sdk.start_span(name="search_products", op="db.connect"):
+            connection = db.connect()
+
+        with sentry_sdk.start_span(name="search_products", op="db.query") as span:
+            query = f"SELECT * FROM products WHERE title LIKE '%{search_term}%'"
+            results = connection.execute(text(query)).fetchall()
+            span.set_data("results_count", len(results))
+
+        return results
+    except Exception as err:
+        raise DatabaseConnectionError('search_products') from err
