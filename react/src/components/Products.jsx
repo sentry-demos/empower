@@ -52,6 +52,10 @@ function Products({ frontendSlowdown, backend, productsApi, productsExtremelySlo
   // intentionally supposed to be slow
   function renderProducts(data) {
     try {
+      // Log the first product's category for analytics
+      const firstProduct = data[0];
+      console.log('First product category:', firstProduct.category.name);
+
       // Trigger a Sentry 'Performance Issue' in the case of
       // a frontend slowdown
       if (frontendSlowdown) {
