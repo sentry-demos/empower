@@ -1,21 +1,32 @@
 """Configuration management for the AI Agent application."""
 
-import os
+from pathlib import Path
 
 from dotenv import load_dotenv
-from pydantic_settings import BaseSettings
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
-# Load environment variables from .env file
-load_dotenv()
+# Load .env into os.environ so other libraries (OpenAI SDK, Sentry) can access their env vars
+# Use explicit path relative to this file's location
+# override=True ensures .env values take precedence over any existing env vars
+env_path = Path(__file__).parent / ".env"
+load_dotenv(env_path, override=True)
 
 
 class Settings(BaseSettings):
     """Application settings."""
 
-    # API settings
-    api_host: str = os.environ["API_HOST"]
-    api_port: int = int(os.environ["PORT"])
-    api_reload: bool = os.environ["API_RELOAD"].lower() == "true"
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+        extra="ignore",  # Allow extra env vars (OPENAI_API_KEY, AGENT_DSN, etc. used by other libs)
+    )
+
+    # API settings (read from environment / .env file)
+    api_host: str = Field(alias="API_HOST")
+    api_port: int = Field(alias="PORT")
+    api_reload: bool = Field(alias="API_RELOAD")
 
     # OpenAI settings
     agent_model: str = "gpt-5-mini"
@@ -25,12 +36,8 @@ class Settings(BaseSettings):
     agent_name: str = "EmpowerPlantAgent"
     agent_description: str = "An AI agent for plant empowerment tasks"
     
-    max_tokens: int = int(os.getenv("MAX_TOKENS", "1000"))
+    max_tokens: int = Field(alias="MAX_TOKENS")
     temperature: float = 0.7
-
-    class Config:
-        env_file = ".env"
-        case_sensitive = False
 
 
 # Instantiate settings
