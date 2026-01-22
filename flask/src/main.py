@@ -11,7 +11,7 @@ from flask_caching import Cache
 from statsig.statsig_user import StatsigUser
 from statsig import statsig, StatsigOptions, StatsigEnvironmentTier
 import dotenv
-from .db import decrement_inventory, get_products, get_products_join, get_inventory, get_promo_code
+from .db import decrement_inventory, get_products, get_products_join, get_inventory, get_promo_code, search_products
 from .utils import parseHeaders, get_iterator, evaluate_statsig_flags
 from .queues.tasks import sendEmail
 import sentry_sdk
@@ -357,6 +357,14 @@ def get_api_response_with_caching(key, delay):
         sentry_sdk.capture_exception(err)
 
     return key
+
+
+@app.route('/search', methods=['GET'])
+def search():
+    logger.info('Received /search endpoint request')
+    search_term = request.args.get('q', '')
+    results = search_products(search_term)
+    return json.dumps([dict(r) for r in results], default=str)
 
 
 @app.route('/products-join', methods=['GET'])
