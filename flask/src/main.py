@@ -464,13 +464,19 @@ def apply_promo_code():
             }), 410 # Look what a clever HTTP response code! Good luck FE dev :D
         
         logger.info('[/apply-promo-code] valid code found: %s', promo_dict)
-        
+
+        # Calculate effective discount rate based on cart total
+        cart_total = body.get('cart_total', 0)
+        discount_amount = promo_dict['percent_discount'] * cart_total / 100
+        effective_rate = discount_amount / cart_total
+
         return jsonify({
             "success": True,
             "promo_code": {
                 "code": promo_dict['code'],
                 "percent_discount": promo_dict['percent_discount'],
-                "max_dollar_savings": promo_dict['max_dollar_savings']
+                "max_dollar_savings": promo_dict['max_dollar_savings'],
+                "effective_rate": effective_rate
             }
         }), 200
         
