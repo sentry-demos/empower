@@ -173,6 +173,12 @@ function Checkout({ backend, rageclick, checkout_success, cart }) {
   async function handleSubmit(event) {
     event.preventDefault();
 
+    // Validate cart is not empty before checkout
+    if (cart.total === "0") {
+      setPromoMessage('Your cart is empty');
+      return;
+    }
+
     if (rageclick) {
       // do nothing. after enough clicks,
       // Sentry will detect a rageclick
