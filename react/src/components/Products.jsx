@@ -138,6 +138,9 @@ function Products({ frontendSlowdown, backend, productsApi, productsExtremelySlo
             product.reviews.length
           ).toFixed(1);
 
+          // Add category badge to product tiles
+          const categoryBadge = product.category.name.toUpperCase();
+
           let stars = [1, 2, 3, 4, 5].map((index) => {
             if (index <= averageRating) {
               return (
@@ -155,7 +158,7 @@ function Products({ frontendSlowdown, backend, productsApi, productsExtremelySlo
           });
 
           return (
-            <ProductCard key={i} product={product} stars={stars} addToCartJsError={addToCartJsError}></ProductCard>
+            <ProductCard key={i} product={product} stars={stars} categoryBadge={categoryBadge} addToCartJsError={addToCartJsError}></ProductCard>
           );
         })}
       </ul>

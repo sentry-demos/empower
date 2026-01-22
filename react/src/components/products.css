@@ -35,3 +35,29 @@
 .loader-container {
   text-align: center;
 }
+
+/* Category Badge Styles */
+.product-card {
+  position: relative;
+}
+
+.product-image-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.category-badge {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  background: linear-gradient(135deg, #362d59 0%, #6c5fc7 100%);
+  color: #ffffff;
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 0.35rem 0.75rem;
+  border-radius: 2rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  box-shadow: 0 2px 8px rgba(54, 45, 89, 0.3);
+  z-index: 1;
+}
