@@ -5,7 +5,7 @@ from datetime import datetime
 import sentry_sdk
 from selenium.webdriver.common.by import By
 
-
+VOLUME_FACTOR = 0.185 # reduce token usage
 WAIT_BEFORE_CLOSE_SECONDS = 80  # Allow time for Sentry trace capture
 BASE_ITERATIONS = 3
 JITTER_PERCENT = 30
@@ -42,7 +42,7 @@ def add_jitter(value: float, jitter_percent: int = JITTER_PERCENT) -> float:
 
 def calculate_iterations() -> int:
     seasonal_multiplier = get_seasonal_multiplier()
-    raw_iterations = add_jitter(BASE_ITERATIONS * seasonal_multiplier)
+    raw_iterations = VOLUME_FACTOR * add_jitter(BASE_ITERATIONS * seasonal_multiplier)
     
     if raw_iterations < 1.0:
         return 1 if random.random() < raw_iterations else 0
