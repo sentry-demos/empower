@@ -44,7 +44,7 @@ export async function getProductsRaw() {
     for (let i = 0; i < products.length; ++i) {
       // product_bundles is a "sleepy view", run the following query to get current sleep duration:
       // SELECT pg_get_viewdef('product_bundles', true)
-      const product_reviews = await query(`SELECT * FROM reviews, product_bundles WHERE productid = $1`, [i]
+      const product_reviews = await query(`SELECT * FROM reviews, product_bundles WHERE productid = $1`, [products[i].id]
       )
       products[i].reviews = product_reviews.rows;
     }
@@ -53,10 +53,6 @@ export async function getProductsRaw() {
     console.error("Database Error:", error)
     // do sentry stuff
   } 
-
-  await Sentry.startSpan({name: "get_iterator"}, async () => {
-    await getIterator();
-  });
 
   return products;
 
