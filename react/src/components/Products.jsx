@@ -158,7 +158,7 @@ function Products({ frontendSlowdown, backend, productsApi, productsExtremelySlo
           });
 
           return (
-            <ProductCard key={i} product={product} stars={stars} categoryBadge={categoryBadge} addToCartJsError={addToCartJsError}></ProductCard>
+            <ProductCard key={i} product={product} stars={stars} categoryBadge={categoryBadge} backend={backend} addToCartJsError={addToCartJsError}></ProductCard>
           );
         })}
       </ul>
