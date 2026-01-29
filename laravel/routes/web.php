@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\EmailController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\ProductController;
 
@@ -9,7 +10,7 @@ Route::get('/', function () {
 
 // Web routes matching original Laravel 8.x implementation
 Route::get('/products', [ProductController::class, 'index']);
-Route::get('/products-join', [ProductController::class, 'index']); // Same as products for now
+Route::get('/products-join', [ProductController::class, 'products_join']); // Same as products for now
 Route::post('/checkout', [ProductController::class, 'checkout']);
 Route::get('/handled', [ProductController::class, 'handled']);
 Route::get('/unhandled', [ProductController::class, 'unhandled']);
@@ -28,3 +29,9 @@ Route::get('/connect', function () {
 Route::get('/debug-sentry', function () {
     throw new Exception('My first Sentry error!');
 });
+
+// Cache testing routes (for Sentry integration)
+Route::get('/maybe-cached', [ProductController::class, 'maybe_cached']);
+
+// Email routes, testing async jobs
+Route::post('/enqueue', [EmailController::class, 'enqueue']); 

@@ -1,6 +1,6 @@
 name: auto-deploy.yml
 # Deploys to Google App Engine upon commit to master branch and on schedule at midnight UTC
-run-name: Deployment triggered by ${{ github.event_name }} / ${{ github.actor }}
+run-name: Deployment triggered by ${{ github.event_name }} / ${{ github.actor }}${{ github.event.inputs.project && format(' ({0})', github.event.inputs.project) || '' }}
 
 on:
   push:
@@ -10,6 +10,12 @@ on:
     - cron: "40 3 * * *" # every day at 8:40pm PDT / 5:40am GMT+2
     # see https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#schedule
   workflow_dispatch:
+    inputs:
+      project:
+        description: 'Project to deploy (leave empty or "all" to deploy all projects)'
+        required: false
+        default: ''
+        type: string
 
 # Only run 1 workflow at a time. If new one starts abort any that are already running.
 concurrency:
@@ -123,11 +129,26 @@ jobs:
           $(gcloud info --format="value(basic.python_location)") -m pip install numpy
 
       - name: Deploy to production
+        env:
+          INPUT_PROJECT: ${{ github.event.inputs.project }}
         run: |
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            # For manual triggers, deploy all projects. This is useful to force a 'bounce'
-            DEPLOYABLE_PROJECTS=$(./_bin/list_deployable_projects.sh)
-            ./deploy $DEPLOYABLE_PROJECTS --env=production
+            # For manual triggers
+            if [[ -n "$INPUT_PROJECT" && "$INPUT_PROJECT" != "all" ]]; then
+              # Validate project name contains only safe characters (alphanumeric, hyphen, underscore)
+              if [[ ! "$INPUT_PROJECT" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+                echo "Error: Invalid project name. Only alphanumeric characters, hyphens, and underscores are allowed."
+                exit 1
+              fi
+              # Deploy only the specified project
+              echo "Deploying specified project: $INPUT_PROJECT"
+              ./deploy "$INPUT_PROJECT" --env=production
+            else
+              # Deploy all projects. This is useful to force a 'bounce'
+              DEPLOYABLE_PROJECTS=$(./_bin/list_deployable_projects.sh)
+              echo "Deploying all projects: $DEPLOYABLE_PROJECTS"
+              ./deploy $DEPLOYABLE_PROJECTS --env=production
+            fi
           else
             # For automated triggers, check for changes
             CHANGED_PROJECTS=$(./_bin/projects_changed_bw_commits.sh "${{ env.NX_BASE }}" "${{ env.NX_HEAD }}")

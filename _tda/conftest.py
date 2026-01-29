@@ -512,6 +512,24 @@ def desktop_web_driver(request, se_prefix):
         with _local_browser(request, se) as b:
             yield b
 
+
+@pytest.fixture
+def desktop_web_1browser_driver(request, se_prefix):
+    """Like desktop_web_driver but only uses the first browser from CONFIG.browsers (no parameterization)"""
+    browser_config = CONFIG.browsers[0]
+    
+    import builtins
+    builtins._current_browser_config = browser_config
+    
+    # Create a wrapper that mimics request.param for _sauce_browser
+    request.param = browser_config
+    
+    se = f'{se_prefix}-sauce-{browser_config.param_display}'
+    sentry_sdk.set_tag("se", se)
+    with _sauce_browser(request, se) as b:
+        yield b
+
+
 @pytest.fixture
 def android_react_native_emu_driver(request, se_prefix):
 
