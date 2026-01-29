@@ -89,12 +89,7 @@ GEM
     drb (2.2.3)
     erb (5.0.1)
     erubi (1.13.1)
-    ffi (1.17.1-aarch64-linux-gnu)
-    ffi (1.17.1-arm-linux-gnu)
-    ffi (1.17.1-arm64-darwin)
-    ffi (1.17.1-x86-linux-gnu)
-    ffi (1.17.1-x86_64-darwin)
-    ffi (1.17.1-x86_64-linux-gnu)
+    ffi (1.17.1)
     globalid (1.2.1)
       activesupport (>= 6.1)
     i18n (1.14.7)
@@ -131,18 +126,8 @@ GEM
     net-smtp (0.5.0)
       net-protocol
     nio4r (2.7.4)
-    nokogiri (1.18.10)
+    nokogiri (1.19.0)
       mini_portile2 (~> 2.8.2)
-      racc (~> 1.4)
-    nokogiri (1.18.10-aarch64-linux-gnu)
-      racc (~> 1.4)
-    nokogiri (1.18.10-arm-linux-gnu)
-      racc (~> 1.4)
-    nokogiri (1.18.10-arm64-darwin)
-      racc (~> 1.4)
-    nokogiri (1.18.10-x86_64-darwin)
-      racc (~> 1.4)
-    nokogiri (1.18.10-x86_64-linux-gnu)
       racc (~> 1.4)
     pg (1.5.9)
     pp (0.6.2)
@@ -226,23 +211,16 @@ GEM
     zeitwerk (2.7.3)
 
 PLATFORMS
-  aarch64-linux
-  aarch64-linux-gnu
-  arm-linux
-  arm-linux-gnu
   arm64-darwin
-  x86-linux
-  x86-linux-gnu
   x86_64-darwin
   x86_64-linux
-  x86_64-linux-gnu
   ruby
 
 DEPENDENCIES
   bootsnap (>= 1.1.0)
   dotenv-rails
   listen (~> 3.5)
-  nokogiri (~> 1.18.10)
+  nokogiri
   pg
   puma (~> 6.5.0)
   rack
