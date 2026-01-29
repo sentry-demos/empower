@@ -303,7 +303,7 @@ def products():
 
                         for i, description in enumerate(descriptions):
                             for pest in pests:
-                                if in_stock_only and productsJSON[i] not in product_inventory:
+                                if in_stock_only and product_inventory is not None and productsJSON[i] not in product_inventory:
                                     continue
                                 if pest in description:
                                     try:
