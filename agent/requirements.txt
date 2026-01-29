@@ -16,6 +16,3 @@ isort==6.0.1
 flake8==7.1.1
 mypy==1.13.0
 pre-commit==4.0.1
-
-# Testing dependencies
-httpx==0.28.1
