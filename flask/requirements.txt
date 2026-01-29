@@ -10,7 +10,7 @@ pytz==2020.4
 sentry-sdk[statsig]>=2.45.0
 sqlalchemy==1.4.49
 redis==5.0.1
-Werkzeug==3.0.3
+Werkzeug==3.1.5
 flask_caching==2.3.0
 tiktoken==0.8.0
 celery==5.4.0
