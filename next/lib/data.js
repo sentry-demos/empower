@@ -33,30 +33,32 @@ export async function getProductsRaw() {
   try {
 
     console.debug("Fetching products...");
-    // Artificial slowdown for demoing
-    const sleepDuration = 2;
-    const data = await query(
-      `SELECT * FROM products WHERE id IN (
-          SELECT id FROM products
-      )`
-    );
-    products = data.rows
-    for (let i = 0; i < products.length; ++i) {
-      // product_bundles is a "sleepy view", run the following query to get current sleep duration:
-      // SELECT pg_get_viewdef('product_bundles', true)
-      const product_reviews = await query(`SELECT * FROM reviews, product_bundles WHERE productid = $1`, [i]
-      )
-      products[i].reviews = product_reviews.rows;
-    }
+    // Fetch all products
+    const data = await query(`SELECT * FROM products`);
+    products = data.rows;
+    
+    // Fetch all reviews in a single query to avoid N+1 pattern
+    const reviewsData = await query(`SELECT * FROM reviews`);
+    const reviewsByProductId = {};
+    
+    // Group reviews by product ID
+    reviewsData.rows.forEach(review => {
+      if (!reviewsByProductId[review.productid]) {
+        reviewsByProductId[review.productid] = [];
+      }
+      reviewsByProductId[review.productid].push(review);
+    });
+    
+    // Attach reviews to products
+    products.forEach(product => {
+      product.reviews = reviewsByProductId[product.id] || [];
+    });
+    
     console.log("products: ", products);
   } catch (error) {
     console.error("Database Error:", error)
     // do sentry stuff
-  } 
-
-  await Sentry.startSpan({name: "get_iterator"}, async () => {
-    await getIterator();
-  });
+  }
 
   return products;
 
