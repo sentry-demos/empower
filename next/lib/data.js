@@ -10,15 +10,8 @@ import { cookies } from 'next/headers';
 const prisma = new PrismaClient();
 
 export async function getIterator(n = 35) {
-  if (n <= 0) {
-    return 0;
-  }
-  // Add artificial delay
-  const start = Date.now();
-  while (Date.now() - start < 100) {
-    // Busy wait for 100ms
-  }
-  return getIterator(n - 1) + 1;
+  // Removed busy-wait to prevent database connection idle timeout
+  return n;
 }
 
 export async function getProductsRaw() {
@@ -41,12 +34,30 @@ export async function getProductsRaw() {
       )`
     );
     products = data.rows
-    for (let i = 0; i < products.length; ++i) {
-      // product_bundles is a "sleepy view", run the following query to get current sleep duration:
-      // SELECT pg_get_viewdef('product_bundles', true)
-      const product_reviews = await query(`SELECT * FROM reviews, product_bundles WHERE productid = $1`, [i]
-      )
-      products[i].reviews = product_reviews.rows;
+    
+    // Fix N+1 query problem: fetch all reviews in a single query
+    if (products.length > 0) {
+      const productIds = products.map(p => p.id);
+      const reviews_data = await query(
+        `SELECT r.*, pb.pg_sleep 
+         FROM reviews r, product_bundles pb 
+         WHERE r.productid = ANY($1::int[])`,
+        [productIds]
+      );
+      
+      // Group reviews by product ID
+      const reviewsByProductId = {};
+      reviews_data.rows.forEach(review => {
+        if (!reviewsByProductId[review.productid]) {
+          reviewsByProductId[review.productid] = [];
+        }
+        reviewsByProductId[review.productid].push(review);
+      });
+      
+      // Assign reviews to products
+      products.forEach(product => {
+        product.reviews = reviewsByProductId[product.id] || [];
+      });
     }
     console.log("products: ", products);
   } catch (error) {
