@@ -41,13 +41,30 @@ export async function getProductsRaw() {
       )`
     );
     products = data.rows
-    for (let i = 0; i < products.length; ++i) {
-      // product_bundles is a "sleepy view", run the following query to get current sleep duration:
-      // SELECT pg_get_viewdef('product_bundles', true)
-      const product_reviews = await query(`SELECT * FROM reviews, product_bundles WHERE productid = $1`, [i]
-      )
-      products[i].reviews = product_reviews.rows;
+    
+    // Fix N+1 query: Fetch all reviews in a single query
+    if (products.length > 0) {
+      const productIds = products.map(p => p.id);
+      const reviewsData = await query(
+        `SELECT * FROM reviews WHERE productid = ANY($1)`,
+        [productIds]
+      );
+      
+      // Group reviews by product ID
+      const reviewsByProduct = {};
+      for (const review of reviewsData.rows) {
+        if (!reviewsByProduct[review.productid]) {
+          reviewsByProduct[review.productid] = [];
+        }
+        reviewsByProduct[review.productid].push(review);
+      }
+      
+      // Attach reviews to products
+      for (let i = 0; i < products.length; ++i) {
+        products[i].reviews = reviewsByProduct[products[i].id] || [];
+      }
     }
+    
     console.log("products: ", products);
   } catch (error) {
     console.error("Database Error:", error)
