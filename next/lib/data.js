@@ -108,7 +108,7 @@ export async function checkoutAction(cart) {
         }
 
         for (let inventoryItem of inventory) {
-          itemId = inventoryItem.id;
+          itemId = inventoryItem.productid;
           currentInventory = inventoryItem.count;
           if (currentInventory < cart.quantities[itemId] || cart.quantities[itemId] >= currentInventory) {
             const error = new Error("Not enough inventory for product")  
@@ -145,7 +145,7 @@ export async function getInventory(cart) {
   let inventory;
   try {
     inventory = await prisma.inventory.findMany({
-      where: { id : { in : productIds } }
+      where: { productid : { in : productIds } }
     });
   } catch (error) {
     console.log("Database Error:", error);
