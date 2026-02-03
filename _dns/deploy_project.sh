@@ -1,15 +1,13 @@
 #!/bin/bash
 #
-# Deploy DNS/Routing configuration.
-# This script handles two routing mechanisms:
-#   1. App Engine dispatch.yml (legacy, for services not yet migrated)
-#   2. Load Balancer with Serverless NEG (new, for migrated services)
+# Deploy DNS/Routing configuration via Load Balancer.
 #
 # The script reads config.yaml (generated from template) and creates/updates:
 #   - Google-managed SSL certificates for all domains
 #   - Serverless NEGs for each App Engine service
 #   - Backend services using those NEGs
 #   - URL map host rules to route traffic
+#   - DNS A records for each domain
 #
 # Environment-specific behavior:
 #   - config.yaml.template uses per-service variables (e.g., ${GO_SUBDOMAIN})
@@ -18,7 +16,6 @@
 #
 # Prerequisites:
 #   - Run first_time_setup.sh once to create base LB infrastructure
-#   - Update DNS to point migrated domains to the LB static IP
 #
 # Usage: Called by ./deploy --env=production _dns  or  ./deploy --env=staging _dns
 
@@ -60,56 +57,8 @@ get_all_hosts() {
 }
 
 # =============================================================================
-# Part 1: Deploy dispatch.yml for non-migrated services
+# Update Load Balancer configuration
 # =============================================================================
-echo "=== Deploying dispatch.yml (legacy routing) ==="
-
-# Get list of LB-managed hosts to filter out (only for current environment)
-if check_lb_routes; then
-  LB_HOSTS=$(get_all_hosts | tr '\n' '|' | sed 's/|$//' | xargs)
-else
-  LB_HOSTS=""
-fi
-
-if [[ -n "$LB_HOSTS" ]]; then
-  # Filter out LB-managed services from dispatch.yml before deploying
-  # Note: gcloud requires the file to be named exactly "dispatch.yaml"
-  TEMP_DIR=$(mktemp -d)
-  TEMP_DISPATCH="$TEMP_DIR/dispatch.yaml"
-  trap "rm -rf $TEMP_DIR" EXIT
-  
-  # Use awk to filter out entries matching LB-managed hosts
-  awk -v hosts="$LB_HOSTS" '
-    BEGIN { skip=0 }
-    /url:/ {
-      skip=0
-      for (i=1; i<=split(hosts,h,"|"); i++) {
-        if (index($0, h[i]) > 0) {
-          skip=1
-          break
-        }
-      }
-    }
-    skip && /service:/ { skip=0; next }
-    !skip { print }
-  ' dispatch.yml > "$TEMP_DISPATCH"
-  
-  # Check if there are any remaining dispatch rules
-  if grep -q 'url:' "$TEMP_DISPATCH"; then
-    echo "Deploying filtered dispatch.yml (excluding LB-managed: $LB_HOSTS)..."
-    gcloud app deploy "$TEMP_DISPATCH" --quiet
-  else
-    echo "No dispatch rules remaining after filtering - skipping dispatch.yml deploy"
-  fi
-else
-  echo "No LB-managed services for this environment, deploying full dispatch.yml..."
-  gcloud app deploy dispatch.yml --quiet
-fi
-
-# =============================================================================
-# Part 2: Update Load Balancer configuration for migrated services
-# =============================================================================
-echo ""
 echo "=== Updating Load Balancer Configuration ==="
 
 # Check if config.yaml exists
@@ -127,7 +76,7 @@ if ! gcloud compute url-maps describe $URL_MAP_NAME --global &>/dev/null; then
 fi
 
 # =============================================================================
-# Part 2a: Manage SSL Certificates
+# Manage SSL Certificates
 # =============================================================================
 echo ""
 echo "=== Managing SSL Certificates ==="
@@ -422,7 +371,7 @@ else
 fi
 
 # =============================================================================
-# Part 2b: Create/Update NEGs, Backend Services, and URL Map rules
+# Create/Update NEGs, Backend Services, and URL Map rules
 # =============================================================================
 echo ""
 echo "=== Updating Backend Services and URL Map ==="
@@ -649,7 +598,7 @@ for pm in data.get('pathMatchers', []):
 parse_lb_routes
 
 # =============================================================================
-# Part 2c: Create/Update DNS Records
+# Create/Update DNS Records
 # =============================================================================
 echo ""
 echo "=== Managing DNS Records ==="
@@ -723,9 +672,9 @@ else
       fi
     done
     
-    # =============================================================================
-    # Part 2d: Create/Update Custom DNS Records (from dns_records section)
-    # =============================================================================
+# =============================================================================
+# Create/Update Custom DNS Records (from dns_records section)
+# =============================================================================
     echo ""
     echo "=== Managing Custom DNS Records ==="
     
