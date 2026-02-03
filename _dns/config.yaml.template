@@ -10,15 +10,39 @@ load_balancer:
 
 # Services routed through Load Balancer (App Engine backends)
 services:
+
+  - host: "${ANGULAR_SUBDOMAIN}.${DOMAIN}"
+    service: ${ANGULAR_APP_ENGINE_SERVICE}
+  
+  - host: "${ASPNETCORE_SUBDOMAIN}.${DOMAIN}"
+    service: ${ASPNETCORE_APP_ENGINE_SERVICE}
+  
+  - host: "${EXPRESS_SUBDOMAIN}.${DOMAIN}"
+    service: ${EXPRESS_APP_ENGINE_SERVICE}
+
+  - host: "${FLASKOTLP_SUBDOMAIN}.${DOMAIN}"
+    service: ${FLASKOTLP_APP_ENGINE_SERVICE}
+
+  - host: "${FLASK_SUBDOMAIN}.${DOMAIN}"
+    service: ${FLASK_APP_ENGINE_SERVICE}
+    
+  - host: "${LARAVEL_SUBDOMAIN}.${DOMAIN}"
+    service: ${LARAVEL_APP_ENGINE_SERVICE}
+
+  - host: "${REACT_SUBDOMAIN}.${DOMAIN}"
+    service: ${REACT_APP_ENGINE_SERVICE}
+
+  - host: "${RUBYONRAILS_SUBDOMAIN}.${DOMAIN}"
+    service: ${RUBYONRAILS_APP_ENGINE_SERVICE}
+
+  - host: "${SPRINGBOOT_SUBDOMAIN}.${DOMAIN}"
+    service: ${SPRINGBOOT_APP_ENGINE_SERVICE}
+
   - host: "${GO_SUBDOMAIN}.${DOMAIN}"
-    service: staging-express
-    #service: ${GO_APP_ENGINE_SERVICE}
+    service: ${GO_APP_ENGINE_SERVICE}
   
   - host: "${SPRINGBOOTOTLP_SUBDOMAIN}.${DOMAIN}"
     service: ${SPRINGBOOTOTLP_APP_ENGINE_SERVICE}
-  
-  - host: "${REACT_SUBDOMAIN}.${DOMAIN}"
-    service: ${REACT_APP_ENGINE_SERVICE}
 
 # Custom DNS records managed directly in Google Cloud DNS (not routed through LB)
 dns_records:
