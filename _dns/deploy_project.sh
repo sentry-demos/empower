@@ -265,6 +265,160 @@ else
       fi
     done
   fi
+  
+  # =============================================================================
+  # Certificate Validation: Verify each domain has correct certificate coverage
+  # =============================================================================
+  echo ""
+  echo "=== Validating Certificate Coverage ==="
+  
+  # Build a map of domain -> certificate that covers it (ACTIVE only)
+  CERT_VALIDATION_ERRORS=""
+  CERT_VALIDATION_WARNINGS=""
+  
+  for domain in $(echo "$ENV_DOMAINS" | tr ',' '\n'); do
+    FOUND_ACTIVE_CERT=""
+    FOUND_PROVISIONING_CERT=""
+    
+    # Check all certificates on the proxy to find one that covers this domain
+    for cert in $EXISTING_CERTS; do
+      if [[ "$cert" == "$PLACEHOLDER_CERT_NAME" ]]; then
+        continue
+      fi
+      
+      CERT_STATUS=$(gcloud compute ssl-certificates describe "$cert" --global \
+        --format="value(managed.status)" 2>/dev/null || echo "")
+      CERT_DOMAINS=$(gcloud compute ssl-certificates describe "$cert" --global \
+        --format="value(managed.domains)" 2>/dev/null | tr ';' ',' || echo "")
+      
+      # Check if this certificate covers the domain
+      if echo "$CERT_DOMAINS" | tr ',' '\n' | grep -q "^${domain}$"; then
+        if [[ "$CERT_STATUS" == "ACTIVE" ]]; then
+          FOUND_ACTIVE_CERT="$cert"
+          break
+        else
+          FOUND_PROVISIONING_CERT="$cert"
+          # Don't break - keep looking for an ACTIVE one
+        fi
+      fi
+    done
+    
+    if [[ -n "$FOUND_ACTIVE_CERT" ]]; then
+      echo "[OK] $domain -> covered by ACTIVE certificate: $FOUND_ACTIVE_CERT"
+    elif [[ -n "$FOUND_PROVISIONING_CERT" ]]; then
+      echo "[WARN] $domain -> certificate '$FOUND_PROVISIONING_CERT' is still PROVISIONING"
+      CERT_VALIDATION_WARNINGS="${CERT_VALIDATION_WARNINGS}\n  - $domain: Certificate '$FOUND_PROVISIONING_CERT' not yet ACTIVE"
+    else
+      echo "[ERROR] $domain -> NO certificate covers this domain!"
+      CERT_VALIDATION_ERRORS="${CERT_VALIDATION_ERRORS}\n  - $domain: No certificate found"
+    fi
+  done
+  
+  # Check for orphaned certificates (certificates that cover domains not in config)
+  echo ""
+  echo "=== Checking for Orphaned/Stale Certificates ==="
+  for cert in $EXISTING_CERTS; do
+    if [[ "$cert" == "$PLACEHOLDER_CERT_NAME" ]]; then
+      continue
+    fi
+    
+    CERT_DOMAINS=$(gcloud compute ssl-certificates describe "$cert" --global \
+      --format="value(managed.domains)" 2>/dev/null | tr ';' ',' || echo "")
+    CERT_STATUS=$(gcloud compute ssl-certificates describe "$cert" --global \
+      --format="value(managed.status)" 2>/dev/null || echo "")
+    
+    for cert_domain in $(echo "$CERT_DOMAINS" | tr ',' '\n'); do
+      # Check if this domain is in our current environment config
+      if ! echo "$ENV_DOMAINS" | tr ',' '\n' | grep -q "^${cert_domain}$"; then
+        echo "[INFO] Certificate '$cert' covers '$cert_domain' which is NOT in current config (may be from another environment or stale)"
+      fi
+    done
+  done
+  
+  # Print summary
+  if [[ -n "$CERT_VALIDATION_ERRORS" ]]; then
+    echo ""
+    echo "=========================================="
+    echo "[ERROR] Certificate validation FAILED!"
+    echo "The following domains have no valid certificate coverage:"
+    echo -e "$CERT_VALIDATION_ERRORS"
+    echo ""
+    echo "This can cause browsers to show 'Not Secure' warnings or serve"
+    echo "the wrong certificate (from another domain on the same proxy)."
+    echo ""
+    echo "To fix this:"
+    echo "1. Wait for DNS to propagate if recently configured"
+    echo "2. Check that DNS A records point to the LB IP"
+    echo "3. Re-run this script to create missing certificates"
+    echo "=========================================="
+  fi
+  
+  if [[ -n "$CERT_VALIDATION_WARNINGS" ]]; then
+    echo ""
+    echo "[WARN] Some certificates are still provisioning:"
+    echo -e "$CERT_VALIDATION_WARNINGS"
+    echo ""
+    echo "Certificate provisioning can take up to 24 hours after DNS is correctly configured."
+    echo "Check certificate status with: gcloud compute ssl-certificates list --global"
+  fi
+  
+  # =============================================================================
+  # Live Certificate Verification: Check what certificate is actually being served
+  # =============================================================================
+  echo ""
+  echo "=== Live Certificate Verification ==="
+  echo "Checking what certificates are actually being served for each domain..."
+  echo "(This requires the domain to be resolvable and LB to be accessible)"
+  echo ""
+  
+  LIVE_CERT_ERRORS=""
+  
+  for domain in $(echo "$ENV_DOMAINS" | tr ',' '\n'); do
+    # Use openssl to check what certificate is actually being served
+    SERVED_CN=$(echo | timeout 5 openssl s_client -servername "$domain" -connect "$domain:443" 2>/dev/null | \
+      openssl x509 -noout -subject 2>/dev/null | sed -E 's/.*CN ?= ?([^,]*).*/\1/' || echo "")
+    
+    # Also get the SAN (Subject Alternative Names) which is more reliable for multi-domain certs
+    SERVED_SANS=$(echo | timeout 5 openssl s_client -servername "$domain" -connect "$domain:443" 2>/dev/null | \
+      openssl x509 -noout -text 2>/dev/null | grep -A1 "Subject Alternative Name" | tail -1 | \
+      sed 's/DNS://g' | tr ',' '\n' | tr -d ' ' || echo "")
+    
+    if [[ -z "$SERVED_CN" ]] && [[ -z "$SERVED_SANS" ]]; then
+      echo "[SKIP] $domain -> Could not connect (DNS not configured or domain unreachable)"
+    else
+      # Check if the served certificate covers this domain
+      if echo "$SERVED_SANS" | grep -q "^${domain}$"; then
+        echo "[OK] $domain -> Certificate correctly covers this domain"
+      elif [[ "$SERVED_CN" == "$domain" ]]; then
+        echo "[OK] $domain -> Certificate CN matches domain"
+      else
+        echo "[ERROR] $domain -> CERTIFICATE MISMATCH!"
+        echo "        Expected: $domain"
+        echo "        Served CN: $SERVED_CN"
+        echo "        Served SANs: $(echo $SERVED_SANS | tr '\n' ', ' | sed 's/,$//')"
+        LIVE_CERT_ERRORS="${LIVE_CERT_ERRORS}\n  - $domain is served certificate for: $SERVED_CN"
+      fi
+    fi
+  done
+  
+  if [[ -n "$LIVE_CERT_ERRORS" ]]; then
+    echo ""
+    echo "=========================================="
+    echo "[ERROR] Certificate MISMATCH detected!"
+    echo "The following domains are being served the WRONG certificate:"
+    echo -e "$LIVE_CERT_ERRORS"
+    echo ""
+    echo "This happens when:"
+    echo "  1. No ACTIVE certificate exists for the domain"
+    echo "  2. GCP serves a 'default' certificate from another domain"
+    echo ""
+    echo "To fix:"
+    echo "  1. Ensure DNS A record for the domain points to the LB IP"
+    echo "  2. Wait for certificate provisioning to complete (up to 24 hours)"
+    echo "  3. Or manually create a certificate:"
+    echo "     gcloud compute ssl-certificates create CERT_NAME --global --domains=DOMAIN"
+    echo "=========================================="
+  fi
 fi
 
 # =============================================================================
@@ -730,4 +884,23 @@ echo "  gcloud compute ssl-certificates list --global"
 echo ""
 echo "To check DNS records:"
 echo "  gcloud dns record-sets list --zone=$DNS_MANAGED_ZONE"
+echo ""
+echo "=== Certificate Troubleshooting Guide ==="
+echo ""
+echo "If you see 'Not Secure' warnings or wrong certificates being served:"
+echo ""
+echo "1. Check certificate status for a domain:"
+echo "   gcloud compute ssl-certificates list --global --format='table(name,managed.status,managed.domains)'"
+echo ""
+echo "2. Check what certificate is actually being served:"
+echo "   echo | openssl s_client -servername YOUR_DOMAIN -connect YOUR_DOMAIN:443 2>/dev/null | openssl x509 -noout -text | grep -E '(Subject:|DNS:)'"
+echo ""
+echo "3. Check certificates attached to the proxy:"
+echo "   gcloud compute target-https-proxies describe $TARGET_PROXY_NAME --global --format='yaml(sslCertificates)'"
+echo ""
+echo "4. If a domain shows the wrong certificate:"
+echo "   - The domain may not have an ACTIVE certificate covering it"
+echo "   - GCP serves a 'default' cert when no matching cert exists"
+echo "   - Re-run this deploy script to create missing certificates"
+echo "   - Ensure DNS A record points to the LB IP before certificate can become ACTIVE"
 echo ""
