@@ -268,7 +268,7 @@ def products():
 
     cache_key = str(random.randrange(100))
 
-    product_inventory = None
+    product_inventory = []
     fetch_promotions = request.args.get('fetch_promotions')
     in_stock_only = request.args.get('in_stock_only')
     timeout_seconds = (EXTREMELY_SLOW_PROFILE if fetch_promotions else NORMAL_SLOW_PROFILE)
