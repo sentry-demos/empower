@@ -10,10 +10,8 @@ trap cleanup EXIT
 # Ensure Docker (via Colima) is available - sources DOCKER_HOST
 source ensure_docker.sh
 
+# Only PORT needs explicit export (not in .env, comes from AGENT_LOCAL_PORT)
+# Other vars are read from .env file by docker-compose (via env_file directive)
 export PORT=$AGENT_LOCAL_PORT
-export AGENT_OPENAI_API_KEY=$AGENT_OPENAI_API_KEY
-export AGENT_DSN=$AGENT_DSN
-export AGENT_SENTRY_ENVIRONMENT=$AGENT_SENTRY_ENVIRONMENT
-export MCP_URL=$MCP_URL
 
 docker-compose up
