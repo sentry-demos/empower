@@ -380,6 +380,7 @@ parse_lb_routes() {
   local in_services=false
   local current_host=""
   local current_service=""
+  local current_service_type=""  # "gae" or "gcr"
   
   while IFS= read -r line || [[ -n "$line" ]]; do
     # Skip comments and empty lines
@@ -396,27 +397,32 @@ parse_lb_routes() {
       # New service entry (starts with "- host:")
       if [[ "$line" =~ ^[[:space:]]*-[[:space:]]*host:[[:space:]]*\"?([^\"]*)\"? ]]; then
         # Process previous service if exists
-        if [[ -n "$current_host" ]]; then
-          create_or_update_service "$current_host" "$current_service"
+        if [[ -n "$current_host" && -n "$current_service" ]]; then
+          create_or_update_service "$current_host" "$current_service" "$current_service_type"
         fi
         current_host="${BASH_REMATCH[1]}"
         current_service=""
-      elif [[ "$line" =~ [[:space:]]*service:[[:space:]]*(.+) ]]; then
+        current_service_type=""
+      elif [[ "$line" =~ [[:space:]]*gae_service:[[:space:]]*(.+) ]]; then
         current_service="${BASH_REMATCH[1]}"
+        current_service_type="gae"
+      elif [[ "$line" =~ [[:space:]]*gcr_service:[[:space:]]*(.+) ]]; then
+        current_service="${BASH_REMATCH[1]}"
+        current_service_type="gcr"
       fi
-      # neg_name and backend_service are now derived automatically
     fi
   done < config.yaml
   
   # Process last service
-  if [[ -n "$current_host" ]]; then
-    create_or_update_service "$current_host" "$current_service"
+  if [[ -n "$current_host" && -n "$current_service" ]]; then
+    create_or_update_service "$current_host" "$current_service" "$current_service_type"
   fi
 }
 
 create_or_update_service() {
   local host="$1"
   local service="$2"
+  local service_type="$3"  # "gae" for App Engine, "gcr" for Cloud Run
   
   # Derive subdomain from host (everything before the first dot)
   local subdomain="${host%%.*}"
@@ -425,47 +431,72 @@ create_or_update_service() {
   local neg_name="neg-${subdomain}"
   local backend_name="backend-${subdomain}"
   
+  local service_type_label
+  if [[ "$service_type" == "gcr" ]]; then
+    service_type_label="Cloud Run"
+  else
+    service_type_label="App Engine"
+  fi
+  
   echo ""
-  echo "--- Processing: $host -> $service ---"
+  echo "--- Processing: $host -> $service ($service_type_label) ---"
   echo "    Subdomain: $subdomain | NEG: $neg_name | Backend: $backend_name"
   
   # 1. Create or update Serverless NEG
   if ! gcloud compute network-endpoint-groups describe "$neg_name" --region=$REGION &>/dev/null; then
-    echo "Creating Serverless NEG: $neg_name"
-    gcloud compute network-endpoint-groups create "$neg_name" \
-      --region=$REGION \
-      --network-endpoint-type=serverless \
-      --app-engine-service="$service"
+    echo "Creating Serverless NEG: $neg_name ($service_type_label)"
+    if [[ "$service_type" == "gcr" ]]; then
+      gcloud compute network-endpoint-groups create "$neg_name" \
+        --region=$REGION \
+        --network-endpoint-type=serverless \
+        --cloud-run-service="$service"
+    else
+      gcloud compute network-endpoint-groups create "$neg_name" \
+        --region=$REGION \
+        --network-endpoint-type=serverless \
+        --app-engine-service="$service"
+    fi
   else
-    # NEG exists - check if it points to the correct service
-    # For serverless NEGs, the App Engine service is in the 'appEngineUrlMask' field
-    # The field contains either a URL mask pattern or the literal service name
+    # NEG exists - check if it points to the correct service and type
     NEG_JSON=$(gcloud compute network-endpoint-groups describe "$neg_name" \
       --region=$REGION --format="json" 2>/dev/null)
     
-    CURRENT_NEG_SERVICE=$(echo "$NEG_JSON" | \
+    # Extract current service and determine its type
+    CURRENT_NEG_INFO=$(echo "$NEG_JSON" | \
       python3 -c "
 import sys, json
 d = json.load(sys.stdin)
 svc = ''
+svc_type = ''
 # Check appEngine structure (for App Engine services)
 if 'appEngine' in d:
     svc = d['appEngine'].get('service', '')
+    if svc:
+        svc_type = 'gae'
 # Fallback: check appEngineUrlMask (older format)
 if not svc:
     svc = d.get('appEngineUrlMask', '')
+    if svc:
+        svc_type = 'gae'
 # Check cloudRun structure
-if not svc:
-    svc = d.get('cloudRun', {}).get('service', '')
+if not svc and 'cloudRun' in d:
+    svc = d['cloudRun'].get('service', '')
+    if svc:
+        svc_type = 'gcr'
 # Check cloudFunction structure
-if not svc:
-    svc = d.get('cloudFunction', {}).get('function', '')
-print(svc)
-" 2>/dev/null || echo "")
+if not svc and 'cloudFunction' in d:
+    svc = d['cloudFunction'].get('function', '')
+    if svc:
+        svc_type = 'gcf'
+print(f'{svc}|{svc_type}')
+" 2>/dev/null || echo "|")
+    
+    CURRENT_NEG_SERVICE="${CURRENT_NEG_INFO%|*}"
+    CURRENT_NEG_TYPE="${CURRENT_NEG_INFO#*|}"
     
     if [[ -z "$CURRENT_NEG_SERVICE" ]]; then
       # Could not determine current service - show debug info and skip update
-      echo "[WARNING] Could not determine current App Engine service for NEG '$neg_name'"
+      echo "[WARNING] Could not determine current service for NEG '$neg_name'"
       echo "[DEBUG] NEG JSON fields:"
       echo "$NEG_JSON" | python3 -c "
 import sys, json
@@ -477,9 +508,14 @@ print(f\"  cloudFunction: {d.get('cloudFunction', '<not set>')}\")
 print(f\"  All top-level keys: {list(d.keys())}\")
 " 2>/dev/null || true
       echo "Skipping NEG update - please verify manually"
-    elif [[ "$CURRENT_NEG_SERVICE" != "$service" ]]; then
-      echo "Serverless NEG '$neg_name' exists but points to '$CURRENT_NEG_SERVICE' instead of '$service'"
-      echo "Recreating NEG with correct service..."
+    elif [[ "$CURRENT_NEG_SERVICE" != "$service" ]] || [[ "$CURRENT_NEG_TYPE" != "$service_type" ]]; then
+      if [[ "$CURRENT_NEG_TYPE" != "$service_type" ]]; then
+        echo "Serverless NEG '$neg_name' is type '$CURRENT_NEG_TYPE' but needs to be '$service_type'"
+      fi
+      if [[ "$CURRENT_NEG_SERVICE" != "$service" ]]; then
+        echo "Serverless NEG '$neg_name' points to '$CURRENT_NEG_SERVICE' instead of '$service'"
+      fi
+      echo "Recreating NEG..."
       
       # Must remove NEG from backend service before deleting
       if gcloud compute backend-services describe "$backend_name" --global &>/dev/null; then
@@ -494,11 +530,18 @@ print(f\"  All top-level keys: {list(d.keys())}\")
       echo "Deleting old NEG..."
       gcloud compute network-endpoint-groups delete "$neg_name" --region=$REGION --quiet
       
-      echo "Creating new NEG with service: $service"
-      gcloud compute network-endpoint-groups create "$neg_name" \
-        --region=$REGION \
-        --network-endpoint-type=serverless \
-        --app-engine-service="$service"
+      echo "Creating new NEG with $service_type_label service: $service"
+      if [[ "$service_type" == "gcr" ]]; then
+        gcloud compute network-endpoint-groups create "$neg_name" \
+          --region=$REGION \
+          --network-endpoint-type=serverless \
+          --cloud-run-service="$service"
+      else
+        gcloud compute network-endpoint-groups create "$neg_name" \
+          --region=$REGION \
+          --network-endpoint-type=serverless \
+          --app-engine-service="$service"
+      fi
       
       # Re-add NEG to backend service if it exists
       if gcloud compute backend-services describe "$backend_name" --global &>/dev/null; then
@@ -509,7 +552,7 @@ print(f\"  All top-level keys: {list(d.keys())}\")
           --network-endpoint-group-region=$REGION
       fi
     else
-      echo "Serverless NEG '$neg_name' already exists with correct service"
+      echo "Serverless NEG '$neg_name' already exists with correct $service_type_label service"
     fi
   fi
   

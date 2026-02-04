@@ -8,41 +8,50 @@ load_balancer:
   ssl_cert: empower-ssl-cert
   region: ${GCP_REGION}
 
-# Services routed through Load Balancer (App Engine backends)
+# Services routed through Load Balancer
+# Use gae_service for App Engine backends, gcr_service for Cloud Run backends
 services:
 
+  # App Engine services
   - host: "${ANGULAR_SUBDOMAIN}.${DOMAIN}"
-    service: ${ANGULAR_APP_ENGINE_SERVICE}
+    gae_service: ${ANGULAR_APP_ENGINE_SERVICE}
   
   - host: "${ASPNETCORE_SUBDOMAIN}.${DOMAIN}"
-    service: ${ASPNETCORE_APP_ENGINE_SERVICE}
+    gae_service: ${ASPNETCORE_APP_ENGINE_SERVICE}
   
   - host: "${EXPRESS_SUBDOMAIN}.${DOMAIN}"
-    service: ${EXPRESS_APP_ENGINE_SERVICE}
+    gae_service: ${EXPRESS_APP_ENGINE_SERVICE}
 
   - host: "${FLASKOTLP_SUBDOMAIN}.${DOMAIN}"
-    service: ${FLASKOTLP_APP_ENGINE_SERVICE}
+    gae_service: ${FLASKOTLP_APP_ENGINE_SERVICE}
 
   - host: "${FLASK_SUBDOMAIN}.${DOMAIN}"
-    service: ${FLASK_APP_ENGINE_SERVICE}
+    gae_service: ${FLASK_APP_ENGINE_SERVICE}
     
   - host: "${LARAVEL_SUBDOMAIN}.${DOMAIN}"
-    service: ${LARAVEL_APP_ENGINE_SERVICE}
+    gae_service: ${LARAVEL_APP_ENGINE_SERVICE}
 
   - host: "${REACT_SUBDOMAIN}.${DOMAIN}"
-    service: ${REACT_APP_ENGINE_SERVICE}
-
+    gae_service: ${REACT_APP_ENGINE_SERVICE}
+  
+  - host: "${REACT_DOMAIN_SHORT}"
+    gae_service: ${REACT_APP_ENGINE_SERVICE}
+  
   - host: "${RUBYONRAILS_SUBDOMAIN}.${DOMAIN}"
-    service: ${RUBYONRAILS_APP_ENGINE_SERVICE}
+    gae_service: ${RUBYONRAILS_APP_ENGINE_SERVICE}
 
   - host: "${SPRINGBOOT_SUBDOMAIN}.${DOMAIN}"
-    service: ${SPRINGBOOT_APP_ENGINE_SERVICE}
+    gae_service: ${SPRINGBOOT_APP_ENGINE_SERVICE}
 
   - host: "${GO_SUBDOMAIN}.${DOMAIN}"
-    service: ${GO_APP_ENGINE_SERVICE}
+    gae_service: ${GO_APP_ENGINE_SERVICE}
   
   - host: "${SPRINGBOOTOTLP_SUBDOMAIN}.${DOMAIN}"
-    service: ${SPRINGBOOTOTLP_APP_ENGINE_SERVICE}
+    gae_service: ${SPRINGBOOTOTLP_APP_ENGINE_SERVICE}
+
+  # Cloud Run services
+  - host: "${AGENT_SUBDOMAIN}.${DOMAIN}"
+    gcr_service: ${AGENT_CLOUD_RUN_SERVICE}
 
 # Custom DNS records managed directly in Google Cloud DNS (not routed through LB)
 dns_records:
