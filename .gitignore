@@ -12,10 +12,8 @@ local.env.backup
 *.pyc
 # dependencies
 /node_modules
-react/node_modules
+*/node_modules
 next/.next
-next/node_modules
-express/node_modules
 /.pnp
 .pnp.js
 .vercel
@@ -44,7 +42,6 @@ notes.txt
 flask/.virtualenv
 **/.virtualenv
 flask/envtest
-node/node_modules
 node/package-lock.json
 
 flask/test.py
@@ -102,7 +99,6 @@ aspnetcore/obj
 aspnetcore/*.suo
 
 # Laravel
-/laravel/node_modules
 /laravel/public/hot
 /laravel/public/storage
 /laravel/storage/*.key

@@ -19,8 +19,8 @@ COPY . .
 # Build the application
 RUN pnpm build
 
-# Expose port
-EXPOSE 3000
+# Expose port (Cloud Run sets PORT env var, app reads from process.env.PORT)
+EXPOSE 8080
 
 # Start the server
 CMD ["pnpm", "start:with-caller"]
