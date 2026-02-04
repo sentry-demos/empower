@@ -62,7 +62,7 @@ mcp_tool = HostedMCPTool(
     tool_config={
         "type": "mcp",  # Specify the tool type
         "server_label": "empower-mcp",
-        "server_url": os.environ["MCP_URL"],
+        "server_url": os.environ["MCP_URL"] + "/mcp",
         "require_approval": "never",
     }
 )

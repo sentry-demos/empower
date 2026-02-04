@@ -39,6 +39,7 @@ ensure_docker() {
   if ! colima status &> /dev/null || [ ! -S "${HOME}/.colima/default/docker.sock" ]; then
     echo "Starting Colima..."
     colima start
+    wait_for_docker
   fi
 
   # Verify Docker is working
@@ -47,12 +48,27 @@ ensure_docker() {
     echo "Error: Docker not responding. Trying to restart Colima..."
     colima stop 2>/dev/null || true
     colima start
-    if ! docker info &> /dev/null; then
-      echo "Error: Docker still not responding after restarting Colima"
-      exit 1
-    fi
+    wait_for_docker
   fi
   echo "Docker is ready."
+}
+
+# Wait for Docker to be ready with timeout
+wait_for_docker() {
+  local max_attempts=30
+  local attempt=1
+  echo "Waiting for Docker to be ready..."
+  while [ $attempt -le $max_attempts ]; do
+    if docker info &> /dev/null; then
+      echo "Docker is responding after ${attempt} attempts."
+      return 0
+    fi
+    echo "  Attempt $attempt/$max_attempts - Docker not ready yet, waiting..."
+    sleep 2
+    attempt=$((attempt + 1))
+  done
+  echo "Error: Docker did not become ready within $((max_attempts * 2)) seconds"
+  exit 1
 }
 
 ensure_docker

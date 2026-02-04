@@ -1,0 +1,20 @@
+# Note: this file is not used by Cloud Run, only locally
+# Most env vars are read from .env (generated from _.env.template by deploy script)
+# Only PORT needs to be passed explicitly (not in .env, comes from MCP_LOCAL_PORT)
+services:
+  mcp-server:
+    build: .
+    ports:
+      - "${PORT}:${PORT}"
+    env_file:
+      - .env
+    environment:
+      # Override/add values for local development
+      - PORT=${PORT}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:${PORT}/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
