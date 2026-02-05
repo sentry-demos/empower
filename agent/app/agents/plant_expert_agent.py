@@ -53,12 +53,8 @@ async def get_recommendations(light: str, maintenance: str) -> str:
     # Create a message with user preferences
     msg = f"Reccomend plants for {light} light and {maintenance} maintenance."
 
-    # Run the agent with streaming
-    result = Runner.run_streamed(plant_expert_agent, msg)
-
-    # Consume the stream
-    async for _ in result.stream_events():
-        pass
+    # Run the agent
+    result = await Runner.run(plant_expert_agent, msg)
 
     logging.debug(f"PlantExpertAgent provided recommendations: {result.final_output}")
     return str(result.final_output)
