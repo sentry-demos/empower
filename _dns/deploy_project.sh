@@ -520,10 +520,27 @@ print(f\"  All top-level keys: {list(d.keys())}\")
       # Must remove NEG from backend service before deleting
       if gcloud compute backend-services describe "$backend_name" --global &>/dev/null; then
         echo "Removing NEG from backend service..."
-        gcloud compute backend-services remove-backend "$backend_name" \
+        if ! gcloud compute backend-services remove-backend "$backend_name" \
           --global \
           --network-endpoint-group="$neg_name" \
-          --network-endpoint-group-region=$REGION 2>/dev/null || true
+          --network-endpoint-group-region=$REGION; then
+          echo "[WARNING] Failed to remove NEG from backend service, trying alternative approach..."
+          # Alternative: Update backend service to have no backends, then re-add later
+          # First check how many backends exist
+          BACKEND_COUNT=$(gcloud compute backend-services describe "$backend_name" --global \
+            --format="value(backends.len())" 2>/dev/null || echo "0")
+          if [[ "$BACKEND_COUNT" == "1" ]]; then
+            echo "Backend service has only this NEG - will delete and recreate backend service"
+            # Remove from URL map first (otherwise backend service deletion fails)
+            # We'll re-add the host rule after recreating everything
+            gcloud compute backend-services delete "$backend_name" --global --quiet || true
+          else
+            echo "[ERROR] Could not remove NEG from backend service with multiple backends"
+            echo "Please manually remove the NEG and retry:"
+            echo "  gcloud compute backend-services remove-backend $backend_name --global --network-endpoint-group=$neg_name --network-endpoint-group-region=$REGION"
+            exit 1
+          fi
+        fi
       fi
       
       # Delete and recreate the NEG
