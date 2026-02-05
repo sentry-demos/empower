@@ -34,7 +34,7 @@ browsers:
 dsn: 'https://9802de20229e4afdaa0d60796cbb44d7@o87286.ingest.sentry.io/5390094'
 
 # endpoints should NOT have "/" at the end
-react_endpoint: https://empower-plant.com
+react_endpoint: https://react.empower-plant.com
 nextjs_endpoint: https://nextjs.empower-plant.com
 angular_endpoint: https://angular.empower-plant.com
 vue_endpoint: https://application-monitoring-vue-dot-sales-engineering-sf.appspot.com
