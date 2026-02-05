@@ -17,45 +17,12 @@ export interface PlantProduct {
   }>;
 }
 
-export interface PlantProductSummary {
+export interface ProductResourceItem {
   id: number;
-  title: string;
-  description: string;
+  name: string;
   price: number;
-}
-
-export interface PlantCareGuide {
-  plantName: string;
-  difficulty: string;
-  sunlight: string;
-  watering: {
-    frequency: string;
-    amount: string;
-    tips: string;
-  };
-  soil: {
-    type: string;
-    drainage: string;
-    ph: string;
-  };
-  temperature: {
-    ideal: string;
-    minimum: string;
-    maximum: string;
-  };
-  humidity: string;
-  fertilizer: {
-    type: string;
-    frequency: string;
-    season: string;
-  };
-  commonIssues: Array<{
-    problem: string;
-    cause: string;
-    solution: string;
-  }>;
-  propagation: string;
-  toxicity: string;
+  description: string;
+  reviews: string[];
 }
 
 export interface CheckoutItem extends PlantProduct {}

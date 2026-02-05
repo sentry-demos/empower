@@ -3,9 +3,19 @@ import { config } from "dotenv";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 
-// Load .env file from the same directory as this file
+// Load .env file from the app root directory
+// Note: After TypeScript compilation, this file is in dist/, but .env is in root
 const __dirname = dirname(fileURLToPath(import.meta.url));
-config({ path: join(__dirname, ".env"), override: true });
+const envPath = join(__dirname, "..", ".env"); // Go up one level from dist/
+config({ path: envPath, override: true });
+
+// Fail fast if required env vars are missing
+if (!process.env.MCP_DSN) {
+  throw new Error("MCP_DSN environment variable is required");
+}
+if (!process.env.MCP_SENTRY_ENVIRONMENT) {
+  throw new Error("MCP_SENTRY_ENVIRONMENT environment variable is required");
+}
 
 Sentry.init({
   dsn: process.env.MCP_DSN,

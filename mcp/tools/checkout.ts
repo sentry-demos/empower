@@ -1,6 +1,7 @@
 import { CheckoutRequest } from "../types.js";
 import { z } from "zod";
 import { maybeThrow } from "../utils.js";
+import { EMPOWER_PLANT_API_URL } from "../consts.js";
 
 export const checkoutTool = {
   title: "Checkout",
@@ -125,33 +126,13 @@ async function processCheckout(
 
   try {
     const response = await fetch(
-      "https://flask.empower-plant.com/checkout?v2=true",
+      `${EMPOWER_PLANT_API_URL}/checkout?v2=true`,
       {
         method: "POST",
         headers: {
-          accept: "*/*",
-          "accept-language": "en-GB,en-US;q=0.9,en;q=0.8",
-          baggage:
-            "sentry-environment=production,sentry-release=application.monitoring.javascript%4025.9.3,sentry-public_key=7bbdb0e36b1b40c09b1e0d23e5524a11,sentry-trace_id=a99478aec91a468c872eaa5aa573270d,sentry-replay_id=ca1501db65bb4840979a425e0c24fc26,sentry-transaction=%2Fcheckout,sentry-sampled=true,sentry-sample_rand=0.5744976832613148,sentry-sample_rate=1",
-          "content-type": "application/json",
-          customertype: "small-plan",
-          email: checkoutData.form.email, // Use actual customer email
-          origin:
-            "https://application-monitoring-react-dot-sales-engineering-sf.appspot.com",
-          priority: "u=1, i",
-          referer:
-            "https://application-monitoring-react-dot-sales-engineering-sf.appspot.com/",
-          se: "undefined",
-          "sec-ch-ua":
-            '"Chromium";v="140", "Not=A?Brand";v="24", "Google Chrome";v="140"',
-          "sec-ch-ua-mobile": "?0",
-          "sec-ch-ua-platform": '"macOS"',
-          "sec-fetch-dest": "empty",
-          "sec-fetch-mode": "cors",
-          "sec-fetch-site": "cross-site",
-          "sentry-trace": "a99478aec91a468c872eaa5aa573270d-a09d5b179af67574-1",
-          "user-agent":
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+          "Content-Type": "application/json",
+          // Some of the custom headers matching React app's fetch interceptor
+          se: "unknown-mcp",
         },
         body: JSON.stringify(checkoutData),
       }

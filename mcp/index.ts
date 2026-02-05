@@ -5,18 +5,9 @@ import { randomUUID } from "node:crypto";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
-import { z } from "zod";
 
-import { getProductsTool } from "./tools/get-products.js";
-import { getPlantCareGuideTool } from "./tools/get-plant-care-guide.js";
 import { checkoutTool } from "./tools/checkout.js";
-import { alwaysErrorTool } from "./tools/always-error.js";
-import { seasonalCalendarResource } from "./resources/seasonal-calendar.js";
-import { plantDiagnosticsResource } from "./resources/plant-diagnostics.js";
-import { seasonalCareGuidePrompt } from "./prompts/seasonal-care-guide.js";
-import { plantShoppingAssistantPrompt } from "./prompts/plant-shopping-assistant.js";
-import { newPlantParentPrompt } from "./prompts/new-plant-parent.js";
-import { plantSymptomsResource } from "./resources/plant-symptoms.js";
+import { productsResource } from "./resources/products.js";
 
 const app = express();
 app.use(express.json());
@@ -64,64 +55,20 @@ app.post("/mcp", async (req, res) => {
         capabilities: {
           tools: { listChanged: true },
           resources: { listChanged: true },
-          prompts: { listChanged: true },
           logging: {},
         },
       })
     );
 
-    server.registerTool(
-      "get-products",
-      getProductsTool,
-      getProductsTool.handler
-    );
-    server.registerTool(
-      "get-plant-care-guide",
-      getPlantCareGuideTool,
-      getPlantCareGuideTool.handler
-    );
+    // Tools
     server.registerTool("checkout", checkoutTool, checkoutTool.handler);
-    server.registerTool(
-      "always-error",
-      alwaysErrorTool,
-      alwaysErrorTool.handler
-    );
 
+    // Resources
     server.registerResource(
-      "seasonal-calendar",
-      seasonalCalendarResource.template,
-      seasonalCalendarResource.metadata,
-      seasonalCalendarResource.handler
-    );
-
-    server.registerResource(
-      "plant-diagnostics",
-      plantDiagnosticsResource.template,
-      plantDiagnosticsResource.metadata,
-      plantDiagnosticsResource.handler
-    );
-
-    server.registerResource(
-      "plant-symptoms",
-      plantSymptomsResource.template,
-      plantSymptomsResource.metadata,
-      plantSymptomsResource.handler
-    );
-
-    server.registerPrompt(
-      "seasonal-care-guide",
-      seasonalCareGuidePrompt.metadata,
-      seasonalCareGuidePrompt.handler
-    );
-    server.registerPrompt(
-      "plant-shopping-assistant",
-      plantShoppingAssistantPrompt.metadata,
-      plantShoppingAssistantPrompt.handler
-    );
-    server.registerPrompt(
-      "new-plant-parent",
-      newPlantParentPrompt.metadata,
-      newPlantParentPrompt.handler
+      "products",
+      productsResource.template,
+      productsResource.metadata,
+      productsResource.handler
     );
 
     await server.connect(transport);
