@@ -5,4 +5,4 @@ entrypoint: gunicorn -b :\$PORT -w 2 --timeout 60 src.main:app
 instance_class: F2
 
 vpc_access_connector:
-  name: projects/sales-engineering-sf/locations/us-central1/connectors/empower-plant-connector
+  name: projects/${GCP_PROJECT}/locations/${GCP_REGION}/connectors/empower-plant-connector

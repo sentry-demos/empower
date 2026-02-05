@@ -30,7 +30,7 @@ This will take care of everything
 
 # Troubleshooting
 
-### ssh: Could not resolve hostname empower-tda-and-crons-staging.us-central1-a.sales-engineering-sf: nodename nor servname provided, or not known
+### ssh: Could not resolve hostname empower-tda-and-crons-staging.${GCP_REGION}-a.sales-engineering-sf: nodename nor servname provided, or not known
 
 1. Test that `gcloud compute ssh empower-tda-and-crons` works
 2. Run `gcloud compute config-ssh` to add any new instances to your `~/.ssh/config`
