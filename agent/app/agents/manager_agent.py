@@ -87,12 +87,8 @@ async def process_user_request(light: str, maintenance: str) -> str:
     # Create a message with user preferences
     message = f"I want to buy plants for {light} light and {maintenance} maintenance."
 
-    # Run the agent with streaming to get recommendations
-    result = Runner.run_streamed(manager_agent, message)
-
-    # Consume the stream
-    async for _ in result.stream_events():
-        pass
+    # Run the agent to get recommendations
+    result = await Runner.run(manager_agent, message)
 
     logging.debug(f"manager_agent completed purchase: {result.final_output}")
     print(result)
