@@ -18,8 +18,6 @@ import { plantShoppingAssistantPrompt } from "./prompts/plant-shopping-assistant
 import { newPlantParentPrompt } from "./prompts/new-plant-parent.js";
 import { plantSymptomsResource } from "./resources/plant-symptoms.js";
 
-import { CallerScript } from "./caller-script.js";
-
 const app = express();
 app.use(express.json());
 
@@ -170,48 +168,24 @@ app.get("/mcp", handleSessionRequest);
 app.delete("/mcp", handleSessionRequest);
 
 const port = process.env.PORT || 3000;
-const enableCallerScript = process.argv.includes("--caller-script");
 
 console.log("🚀 MCP Server starting...");
-
-let callerScript: CallerScript | null = null;
 
 const server = app.listen(Number(port), () => {
   console.log(`📡 Server running on port ${port}`);
   console.log(`🔗 MCP Streamable HTTP endpoint: http://localhost:${port}/mcp`);
   console.log(`🏠 Home: http://localhost:${port}/`);
-
-  if (enableCallerScript) {
-    console.log("🎨 Starting caller script...");
-    callerScript = new CallerScript();
-
-    setTimeout(async () => {
-      try {
-        if (callerScript) {
-          await callerScript.start();
-        }
-      } catch (error) {
-        console.error("❌ Failed to start caller script:", error);
-      }
-    }, 2000);
-  }
 });
 
-process.on("SIGINT", async () => {
+process.on("SIGINT", () => {
   console.log("\n🛑 Received SIGINT, shutting down gracefully...");
-  if (callerScript) {
-    await callerScript.stop();
-  }
   server.close(() => {
     process.exit(0);
   });
 });
 
-process.on("SIGTERM", async () => {
+process.on("SIGTERM", () => {
   console.log("\n🛑 Received SIGTERM, shutting down gracefully...");
-  if (callerScript) {
-    await callerScript.stop();
-  }
   server.close(() => {
     process.exit(0);
   });

@@ -18,15 +18,9 @@ pnpm install
 # Development
 pnpm dev
 
-# Development with caller script
-pnpm dev:caller
-
 # Production
 pnpm build
 pnpm start
-
-# Production with caller script
-pnpm start:caller
 ```
 
 ## Endpoints
@@ -46,30 +40,6 @@ You can use MCP inspector by running `npx @modelcontextprotocol/inspector`
 - Seasonal care calendars
 - Plant problem diagnostics
 - Interactive care prompts
-
-## Caller Script
-
-The caller script automatically calls MCP tools at configurable intervals with callerful output.
-
-### Usage
-
-```bash
-# Run with server (enabled via flag or env var)
-pnpm start:with-caller
-pnpm start:with-caller
-
-# Run standalone
-pnpm caller-script
-
-# Run with custom options
-pnpm caller-script -- --interval 30 --tool get-plant-care-guide
-```
-
-### Available Tools
-
-- `get-products` - Fetch plant products
-- `get-plant-care-guide` - Get plant care information
-- `checkout` - Process checkout (requires parameters)
 
 ## Environment
 
