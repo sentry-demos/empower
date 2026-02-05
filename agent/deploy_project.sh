@@ -2,7 +2,7 @@
 
 set -e
 
-gcloud run deploy $AGENT_CLOUD_RUN_SERVICE_NAME \
+gcloud run deploy $AGENT_CLOUD_RUN_SERVICE \
 	--region $GCP_REGION \
 	--source . \
 	--platform managed \
