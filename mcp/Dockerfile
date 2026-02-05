@@ -23,4 +23,4 @@ RUN pnpm build
 EXPOSE 8080
 
 # Start the server
-CMD ["pnpm", "start:with-caller"]
+CMD ["pnpm", "start"]
