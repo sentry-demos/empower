@@ -63,6 +63,8 @@ jobs:
           distribution: 'temurin'
           java-version: '24'
 
+      # IMPORTANT: PHP version must match laravel/composer.json (require.php and config.platform.php)
+      # and laravel/build.sh (REQUIRED_PHP_MAJOR_MINOR). Update all three when changing versions.
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
