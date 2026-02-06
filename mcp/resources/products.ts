@@ -1,11 +1,21 @@
 import { ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { PlantProduct, ProductResourceItem } from "../types.js";
 import { EMPOWER_PLANT_API_URL } from "../consts.js";
-import { randomDelay, maybeThrow } from "../utils.js";
 
 export const productsResource = {
   template: new ResourceTemplate("empower://products", {
-    list: undefined,
+    // Provide list callback so resource appears in resources/list
+    list: async () => ({
+      resources: [
+        {
+          uri: "empower://products",
+          name: "Products",
+          description:
+            "List of available products from Empower Plant store with names, prices, descriptions, and customer reviews",
+          mimeType: "application/json",
+        },
+      ],
+    }),
   }),
   metadata: {
     name: "Products",
@@ -14,10 +24,6 @@ export const productsResource = {
     mimeType: "application/json",
   },
   handler: async (_uri: URL) => {
-    await randomDelay(50, 150);
-
-    maybeThrow(0.1, new Error("Empower Plant API unreachable"));
-
     const response = await fetch(`${EMPOWER_PLANT_API_URL}/products`, {
       method: "GET",
       headers: {

@@ -1,11 +1,17 @@
-"""Simple API routes for the plant care agent."""
+"""API routes for the Empower Plant shopping agent."""
 
 
 import sentry_sdk.ai
 from fastapi import APIRouter, HTTPException, Request
 
-from ..agents.manager_agent import process_user_request
-from .models import ChatResponse, HealthResponse, PlantPurchaseRequest
+from ..agents.manager_agent import process_chat_message, process_user_request
+from .models import (
+    ChatRequest,
+    ChatResponse,
+    HealthResponse,
+    LegacyChatResponse,
+    PlantPurchaseRequest,
+)
 
 # Initialize router
 router = APIRouter()
@@ -14,14 +20,48 @@ router = APIRouter()
 @router.get("/health", response_model=HealthResponse)  # type: ignore[misc]
 async def health_check() -> HealthResponse:
     """Health check endpoint."""
-    return HealthResponse(status="healthy", agent_name="", version="1.0.0")
+    return HealthResponse(status="healthy", agent_name="shopping_agent", version="2.0.0")
 
 
-@router.post("/buy-plants", response_model=ChatResponse)  # type: ignore[misc]
-async def buy_plants(
-    request: PlantPurchaseRequest, raw_request: Request
-) -> ChatResponse:
-    """Trigger the plant purchase workflow.
+@router.post("/chat", response_model=ChatResponse)  # type: ignore[misc]
+async def chat(request: ChatRequest) -> ChatResponse:
+    """Conversational chat endpoint with session support.
+    
+    This endpoint maintains conversation history using SQLiteSession.
+    Each session_id represents a unique conversation thread.
+    
+    Args:
+        request: Chat request with session_id and message
+        
+    Returns:
+        Structured response with message items, product cards, or checkout results
+        
+    Raises:
+        HTTPException: If processing fails
+    """
+    try:
+        items = await process_chat_message(
+            session_id=request.session_id,
+            message=request.message
+        )
+        
+        return ChatResponse(
+            session_id=request.session_id,
+            items=items
+        )
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Failed to process chat message: {str(e)}"
+        )
+
+
+@router.post("/buy-plants", response_model=LegacyChatResponse)  # type: ignore[misc]
+async def buy_plants(request: PlantPurchaseRequest) -> LegacyChatResponse:
+    """Legacy endpoint for plant purchase workflow.
+    
+    Kept for backward compatibility. For new integrations, use /chat endpoint.
 
     Args:
         request: Request containing light and maintenance preferences
@@ -42,7 +82,7 @@ async def buy_plants(
             light=request.light, maintenance=request.maintenance
         )
 
-        return ChatResponse(response=response, agent_name="manager_agent")
+        return LegacyChatResponse(response=response, agent_name="shopping_agent")
 
     except Exception as e:
         raise HTTPException(

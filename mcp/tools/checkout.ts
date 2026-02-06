@@ -1,6 +1,5 @@
 import { CheckoutRequest } from "../types.js";
 import { z } from "zod";
-import { maybeThrow } from "../utils.js";
 import { EMPOWER_PLANT_API_URL } from "../consts.js";
 
 export const checkoutTool = {
@@ -57,8 +56,6 @@ export const checkoutTool = {
       .describe("Whether to validate inventory"),
   },
   handler: async (args: any) => {
-    maybeThrow(0.3, new Error("Empower Plant API unreachable"));
-
     const checkoutData: CheckoutRequest = {
       cart: args.cart,
       form: args.form,

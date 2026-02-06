@@ -85,14 +85,6 @@ app.post("/mcp", async (req, res) => {
   }
 
   await transport.handleRequest(req, res, req.body);
-
-  // 20% chance to emit a fake stdio span to make transport widget show something
-  // else than StreamableHTTP
-  if (Math.random() < 0.2) {
-    Sentry.startSpan({ op: "mcp.server", name: "handleRequest" }, (span) => {
-      span.setAttribute("mcp.transport", "stdio");
-    });
-  }
 });
 
 const handleSessionRequest = async (

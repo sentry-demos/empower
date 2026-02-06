@@ -3,29 +3,40 @@ import * as Sentry from '@sentry/react';
 import './chatWidget.css';
 import agentIcon from '../assets/empower-agent.png';
 
-const CHAT_SESSION_INACTIVITY_TIMEOUT_MS = 15000;
+const CHAT_SESSION_INACTIVITY_TIMEOUT_MS = 60000; // Increased for longer conversations
 const AGENT_URL = process.env.REACT_APP_BACKEND_URL_AGENT;
 
 let messageIdCounter = 0;
 const generateMessageId = () => `msg-${Date.now()}-${++messageIdCounter}`;
 const generateConversationId = () => `conv-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
+// Generate a UUID for session management
+const generateSessionId = () => {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  // Fallback for older browsers
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+};
+
 const ChatWidget = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [userInput, setUserInput] = useState('');
-  const [conversationState, setConversationState] = useState('initial');
-  const [userResponses, setUserResponses] = useState({
-    light: '',
-    maintenance: ''
-  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [sessionId] = useState(() => generateSessionId());
+  const [hasStartedConversation, setHasStartedConversation] = useState(false);
+  
   const messagesEndRef = useRef(null);
   const chatSpanRef = useRef(null);
   const conversationIdRef = useRef(null);
   const typingSpanRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const inactivityTimeoutRef = useRef(null);
-  const initTimeoutsRef = useRef([]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -44,12 +55,7 @@ const ChatWidget = () => {
       clearTimeout(inactivityTimeoutRef.current);
       inactivityTimeoutRef.current = null;
     }
-    // Clear any pending initialization timeouts
-    initTimeoutsRef.current.forEach(timeoutId => clearTimeout(timeoutId));
-    initTimeoutsRef.current = [];
     
-    Sentry.setConversationId(null);
-    // Record how the session ended
     if (chatSpanRef.current) {
       const isTimeout = reason === 'inactivity_timeout';
       Sentry.withActiveSpan(chatSpanRef.current, () => {
@@ -58,9 +64,7 @@ const ChatWidget = () => {
             op: isTimeout ? 'mark' : 'ui.action',
             name: `Session End: ${reason}`
           },
-          () => {
-            // Span ends immediately
-          }
+          () => {}
         );
       });
       
@@ -85,89 +89,108 @@ const ChatWidget = () => {
     scrollToBottom();
   }, [messages]);
 
-  const addBotMessage = useCallback((text, updateFn) => {
-    if (chatSpanRef.current) {
-      Sentry.withActiveSpan(chatSpanRef.current, () => {
-        Sentry.startSpan(
-          { op: 'ui.render', name: 'Render Bot Message' },
-          () => {
-            if (updateFn) {
-              updateFn();
-            } else {
-              setMessages(prev => [
-                ...prev.filter(msg => msg.type !== 'typing'),
-                {
-                  type: 'bot',
-                  text,
-                  id: generateMessageId()
-                }
-              ]);
-            }
-          }
-        );
-      });
-    } else {
-      if (updateFn) {
-        updateFn();
-      } else {
-        setMessages(prev => [
-          ...prev.filter(msg => msg.type !== 'typing'),
-          {
-            type: 'bot',
-            text,
-            id: generateMessageId()
-          }
-        ]);
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    if (isOpen && conversationState === 'initial') {
-      // Clear any existing init timeouts
-      initTimeoutsRef.current.forEach(timeoutId => clearTimeout(timeoutId));
-      initTimeoutsRef.current = [];
+  // Send message to the agent API
+  const sendMessage = useCallback(async (messageText) => {
+    setIsLoading(true);
+    
+    // Show typing indicator
+    setMessages(prev => [...prev, { type: 'typing', id: generateMessageId() }]);
+    
+    try {
+      let response, data;
       
-      // Show typing indicator
-      setMessages([{ type: 'typing', id: generateMessageId() }]);
-      
-      const timeout1 = setTimeout(() => {
-        // Remove typing indicator and show welcome message
-        addBotMessage("Hi, I can help you pick the right plants for your home", () => {
-          setMessages([
-            {
-              type: 'bot',
-              text: "Hi, I can help you pick the right plants for your home",
-              id: generateMessageId()
-            }
-          ]);
+      const makeRequest = async () => {
+        const res = await fetch(`${AGENT_URL}/api/v1/chat`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            session_id: sessionId,
+            message: messageText
+          })
         });
+        return res;
+      };
+      
+      if (chatSpanRef.current) {
+        await Sentry.withActiveSpan(chatSpanRef.current, async () => {
+          response = await makeRequest();
+          data = await response.json();
+        });
+      } else {
+        response = await makeRequest();
+        data = await response.json();
+      }
+      
+      if (!response.ok) {
+        throw new Error(data.detail || 'Failed to get response');
+      }
+      
+      // Process response items and add to messages
+      setMessages(prev => {
+        const withoutTyping = prev.filter(msg => msg.type !== 'typing');
+        const newMessages = [];
         
-        // Show second message after a brief pause
-        const timeout2 = setTimeout(() => {
-          // Show typing indicator
-          setMessages(prev => [...prev, { type: 'typing', id: generateMessageId() }]);
-          
-          const timeout3 = setTimeout(() => {
-            addBotMessage('How much light does your room get?');
-            setConversationState('awaiting_light');
-          }, 1000);
-          initTimeoutsRef.current.push(timeout3);
-        }, 500);
-        initTimeoutsRef.current.push(timeout2);
-      }, 1000);
-      initTimeoutsRef.current.push(timeout1);
+        for (const item of data.items) {
+          if (item.type === 'message') {
+            newMessages.push({
+              type: 'bot',
+              text: item.content.text,
+              id: generateMessageId()
+            });
+          } else if (item.type === 'product_card') {
+            newMessages.push({
+              type: 'product_card',
+              content: item.content,
+              id: generateMessageId()
+            });
+          } else if (item.type === 'checkout_result') {
+            newMessages.push({
+              type: 'checkout_result',
+              content: item.content,
+              id: generateMessageId()
+            });
+          }
+        }
+        
+        return [...withoutTyping, ...newMessages];
+      });
+      
+      startInactivityTimeout();
+      
+    } catch (error) {
+      console.error('Chat error:', error);
+      Sentry.captureException(error);
+      
+      setMessages(prev => [
+        ...prev.filter(msg => msg.type !== 'typing'),
+        {
+          type: 'bot',
+          text: 'Sorry, I encountered an error. Please try again.',
+          id: generateMessageId()
+        }
+      ]);
+    } finally {
+      setIsLoading(false);
     }
-  }, [isOpen, conversationState, addBotMessage]);
+  }, [sessionId, startInactivityTimeout]);
+
+  // Start conversation when chat opens
+  useEffect(() => {
+    if (isOpen && !hasStartedConversation) {
+      setHasStartedConversation(true);
+      // Send initial message to start the conversation
+      sendMessage('Hi, I\'m looking for a plant recommendation.');
+    }
+  }, [isOpen, hasStartedConversation, sendMessage]);
 
   const handleInputFocus = () => {
     if (chatSpanRef.current) {
       Sentry.withActiveSpan(chatSpanRef.current, () => {
         Sentry.startSpan(
           { op: 'ui.action', name: 'Focus Chat Input' },
-          () => {
-            // Span ends immediately after focus
-          }
+          () => {}
         );
       });
     }
@@ -176,7 +199,6 @@ const ChatWidget = () => {
   const handleInputChange = (e) => {
     setUserInput(e.target.value);
     
-    // Start typing span if not already started
     if (chatSpanRef.current && !typingSpanRef.current) {
       Sentry.withActiveSpan(chatSpanRef.current, () => {
         typingSpanRef.current = Sentry.startInactiveSpan({
@@ -186,12 +208,10 @@ const ChatWidget = () => {
       });
     }
     
-    // Clear existing timeout
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
     
-    // Set new timeout to end typing span after 1 second of inactivity
     typingTimeoutRef.current = setTimeout(() => {
       if (typingSpanRef.current) {
         typingSpanRef.current.end();
@@ -201,7 +221,6 @@ const ChatWidget = () => {
   };
 
   const handleSendClick = () => {
-    // End any active typing span
     if (typingSpanRef.current) {
       typingSpanRef.current.end();
       typingSpanRef.current = null;
@@ -211,14 +230,11 @@ const ChatWidget = () => {
       typingTimeoutRef.current = null;
     }
     
-    // Create send button click span
     if (chatSpanRef.current) {
       Sentry.withActiveSpan(chatSpanRef.current, () => {
         Sentry.startSpan(
           { op: 'ui.action.click', name: 'Send Message' },
-          () => {
-            // Span ends immediately after click
-          }
+          () => {}
         );
       });
     }
@@ -226,107 +242,37 @@ const ChatWidget = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!userInput.trim()) return;
+    if (!userInput.trim() || isLoading) return;
     
-    // Track the send click
     handleSendClick();
 
-    // Add user message to chat
-    const userMessage = {
-      type: 'user',
-      text: userInput,
-      id: generateMessageId()
-    };
-    setMessages(prev => [...prev, userMessage]);
+    const messageText = userInput;
+    setUserInput('');
     
-    if (conversationState === 'awaiting_light') {
-      // Store light response
-      setUserResponses(prev => ({ ...prev, light: userInput }));
-      setUserInput('');
-      
-      // Show typing indicator
-      setMessages(prev => [...prev, { type: 'typing', id: generateMessageId() }]);
-      
-      // Ask next question
-      setTimeout(() => {
-        addBotMessage('Are you only looking for low-maintenance plants?');
-        setConversationState('awaiting_maintenance');
-      }, 1000);
-    } else if (conversationState === 'awaiting_maintenance') {
-      // Store maintenance response
-      const maintenanceAnswer = userInput;
-      setUserInput('');
-      
-      // Show typing indicator
-      setMessages(prev => [...prev, { type: 'typing', id: generateMessageId() }]);
-      
-      // Make API call within the active span context
-      try {
-        let response, data;
-        
-        const requestHeaders = {
-          'Content-Type': 'application/json',
-        };
-        if (conversationIdRef.current) {
-          requestHeaders['x-conversation-id'] = conversationIdRef.current;
-        }
+    // Add user message to chat
+    setMessages(prev => [...prev, {
+      type: 'user',
+      text: messageText,
+      id: generateMessageId()
+    }]);
+    
+    // Send to agent
+    await sendMessage(messageText);
+  };
 
-        if (chatSpanRef.current) {
-          await Sentry.withActiveSpan(chatSpanRef.current, async () => {
-            response = await fetch(`${AGENT_URL}/api/v1/buy-plants`, {
-              method: 'POST',
-              headers: requestHeaders,
-              body: JSON.stringify({
-                light: userResponses.light,
-                maintenance: `Are you only looking for low-maintenance plants? Answer: ${maintenanceAnswer}`
-              })
-            });
-            data = await response.json();
-          });
-        } else {
-          response = await fetch(`${AGENT_URL}/api/v1/buy-plants`, {
-            method: 'POST',
-            headers: requestHeaders,
-            body: JSON.stringify({
-              light: userResponses.light,
-              maintenance: `Are you only looking for low-maintenance plants? Answer: ${maintenanceAnswer}`
-            })
-          });
-          data = await response.json();
-        }
-        
-        // Remove typing indicator and show response
-        addBotMessage(data.response, () => {
-          setMessages(prev => [
-            ...prev.filter(msg => msg.type !== 'typing'),
-            {
-              type: 'bot',
-              text: data.response,
-              agentName: data.agent_name,
-              id: generateMessageId()
-            }
-          ]);
-        });
-        setConversationState('completed');
-        
-        // Start inactivity timeout after final bot response is rendered
-        startInactivityTimeout();
-      } catch (error) {
-        // Handle error
-        addBotMessage('Sorry, I encountered an error. Please try again later.');
-        setConversationState('error');
-        
-        // Start inactivity timeout after error response is rendered
-        startInactivityTimeout();
-      }
-    }
+  const handleAddToCart = async (product) => {
+    // Add user action message
+    setMessages(prev => [...prev, {
+      type: 'user',
+      text: `Add "${product.name}" to cart`,
+      id: generateMessageId()
+    }]);
+    
+    // Send add to cart message to agent
+    await sendMessage(`I'd like to add "${product.name}" (ID: ${product.id}) to my cart and checkout.`);
   };
 
   const openChat = () => {
-    // Opening the chat - start a new trace
-    const conversationId = generateConversationId();
-    conversationIdRef.current = conversationId;
-    Sentry.setConversationId(conversationId);
     Sentry.startNewTrace(() => {
       const span = Sentry.startInactiveSpan({
         op: 'ui.interaction.chat',
@@ -355,12 +301,86 @@ const ChatWidget = () => {
     closeChat('click_close_button');
   };
   
-  // Clean up spans on unmount or navigation
   useEffect(() => {
     return () => {
       endChatSession('navigation');
     };
   }, [endChatSession]);
+
+  // Render a single message based on its type
+  const renderMessage = (message) => {
+    if (message.type === 'typing') {
+      return (
+        <div key={message.id} className="message bot-message">
+          <div className="typing-indicator">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        </div>
+      );
+    }
+    
+    if (message.type === 'product_card') {
+      const product = message.content;
+      return (
+        <div key={message.id} className="message bot-message">
+          <div className="chat-product-card">
+            <h4 className="product-name">{product.name}</h4>
+            <p className="product-price">${product.price?.toFixed(2)}</p>
+            {product.description && (
+              <p className="product-description">{product.description}</p>
+            )}
+            <button 
+              className="add-to-cart-button"
+              onClick={() => handleAddToCart(product)}
+              disabled={isLoading}
+            >
+              Add to Cart
+            </button>
+          </div>
+        </div>
+      );
+    }
+    
+    if (message.type === 'checkout_result') {
+      const result = message.content;
+      return (
+        <div key={message.id} className="message bot-message">
+          <div className={`checkout-result ${result.success ? 'success' : 'error'}`}>
+            {result.success ? (
+              <>
+                <span className="checkout-icon">&#10003;</span>
+                <span>{result.message || 'Order placed successfully!'}</span>
+              </>
+            ) : (
+              <>
+                <span className="checkout-icon">&#10007;</span>
+                <span>{result.error || 'Checkout failed. Please try again.'}</span>
+              </>
+            )}
+          </div>
+        </div>
+      );
+    }
+    
+    // Regular text message (bot or user)
+    return (
+      <div
+        key={message.id}
+        className={`message ${message.type === 'bot' ? 'bot-message' : 'user-message'}`}
+      >
+        <div className="message-bubble">
+          {(message.text || '').split('\n').map((line, index, array) => (
+            <React.Fragment key={index}>
+              {line}
+              {index < array.length - 1 && <br />}
+            </React.Fragment>
+          ))}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="chat-widget-container">
@@ -369,59 +389,37 @@ const ChatWidget = () => {
           <div className="chat-header">
             <div className="chat-header-content">
               <img src={agentIcon} alt="AI Agent" className="chat-header-icon" />
-              <span className="chat-header-title">AI Agent</span>
+              <span className="chat-header-title">AI Shopping Assistant</span>
             </div>
             <button className="chat-close-button" onClick={handleCloseButtonClick}>×</button>
           </div>
           
           <div className="chat-messages">
-            {messages.map((message) => {
-              if (message.type === 'typing') {
-                return (
-                  <div key={message.id} className="message bot-message">
-                    <div className="typing-indicator">
-                      <span></span>
-                      <span></span>
-                      <span></span>
-                    </div>
-                  </div>
-                );
-              }
-              
-              return (
-                <div
-                  key={message.id}
-                  className={`message ${message.type === 'bot' ? 'bot-message' : 'user-message'}`}
-                >
-                  <div className="message-bubble">
-                    {(message.text || '').split('\n').map((line, index, array) => (
-                      <React.Fragment key={index}>
-                        {line}
-                        {index < array.length - 1 && <br />}
-                      </React.Fragment>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
+            {messages.map(renderMessage)}
             <div ref={messagesEndRef} />
           </div>
           
-          {(conversationState === 'awaiting_light' || conversationState === 'awaiting_maintenance') && (
-            <form className="chat-input-form" onSubmit={handleSubmit}>
-              <input
-                id="chat-message-input"
-                type="text"
-                value={userInput}
-                onChange={handleInputChange}
-                onFocus={handleInputFocus}
-                placeholder="Type your answer..."
-                className="chat-input"
-                autoFocus
-              />
-              <button id="chat-send-button" type="submit" className="chat-send-button">Send</button>
-            </form>
-          )}
+          <form className="chat-input-form" onSubmit={handleSubmit}>
+            <input
+              id="chat-message-input"
+              type="text"
+              value={userInput}
+              onChange={handleInputChange}
+              onFocus={handleInputFocus}
+              placeholder="Type your message..."
+              className="chat-input"
+              disabled={isLoading}
+              autoFocus
+            />
+            <button 
+              id="chat-send-button" 
+              type="submit" 
+              className="chat-send-button"
+              disabled={isLoading || !userInput.trim()}
+            >
+              Send
+            </button>
+          </form>
         </div>
       )}
       
