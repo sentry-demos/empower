@@ -685,16 +685,44 @@ else
       echo "--- DNS: $host ---"
       
       # Check if A record already exists
-      EXISTING_A=$(gcloud dns record-sets describe "$host." \
+      # Note: We capture stderr to distinguish "not found" from "permission denied"
+      DNS_DESCRIBE_OUTPUT=$(gcloud dns record-sets describe "$host." \
         --zone="$DNS_MANAGED_ZONE" \
         --type=A \
-        --format="value(rrdatas[0])" 2>/dev/null || echo "")
+        --format="value(rrdatas[0])" 2>&1)
+      DNS_DESCRIBE_EXIT=$?
+      
+      if [[ $DNS_DESCRIBE_EXIT -eq 0 ]]; then
+        EXISTING_A="$DNS_DESCRIBE_OUTPUT"
+      elif echo "$DNS_DESCRIBE_OUTPUT" | grep -q "was not found\|does not exist\|NOT_FOUND"; then
+        # Record doesn't exist - this is expected for new records
+        EXISTING_A=""
+      else
+        # Some other error (likely permissions)
+        echo "[ERROR] Failed to check existing DNS record for $host:"
+        echo "$DNS_DESCRIBE_OUTPUT"
+        echo ""
+        echo "If this is a permissions error, grant the CI service account the 'DNS Administrator' role:"
+        echo "  gcloud projects add-iam-policy-binding \$GCP_PROJECT \\"
+        echo "    --member='serviceAccount:YOUR_SA@YOUR_PROJECT.iam.gserviceaccount.com' \\"
+        echo "    --role='roles/dns.admin'"
+        exit 1
+      fi
       
       # Check if CNAME record exists (need to delete before creating A record)
-      EXISTING_CNAME=$(gcloud dns record-sets describe "$host." \
+      DNS_CNAME_OUTPUT=$(gcloud dns record-sets describe "$host." \
         --zone="$DNS_MANAGED_ZONE" \
         --type=CNAME \
-        --format="value(rrdatas[0])" 2>/dev/null || echo "")
+        --format="value(rrdatas[0])" 2>&1)
+      DNS_CNAME_EXIT=$?
+      
+      if [[ $DNS_CNAME_EXIT -eq 0 ]]; then
+        EXISTING_CNAME="$DNS_CNAME_OUTPUT"
+      elif echo "$DNS_CNAME_OUTPUT" | grep -q "was not found\|does not exist\|NOT_FOUND"; then
+        EXISTING_CNAME=""
+      else
+        EXISTING_CNAME=""  # Ignore other errors for CNAME check, A record is primary
+      fi
       
       if [[ -n "$EXISTING_CNAME" ]]; then
         echo "Found existing CNAME record: $host -> $EXISTING_CNAME"
