@@ -118,7 +118,12 @@ async def generate_questions() -> tuple[list[dict], list[dict]]:
 Based on ONLY these products, generate 2-3 questions to help a customer choose.
 Remember: ONLY reference the product names listed above. Output ONLY a JSON array."""
     
-    result = await Runner.run(question_generator_agent, prompt)
+    result = Runner.run_streamed(question_generator_agent, prompt)
+
+    # Consume the stream
+    async for _ in result.stream_events():
+        pass
+
     output = str(result.final_output)
     
     logging.debug(f"Question generator output: {output}")

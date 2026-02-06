@@ -249,5 +249,14 @@ async def process_user_request(light: str, maintenance: str) -> str:
         f"Legacy process_user_request invoked with light: {light}, maintenance: {maintenance}"
     )
     message = f"I want to buy plants for {light} light and {maintenance} maintenance."
-    result = await Runner.run(shopping_agent, message)
+
+    # Run the agent with streaming to get recommendations
+    result = Runner.run_streamed(manager_agent, message)
+
+    # Consume the stream
+    async for _ in result.stream_events():
+        pass
+
+    logging.debug(f"manager_agent completed purchase: {result.final_output}")
+    print(result)
     return str(result.final_output)
