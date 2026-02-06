@@ -686,11 +686,14 @@ else
       
       # Check if A record already exists
       # Note: We capture stderr to distinguish "not found" from "permission denied"
+      # Use set +e so we capture exit code and can print the error instead of exiting quietly
+      set +e
       DNS_DESCRIBE_OUTPUT=$(gcloud dns record-sets describe "$host." \
         --zone="$DNS_MANAGED_ZONE" \
         --type=A \
         --format="value(rrdatas[0])" 2>&1)
       DNS_DESCRIBE_EXIT=$?
+      set -e
       
       if [[ $DNS_DESCRIBE_EXIT -eq 0 ]]; then
         EXISTING_A="$DNS_DESCRIBE_OUTPUT"
@@ -710,11 +713,13 @@ else
       fi
       
       # Check if CNAME record exists (need to delete before creating A record)
+      set +e
       DNS_CNAME_OUTPUT=$(gcloud dns record-sets describe "$host." \
         --zone="$DNS_MANAGED_ZONE" \
         --type=CNAME \
         --format="value(rrdatas[0])" 2>&1)
       DNS_CNAME_EXIT=$?
+      set -e
       
       if [[ $DNS_CNAME_EXIT -eq 0 ]]; then
         EXISTING_CNAME="$DNS_CNAME_OUTPUT"
@@ -728,14 +733,19 @@ else
         echo "Found existing CNAME record: $host -> $EXISTING_CNAME"
         echo "Deleting CNAME to replace with A record for Load Balancer..."
         # Get TTL of existing record for deletion
+        set +e
         CNAME_TTL=$(gcloud dns record-sets describe "$host." \
           --zone="$DNS_MANAGED_ZONE" \
           --type=CNAME \
           --format="value(ttl)" 2>/dev/null || echo "300")
-        gcloud dns record-sets delete "$host." \
+        set -e
+        if ! gcloud dns record-sets delete "$host." \
           --zone="$DNS_MANAGED_ZONE" \
           --type=CNAME \
-          --quiet
+          --quiet; then
+          echo "[ERROR] Failed to delete CNAME record for $host"
+          exit 1
+        fi
       fi
       
       if [[ -n "$EXISTING_A" ]]; then
@@ -744,19 +754,25 @@ else
         else
           echo "DNS A record exists but points to $EXISTING_A (expected $LB_IP)"
           echo "Updating DNS record..."
-          gcloud dns record-sets update "$host." \
+          if ! gcloud dns record-sets update "$host." \
             --zone="$DNS_MANAGED_ZONE" \
             --type=A \
             --ttl=300 \
-            --rrdatas="$LB_IP"
+            --rrdatas="$LB_IP"; then
+            echo "[ERROR] Failed to update DNS A record for $host"
+            exit 1
+          fi
         fi
       else
         echo "Creating DNS A record: $host -> $LB_IP"
-        gcloud dns record-sets create "$host." \
+        if ! gcloud dns record-sets create "$host." \
           --zone="$DNS_MANAGED_ZONE" \
           --type=A \
           --ttl=300 \
-          --rrdatas="$LB_IP"
+          --rrdatas="$LB_IP"; then
+          echo "[ERROR] Failed to create DNS A record for $host"
+          exit 1
+        fi
       fi
     done
     
