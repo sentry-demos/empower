@@ -16,7 +16,7 @@ from .question_generator import generate_questions
 logging.basicConfig(level=logging.DEBUG)
 
 # Database path for session storage
-DB_PATH = os.environ.get("AGENT_SESSION_DB", "agent_sessions.db")
+DB_PATH = "agent_sessions.db"
 
 # Shopping agent configuration
 SHOPPING_AGENT_NAME = "shopping_agent"
@@ -71,7 +71,7 @@ mcp_tool = HostedMCPTool(
     tool_config={
         "type": "mcp",
         "server_label": "empower-mcp",
-        "server_url": os.environ.get("MCP_URL", "http://localhost:3000") + "/mcp",
+        "server_url": os.environ["MCP_URL"] + "/mcp",
         "require_approval": "never",
     }
 )
@@ -251,12 +251,12 @@ async def process_user_request(light: str, maintenance: str) -> str:
     message = f"I want to buy plants for {light} light and {maintenance} maintenance."
 
     # Run the agent with streaming to get recommendations
-    result = Runner.run_streamed(manager_agent, message)
+    result = Runner.run_streamed(shopping_agent, message)
 
     # Consume the stream
     async for _ in result.stream_events():
         pass
 
-    logging.debug(f"manager_agent completed purchase: {result.final_output}")
+    logging.debug(f"shopping_agent completed purchase: {result.final_output}")
     print(result)
     return str(result.final_output)

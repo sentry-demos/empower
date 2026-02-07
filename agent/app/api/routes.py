@@ -4,7 +4,7 @@
 import sentry_sdk.ai
 from fastapi import APIRouter, HTTPException, Request
 
-from ..agents.manager_agent import process_chat_message, process_user_request
+from ..agents.shopping_agent import process_chat_message, process_user_request
 from .models import (
     ChatRequest,
     ChatResponse,

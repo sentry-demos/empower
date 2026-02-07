@@ -7,6 +7,7 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
 
 import { checkoutTool } from "./tools/checkout.js";
+import { getProductsTool } from "./tools/get-products.js";
 import { productsResource } from "./resources/products.js";
 
 const app = express();
@@ -62,6 +63,7 @@ app.post("/mcp", async (req, res) => {
 
     // Tools
     server.registerTool("checkout", checkoutTool, checkoutTool.handler);
+    server.registerTool("get-products", getProductsTool, getProductsTool.handler);
 
     // Resources
     server.registerResource(

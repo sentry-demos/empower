@@ -11,7 +11,7 @@ from typing import Optional
 logging.basicConfig(level=logging.DEBUG)
 
 # Database path for question storage
-DB_PATH = os.environ.get("AGENT_SESSION_DB", "agent_sessions.db")
+DB_PATH = "agent_sessions.db"
 
 
 @dataclass

@@ -1,19 +1,27 @@
-"""Question Generator - fetches products and generates optimal question flow."""
+"""Question Generator - fetches products via MCP and generates optimal question flow."""
 
 import json
 import logging
 import os
 
-import httpx
-from agents import Agent, Runner
+from agents import Agent, HostedMCPTool, Runner
 
 from config import settings
 
 logging.basicConfig(level=logging.DEBUG)
 
-# API URL for fetching products directly
-FLASK_API_URL = os.environ.get("FLASK_API_URL", "http://localhost:8081")
+# MCP URL for product data
+MCP_URL = os.environ["MCP_URL"] + "/mcp"
 
+# Agent that fetches products from MCP
+PRODUCT_FETCHER_NAME = "product_fetcher"
+PRODUCT_FETCHER_INSTRUCTIONS = """
+You are a product data fetcher. Your ONLY job is to:
+1. Call the MCP "get-products" tool to fetch all available products
+2. Output the product data as a JSON array, nothing else - do not add any explanation or commentary
+"""
+
+# Agent that generates questions based on products
 QUESTION_GENERATOR_NAME = "question_generator"
 QUESTION_GENERATOR_INSTRUCTIONS = """
 You are a product analysis specialist. You will be given a list of ACTUAL products from the Empower Plant store.
@@ -43,44 +51,24 @@ RULES:
 3. Output ONLY the JSON array, nothing else
 """
 
+# Create the product fetcher agent with MCP tool
+product_fetcher_agent = Agent(
+    name=PRODUCT_FETCHER_NAME,
+    instructions=PRODUCT_FETCHER_INSTRUCTIONS,
+    model=settings.agent_model,
+    tools=[
+        HostedMCPTool(
+            tool_config={
+                "type": "mcp",
+                "server_label": "empower-mcp",
+                "server_url": MCP_URL,
+                "require_approval": "never",
+            }
+        )
+    ],
+)
 
-async def fetch_products_from_api() -> list[dict]:
-    """Fetch products directly from the Flask API (bypassing LLM).
-    
-    This ensures we get the actual product data without any hallucination.
-    """
-    try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.get(
-                f"{FLASK_API_URL}/products",
-                headers={
-                    "Content-Type": "application/json",
-                    "se": "agent-direct",
-                }
-            )
-            response.raise_for_status()
-            raw_products = response.json()
-            
-            # Transform to simplified structure matching MCP resource format
-            products = []
-            for p in raw_products:
-                products.append({
-                    "id": p.get("id"),
-                    "name": p.get("title"),
-                    "price": p.get("price"),
-                    "description": p.get("description"),
-                    "reviews": [r.get("description", "") for r in p.get("reviews", []) if r.get("description")]
-                })
-            
-            logging.debug(f"Fetched {len(products)} products from API: {[p['name'] for p in products]}")
-            return products
-            
-    except Exception as e:
-        logging.error(f"Failed to fetch products from API: {e}")
-        return []
-
-
-# Create the question generator agent (no MCP tool - we pass products directly)
+# Create the question generator agent (no tools - just analyzes provided data)
 question_generator_agent = Agent(
     name=QUESTION_GENERATOR_NAME,
     instructions=QUESTION_GENERATOR_INSTRUCTIONS,
@@ -89,41 +77,87 @@ question_generator_agent = Agent(
 )
 
 
+class MCPProductFetchError(Exception):
+    """Raised when fetching products from MCP fails."""
+    pass
+
+
+class QuestionGenerationError(Exception):
+    """Raised when generating questions fails."""
+    pass
+
+
+async def fetch_products_via_mcp() -> list[dict]:
+    """Fetch products using MCP via the product fetcher agent.
+    
+    Returns:
+        List of product dicts from MCP.
+        
+    Raises:
+        MCPProductFetchError: If MCP call fails or returns invalid data.
+    """
+    logging.debug("Fetching products via MCP...")
+    
+    result = await Runner.run(
+        product_fetcher_agent,
+        "Call the 'get-products' tool and output the JSON array of products."
+    )
+    output = str(result.final_output)
+    logging.debug(f"Product fetcher output: {output[:500]}...")
+    
+    # Parse JSON from output
+    start_idx = output.find('[')
+    end_idx = output.rfind(']') + 1
+    if start_idx == -1 or end_idx <= start_idx:
+        raise MCPProductFetchError(f"No JSON array found in MCP output: {output}")
+    
+    json_str = output[start_idx:end_idx]
+    try:
+        products = json.loads(json_str)
+    except json.JSONDecodeError as e:
+        raise MCPProductFetchError(f"Invalid JSON from MCP: {e}. Raw: {json_str}")
+    
+    if not products:
+        raise MCPProductFetchError("MCP returned empty product list")
+    
+    logging.debug(f"Parsed {len(products)} products from MCP")
+    return products
+
+
 async def generate_questions() -> tuple[list[dict], list[dict]]:
-    """Generate optimal questions based on actual product data.
+    """Generate optimal questions based on product data from MCP.
     
     Returns:
         Tuple of (questions_list, products_list)
         - questions_list: List of question dicts with question, answer_interpretation, next_question
-        - products_list: List of product dicts from the API
+        - products_list: List of product dicts from MCP
+        
+    Raises:
+        MCPProductFetchError: If fetching products fails.
+        QuestionGenerationError: If generating questions fails.
     """
     logging.debug("Generating questions based on product analysis...")
     
-    # Step 1: Fetch actual products from API (deterministic, no hallucination)
-    products = await fetch_products_from_api()
+    # Step 1: Fetch products via MCP
+    products = await fetch_products_via_mcp()
     
-    if not products:
-        logging.error("No products fetched - returning fallback questions")
-        return _get_fallback_questions(), []
-    
-    # Step 2: Format products for LLM context
+    # Step 2: Format products for question generator context
     products_text = "ACTUAL PRODUCTS IN THE STORE:\n"
     for p in products:
-        reviews_summary = f" ({len(p.get('reviews', []))} reviews)" if p.get('reviews') else ""
-        products_text += f"- {p['name']} (id: {p['id']}, ${p['price']}): {p['description']}{reviews_summary}\n"
+        name = p.get('name') or p.get('title', 'Unknown')
+        price = p.get('price', 0)
+        description = p.get('description', '')
+        reviews = p.get('reviews', [])
+        reviews_summary = f" ({len(reviews)} reviews)" if reviews else ""
+        products_text += f"- {name} (id: {p.get('id')}, ${price}): {description}{reviews_summary}\n"
     
-    # Step 3: Ask LLM to generate questions based on actual products
+    # Step 3: Generate questions using the question generator agent
     prompt = f"""{products_text}
 
 Based on ONLY these products, generate 2-3 questions to help a customer choose.
 Remember: ONLY reference the product names listed above. Output ONLY a JSON array."""
     
-    result = Runner.run_streamed(question_generator_agent, prompt)
-
-    # Consume the stream
-    async for _ in result.stream_events():
-        pass
-
+    result = await Runner.run(question_generator_agent, prompt)
     output = str(result.final_output)
     
     logging.debug(f"Question generator output: {output}")
@@ -136,41 +170,31 @@ Remember: ONLY reference the product names listed above. Output ONLY a JSON arra
 
 
 def _parse_questions_json(output: str, products: list[dict]) -> list[dict]:
-    """Parse questions JSON from LLM output with validation."""
-    try:
-        start_idx = output.find('[')
-        end_idx = output.rfind(']') + 1
-        if start_idx != -1 and end_idx > start_idx:
-            json_str = output[start_idx:end_idx]
-            questions = json.loads(json_str)
-            
-            # Validate that questions reference actual products
-            product_names = {p['name'].lower() for p in products}
-            for q in questions:
-                interpretation = q.get('answer_interpretation', '').lower()
-                # Check if at least one product name is mentioned
-                if not any(name in interpretation for name in product_names):
-                    logging.warning(f"Question may not reference actual products: {q}")
-            
-            return questions
-    except json.JSONDecodeError as e:
-        logging.error(f"Failed to parse questions JSON: {e}")
-        logging.error(f"Raw output was: {output}")
+    """Parse questions JSON from LLM output with validation.
     
-    return _get_fallback_questions()
-
-
-def _get_fallback_questions() -> list[dict]:
-    """Return safe fallback questions that don't assume specific products."""
-    return [
-        {
-            "question": "What's your budget: under $50, $50-200, or over $200?",
-            "answer_interpretation": "Budget determines which products to show - lower budget items vs premium options.",
-            "next_question": 1
-        },
-        {
-            "question": "Is this for yourself or as a gift?",
-            "answer_interpretation": "Gifts may prefer unique/fun items; personal use focuses on functionality.",
-            "next_question": None
-        }
-    ]
+    Raises:
+        QuestionGenerationError: If parsing fails or output is invalid.
+    """
+    start_idx = output.find('[')
+    end_idx = output.rfind(']') + 1
+    if start_idx == -1 or end_idx <= start_idx:
+        raise QuestionGenerationError(f"No JSON array found in question generator output: {output}")
+    
+    json_str = output[start_idx:end_idx]
+    try:
+        questions = json.loads(json_str)
+    except json.JSONDecodeError as e:
+        raise QuestionGenerationError(f"Invalid JSON from question generator: {e}. Raw: {output}")
+    
+    if not questions:
+        raise QuestionGenerationError("Question generator returned empty list")
+    
+    # Validate that questions reference actual products
+    product_names = {(p.get('name') or p.get('title', '')).lower() for p in products}
+    for q in questions:
+        interpretation = q.get('answer_interpretation', '').lower()
+        # Check if at least one product name is mentioned
+        if not any(name in interpretation for name in product_names if name):
+            logging.warning(f"Question may not reference actual products: {q}")
+    
+    return questions

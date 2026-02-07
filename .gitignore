@@ -62,6 +62,9 @@ spring-boot/*.jar
 spring-boot/bin
 spring-boot/.mvn/wrapper/maven-wrapper.jar
 
+# Agent session database
+agent/*.db
+
 # Ruby, Rails
 ruby/.bundle
 # Ignore the default SQLite database.

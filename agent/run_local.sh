@@ -14,4 +14,5 @@ source ensure_docker.sh
 # Other vars are read from .env file by docker-compose (via env_file directive)
 export PORT=$AGENT_LOCAL_PORT
 
-docker-compose up
+# Redirect stdin to prevent interactive mode from capturing terminal
+docker-compose up < /dev/null

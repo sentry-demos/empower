@@ -8,4 +8,5 @@ function cleanup {
 }
 trap cleanup EXIT
 
-PORT=$REACT_LOCAL_PORT npx serve -s build
+# Redirect stdin to prevent interactive mode from capturing terminal
+PORT=$REACT_LOCAL_PORT npx serve -s build < /dev/null

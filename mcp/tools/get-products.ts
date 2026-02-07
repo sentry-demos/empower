@@ -1,29 +1,15 @@
-import { ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { PlantProduct, ProductResourceItem } from "../types.js";
 import { EMPOWER_PLANT_API_URL } from "../consts.js";
 
-export const productsResource = {
-  template: new ResourceTemplate("empower://products", {
-    // Provide list callback so resource appears in resources/list
-    list: async () => ({
-      resources: [
-        {
-          uri: "empower://products",
-          name: "Products",
-          description:
-            "List of available products from Empower Plant store with names, prices, descriptions, and customer reviews",
-          mimeType: "application/json",
-        },
-      ],
-    }),
-  }),
-  metadata: {
-    name: "Products",
-    description:
-      "List of available products from Empower Plant store with names, prices, descriptions, and customer reviews",
-    mimeType: "application/json",
+export const getProductsTool = {
+  description:
+    "Get all available products from the Empower Plant store with names, prices, descriptions, and customer reviews",
+  parameters: {
+    type: "object" as const,
+    properties: {},
+    required: [] as string[],
   },
-  handler: async (_uri: URL) => {
+  handler: async () => {
     // Use products-join for faster response (single SQL query with JOIN)
     const response = await fetch(`${EMPOWER_PLANT_API_URL}/products-join`, {
       method: "GET",
@@ -52,11 +38,11 @@ export const productsResource = {
       })
     );
 
+    // Return in MCP tool response format
     return {
-      contents: [
+      content: [
         {
-          uri: "empower://products",
-          mimeType: "application/json",
+          type: "text" as const,
           text: JSON.stringify(simplifiedProducts, null, 2),
         },
       ],
