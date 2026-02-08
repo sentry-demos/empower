@@ -47,25 +47,26 @@ def get_products():
         with sentry_sdk.start_span(name="get_products", op="db.connect"):
             connection = db.connect()
 
-        n = weighter(operator.le, 12)
-        # adjust by number of products to get the same timeout as we had in the past
-        # before pg_sleep() was moved out of SELECT clause.
-        n *= PRODUCTS_NUM
-        query = text("SELECT * FROM products WHERE id IN (SELECT id from products, pg_sleep(:sleep_duration))")
-        products = connection.execute(query, sleep_duration=n).fetchall()
+        with connection:
+            n = weighter(operator.le, 12)
+            # adjust by number of products to get the same timeout as we had in the past
+            # before pg_sleep() was moved out of SELECT clause.
+            n *= PRODUCTS_NUM
+            query = text("SELECT * FROM products WHERE id IN (SELECT id from products, pg_sleep(:sleep_duration))")
+            products = connection.execute(query, sleep_duration=n).fetchall()
 
-        for product in products:
-            # product_bundles is a "sleepy view", run the following query to get current sleep duration:
-            # SELECT pg_get_viewdef('product_bundles', true)
-            query = text("SELECT * FROM reviews, product_bundles WHERE productId = :x")
-            reviews = connection.execute(query, x=product.id).fetchall()
+            for product in products:
+                # product_bundles is a "sleepy view", run the following query to get current sleep duration:
+                # SELECT pg_get_viewdef('product_bundles', true)
+                query = text("SELECT * FROM reviews, product_bundles WHERE productId = :x")
+                reviews = connection.execute(query, x=product.id).fetchall()
 
-            result = dict(product)
-            result["reviews"] = []
+                result = dict(product)
+                result["reviews"] = []
 
-            for review in reviews:
-                result["reviews"].append(dict(review))
-            results.append(result)
+                for review in reviews:
+                    result["reviews"].append(dict(review))
+                results.append(result)
 
         with sentry_sdk.start_span(name="get_products.combined_reviews.json", op="serialization"):
             result = json.dumps(results, default=str)
@@ -81,18 +82,19 @@ def get_products_join():
         with sentry_sdk.start_span(name="get_products_join", op="db.connect"):
             connection = db.connect()
 
-        with sentry_sdk.start_span(name="get_products_join", op="db.query") as span:
-            products = connection.execute(
-                "SELECT * FROM products"
-            ).fetchall()
-            span.set_tag("totalProducts",len(products))
-            span.set_data("products",products)
+        with connection:
+            with sentry_sdk.start_span(name="get_products_join", op="db.query") as span:
+                products = connection.execute(
+                    "SELECT * FROM products"
+                ).fetchall()
+                span.set_tag("totalProducts",len(products))
+                span.set_data("products",products)
 
-        with sentry_sdk.start_span(name="get_products_join.reviews", op="db.query") as span:
-            reviews = connection.execute(
-                "SELECT reviews.id, products.id AS productid, reviews.rating, reviews.customerId, reviews.description, reviews.created FROM reviews INNER JOIN products ON reviews.productId = products.id"
-            ).fetchall()
-            span.set_data("reviews",reviews)
+            with sentry_sdk.start_span(name="get_products_join.reviews", op="db.query") as span:
+                reviews = connection.execute(
+                    "SELECT reviews.id, products.id AS productid, reviews.rating, reviews.customerId, reviews.description, reviews.created FROM reviews INNER JOIN products ON reviews.productId = products.id"
+                ).fetchall()
+                span.set_data("reviews",reviews)
     except Exception as err:
         raise DatabaseConnectionError('get_products_join') from err
 
@@ -131,11 +133,12 @@ def get_inventory(cart):
     try:
         with sentry_sdk.start_span(name="get_inventory", op="db.connect"):
             connection = db.connect()
-        with sentry_sdk.start_span(name="get_inventory", op="db.query") as span:
-            # Use parameterized query with ANY() to safely handle array of product IDs
-            query = text("SELECT * FROM inventory WHERE productId = ANY(:product_ids)")
-            inventory = connection.execute(query, product_ids=productIds).fetchall()
-            span.set_data("inventory",inventory)
+        with connection:
+            with sentry_sdk.start_span(name="get_inventory", op="db.query") as span:
+                # Use parameterized query with ANY() to safely handle array of product IDs
+                query = text("SELECT * FROM inventory WHERE productId = ANY(:product_ids)")
+                inventory = connection.execute(query, product_ids=productIds).fetchall()
+                span.set_data("inventory",inventory)
     except Exception as err:
         raise DatabaseConnectionError('get_inventory') from err
 
@@ -151,10 +154,11 @@ def get_promo_code(code):
         with sentry_sdk.start_span(name="get_promo_code", op="db.connect"):
             connection = db.connect()
         
-        with sentry_sdk.start_span(name="get_promo_code", op="db.query") as span:
-            query = text("SELECT * FROM promo_codes WHERE code = :code AND is_active = true")
-            result = connection.execute(query, code=code).fetchone()
-            span.set_data("promo_code", result)
+        with connection:
+            with sentry_sdk.start_span(name="get_promo_code", op="db.query") as span:
+                query = text("SELECT * FROM promo_codes WHERE code = :code AND is_active = true")
+                result = connection.execute(query, code=code).fetchone()
+                span.set_data("promo_code", result)
         
         return result
     except Exception as err:
