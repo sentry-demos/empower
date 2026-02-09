@@ -95,7 +95,8 @@ function Checkout({ backend, rageclick, checkout_success, cart }) {
     if (!response.ok) {
       checkout_span.setAttribute("checkout.error", 1);
 
-      if (!response.error || response.status === undefined) {
+      if (response.status !== undefined) {
+        // Normal HTTP error response (4xx, 5xx)
         checkout_span.setAttribute("status", response.status);
 
         throw new Error( 
@@ -103,7 +104,8 @@ function Checkout({ backend, rageclick, checkout_success, cart }) {
             ' -'
           )
         );
-      } else {
+      } else if (response.error) {
+        // Network error or CORS issue
         checkout_span.setAttribute("status", "unknown_error");
         if (response.error instanceof TypeError && response.error.message === "Failed to fetch") {
           /* A fetch() promise only rejects when e.g. badly-formed request URL or a network error. It does not reject if
