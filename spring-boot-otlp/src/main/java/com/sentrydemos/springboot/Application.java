@@ -17,6 +17,11 @@ public class Application {
 	private static final Logger logger = LoggerFactory.getLogger(Application.class);
 	
 	public static void main(String[] args) {
+		String serviceName = System.getProperty("otel.service.name", System.getenv().getOrDefault("OTEL_SERVICE_NAME", ""));
+		String collectorUrl = System.getenv().getOrDefault("OTEL_EXPORTER_OTLP_ENDPOINT", "");
+		if (!serviceName.isEmpty() && collectorUrl.isEmpty()) {
+			throw new IllegalStateException("OTEL_SERVICE_NAME is set but OTEL_EXPORTER_OTLP_ENDPOINT is empty");
+		}
 		SpringApplication.run(Application.class, args);
 	}
 
