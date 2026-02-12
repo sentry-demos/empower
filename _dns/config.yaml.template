@@ -53,6 +53,9 @@ services:
   - host: "${AGENT_SUBDOMAIN}.${DOMAIN}"
     gcr_service: ${AGENT_CLOUD_RUN_SERVICE}
 
+  - host: "${OTLPCOLLECTOR_SUBDOMAIN}.${DOMAIN}"
+    gcr_service: ${OTLPCOLLECTOR_CLOUD_RUN_SERVICE}
+
 # Custom DNS records managed directly in Google Cloud DNS (not routed through LB)
 dns_records:
   - name: "nextjs.${DOMAIN}"

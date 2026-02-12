@@ -1,0 +1,22 @@
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:8080
+
+exporters:
+  sentry:
+    url: https://sentry.io
+    org_slug: ${SENTRY_ORG}
+    auth_token: ${SENTRY_AUTH_TOKEN}
+    routing:
+      project_from_attribute: service.name
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      exporters: [sentry]
+    logs:
+      receivers: [otlp]
+      exporters: [sentry]
