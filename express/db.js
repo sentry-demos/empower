@@ -56,14 +56,15 @@ const getJoinedProducts = async function () {
   });
 
   Sentry.setTag("totalProducts", products.rows.length);
-  span.setAttribute("Products", products.rows);
+  const span = Sentry.getActiveSpan();
+  if (span) span.setAttribute("Products", products.rows);
 
   // Retrieve Reviews
   const reviewsQuery =
     "SELECT reviews.id, products.id AS productid, reviews.rating, reviews.customerId, reviews.description, reviews.created FROM reviews INNER JOIN products ON reviews.productId = products.id";
   
   const retrievedReviews = await knex.raw(reviewsQuery);
-  span.setAttribute("reviews", retrievedReviews.rows);
+  if (span) span.setAttribute("reviews", retrievedReviews.rows);
 
   // Format Products/Reviews
   
@@ -74,7 +75,7 @@ const getJoinedProducts = async function () {
     formattedProducts.push(productWithReviews);
   }
   
-  span.setAttribute("results", formattedProducts);
+  if (span) span.setAttribute("results", formattedProducts);
 
   return formattedProducts;
 };
