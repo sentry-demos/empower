@@ -1,3 +1,12 @@
 import config from 'eslint-config-prettier';
 
-export default [...[].concat(config)];
+export default [
+  {
+    languageOptions: {
+      parserOptions: {
+        ecmaFeatures: { jsx: true },
+      },
+    },
+  },
+  ...([].concat(config)),
+];
