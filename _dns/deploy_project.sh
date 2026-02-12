@@ -685,29 +685,67 @@ else
       echo "--- DNS: $host ---"
       
       # Check if A record already exists
-      EXISTING_A=$(gcloud dns record-sets describe "$host." \
+      # Note: We capture stderr to distinguish "not found" from "permission denied"
+      # Use set +e so we capture exit code and can print the error instead of exiting quietly
+      set +e
+      DNS_DESCRIBE_OUTPUT=$(gcloud dns record-sets describe "$host." \
         --zone="$DNS_MANAGED_ZONE" \
         --type=A \
-        --format="value(rrdatas[0])" 2>/dev/null || echo "")
+        --format="value(rrdatas[0])" 2>&1)
+      DNS_DESCRIBE_EXIT=$?
+      set -e
+      
+      if [[ $DNS_DESCRIBE_EXIT -eq 0 ]]; then
+        EXISTING_A="$DNS_DESCRIBE_OUTPUT"
+      elif echo "$DNS_DESCRIBE_OUTPUT" | grep -q "was not found\|does not exist\|NOT_FOUND"; then
+        # Record doesn't exist - this is expected for new records
+        EXISTING_A=""
+      else
+        # Some other error (likely permissions)
+        echo "[ERROR] Failed to check existing DNS record for $host:"
+        echo "$DNS_DESCRIBE_OUTPUT"
+        echo ""
+        echo "If this is a permissions error, grant the CI service account the 'DNS Administrator' role:"
+        echo "  gcloud projects add-iam-policy-binding \$GCP_PROJECT \\"
+        echo "    --member='serviceAccount:YOUR_SA@YOUR_PROJECT.iam.gserviceaccount.com' \\"
+        echo "    --role='roles/dns.admin'"
+        exit 1
+      fi
       
       # Check if CNAME record exists (need to delete before creating A record)
-      EXISTING_CNAME=$(gcloud dns record-sets describe "$host." \
+      set +e
+      DNS_CNAME_OUTPUT=$(gcloud dns record-sets describe "$host." \
         --zone="$DNS_MANAGED_ZONE" \
         --type=CNAME \
-        --format="value(rrdatas[0])" 2>/dev/null || echo "")
+        --format="value(rrdatas[0])" 2>&1)
+      DNS_CNAME_EXIT=$?
+      set -e
+      
+      if [[ $DNS_CNAME_EXIT -eq 0 ]]; then
+        EXISTING_CNAME="$DNS_CNAME_OUTPUT"
+      elif echo "$DNS_CNAME_OUTPUT" | grep -q "was not found\|does not exist\|NOT_FOUND"; then
+        EXISTING_CNAME=""
+      else
+        EXISTING_CNAME=""  # Ignore other errors for CNAME check, A record is primary
+      fi
       
       if [[ -n "$EXISTING_CNAME" ]]; then
         echo "Found existing CNAME record: $host -> $EXISTING_CNAME"
         echo "Deleting CNAME to replace with A record for Load Balancer..."
         # Get TTL of existing record for deletion
+        set +e
         CNAME_TTL=$(gcloud dns record-sets describe "$host." \
           --zone="$DNS_MANAGED_ZONE" \
           --type=CNAME \
           --format="value(ttl)" 2>/dev/null || echo "300")
-        gcloud dns record-sets delete "$host." \
+        set -e
+        if ! gcloud dns record-sets delete "$host." \
           --zone="$DNS_MANAGED_ZONE" \
           --type=CNAME \
-          --quiet
+          --quiet; then
+          echo "[ERROR] Failed to delete CNAME record for $host"
+          exit 1
+        fi
       fi
       
       if [[ -n "$EXISTING_A" ]]; then
@@ -716,19 +754,25 @@ else
         else
           echo "DNS A record exists but points to $EXISTING_A (expected $LB_IP)"
           echo "Updating DNS record..."
-          gcloud dns record-sets update "$host." \
+          if ! gcloud dns record-sets update "$host." \
             --zone="$DNS_MANAGED_ZONE" \
             --type=A \
             --ttl=300 \
-            --rrdatas="$LB_IP"
+            --rrdatas="$LB_IP"; then
+            echo "[ERROR] Failed to update DNS A record for $host"
+            exit 1
+          fi
         fi
       else
         echo "Creating DNS A record: $host -> $LB_IP"
-        gcloud dns record-sets create "$host." \
+        if ! gcloud dns record-sets create "$host." \
           --zone="$DNS_MANAGED_ZONE" \
           --type=A \
           --ttl=300 \
-          --rrdatas="$LB_IP"
+          --rrdatas="$LB_IP"; then
+          echo "[ERROR] Failed to create DNS A record for $host"
+          exit 1
+        fi
       fi
     done
     
