@@ -36,6 +36,13 @@ var probability = function (n) {
 };
 
 const crasher = () => {
+  // Only allow crash testing in non-production environments
+  const environment = process.env.REACT_APP_ENVIRONMENT;
+  if (environment === 'production') {
+    console.log('> crash testing disabled in production environment');
+    return;
+  }
+
   const queryParams = new URLSearchParams(history.location.search);
   if (queryParams !== '') {
     const crash = queryParams.get('crash');
