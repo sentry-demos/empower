@@ -246,7 +246,7 @@ public class AppController {
 				currentInventory = currentInventory - quantities.get(key);
 				Sentry.logger().info("[springboot] - Item " + key + " has quantity " + quantities.get(key) + " and current inventory " + currentInventory);
 				
-				if (!hasInventory()) {
+				if (currentInventory < 0) {
 					String message = "No inventory for item";
 					Sentry.logger().warn("[springboot] - " + message);
 					throw new RuntimeException(message);
