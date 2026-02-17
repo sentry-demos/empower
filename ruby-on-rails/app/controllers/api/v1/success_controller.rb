@@ -21,7 +21,7 @@ class Api::V1::SuccessController < ApplicationController
 
   def index
     Sentry.logger.info("Success endpoint accessed")
-    render json: {"message": "success from rails"}, status: 200
+    render json: {"message": "success from ruby-on-rails"}, status: 200
     # -- below was for testing a client issue, remove after confirmation client resolved issue --
     # # results = []
     # testval_nil = nil # results in messages sent, but no tag created

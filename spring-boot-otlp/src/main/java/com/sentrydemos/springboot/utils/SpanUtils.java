@@ -43,14 +43,14 @@ public class SpanUtils {
             .startSpan();
         
         try (Scope scope = span.makeCurrent()) {
-            Sentry.logger().info("[springboot] - " + description + " started");
+            Sentry.logger().info(description + " started");
             T result = callable.call();
-            Sentry.logger().info("[springboot] - " + description + " completed");
+            Sentry.logger().info(description + " completed");
             return result;
         } catch (Exception e) {
             span.setStatus(StatusCode.ERROR, e.getMessage());
             span.recordException(e);
-            Sentry.logger().warn("[springboot] - " + description + " failed", e);
+            Sentry.logger().warn(description + " failed", e);
             throw e;
         } finally {
             span.end();
