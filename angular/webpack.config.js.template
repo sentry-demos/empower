@@ -18,6 +18,8 @@ module.exports = {
         'BACKEND_URL_ASPNETCORE': '"${ASPNETCORE_URL}"',
         'BACKEND_URL_LARAVEL': '"${LARAVEL_URL}"',
         'BACKEND_URL_RUBYONRAILS': '"${RUBYONRAILS_URL}"',
+        'BACKEND_URL_FLASKOTLP': '"${FLASKOTLP_URL}"',
+        'BACKEND_URL_SPRINGBOOTOTLP': '"${SPRINGBOOTOTLP_URL}"',
       }
     }),
     // Sentry webpack plugin for automatic source map upload

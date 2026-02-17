@@ -43,8 +43,7 @@ export interface CheckoutForm {
  * 
  * Backend Switching:
  * - Default: Flask backend
- * - Supports 6 backends: flask, laravel, express, springboot, aspnetcore, rails
- * - Switch via URL parameter: ?backend=rails, ?backend=express, etc.
+ * - Switch via URL parameter: ?backend=ruby-on-rails, ?backend=express, etc.
  */
 @Injectable({
   providedIn: 'root'
@@ -82,7 +81,6 @@ export class ConfigService {
     
     // Handle 'backend' parameter (like React)
     // This determines which backend to use for all API calls
-    // Supports: flask, laravel, express, springboot, aspnetcore, rails
     const backendParam = urlParams.get('backend');
     const backendType = determineBackendType(backendParam);
     sessionStorage.setItem('backend', backendType);
@@ -177,7 +175,7 @@ export class ConfigService {
    * URL Examples:
    * - / → Uses Flask backend (default)
    * - /?backend=laravel → Uses Laravel backend
-   * - /?backend=rails&se=wassim → Uses Rails + SE tagging
+   * - /?backend=ruby-on-rails&se=wassim → Uses Ruby on Rails + SE tagging
    * 
    * @returns Backend URL string for API calls
    */
