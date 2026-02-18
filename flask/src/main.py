@@ -11,7 +11,7 @@ from flask_caching import Cache
 from statsig.statsig_user import StatsigUser
 from statsig import statsig, StatsigOptions, StatsigEnvironmentTier
 import dotenv
-from .db import decrement_inventory, get_products, get_products_join, get_inventory, get_promo_code
+from .db import decrement_inventory, get_products, get_products_join, get_inventory, get_all_inventory, get_promo_code
 from .utils import parseHeaders, get_iterator, evaluate_statsig_flags
 from .queues.tasks import sendEmail
 import sentry_sdk
@@ -275,6 +275,18 @@ def products():
 
     logger.info('Processing /products')
 
+    # Fetch inventory if filtering for in-stock items only
+    if in_stock_only:
+        try:
+            all_inventory = get_all_inventory()
+            # Build a set of product IDs that are in stock (count > 0)
+            product_inventory = {inv.productid for inv in all_inventory if inv.count > 0}
+        except Exception as err:
+            logger.error('Failed to get inventory for in_stock_only filter')
+            sentry_sdk.capture_exception(err)
+            # Continue without filtering if inventory fetch fails
+            product_inventory = None
+
     # Adding 0.5 seconds to the ruby /api_request in order to show caching
     # However, we want to keep the total trace time the same to preserve web vitals (+ other) functionality in sentry
     # Cache hits should keep the current delay, while cache misses will move 0.5 over to the ruby span
@@ -303,7 +315,7 @@ def products():
 
                         for i, description in enumerate(descriptions):
                             for pest in pests:
-                                if in_stock_only and productsJSON[i] not in product_inventory:
+                                if in_stock_only and product_inventory is not None and productsJSON[i]["id"] not in product_inventory:
                                     continue
                                 if pest in description:
                                     try:

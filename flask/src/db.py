@@ -141,6 +141,21 @@ def get_inventory(cart):
 
     return inventory
 
+@sentry_sdk.trace
+def get_all_inventory():
+    """Get all inventory records from the database"""
+    try:
+        with sentry_sdk.start_span(name="get_all_inventory", op="db.connect"):
+            connection = db.connect()
+        with sentry_sdk.start_span(name="get_all_inventory", op="db.query") as span:
+            query = text("SELECT * FROM inventory")
+            inventory = connection.execute(query).fetchall()
+            span.set_data("inventory", inventory)
+    except Exception as err:
+        raise DatabaseConnectionError('get_all_inventory') from err
+    
+    return inventory
+
 def decrement_inventory(id, count):
     pass
 
