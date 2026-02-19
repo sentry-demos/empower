@@ -13,10 +13,19 @@ entrypoint: java -jar /workspace/springboot-1.0.0-SNAPSHOT.jar
 env_variables:
   # Let Spring Boot handle Sentry initialization via application.properties
   SENTRY_AUTO_INIT: "false"
-  # Disable default OTLP exporters (Sentry handles exporting)
-  OTEL_TRACES_EXPORTER: "none"
+  OTEL_TRACES_EXPORTER: "otlp"
+  OTEL_EXPORTER_OTLP_ENDPOINT: "${OTLPCOLLECTOR_URL}"
+  OTEL_EXPORTER_OTLP_PROTOCOL: "http/protobuf"
   OTEL_METRICS_EXPORTER: "none"
   OTEL_LOGS_EXPORTER: "none"
+  # Set the OpenTelemetry service.name resource attribute (used by the OTLP collector to route 
+  # to the correct Sentry project). Can also be set as JVM system property (-Dotel.service.name=),
+  # because OTel agent initializes before Spring Boot loads application.properties.
+  #
+  # WARNING: This setup will send events to both the Collector AND Sentry.
+  # The other alternative is to use generic OTel SDK + Sentry SDK but it will not link OTel traces
+  # to Sentry traces and Sentry errors. See: https://github.com/getsentry/sentry-java/issues/5096
+  OTEL_SERVICE_NAME: ${SPRINGBOOTOTLP_OTEL_SERVICE_NAME}
   # Attach the OpenTelemetry agent to the JVM
   JAVA_TOOL_OPTIONS: "-javaagent:/workspace/sentry-opentelemetry-agent.jar"
 

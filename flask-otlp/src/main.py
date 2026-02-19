@@ -26,7 +26,8 @@ from celery import Celery, states
 from celery.exceptions import Ignore
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider, ReadableSpan
-from opentelemetry.sdk.trace.export import SpanProcessor
+from opentelemetry.sdk.trace.export import SpanProcessor, BatchSpanProcessor
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.semconv.resource import ResourceAttributes
 from opentelemetry.context import Context
@@ -149,6 +150,10 @@ class MyFlask(Flask):
         if "RUN_SLOW_PROFILE" in os.environ:
             RUN_SLOW_PROFILE = os.environ["RUN_SLOW_PROFILE"].lower() == "true"
 
+        collector_url = os.environ.get("OTLPCOLLECTOR_URL", "")
+        use_collector = bool(os.environ.get("OTEL_SERVICE_NAME"))
+        if use_collector and not collector_url:
+            raise RuntimeError("OTEL_SERVICE_NAME is set but OTLPCOLLECTOR_URL is empty")
 
         sentry_sdk.init(
             dsn=DSN,
@@ -160,7 +165,7 @@ class MyFlask(Flask):
                 SqlalchemyIntegration(),
                 RedisIntegration(cache_prefixes=["flask.", "ruby."]),
                 StatsigIntegration(),
-                OTLPIntegration(),
+                OTLPIntegration(setup_otlp_traces_exporter=not use_collector),
                 LoggingIntegration(event_level=None) # don't send ERROR level logs as events/errors
             ],
             trace_propagation_targets=[
@@ -173,12 +178,19 @@ class MyFlask(Flask):
         )
 
         # Get tracer for this application
-        # OTLPIntegration automatically sets up the TracerProvider, so we just get the tracer
         global tracer
         tracer = trace.get_tracer(__name__)
-        
-        # Add custom SpanProcessor to hook into span lifecycle for profiling
+
         tracer_provider = trace.get_tracer_provider()
+
+        if use_collector:
+            tracer_provider = TracerProvider()
+            trace.set_tracer_provider(tracer_provider)
+            otlp_exporter = OTLPSpanExporter(endpoint=collector_url + "/v1/traces")
+            tracer_provider.add_span_processor(BatchSpanProcessor(otlp_exporter))
+            logger.info("OTLP traces routed to collector at %s", collector_url)
+
+        # Add custom SpanProcessor to hook into span lifecycle for profiling
         if hasattr(tracer_provider, 'add_span_processor'):
             tracer_provider.add_span_processor(SentryProfilerSpanProcessor())
             logger.info("Added SentryProfilerSpanProcessor to TracerProvider")
