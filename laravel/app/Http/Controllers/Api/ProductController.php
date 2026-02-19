@@ -180,13 +180,13 @@ class ProductController extends Controller
         $out_of_stock = []; // list of items that are out of stock
         try {
             if ($validate_inventory) {
-                if (empty($quantities)) {
-                    throw new Exception("Invalid checkout request: cart is empty");
-                }
-                
                 $quantities = [];
                 foreach ($cart['quantities'] as $key => $value) {
                     $quantities[(int)$key] = $value;
+                }
+                
+                if (empty($quantities)) {
+                    throw new Exception("Invalid checkout request: cart is empty");
                 }
                 $inventory_dict = [];
                 foreach ($inventory as $x) {
