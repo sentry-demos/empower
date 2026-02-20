@@ -22,3 +22,4 @@ opentelemetry-instrumentation-flask>=0.59b0
 opentelemetry-instrumentation-sqlalchemy>=0.59b0
 opentelemetry-instrumentation-redis>=0.59b0
 opentelemetry-instrumentation-requests>=0.59b0
+opentelemetry-exporter-otlp-proto-http>=0.59b0

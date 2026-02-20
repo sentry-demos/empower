@@ -23,6 +23,8 @@ from opentelemetry.instrumentation.flask import FlaskInstrumentor
 from opentelemetry.instrumentation.redis import RedisInstrumentor
 from opentelemetry.instrumentation.requests import RequestsInstrumentor
 from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
 RUBY_CUSTOM_HEADERS = ['se', 'customerType', 'email']
 pests = ["aphids", "thrips", "spider mites", "lead miners", "scale", "whiteflies", "earwigs", "cutworms", "mealybugs",
@@ -65,6 +67,10 @@ class MyFlask(Flask):
             ResourceAttributes.SERVICE_NAME: "flask-otlp",
         })
         tracer_provider = TracerProvider(resource=resource)
+        otlp_endpoint = os.environ.get("OTEL_EXPORTER_OTLP_ENDPOINT")
+        if otlp_endpoint:
+            exporter = OTLPSpanExporter(endpoint=otlp_endpoint)
+            tracer_provider.add_span_processor(BatchSpanProcessor(exporter))
         trace.set_tracer_provider(tracer_provider)
         global tracer
         tracer = trace.get_tracer(__name__)

@@ -25,7 +25,16 @@ class DatabaseConnectionError (Exception):
 
 if FLASKOTLP_ENVIRONMENT == "local":
     print("> ENVIRONMENT local ")
-    db = create_engine('postgresql://' + USERNAME + ':' + PASSWORD + '@' + HOST + ':5432/' + DATABASE)
+    db = sqlalchemy.create_engine(
+        sqlalchemy.engine.url.URL(
+            drivername='postgresql',
+            username=USERNAME,
+            password=PASSWORD,
+            host=HOST,
+            port=5432,
+            database=DATABASE,
+        )
+    )
 else:
     CLOUD_SQL_CONNECTION_NAME = os.environ["DB_CLOUD_SQL_CONNECTION_NAME"]
     print("> ENVIRONMENT production ")
