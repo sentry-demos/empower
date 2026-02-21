@@ -7,7 +7,6 @@ pg8000==1.16.6
 psycopg2-binary==2.9.10
 python-dotenv==0.12.0
 pytz==2020.4
-sentry-sdk[statsig,opentelemetry-otlp]>=2.48.0
 sqlalchemy==1.4.49
 redis==5.0.1
 Werkzeug==3.1.5
@@ -23,3 +22,4 @@ opentelemetry-instrumentation-flask>=0.59b0
 opentelemetry-instrumentation-sqlalchemy>=0.59b0
 opentelemetry-instrumentation-redis>=0.59b0
 opentelemetry-instrumentation-requests>=0.59b0
+opentelemetry-exporter-otlp-proto-http>=0.59b0

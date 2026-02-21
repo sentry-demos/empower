@@ -1,4 +1,3 @@
-import re
 import os
 import random
 import requests
@@ -14,73 +13,29 @@ from statsig import statsig, StatsigOptions, StatsigEnvironmentTier
 import dotenv
 from .db import decrement_inventory, get_products, get_products_join, get_inventory, get_promo_code, db
 from .utils import parseHeaders, get_iterator, evaluate_statsig_flags
-import sentry_sdk
-from sentry_sdk.integrations.flask import FlaskIntegration
-from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
-from sentry_sdk.integrations.redis import RedisIntegration
-from sentry_sdk.integrations.logging import LoggingIntegration
-from sentry_sdk.ai.monitoring import ai_track
-from sentry_sdk.integrations.statsig import StatsigIntegration
-from sentry_sdk.integrations.otlp import OTLPIntegration
 from celery import Celery, states
 from celery.exceptions import Ignore
 from opentelemetry import trace
-from opentelemetry.sdk.trace import TracerProvider, ReadableSpan
-from opentelemetry.sdk.trace.export import SpanProcessor
+from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.semconv.resource import ResourceAttributes
-from opentelemetry.context import Context
 from opentelemetry.instrumentation.flask import FlaskInstrumentor
 from opentelemetry.instrumentation.redis import RedisInstrumentor
 from opentelemetry.instrumentation.requests import RequestsInstrumentor
 from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
 RUBY_CUSTOM_HEADERS = ['se', 'customerType', 'email']
 pests = ["aphids", "thrips", "spider mites", "lead miners", "scale", "whiteflies", "earwigs", "cutworms", "mealybugs",
          "fungus gnats"]
 
-RELEASE = None
-DSN = None
-ENVIRONMENT = None
 BACKEND_URL_RUBYONRAILS = None
 RUN_SLOW_PROFILE = None
 tracer = None  # Global OpenTelemetry tracer
 
 NORMAL_SLOW_PROFILE = 2 # seconds
 EXTREMELY_SLOW_PROFILE = 24
-
-
-def before_send(event, hint):
-    # 'se' tag may have been set in app.before_request
-    se = None
-    if 'tags' in event.keys() and 'se' in event['tags']:
-        se = event['tags']['se']
-
-    if se not in [None, "undefined"]:
-        se_tda_prefix_regex = r"[^-]+-tda-[^-]+-"
-        se_fingerprint = se
-        prefix = re.findall(se_tda_prefix_regex, se)
-        if prefix:
-            # Now that TDA puts platform/browser and test path into SE tag we want to prevent
-            # creating separate issues for those. See https://github.com/sentry-demos/empower/pull/332
-            se_fingerprint = prefix[0]
-
-        if se.startswith('prod-tda-'):
-            event['fingerprint'] = ['{{ default }}', se_fingerprint, RELEASE]
-        else:
-            event['fingerprint'] = ['{{ default }}', se_fingerprint]
-
-    return event
-
-
-def traces_sampler(sampling_context):
-    sentry_sdk.set_context("sampling_context", sampling_context)
-    wsgi_environ = sampling_context.get('wsgi_environ', {})
-    REQUEST_METHOD = wsgi_environ.get('REQUEST_METHOD', 'GET')
-    if REQUEST_METHOD == 'OPTIONS':
-        return 0.0
-    else:
-        return 1.0
 
 
 def redis_request_hook(span, instance, args, kwargs):
@@ -93,56 +48,14 @@ def redis_request_hook(span, instance, args, kwargs):
             
             # Set the key as an attribute
             span.set_attribute("db.redis.key", key)
-            
-            # Set db.statement - this is what Sentry uses for sentry.description in the UI
             span.set_attribute("db.statement", f"{command} '{key}'")
-
-
-# NOTE: this succeeds at sending the profile to Sentry, but it seems like it's not showing up
-# in the UI because it's not being attached to any span or transaction.
-class SentryProfilerSpanProcessor(SpanProcessor):
-    """
-    Custom SpanProcessor that starts Sentry profiler on top-level span start
-    and stops it when the span ends.
-    """
-    
-    def on_start(self, span: ReadableSpan, parent_context: Context = None) -> None:
-        """Called when a span is started"""
-        # Check if this is a top-level span (no parent)
-        if not span.parent:
-            try:
-                sentry_sdk.profiler.start_profiler()
-                logger.debug(f"Started Sentry profiler for top-level span: {span.name}")
-            except Exception as e:
-                logger.warning(f"Failed to start Sentry profiler: {e}")
-    
-    def on_end(self, span: ReadableSpan) -> None:
-        """Called when a span is ended"""
-        # Check if this is a top-level span (no parent)
-        if not span.parent:
-            try:
-                sentry_sdk.profiler.stop_profiler()
-                logger.debug(f"Stopped Sentry profiler for top-level span: {span.name}")
-            except Exception as e:
-                logger.warning(f"Failed to stop Sentry profiler: {e}")
-    
-    def shutdown(self) -> None:
-        """Called when the processor is shutdown"""
-        pass
-    
-    def force_flush(self, timeout_millis: int = 30000) -> bool:
-        """Called to force flush any pending spans"""
-        return True
 
 
 class MyFlask(Flask):
     def __init__(self, import_name, *args, **kwargs):
-        global RELEASE, DSN, ENVIRONMENT, BACKEND_URL_RUBYONRAILS, RUN_SLOW_PROFILE, redis_client, cache, tracer;
+        global BACKEND_URL_RUBYONRAILS, RUN_SLOW_PROFILE, redis_client, cache, tracer;
         dotenv.load_dotenv()
 
-        RELEASE = os.environ["FLASKOTLP_RELEASE"]
-        DSN = os.environ["FLASKOTLP_DSN"]
-        ENVIRONMENT = os.environ["FLASKOTLP_ENVIRONMENT"]
         BACKEND_URL_RUBYONRAILS = os.environ["BACKEND_URL_RUBYONRAILS"]
 
         RUN_SLOW_PROFILE = True
@@ -150,38 +63,23 @@ class MyFlask(Flask):
             RUN_SLOW_PROFILE = os.environ["RUN_SLOW_PROFILE"].lower() == "true"
 
 
-        sentry_sdk.init(
-            dsn=DSN,
-            release=RELEASE,
-            environment=ENVIRONMENT,
-            enable_logs=True,
-            integrations=[
-                FlaskIntegration(),
-                SqlalchemyIntegration(),
-                RedisIntegration(cache_prefixes=["flask.", "ruby."]),
-                StatsigIntegration(),
-                OTLPIntegration(),
-                LoggingIntegration(event_level=None) # don't send ERROR level logs as events/errors
-            ],
-            trace_propagation_targets=[
-                r"https://.*\.empower-plant\.com.*",
-                r"https://.*sales-engineering-sf\.appspot.com.*",
-            ],
-            before_send=before_send,
-            profile_session_sample_rate=1.0,
-            profile_lifecycle="manual"
-        )
-
-        # Get tracer for this application
-        # OTLPIntegration automatically sets up the TracerProvider, so we just get the tracer
+        resource = Resource(attributes={
+            ResourceAttributes.SERVICE_NAME: "flask-otlp",
+        })
+        tracer_provider = TracerProvider(resource=resource)
+        otlp_endpoint = os.environ.get("OTEL_EXPORTER_OTLP_ENDPOINT")
+        if otlp_endpoint:
+            headers = {}
+            dsn = os.environ.get("FLASKOTLP_DSN")
+            if dsn:
+                from urllib.parse import urlparse
+                public_key = urlparse(dsn).username
+                headers["x-sentry-auth"] = f"Sentry sentry_key={public_key}, sentry_version=7"
+            exporter = OTLPSpanExporter(endpoint=otlp_endpoint, headers=headers)
+            tracer_provider.add_span_processor(BatchSpanProcessor(exporter))
+        trace.set_tracer_provider(tracer_provider)
         global tracer
         tracer = trace.get_tracer(__name__)
-        
-        # Add custom SpanProcessor to hook into span lifecycle for profiling
-        tracer_provider = trace.get_tracer_provider()
-        if hasattr(tracer_provider, 'add_span_processor'):
-            tracer_provider.add_span_processor(SentryProfilerSpanProcessor())
-            logger.info("Added SentryProfilerSpanProcessor to TracerProvider")
 
         statsig.initialize(os.environ["STATSIG_SERVER_KEY"])
 
@@ -219,8 +117,6 @@ class MyFlask(Flask):
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logger.info("Flask application initialized")
-logger.info("RELEASE: %s", RELEASE)
-logger.info("ENVIRONMENT: %s", ENVIRONMENT)
 
 # This ensures CORS headers are applied to ALL responses, including 500 errors
 # upgrading flask-cors from 3.0.10 to 6.0.1 and flask from 3.0.0 to 3.1.1 alone did not fix the issue
@@ -272,7 +168,6 @@ def checkout():
     try:
         evaluate_statsig_flags()
     except Exception as e:
-        sentry_sdk.capture_exception(e)
         logger.error('Error evaluating Statsig flags')
 
     order = json.loads(request.data)
@@ -398,7 +293,6 @@ def products():
                                         productsJSON = json.loads(rows)
     except Exception as err:
         logger.error('Processing /products - error occurred')
-        sentry_sdk.capture_exception(err)
         raise (err)
 
     logger.info('Completed /products request')
@@ -446,7 +340,6 @@ def get_api_response_with_caching(key, delay):
 
     except Exception as err:
         logger.error('Processing /products - API request failed')
-        sentry_sdk.capture_exception(err)
 
     return key
 
@@ -460,7 +353,6 @@ def products_join():
         logger.info('Processing /products-join - data retrieved')
     except Exception as err:
         logger.warn('Processing /products-join - error getting data')
-        sentry_sdk.capture_exception(err)
         raise (err)
 
     try:
@@ -470,7 +362,6 @@ def products_join():
         logger.info('Processing /products-join - backend API call successful')
     except Exception as err:
         logger.error('Processing /products-join - backend API call failed')
-        sentry_sdk.capture_exception(err)
 
     return rows
 
@@ -547,7 +438,6 @@ def apply_promo_code():
         }), 200
         
     except Exception as err:
-        sentry_sdk.capture_exception(err)
         return '', 500
 
 
@@ -560,31 +450,3 @@ def product_info():
     return "flask /product/0/info"
 
 
-@app.before_request
-def sentry_event_context():
-    # Extract context information
-    se = request.headers.get('se')
-    customerType = request.headers.get('customerType')
-    email = request.headers.get('email')
-    cexp = request.headers.get('cexp')
-
-    # Log request context information
-    logger.debug('Setting up request context')
-
-    if se not in [None, "undefined"]:
-        sentry_sdk.set_tag("se", se)
-    else:
-        # sometimes this is the only way to propagate, e.g. when requested through a dynamically
-        # inserted HTML tag as in case with (un)compressed_assets
-        se = request.args.get('se')
-        if se not in [None, "undefined"]:
-            sentry_sdk.set_tag("se", se)
-
-    if customerType not in [None, "undefined"]:
-        sentry_sdk.set_tag("customerType", customerType)
-
-    if email not in [None, "undefined"]:
-        sentry_sdk.set_user({"email": email})
-
-    if cexp not in [None, "undefined"]:
-        sentry_sdk.set_tag("cexp", cexp)
