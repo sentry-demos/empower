@@ -52,8 +52,6 @@ const tracingOrigins = [
 
 const history = createBrowserHistory();
 
-const PREFERRED_BACKENDS = ['flask', 'laravel', 'flask-otlp'];
-
 let BACKEND_URL;
 let BACKEND_TYPE;
 let FRONTEND_SLOWDOWN;
@@ -143,11 +141,13 @@ Sentry.init({
         // SE Testing
         event.fingerprint = ['{{ default }}', seFingerprint];
       }
+    } else {
+      event.fingerprint = ['{{ default }}'];
     }
 
-    if ((PREFERRED_BACKENDS.includes(BACKEND_TYPE)) && is5xxError && (se && se.startsWith('prod-tda-'))) {
-      // Seer when run automatically will use the latest event. We want it to run on event with flask backend instead of taking chances.
-      event.fingerprint.push('tda-flagship-react-preferred-backends');
+    if (is5xxError) {
+      // don't group different backends into the same issue to avoid mismatch between Seer autofix and latest event.
+      event.fingerprint.push(BACKEND_TYPE);
     }
 
     if (event.exception) {
