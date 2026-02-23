@@ -101,7 +101,8 @@ function Checkout({ backend, rageclick, checkout_success, cart }) {
           )
         );
       } else {
-        checkout_span.setAttribute("status", "unknown_error");
+        const activeSpan = Sentry.getActiveSpan();
+        if (activeSpan) activeSpan.setAttribute("status", "unknown_error");
         if (response.error instanceof TypeError && response.error.message === "Failed to fetch") {
           /* A fetch() promise only rejects when e.g. badly-formed request URL or a network error. It does not reject if
           the server responds with HTTP 4xx or 5xx, etc. However some server frameworks might not attach CORS headers 
