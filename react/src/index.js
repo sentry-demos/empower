@@ -303,6 +303,7 @@ class App extends Component {
         Sentry.withScope(function (scope) {
           let se, customerType, email, cexp;
           [se, customerType, email, cexp] = [scope._tags.se, scope._tags.customerType, scope._user.email, scope._tags.cexp];
+          args[1] = args[1] || {};
           args[1].headers = { ...args[1].headers, se, customerType, email, cexp };
         });
       }
