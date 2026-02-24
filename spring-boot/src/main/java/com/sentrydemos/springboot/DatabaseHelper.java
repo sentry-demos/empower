@@ -46,7 +46,7 @@ public class DatabaseHelper {
 				ja.put(jsonItemObject);
 			}
 			
-			Sentry.logger().info("[springboot] - Products retrieved successfully", 
+			Sentry.logger().info("Products retrieved successfully", 
 				"total_products", allItems.size(),
 				"sql_query", "SELECT * FROM products");
 			
@@ -130,7 +130,7 @@ public class DatabaseHelper {
 	}
 	
 	public Map<String, Integer> getInventory(Set<String> set, ISpan span) throws Exception {
-		Sentry.logger().info("[springboot] - Retrieving inventory for products", 
+		Sentry.logger().info("Retrieving inventory for products", 
 			"product_ids", set.toString(),
 			"product_count", set.size());
 
@@ -146,7 +146,7 @@ public class DatabaseHelper {
 				}
 			}
 			
-			Sentry.logger().info("[springboot] - Inventory retrieved", 
+			Sentry.logger().info("Inventory retrieved", 
 				"inventory_items_count", inventory.size(),
 				"requested_products", set.size());
 			

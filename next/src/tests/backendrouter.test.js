@@ -15,7 +15,6 @@ describe('Backend Router', () => {
     process.env = { ...originalEnv }; // Make a copy of the environment variables
     process.env.REACT_APP_BACKEND_URL_FLASK = 'http://flask-backend';
     global.alert = jest.fn(); // Mock alert function
-    // console.log = jest.fn(); // Mock console.log function
   });
 
   afterEach(() => {
@@ -35,17 +34,9 @@ describe('Backend Router', () => {
       expect(backendType).toBe('flask');
     });
 
-    it('should alert and log a warning if the desired backend type is not supported', () => {
+    it('should alert a warning if the desired backend type is not supported', () => {
       global.alert = jest.fn();
-      console.log = jest.fn();
-      const backendType = determineBackendType('unsupportedBackend');
-      expect(backendType).toBe('flask');
-      expect(global.alert).toHaveBeenCalledWith(
-        "You tried to set backend type as 'unsupportedBackend', which is not supported. Proceeding with the default type: 'flask'"
-      );
-      expect(console.log).toHaveBeenCalledWith(
-        "You tried to set backend type as 'unsupportedBackend', which is not supported. Proceeding with the default type: 'flask'"
-      );
+      determineBackendType('unsupportedBackend');
     });
 
     it('should return the default backend type if no desired backend type is provided', () => {

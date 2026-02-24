@@ -26,14 +26,14 @@ public class SpanUtils {
     public static <T> T executeWithSpan(String operation, String description, Callable<T> callable) throws Exception {
         ISpan span = Sentry.getSpan().startChild(operation, description);
         try {
-            Sentry.logger().info("[springboot] - " + description + " started");
+            Sentry.logger().info(description + " started");
             T result = callable.call();
-            Sentry.logger().info("[springboot] - " + description + " completed");
+            Sentry.logger().info(description + " completed");
             return result;
         } catch (Exception e) {
             span.setThrowable(e);
             span.setStatus(SpanStatus.INTERNAL_ERROR);
-            Sentry.logger().warn("[springboot] - " + description + " failed", e);
+            Sentry.logger().warn(description + " failed", e);
             throw e;
         } finally {
             span.finish();
