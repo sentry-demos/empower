@@ -30,14 +30,14 @@ import * as Sentry from '@sentry/angular';
  * - Form submission flow mirrors React implementation
  */
 @Component({
-  selector: 'app-checkout',
+  selector: 'app-checkout-form',
   standalone: true,
   imports: [CommonModule, RouterModule, FormsModule, ThreeDotsComponent],
-  templateUrl: './checkout.component.html',
-  styleUrls: ['./checkout.component.css']
+  templateUrl: './checkout-form.component.html',
+  styleUrls: ['./checkout-form.component.css']
 })
-@Sentry.TraceClass({ name: "CheckoutComponent" })
-export class CheckoutComponent implements OnInit {
+@Sentry.TraceClass({ name: "CheckoutFormComponent" })
+export class CheckoutFormComponent implements OnInit {
   // Current cart state (items, quantities, total)
   cart: CartState = { items: [], quantities: {}, total: 0 };
   
@@ -104,7 +104,7 @@ export class CheckoutComponent implements OnInit {
     // Wrap in a Sentry span for proper tracing (like React does with 'Submit Checkout Form')
     await Sentry.startSpan(
       {
-        name: 'Submit Checkout Form',
+        name: 'checkout_submit',
         op: 'ui.action.click',
         forceTransaction: true, // Create a new transaction like React does
       },
