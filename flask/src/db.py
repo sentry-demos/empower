@@ -47,24 +47,25 @@ def get_products():
         with sentry_sdk.start_span(name="get_products", op="db.connect"):
             connection = db.connect()
 
-        n = weighter(operator.le, 12)
-        # adjust by number of products to get the same timeout as we had in the past
-        # before pg_sleep() was moved out of SELECT clause.
-        n *= PRODUCTS_NUM
-        query = text("SELECT * FROM products WHERE id IN (SELECT id from products, pg_sleep(:sleep_duration))")
-        products = connection.execute(query, sleep_duration=n).fetchall()
+        query = text("SELECT * FROM products")
+        products = connection.execute(query).fetchall()
 
+        # Fetch all reviews in a single query to avoid N+1 problem
+        query = text("SELECT * FROM reviews WHERE productId IN (SELECT id FROM products)")
+        all_reviews = connection.execute(query).fetchall()
+
+        # Build a dictionary of reviews grouped by productId for efficient lookup
+        reviews_by_product = {}
+        for review in all_reviews:
+            product_id = review.productid
+            if product_id not in reviews_by_product:
+                reviews_by_product[product_id] = []
+            reviews_by_product[product_id].append(dict(review))
+
+        # Combine products with their reviews
         for product in products:
-            # product_bundles is a "sleepy view", run the following query to get current sleep duration:
-            # SELECT pg_get_viewdef('product_bundles', true)
-            query = text("SELECT * FROM reviews, product_bundles WHERE productId = :x")
-            reviews = connection.execute(query, x=product.id).fetchall()
-
             result = dict(product)
-            result["reviews"] = []
-
-            for review in reviews:
-                result["reviews"].append(dict(review))
+            result["reviews"] = reviews_by_product.get(product.id, [])
             results.append(result)
 
         with sentry_sdk.start_span(name="get_products.combined_reviews.json", op="serialization"):

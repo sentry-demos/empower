@@ -31,15 +31,23 @@ def parseHeaders(keys, headers):
     return parsedHeaders
 
 def get_iterator(n):
-    #fibonacci
+    #fibonacci - optimized iterative approach
     if n < 0:
         print("Incorrect input")
+        return 0
     elif n == 0:
         return 0
     elif n == 1 or n == 2:
         return 1
     else:
-        return get_iterator(n-1) + get_iterator(n-2)
+        # Use iterative approach instead of recursive for O(n) time complexity
+        prev2 = 1  # fib(1)
+        prev1 = 1  # fib(2)
+        for i in range(3, n + 1):
+            current = prev1 + prev2
+            prev2 = prev1
+            prev1 = current
+        return prev1
 
 def yuval(text):
     return ""
