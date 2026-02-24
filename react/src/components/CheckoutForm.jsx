@@ -59,11 +59,11 @@ function CheckoutForm({ backend, rageclick, checkout_success, cart }) {
         return;
     }
 
-    checkout_span.setAttribute("checkout.click", 1);
-    checkout_span.setAttribute("items_at_checkout", itemsInCart);
-    checkout_span.setAttribute("checkout.order.total", cart.total);
+    checkout_span.setAttribute("checkout_submit.click", 1);
+    checkout_span.setAttribute("checkout_submit.num_items", itemsInCart);
+    checkout_span.setAttribute("checkout_submit.order_total", cart.total);
 
-    let tags = { 'backendType': getTag('backendType'), 'cexp': getTag('cexp'), 'items_at_checkout': itemsInCart, 'checkout.click': 1 };
+    let tags = { 'backendType': getTag('backendType'), 'cexp': getTag('cexp'), 'checkout_submit.num_items': itemsInCart, 'checkout_submit.click': 1 };
     checkout_span.setAttributes(tags);
 
     const metricAttributes = {
@@ -103,8 +103,8 @@ function CheckoutForm({ backend, rageclick, checkout_success, cart }) {
       return res;
     });
     if (!response.ok) {
-      checkout_span.setAttribute("checkout.error", 1);
-      Sentry.metrics.count("checkout.error", 1);
+      checkout_span.setAttribute("checkout_submit.error", 1);
+      Sentry.metrics.count("checkout_submit.error", 1);
 
       if (!response.error || response.status === undefined) {
         checkout_span.setAttribute("status", response.status);
@@ -127,8 +127,8 @@ function CheckoutForm({ backend, rageclick, checkout_success, cart }) {
         }
       }
     } else {
-      checkout_span.setAttribute("checkout.success", 1)
-      Sentry.metrics.count("checkout.success", 1);
+      checkout_span.setAttribute("checkout_submit.success", 1)
+      Sentry.metrics.count("checkout_submit.success", 1);
     }
 
     return response;
@@ -193,7 +193,7 @@ function CheckoutForm({ backend, rageclick, checkout_success, cart }) {
     }
 
     Sentry.startSpan({
-      name: '/checkout',
+      name: 'checkout_submit',
       forceTransaction: true,
     }, async (span) => {
       let hadError = false;

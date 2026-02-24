@@ -81,7 +81,7 @@ describe('CheckoutForm Component', () => {
 //     await waitFor(() => {
 //       expect(mockCheckout).toHaveBeenCalledTimes(1);
 //       expect(mockNavigate).toHaveBeenCalledWith('/complete');
-//       expect(Sentry.metrics.increment).toHaveBeenCalledWith('checkout.success');
+//       expect(Sentry.metrics.increment).toHaveBeenCalledWith('checkout_submit.success');
 //     });
 //   });
 
