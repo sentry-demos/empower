@@ -9,7 +9,7 @@ import { countItemsInCart } from '../utils/cart';
 import { getTag } from '../utils/utils';
 import { updateStatsigUserAndEvaluate } from '../utils/statsig';
 
-function Checkout({ backend, rageclick, checkout_success, cart }) {
+function CheckoutForm({ backend, rageclick, checkout_success, cart }) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   let initialFormValues;
@@ -42,7 +42,7 @@ function Checkout({ backend, rageclick, checkout_success, cart }) {
       zipCode: '94122',
       promoCode: 'SAVE20',
     };
-  }
+}
   const [form, setForm] = useState(initialFormValues);
   const [promoMessage, setPromoMessage] = useState('');
   const [promoLoading, setPromoLoading] = useState(false);
@@ -193,7 +193,7 @@ function Checkout({ backend, rageclick, checkout_success, cart }) {
     }
 
     Sentry.startSpan({
-      name: 'Submit Checkout Form',
+      name: '/checkout',
       forceTransaction: true,
     }, async (span) => {
       let hadError = false;
@@ -410,4 +410,4 @@ const mapStateToProps = (state, ownProps) => {
 export default connect(
   mapStateToProps,
   {}
-)(Sentry.withProfiler(Checkout, { name: 'Checkout' }));
+)(Sentry.withProfiler(CheckoutForm, { name: 'CheckoutForm' }));

@@ -114,6 +114,6 @@ describe('Cart Component', () => {
     setup();
 
     const checkoutButton = screen.getByText('Proceed to checkout');
-    // expect(checkoutButton).toHaveAttribute('href', '/checkout');
+    // expect(checkoutButton).toHaveAttribute('href', '/checkout-form');
   });
 });

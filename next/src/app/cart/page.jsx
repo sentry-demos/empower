@@ -63,7 +63,7 @@ function Cart({ cart, removeProduct, addProduct }) {
             <span className="sentry-unmask">Cart Subtotal: $</span>
             {cart.total}.00
           </h3>
-          <Button to="/checkout" className="sentry-unmask">
+          <Button to="/checkout-form" className="sentry-unmask">
             Proceed to checkout
           </Button>
         </>
