@@ -173,9 +173,9 @@ export class CheckoutFormComponent implements OnInit {
         const checkoutUrl = `${backendUrl}/checkout?v2=true`;
         
         // Set span attributes (like React does)
-        span?.setAttribute('checkout.click', 1);
-        span?.setAttribute('items_at_checkout', itemsInCart);
-        span?.setAttribute('checkout.order.total', this.cart.total);
+        span?.setAttribute('checkout_submit.click', 1);
+        span?.setAttribute('checkout_submit.num_items', itemsInCart);
+        span?.setAttribute('checkout_submit.order_total', this.cart.total);
         span?.setAttribute('backendType', backendType);
 
         const requestBody = {
@@ -199,7 +199,7 @@ export class CheckoutFormComponent implements OnInit {
             console.error("Checkout failed with status:", (response as any).status);
             
             // Set error attribute on span (like React)
-            span?.setAttribute('checkout.error', 1);
+            span?.setAttribute('checkout_submit.error', 1);
             
             if (!(response as any).error || (response as any).status === undefined) {
               span?.setAttribute('status', (response as any).status);
@@ -216,7 +216,7 @@ export class CheckoutFormComponent implements OnInit {
             }
           } else {
             // Set success attribute on span (like React)
-            span?.setAttribute('checkout.success', 1);
+            span?.setAttribute('checkout_submit.success', 1);
           }
 
           return response as Response;

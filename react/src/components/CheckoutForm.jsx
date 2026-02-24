@@ -71,9 +71,9 @@ function CheckoutForm({ backend, rageclick, checkout_success, cart }) {
       cexp: getTag('cexp'),
     };
 
-    Sentry.metrics.count("checkout.click", 1, { attributes: metricAttributes });
-    Sentry.metrics.gauge("items_at_checkout", itemsInCart, { attributes: metricAttributes });
-    Sentry.metrics.gauge("checkout.order.total", cart.total, { attributes: metricAttributes });
+    Sentry.metrics.count("checkout_submit.click", 1, { attributes: metricAttributes });
+    Sentry.metrics.gauge("checkout_submit.num_items", itemsInCart, { attributes: metricAttributes });
+    Sentry.metrics.gauge("checkout_submit.order_total", cart.total, { attributes: metricAttributes });
 
     const stopMeasurement = measureRequestDuration('/checkout');
 
@@ -108,7 +108,7 @@ function CheckoutForm({ backend, rageclick, checkout_success, cart }) {
 
       if (!response.error || response.status === undefined) {
         checkout_span.setAttribute("status", response.status);
-        Sentry.metrics.gauge("checkout.status", response.status);
+        Sentry.metrics.gauge("checkout_submit.status", response.status);
 
         throw new Error( 
           [response.status, response.statusText || ' Internal Server Error'].join(
