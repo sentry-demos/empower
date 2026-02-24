@@ -82,7 +82,7 @@ public class AppController {
 	@CrossOrigin
 	@GetMapping("/")
 	public String index() {
-		logger.info("[springboot - logback] - returning from / call: Greetings from Spring Boot!");
+		logger.info("[logback] - returning from / call: Greetings from Spring Boot!");
 		return "Greetings from Spring Boot!";
 
 	}
@@ -90,9 +90,9 @@ public class AppController {
 	@CrossOrigin
 	@GetMapping("/success")
 	public String Success(HttpServletRequest request) {
-		logger.info("[springboot - logback] - success");
+		logger.info("[logback] - success");
 		setTags(request);
-		return "success from springboot";
+		return "success from spring-boot-otlp";
 
 	}
 
@@ -104,7 +104,7 @@ public class AppController {
 		try {
 			int example = 1 / 0;
 		} catch (Exception e) {
-			logger.error("[springboot - logback] - caught exception", e);
+			logger.error("[logback] - caught exception", e);
 			return "Fail";
 		}
 		return "Success";
@@ -119,41 +119,41 @@ public class AppController {
 	@CrossOrigin
 	@GetMapping("/api")
 	public String Api(HttpServletRequest request) {
-		logger.info("[springboot - logback] - > /api");
+		logger.info("[logback] - > /api");
 		setTags(request);
 
-		Sentry.logger().info("[springboot] - Making external API call to Ruby backend");
+		Sentry.logger().info("Making external API call to Ruby backend");
 		String BACKEND_URL_RUBY = environment.getProperty("empower.rubyonrails_backend");
 		ResponseEntity<String> response = restClient.get()
 			.uri(BACKEND_URL_RUBY + "/api")
 			.headers(h -> h.addAll(headers))
 			.retrieve()
 			.toEntity(String.class);
-		Sentry.logger().info("[springboot] - External API call completed", "response_status", response.getStatusCode().value());
+		Sentry.logger().info("External API call completed", "response_status", response.getStatusCode().value());
 		
-		return "springboot /api";
+		return "spring-boot-otlp /api";
 	}
 
 	@CrossOrigin
 	@GetMapping("/connect")
 	public String Connect(HttpServletRequest request) {
 		setTags(request);
-		return "springboot /connect";
+		return "spring-boot-otlp /connect";
 	}
 
 	@CrossOrigin
 	@GetMapping("/organization")
 	public String Organization(HttpServletRequest request) {
 		setTags(request);
-		return "springboot /organization";
+		return "spring-boot-otlp /organization";
 	}
 
 	@CrossOrigin
 	@GetMapping("/logback")
 	public String Logback() {
-		logger.info("[springboot - logback] - info log");
-		logger.warn("[springboot - logback] - warn log");
-		logger.error("[springboot - logback] - error log");
+		logger.info("[logback] - info log");
+		logger.warn("[logback] - warn log");
+		logger.error("[logback] - error log");
 		return "Made an info, warn, and error log entry.\n"
 				+ "Whether they go to Sentry depends on the application.properties value: sentry.logging.minimum-event-level";
 
@@ -180,7 +180,7 @@ public class AppController {
 			String allProducts = dbHelper.mapAllProducts();
 			return allProducts;
 		} catch (Exception e) {
-			logger.error("[springboot - logback] - Failed to get products", e);
+			logger.error("[logback] - Failed to get products", e);
 			throw new RuntimeException("Failed to retrieve products", e);
 		}
 	}
@@ -205,7 +205,7 @@ public class AppController {
 	@CrossOrigin
 	@PostMapping("/checkout")
 	public String CheckoutCart(HttpServletRequest request, @RequestBody String payload) throws Exception {
-		Sentry.logger().info("[springboot] - Checkout process started", "payload_size", payload.length());
+		Sentry.logger().info("Checkout process started", "payload_size", payload.length());
     	setTags(request);
 
 		// Parse cart with span tracking
@@ -215,7 +215,7 @@ public class AppController {
 			try {
 				Cart parsedCart = objectMapper.readValue(json.get("cart").toString(), Cart.class);
 				
-				Sentry.logger().info("[springboot] - Cart parsed successfully", 
+				Sentry.logger().info("Cart parsed successfully", 
 					"cart_items_count", parsedCart.getItems() != null ? parsedCart.getItems().size() : 0,
 					"cart_total", parsedCart.getTotal(),
 					"quantities_count", parsedCart.getQuantities().size());
@@ -229,26 +229,26 @@ public class AppController {
 		// Process checkout with span tracking
 		executeWithSpan("process_order", "Checkout Cart quantities", () -> checkout(cart.getQuantities()));
 		
-		Sentry.logger().info("[springboot] - Checkout completed successfully");
+		Sentry.logger().info("Checkout completed successfully");
 		return "Checkout completed";
 	}
 
 	private void checkout(Map<String, Integer> quantities) throws Exception {
 		// OpenTelemetry propagates context automatically - no need to pass spans
 		Map<String, Integer> tempInventory = dbHelper.getInventory(quantities.keySet());
-		Sentry.logger().info("[springboot] - Inventory size: " + tempInventory.size());
+		Sentry.logger().info("Inventory size: " + tempInventory.size());
 
 		SpanUtils.executeWithSpan("reduce_inventory", "Reduce inventory from Cart quantities", () -> {
 			for (String key : quantities.keySet()) {
-				logger.info("[springboot - logback] - Item " + key + " has quantity " + quantities.get(key));
+				logger.info("[logback] - Item " + key + " has quantity " + quantities.get(key));
 
 				int currentInventory = tempInventory.get(key);
 				currentInventory = currentInventory - quantities.get(key);
-				Sentry.logger().info("[springboot] - Item " + key + " has quantity " + quantities.get(key) + " and current inventory " + currentInventory);
+				Sentry.logger().info("Item " + key + " has quantity " + quantities.get(key) + " and current inventory " + currentInventory);
 				
 				if (!hasInventory()) {
 					String message = "No inventory for item";
-					Sentry.logger().warn("[springboot] - " + message);
+					Sentry.logger().warn(message);
 					throw new RuntimeException(message);
 				}
 
