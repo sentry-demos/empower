@@ -48,10 +48,23 @@ function Checkout({ backend, rageclick, checkout_success, cart }) {
   const [promoLoading, setPromoLoading] = useState(false);
 
 
-  async function checkout(cart) {
+  async function checkout(cart, checkout_span) {
     console.log("Checkout called with cart:", cart);
+    console.log("Checkout span:", checkout_span);
     const itemsInCart = countItemsInCart(cart);
     console.log("Calculated itemsInCart:", itemsInCart);
+
+    if (!checkout_span || typeof checkout_span.setAttribute !== 'function') {
+        console.error("Invalid checkout_span object:", checkout_span);
+        return;
+    }
+
+    checkout_span.setAttribute("checkout.click", 1);
+    checkout_span.setAttribute("items_at_checkout", itemsInCart);
+    checkout_span.setAttribute("checkout.order.total", cart.total);
+
+    let tags = { 'backendType': getTag('backendType'), 'cexp': getTag('cexp'), 'items_at_checkout': itemsInCart, 'checkout.click': 1 };
+    checkout_span.setAttributes(tags);
 
     const metricAttributes = {
       backendType: getTag('backendType'),
@@ -90,9 +103,11 @@ function Checkout({ backend, rageclick, checkout_success, cart }) {
       return res;
     });
     if (!response.ok) {
+      checkout_span.setAttribute("checkout.error", 1);
       Sentry.metrics.count("checkout.error", 1);
 
       if (!response.error || response.status === undefined) {
+        checkout_span.setAttribute("status", response.status);
         Sentry.metrics.gauge("checkout.status", response.status);
 
         throw new Error( 
@@ -101,8 +116,7 @@ function Checkout({ backend, rageclick, checkout_success, cart }) {
           )
         );
       } else {
-        const activeSpan = Sentry.getActiveSpan();
-        if (activeSpan) activeSpan.setAttribute("status", "unknown_error");
+        checkout_span.setAttribute("status", "unknown_error");
         if (response.error instanceof TypeError && response.error.message === "Failed to fetch") {
           /* A fetch() promise only rejects when e.g. badly-formed request URL or a network error. It does not reject if
           the server responds with HTTP 4xx or 5xx, etc. However some server frameworks might not attach CORS headers 
@@ -113,6 +127,7 @@ function Checkout({ backend, rageclick, checkout_success, cart }) {
         }
       }
     } else {
+      checkout_span.setAttribute("checkout.success", 1)
       Sentry.metrics.count("checkout.success", 1);
     }
 
@@ -180,7 +195,7 @@ function Checkout({ backend, rageclick, checkout_success, cart }) {
     Sentry.startSpan({
       name: 'Submit Checkout Form',
       forceTransaction: true,
-    }, async () => {
+    }, async (span) => {
       let hadError = false;
 
       window.scrollTo({
@@ -191,7 +206,7 @@ function Checkout({ backend, rageclick, checkout_success, cart }) {
       setLoading(true);
 
       try {
-        await checkout(cart);
+        await checkout(cart, span);
       } catch (error) {
         Sentry.captureException(error);
         hadError = true;

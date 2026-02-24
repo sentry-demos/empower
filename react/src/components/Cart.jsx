@@ -10,6 +10,10 @@ import { getTag } from '../utils/utils';
 
 function Cart({ cart, removeProduct, addProduct }) {
   const itemsInCart = countItemsInCart(cart);
+  let tags = { 'backendType': getTag('backendType'), 'cexp': getTag('cexp'), 'items_in_cart': itemsInCart };
+  const span = Sentry.startInactiveSpan({ name: "items_added_to_cart", op: "function"});
+  span.setAttributes(tags);
+  span.end();
   Sentry.metrics.gauge("items_in_cart", itemsInCart, {
     attributes: { backendType: getTag('backendType'), cexp: getTag('cexp') },
   });
