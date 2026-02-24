@@ -12,6 +12,8 @@ jest.mock('@sentry/react', () => ({
   captureException: jest.fn(),
   metrics: {
     increment: jest.fn(),
+    count: jest.fn(),
+    gauge: jest.fn(),
     distribution: jest.fn(),
   },
   startSpan: jest.fn((span, fn) => fn()),
