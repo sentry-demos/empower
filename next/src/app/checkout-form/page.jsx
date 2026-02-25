@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { checkoutAction } from '@/lib/data';
 import CheckoutForm from '@/src/ui/checkout/CheckoutForm';
 
-export default async function CheckoutForm() {
+export default async function CheckoutFormPage() {
 
   return (
     <div className="checkout-container">
