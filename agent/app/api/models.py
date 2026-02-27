@@ -6,23 +6,6 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field
 
 
-# Legacy response model (kept for backward compatibility)
-class LegacyChatResponse(BaseModel):
-    """Legacy response model for buy-plants endpoint."""
-
-    response: str = Field(..., description="Agent's response")
-    agent_name: str = Field(..., description="Name of the responding agent")
-
-    class Config:
-        schema_extra = {
-            "example": {
-                "response": "Yellow leaves on a pothos can indicate overwatering...",
-                "agent_name": "EmpowerPlantAgent",
-            }
-        }
-
-
-# New chat models
 class ChatRequest(BaseModel):
     """Request model for conversational chat endpoint."""
 
@@ -33,7 +16,7 @@ class ChatRequest(BaseModel):
         schema_extra = {
             "example": {
                 "session_id": "550e8400-e29b-41d4-a716-446655440000",
-                "message": "I'm looking for a low-maintenance plant",
+                "message": "I'm looking for a gift for a plant lover",
             }
         }
 
@@ -49,8 +32,8 @@ class ResponseItem(BaseModel):
     class Config:
         schema_extra = {
             "examples": [
-                {"type": "message", "content": {"text": "What kind of light does your space get?"}},
-                {"type": "product_card", "content": {"id": 1, "name": "Monstera", "price": 29.99}},
+                {"type": "message", "content": {"text": "What's your budget?"}},
+                {"type": "product_card", "content": {"id": 1, "name": "Plant Mood", "price": 155}},
                 {"type": "checkout_result", "content": {"success": False, "error": "Out of stock"}},
             ]
         }
@@ -68,7 +51,7 @@ class ChatResponse(BaseModel):
                 "session_id": "550e8400-e29b-41d4-a716-446655440000",
                 "items": [
                     {"type": "message", "content": {"text": "Based on your answers, I recommend:"}},
-                    {"type": "product_card", "content": {"id": 1, "name": "Monstera", "price": 29.99}},
+                    {"type": "product_card", "content": {"id": 3, "name": "Plant Mood", "price": 155}},
                 ],
             }
         }
@@ -85,19 +68,7 @@ class HealthResponse(BaseModel):
         schema_extra = {
             "example": {
                 "status": "healthy",
-                "agent_name": "EmpowerPlantAgent",
+                "agent_name": "shopping_agent",
                 "version": "1.0.0",
             }
         }
-
-
-class PlantPurchaseRequest(BaseModel):
-    """Request model for plant purchase endpoint."""
-
-    light: str = Field(..., description="Light conditions for the plants", min_length=1)
-    maintenance: str = Field(
-        ..., description="Maintenance level for the plants", min_length=1
-    )
-
-    class Config:
-        schema_extra = {"example": {"light": "full sun", "maintenance": "low"}}

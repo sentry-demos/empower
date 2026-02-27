@@ -1,14 +1,14 @@
-# Simple Plant Care AI Agent
+# Empower Plant Shopping Agent
 
-A simple FastAPI-based plant care AI assistant powered by the OpenAI Agents SDK. Just provide a plant name and get personalized care advice!
+A FastAPI-based AI shopping assistant for plant care gadgets and accessories, powered by the OpenAI Agents SDK and MCP (Model Context Protocol).
 
 ## Features
 
-- 🌱 **Simple Plant Care Agent**: Get care advice for any plant by name
-- 🛠️ **One Tool**: Basic plant care database with common houseplants
-- 🚀 **FastAPI Backend**: Modern, fast API with automatic docs
-- 📚 **Interactive API Docs**: Built-in Swagger UI at `/docs`
-- 🎯 **Minimal Dependencies**: Bare bones implementation following OpenAI Agents SDK
+- 🛒 **Conversational Shopping**: Interactive chat-based product recommendations
+- 🔌 **MCP Integration**: Fetches real product data via MCP server
+- 💬 **Session Management**: Maintains conversation history across messages
+- 🎯 **Smart Questioning**: Dynamically generates relevant questions based on actual product differences
+- 🛍️ **Checkout Flow**: Complete purchase flow with structured responses
 
 ## Quick Start
 
@@ -16,140 +16,111 @@ A simple FastAPI-based plant care AI assistant powered by the OpenAI Agents SDK.
 
 - Python 3.11+
 - OpenAI API key
+- Running MCP server (see `/mcp` directory)
 
 ### Installation
 
-1. **Clone the repository**
+1. **Set up environment variables**
 
-   ```bash
-   git clone <repository-url>
-   cd empower-plant-agent-demo
-   ```
+   The deploy script handles this, but key variables include:
+   - `OPENAI_API_KEY` or `AGENT_OPENAI_API_KEY`
+   - `MCP_URL` - URL to the MCP server
 
-2. **Set up environment variables**
-
-   ```bash
-   export OPENAI_API_KEY=sk-your-api-key-here
-   ```
-
-3. **Install dependencies**
+2. **Install dependencies**
 
    ```bash
    pip install -r requirements.txt
    ```
 
-4. **Run the application**
+3. **Run the application**
    ```bash
    python main.py
    ```
 
-The API will be available at `http://localhost:8000` with interactive docs at `http://localhost:8000/docs`.
+The API will be available at `http://localhost:8093` with interactive docs at `/docs`.
 
-## Usage
+## API Endpoints
 
-### API Endpoint
+### Health Check
 
-**POST** `/api/v1/plant-care`
+**GET** `/api/v1/health`
+
+Returns service health status.
+
+### Chat
+
+**POST** `/api/v1/chat`
+
+Conversational endpoint with session support.
 
 Request body:
-
 ```json
 {
-  "plant_name": "pothos"
+  "session_id": "unique-session-id",
+  "message": "I'm looking for a gift for a plant lover"
 }
 ```
 
 Response:
-
 ```json
 {
-  "response": "🌱 **Pothos Care Guide**\n\n**Watering**: Water when top inch of soil is dry (every 1-2 weeks)\n**Light**: Bright, indirect light\n**Pro Tip**: Very forgiving plant, great for beginners. Can tolerate low light.\n\n**General Care Reminders**:\n• Check soil moisture before watering\n• Ensure good drainage\n• Watch for signs of overwatering (yellow leaves)\n• Rotate plant occasionally for even growth",
-  "agent_name": "PlantCareAgent"
+  "session_id": "unique-session-id",
+  "items": [
+    {"type": "message", "content": {"text": "Great! What's your budget?"}},
+    {"type": "product_card", "content": {"id": 3, "name": "Plant Mood", "price": 155, "description": "..."}},
+    {"type": "checkout_result", "content": {"success": true, "message": "Order confirmed!"}}
+  ]
 }
 ```
 
-### Direct Python Usage
+Response item types:
+- `message` - Text response from the agent
+- `product_card` - Product recommendation (rendered as card in UI)
+- `checkout_result` - Checkout success/failure
 
-```python
-import asyncio
-from app.agents.simple_plant_agent import process_plant_query
-
-async def main():
-    advice = await process_plant_query("snake plant")
-    print(advice)
-
-asyncio.run(main())
-```
-
-### Example with curl
-
-```bash
-curl -X POST "http://localhost:8000/api/v1/plant-care" \
-     -H "Content-Type: application/json" \
-     -d '{"plant_name": "monstera"}'
-```
-
-## Supported Plants
-
-The agent has specific care information for:
-
-- Pothos
-- Snake Plant
-- Monstera
-- Fiddle Leaf Fig
-- Peace Lily
-- Rubber Plant
-- Succulents
-
-For other plants, it provides general care advice and suggests trying the supported plants.
-
-## Project Structure
+## Architecture
 
 ```
-app/
-├── agents/
-│   └── simple_plant_agent.py    # Main agent with OpenAI Agents SDK
-├── tools/
-│   └── simple_plant_tool.py     # Plant care tool/function
-└── api/
-    ├── models.py                # Pydantic request/response models
-    └── routes.py         # FastAPI routes
-
-main.py                          # FastAPI application entry point
-simple_example.py               # Direct usage example
-config.py                       # Configuration management
+agent/
+├── app/
+│   ├── agents/
+│   │   ├── shopping_agent.py      # Main shopping agent
+│   │   └── question_generator.py  # Generates questions via MCP
+│   ├── api/
+│   │   ├── models.py              # Pydantic models
+│   │   └── routes.py              # FastAPI routes
+│   └── question_store.py          # Session state management
+├── main.py                        # FastAPI entry point
+└── config.py                      # Configuration
 ```
+
+## How It Works
+
+1. **First Message**: Agent fetches products from MCP, generates targeted questions
+2. **Conversation**: Agent asks questions one at a time, narrows down choices
+3. **Recommendation**: Once enough info gathered, recommends specific product
+4. **Checkout**: User confirms, agent calls MCP checkout tool
 
 ## Configuration
 
-Set these environment variables:
-
-- `OPENAI_API_KEY`: Your OpenAI API key (required)
-- `light_model`: Model for the agent (default: "gpt-4o-mini")
-- `API_HOST`: API host (default: "0.0.0.0")
-- `PORT`: API port (default: 8000)
+Environment variables:
+- `AGENT_DSN`: Sentry DSN for error tracking
+- `AGENT_SENTRY_ENVIRONMENT`: Environment name
+- `MCP_URL`: MCP server URL (e.g., `https://staging-mcp.example.com`)
+- `OPENAI_API_KEY`: OpenAI API key
 
 ## Development
 
-Run the simple example:
-
+Run locally with the deploy script:
 ```bash
-python simple_example.py
+./deploy --env=local agent
 ```
 
-Check the API docs:
-
+Or with MCP via ngrok:
 ```bash
-python main.py
-# Visit http://localhost:8000/docs
+# Terminal 1: Start MCP with ngrok
+cd mcp && ./run_local.sh
+
+# Terminal 2: Start agent
+cd agent && ./run_local.sh
 ```
-
-## OpenAI Agents SDK
-
-This project follows the [OpenAI Agents SDK](https://openai.github.io/openai-agents-python/) patterns:
-
-- **Agent**: Simple plant care assistant with instructions
-- **Tool**: Function tool for plant care advice
-- **Runner**: Handles the agent execution loop
-
-The implementation is minimal and focused, demonstrating the core concepts without complexity.

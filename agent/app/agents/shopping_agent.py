@@ -240,23 +240,3 @@ async def process_chat_message(session_id: str, message: str) -> list[ResponseIt
     items = parse_agent_output(str(result.final_output))
     
     return items
-
-
-# Keep legacy function for backward compatibility
-async def process_user_request(light: str, maintenance: str) -> str:
-    """Legacy function for plant purchase workflow."""
-    logging.debug(
-        f"Legacy process_user_request invoked with light: {light}, maintenance: {maintenance}"
-    )
-    message = f"I want to buy plants for {light} light and {maintenance} maintenance."
-
-    # Run the agent with streaming to get recommendations
-    result = Runner.run_streamed(shopping_agent, message)
-
-    # Consume the stream
-    async for _ in result.stream_events():
-        pass
-
-    logging.debug(f"shopping_agent completed purchase: {result.final_output}")
-    print(result)
-    return str(result.final_output)
