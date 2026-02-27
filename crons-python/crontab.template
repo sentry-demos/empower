@@ -1,1 +1,1 @@
-*/5 * * * * ${CRONSPYTHON_DEPLOY_DIR}/run.sh
+*/5 * * * * ${CRONSPYTHON_DEPLOY_DIR}/run_local.sh
