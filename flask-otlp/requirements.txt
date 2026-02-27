@@ -10,7 +10,7 @@ pytz==2020.4
 sentry-sdk[statsig,opentelemetry-otlp]>=2.48.0
 sqlalchemy==1.4.49
 redis==5.0.1
-Werkzeug==3.1.5
+Werkzeug==3.1.6
 flask_caching==2.3.0
 openai==1.52.2
 tiktoken==0.8.0
