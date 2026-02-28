@@ -9,7 +9,7 @@ import { countItemsInCart } from '../utils/cart';
 import { getTag } from '../utils/utils';
 import { updateStatsigUserAndEvaluate } from '../utils/statsig';
 
-function Checkout({ backend, rageclick, checkout_success, cart }) {
+function CheckoutForm({ backend, rageclick, checkout_success, cart }) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   let initialFormValues;
@@ -42,7 +42,7 @@ function Checkout({ backend, rageclick, checkout_success, cart }) {
       zipCode: '94122',
       promoCode: 'SAVE20',
     };
-  }
+}
   const [form, setForm] = useState(initialFormValues);
   const [promoMessage, setPromoMessage] = useState('');
   const [promoLoading, setPromoLoading] = useState(false);
@@ -59,11 +59,11 @@ function Checkout({ backend, rageclick, checkout_success, cart }) {
         return;
     }
 
-    checkout_span.setAttribute("checkout.click", 1);
-    checkout_span.setAttribute("items_at_checkout", itemsInCart);
-    checkout_span.setAttribute("checkout.order.total", cart.total);
+    checkout_span.setAttribute("checkout_submit.click", 1);
+    checkout_span.setAttribute("checkout_submit.num_items", itemsInCart);
+    checkout_span.setAttribute("checkout_submit.order_total", cart.total);
 
-    let tags = { 'backendType': getTag('backendType'), 'cexp': getTag('cexp'), 'items_at_checkout': itemsInCart, 'checkout.click': 1 };
+    let tags = { 'backendType': getTag('backendType'), 'cexp': getTag('cexp'), 'checkout_submit.num_items': itemsInCart, 'checkout_submit.click': 1 };
     checkout_span.setAttributes(tags);
 
     const metricAttributes = {
@@ -71,9 +71,9 @@ function Checkout({ backend, rageclick, checkout_success, cart }) {
       cexp: getTag('cexp'),
     };
 
-    Sentry.metrics.count("checkout.click", 1, { attributes: metricAttributes });
-    Sentry.metrics.gauge("items_at_checkout", itemsInCart, { attributes: metricAttributes });
-    Sentry.metrics.gauge("checkout.order.total", cart.total, { attributes: metricAttributes });
+    Sentry.metrics.count("checkout_submit.click", 1, { attributes: metricAttributes });
+    Sentry.metrics.gauge("checkout_submit.num_items", itemsInCart, { attributes: metricAttributes });
+    Sentry.metrics.gauge("checkout_submit.order_total", cart.total, { attributes: metricAttributes });
 
     const stopMeasurement = measureRequestDuration('/checkout');
 
@@ -103,12 +103,12 @@ function Checkout({ backend, rageclick, checkout_success, cart }) {
       return res;
     });
     if (!response.ok) {
-      checkout_span.setAttribute("checkout.error", 1);
-      Sentry.metrics.count("checkout.error", 1);
+      checkout_span.setAttribute("checkout_submit.error", 1);
+      Sentry.metrics.count("checkout_submit.error", 1);
 
       if (!response.error || response.status === undefined) {
         checkout_span.setAttribute("status", response.status);
-        Sentry.metrics.gauge("checkout.status", response.status);
+        Sentry.metrics.gauge("checkout_submit.status", response.status);
 
         throw new Error( 
           [response.status, response.statusText || ' Internal Server Error'].join(
@@ -127,8 +127,8 @@ function Checkout({ backend, rageclick, checkout_success, cart }) {
         }
       }
     } else {
-      checkout_span.setAttribute("checkout.success", 1)
-      Sentry.metrics.count("checkout.success", 1);
+      checkout_span.setAttribute("checkout_submit.success", 1)
+      Sentry.metrics.count("checkout_submit.success", 1);
     }
 
     return response;
@@ -193,7 +193,7 @@ function Checkout({ backend, rageclick, checkout_success, cart }) {
     }
 
     Sentry.startSpan({
-      name: 'Submit Checkout Form',
+      name: 'checkout_submit',
       forceTransaction: true,
     }, async (span) => {
       let hadError = false;
@@ -410,4 +410,4 @@ const mapStateToProps = (state, ownProps) => {
 export default connect(
   mapStateToProps,
   {}
-)(Sentry.withProfiler(Checkout, { name: 'Checkout' }));
+)(Sentry.withProfiler(CheckoutForm, { name: 'CheckoutForm' }));

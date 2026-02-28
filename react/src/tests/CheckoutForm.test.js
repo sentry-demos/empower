@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { BrowserRouter as Router } from 'react-router-dom';
-import Checkout from '../components/Checkout';
+import CheckoutForm from '../components/CheckoutForm';
 import configureStore from 'redux-mock-store';
 import * as Sentry from '@sentry/react';
 
@@ -21,7 +21,7 @@ jest.mock('@sentry/react', () => ({
 
 const mockStore = configureStore([]);
 
-describe('Checkout Component', () => {
+describe('CheckoutForm Component', () => {
   let store;
 
   beforeEach(() => {
@@ -32,11 +32,11 @@ describe('Checkout Component', () => {
     jest.clearAllMocks();
   });
 
-  test('renders Checkout form', () => {
+  test('renders CheckoutForm', () => {
     render(
       <Provider store={store}>
         <Router>
-          <Checkout backend="/api" rageclick={false} />
+          <CheckoutForm backend="/api" rageclick={false} />
         </Router>
       </Provider>
     );
@@ -50,7 +50,7 @@ describe('Checkout Component', () => {
 //     render(
 //       <Provider store={store}>
 //         <Router>
-//           <Checkout backend="/api" rageclick={false} />
+//           <CheckoutForm backend="/api" rageclick={false} />
 //         </Router>
 //       </Provider>
 //     );
@@ -66,12 +66,12 @@ describe('Checkout Component', () => {
 //     const mockCheckout = jest.fn().mockResolvedValue({ ok: true });
 
 //     jest.spyOn(require('react-router-dom'), 'useNavigate').mockReturnValue(mockNavigate);
-//     jest.spyOn(require('../components/Checkout'), 'checkout').mockImplementation(mockCheckout);
+//     jest.spyOn(require('../components/CheckoutForm'), 'checkout').mockImplementation(mockCheckout);
 
 //     render(
 //       <Provider store={store}>
 //         <Router>
-//           <Checkout backend="/api" rageclick={false} />
+//           <CheckoutForm backend="/api" rageclick={false} />
 //         </Router>
 //       </Provider>
 //     );
@@ -81,7 +81,7 @@ describe('Checkout Component', () => {
 //     await waitFor(() => {
 //       expect(mockCheckout).toHaveBeenCalledTimes(1);
 //       expect(mockNavigate).toHaveBeenCalledWith('/complete');
-//       expect(Sentry.metrics.increment).toHaveBeenCalledWith('checkout.success');
+//       expect(Sentry.metrics.increment).toHaveBeenCalledWith('checkout_submit.success');
 //     });
 //   });
 
@@ -90,12 +90,12 @@ describe('Checkout Component', () => {
 //     const mockCheckout = jest.fn().mockRejectedValue(new Error('Checkout failed'));
 
 //     jest.spyOn(require('react-router-dom'), 'useNavigate').mockReturnValue(mockNavigate);
-//     jest.spyOn(require('./Checkout'), 'checkout').mockImplementation(mockCheckout);
+//     jest.spyOn(require('./CheckoutForm'), 'checkout').mockImplementation(mockCheckout);
 
 //     render(
 //       <Provider store={store}>
 //         <Router>
-//           <Checkout backend="/api" rageclick={false} />
+//           <CheckoutForm backend="/api" rageclick={false} />
 //         </Router>
 //       </Provider>
 //     );

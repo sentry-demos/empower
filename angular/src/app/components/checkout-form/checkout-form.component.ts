@@ -30,14 +30,14 @@ import * as Sentry from '@sentry/angular';
  * - Form submission flow mirrors React implementation
  */
 @Component({
-  selector: 'app-checkout',
+  selector: 'app-checkout-form',
   standalone: true,
   imports: [CommonModule, RouterModule, FormsModule, ThreeDotsComponent],
-  templateUrl: './checkout.component.html',
-  styleUrls: ['./checkout.component.css']
+  templateUrl: './checkout-form.component.html',
+  styleUrls: ['./checkout-form.component.css']
 })
-@Sentry.TraceClass({ name: "CheckoutComponent" })
-export class CheckoutComponent implements OnInit {
+@Sentry.TraceClass({ name: "CheckoutFormComponent" })
+export class CheckoutFormComponent implements OnInit {
   // Current cart state (items, quantities, total)
   cart: CartState = { items: [], quantities: {}, total: 0 };
   
@@ -104,7 +104,7 @@ export class CheckoutComponent implements OnInit {
     // Wrap in a Sentry span for proper tracing (like React does with 'Submit Checkout Form')
     await Sentry.startSpan(
       {
-        name: 'Submit Checkout Form',
+        name: 'checkout_submit',
         op: 'ui.action.click',
         forceTransaction: true, // Create a new transaction like React does
       },
@@ -173,9 +173,9 @@ export class CheckoutComponent implements OnInit {
         const checkoutUrl = `${backendUrl}/checkout?v2=true`;
         
         // Set span attributes (like React does)
-        span?.setAttribute('checkout.click', 1);
-        span?.setAttribute('items_at_checkout', itemsInCart);
-        span?.setAttribute('checkout.order.total', this.cart.total);
+        span?.setAttribute('checkout_submit.click', 1);
+        span?.setAttribute('checkout_submit.num_items', itemsInCart);
+        span?.setAttribute('checkout_submit.order_total', this.cart.total);
         span?.setAttribute('backendType', backendType);
 
         const requestBody = {
@@ -199,7 +199,7 @@ export class CheckoutComponent implements OnInit {
             console.error("Checkout failed with status:", (response as any).status);
             
             // Set error attribute on span (like React)
-            span?.setAttribute('checkout.error', 1);
+            span?.setAttribute('checkout_submit.error', 1);
             
             if (!(response as any).error || (response as any).status === undefined) {
               span?.setAttribute('status', (response as any).status);
@@ -216,7 +216,7 @@ export class CheckoutComponent implements OnInit {
             }
           } else {
             // Set success attribute on span (like React)
-            span?.setAttribute('checkout.success', 1);
+            span?.setAttribute('checkout_submit.success', 1);
           }
 
           return response as Response;

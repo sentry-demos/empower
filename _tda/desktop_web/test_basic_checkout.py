@@ -43,7 +43,7 @@ def test_basic_checkout(desktop_web_driver, endpoints, random, sleep_length, cex
                 time.sleep(sleep_length())
 
                 try:
-                    desktop_web_driver.find_element(By.CSS_SELECTOR, 'a[href="/checkout"]').click()
+                    desktop_web_driver.find_element(By.CSS_SELECTOR, 'a[href="/checkout-form"]').click()
                 except NoSuchElementException as err:
                     continue
 

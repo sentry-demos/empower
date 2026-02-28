@@ -97,7 +97,7 @@ def test_cexp_checkout(desktop_web_driver, endpoints, batch_size, backend, rando
 
                     if (ce != CExp.ADD_TO_CART_JS_ERROR):
                         try:
-                            desktop_web_driver.find_element(By.CSS_SELECTOR, 'a[href="/checkout"]').click()
+                            desktop_web_driver.find_element(By.CSS_SELECTOR, 'a[href="/checkout-form"]').click()
                         except NoSuchElementException as err:
                             sentry_sdk.metrics.incr(key="test_checkout.iteration.abandoned", value=1, tags=dict(query_string, reason="no_proceed_to_checkout_btn"))
                             continue
