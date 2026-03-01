@@ -66,14 +66,9 @@ function CheckoutForm({ backend, rageclick, checkout_success, cart }) {
     let tags = { 'backendType': getTag('backendType'), 'cexp': getTag('cexp'), 'checkout_submit.num_items': itemsInCart, 'checkout_submit.click': 1 };
     checkout_span.setAttributes(tags);
 
-    const metricAttributes = {
-      backendType: getTag('backendType'),
-      cexp: getTag('cexp'),
-    };
-
-    Sentry.metrics.count("checkout_submit.click", 1, { attributes: metricAttributes });
-    Sentry.metrics.gauge("checkout_submit.num_items", itemsInCart, { attributes: metricAttributes });
-    Sentry.metrics.gauge("checkout_submit.order_total", cart.total, { attributes: metricAttributes });
+    Sentry.metrics.count("checkout_submit.click", 1);
+    Sentry.metrics.gauge("checkout_submit.num_items", itemsInCart);
+    Sentry.metrics.gauge("checkout_submit.order_total", cart.total);
 
     const stopMeasurement = measureRequestDuration('/checkout');
 

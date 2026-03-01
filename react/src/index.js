@@ -269,6 +269,12 @@ class App extends Component {
 
     currentScope.setTag('backendType', backendType);
 
+    const metricScopeAttrs = { backendType };
+    if (cexp) {
+      metricScopeAttrs.cexp = cexp;
+    }
+    Sentry.getGlobalScope().setAttributes(metricScopeAttrs);
+
     let email = null;
     if (queryParams.get('userEmail')) {
       email = queryParams.get('userEmail');
