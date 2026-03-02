@@ -4,12 +4,12 @@ function Nplusone({ backend }) {
   const idRequests = 20;
 
   useEffect(() => {
-    for (let i = 0; i < idRequests; i++) {
-      fetch(backend + '/product/0/info?id=' + i, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
+    const ids = Array.from({ length: idRequests }, (_, i) => i);
+    fetch(backend + '/product/0/info/batch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids }),
+    });
   }, []);
 
   return (

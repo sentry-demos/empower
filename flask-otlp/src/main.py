@@ -560,6 +560,33 @@ def product_info():
     return "flask /product/0/info"
 
 
+@app.route('/product/0/info/batch', methods=['POST'])
+def product_info_batch():
+    logger.info('Received /product/0/info/batch endpoint request')
+    
+    try:
+        body = json.loads(request.data)
+        ids = body.get('ids', [])
+        
+        if not isinstance(ids, list):
+            logger.warning('Invalid request - ids must be an array')
+            return jsonify({"error": "ids must be an array"}), 400
+        
+        logger.info('Processing batch request for %d product IDs', len(ids))
+        
+        time.sleep(.55)
+        
+        results = {str(id): f"Product info for ID {id}" for id in ids}
+        
+        logger.info('Completed /product/0/info/batch request')
+        return jsonify({"results": results}), 200
+        
+    except Exception as err:
+        logger.error('Error processing batch request')
+        sentry_sdk.capture_exception(err)
+        return jsonify({"error": "Internal server error"}), 500
+
+
 @app.before_request
 def sentry_event_context():
     # Extract context information
