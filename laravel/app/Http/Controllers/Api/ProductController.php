@@ -284,8 +284,74 @@ class ProductController extends Controller
         1/0;
     }
 
+    public function apply_promo_code(Request $request): JsonResponse
+    {
+        Log::info('[/apply-promo-code] request received');
+
+        try {
+            $body = json_decode($request->getContent(), true);
+            $promoCode = trim($body['value'] ?? '');
+
+            if (empty($promoCode)) {
+                Log::warning('[/apply-promo-code] bad request - missing value parameter');
+                return response()->json(null, 400);
+            }
+
+            $promoCodeData = DB::table('promo_codes')
+                ->where('code', $promoCode)
+                ->where('is_active', true)
+                ->first();
+
+            if (!$promoCodeData) {
+                Log::warning('[/apply-promo-code] code not found: ' . $promoCode);
+                return response()->json([
+                    'error' => [
+                        'code' => 'not_found',
+                        'message' => 'Promo code not found.',
+                    ],
+                ], 404);
+            }
+
+            Log::info('[/apply-promo-code] code found: ' . json_encode($promoCodeData));
+
+            if ($promoCodeData->expires_at && $promoCodeData->expires_at <= now()) {
+                Log::warning('[/apply-promo-code] code has expired: ' . $promoCode);
+                return response()->json([
+                    'error' => [
+                        'code' => 'expired',
+                        'message' => 'Provided coupon code has expired.',
+                    ],
+                ], 410);
+            }
+
+            Log::info('[/apply-promo-code] valid code found: ' . json_encode($promoCodeData));
+
+            return response()->json([
+                'success' => true,
+                'promo_code' => [
+                    'code' => $promoCodeData->code,
+                    'percent_discount' => $promoCodeData->percent_discount,
+                    'max_dollar_savings' => $promoCodeData->max_dollar_savings,
+                ],
+            ], 200);
+        } catch (\Throwable $err) {
+            report($err);
+            return response()->json(null, 500);
+        }
+    }
+
+    public function product_info(): string
+    {
+        Log::info('Received /product/0/info endpoint request');
+
+        usleep(550000); // 0.55 seconds
+
+        Log::info('Completed /product/0/info request');
+        return 'laravel /product/0/info';
+    }
+
     /**
-     * 
+     *
      */
     public function maybe_cached(): JsonResponse
     {

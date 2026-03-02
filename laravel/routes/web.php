@@ -32,6 +32,8 @@ Route::get('/connect', function () {
     Log::info('Received /connect endpoint request');
     return 'laravel /connect';
 });
+Route::post('/apply-promo-code', [ProductController::class, 'apply_promo_code']);
+Route::get('/product/0/info', [ProductController::class, 'product_info']);
 Route::get('/debug-sentry', function () {
     throw new Exception('My first Sentry error!');
 });
