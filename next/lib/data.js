@@ -101,7 +101,7 @@ export async function checkoutAction(cart) {
       let itemId;
       let currentInventory
       try {
-        if (inventory.length === 0 || cart.quantities.length === 0) {
+        if (!inventory || inventory.length === 0 || cart.quantities.length === 0) {
           const error = new Error("Not enough inventory for product")
           //Sentry.captureException(error);
           throw error;
@@ -142,13 +142,14 @@ export async function getInventory(cart) {
 
   Object.entries(quantities).forEach(([key, value]) => productIds.push(Number(key)));
   console.log("> product ids", productIds);
-  let inventory;
+  let inventory = [];
   try {
     inventory = await prisma.inventory.findMany({
       where: { id : { in : productIds } }
     });
   } catch (error) {
     console.log("Database Error:", error);
+    inventory = [];
   }
   console.log("inventory: ", inventory);
   return inventory;
