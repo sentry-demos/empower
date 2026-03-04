@@ -130,14 +130,14 @@ class ProductController extends Controller
     }
 
     /**
-     * Get all products with reviews, after making a request to the Ruby backend
+     * Get all products with reviews using a JOIN query (fast path to checkout)
      */
     public function products_join(Request $request): JsonResponse
     {
         Log::info('Received /products-join endpoint request');
 
         try {
-            $result = $this->index($request);
+            $products = DB::select('SELECT * FROM products');
             Log::info('Processing /products-join - data retrieved');
         } catch (\Throwable $err) {
             Log::error('Processing /products-join - error getting data');
@@ -145,30 +145,31 @@ class ProductController extends Controller
             throw $err;
         }
 
-        $rubyBackendUrl = env('BACKEND_URL_RUBYONRAILS');
+        $reviews = DB::select(
+            'SELECT reviews.id, products.id AS productid, reviews.rating, reviews.customerid, reviews.description, reviews.created FROM reviews INNER JOIN products ON reviews.productid = products.id'
+        );
 
-        if (!empty($rubyBackendUrl)) {
-            try {
-                $headers = [];
-                $customHeaders = ['se', 'customerType', 'email'];
-                foreach ($customHeaders as $header) {
-                    if ($request->hasHeader($header)) {
-                        $headers[$header] = $request->header($header);
-                    }
+        $results = [];
+        foreach ($products as $product) {
+            $result = (array) $product;
+            $result['reviews'] = [];
+
+            foreach ($reviews as $review) {
+                if ($review->productid == $product->id) {
+                    $result['reviews'][] = [
+                        'id' => $review->id,
+                        'productid' => $review->productid,
+                        'rating' => $review->rating,
+                        'customerId' => $review->customerid,
+                        'description' => $review->description,
+                        'created' => $review->created,
+                    ];
                 }
-
-                $response = Http::withHeaders($headers)->get($rubyBackendUrl . '/api');
-                $response->throw();
-                Log::info('Processing /products-join - backend API call successful');
-            } catch (\Throwable $err) {
-                Log::error('Processing /products-join - backend API call failed');
-                report($err);
             }
-        } else {
-            Log::warning('BACKEND_URL_RUBYONRAILS not configured, skipping backend call');
+            $results[] = $result;
         }
 
-        return $result;
+        return response()->json($results);
     }
 
     /**
