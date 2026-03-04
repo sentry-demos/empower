@@ -41,7 +41,7 @@ var probability = function (n) {
 
 const crasher = () => {
   const queryParams = new URLSearchParams(history.location.search);
-  if (queryParams !== '') {
+  if (history.location.search !== '') {
     const crash = queryParams.get('crash');
     if (crash) {
       console.log('> crash', crash);
