@@ -21,6 +21,8 @@ class EmailController extends Controller
      */
     public function enqueue(Request $request): JsonResponse
     {
+        Log::info('Received /enqueue endpoint request');
+
         // Validate the request first
         $request->validate([
             'email' => 'required|email'
@@ -31,8 +33,7 @@ class EmailController extends Controller
         // Dispatch the SendEmail job to the queue
         $job = SendEmail::dispatch($email);
 
-        // Log the job dispatch (Laravel doesn't expose task_id like Celery, but we can log the job)
-        Log::info("Email job dispatched for email: {$email}");
+        Log::info('Completed /enqueue request - email task enqueued');
 
         return response()->json(['status' => 'success'], 200);
     }
