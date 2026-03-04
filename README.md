@@ -57,19 +57,19 @@ Note: some of these may be out of date
 - **"empower/deploy"** (internal doc)
 - See [troubleshooting](./troubleshooting.md)
 - **"Checklist for adding new language/framework demo to Empower"** (internal documentation)
-- [comment at the top of `deploy.sh` file](https://github.com/sentry-demos/empower/blob/master/deploy.sh#L3-L47).
+- [comment at the top of `./deploy` file](https://github.com/sentry-demos/empower/blob/master/deploy#L3-L47).
 
 # Local Setup / Development
 
 > [!WARNING]
-> `npm run` won't work, please use the build system (`deploy.sh`). It sets all required env variables and is documented in detail below:
+> `npm run` won't work, please use the build system (`./deploy`). It sets all required env variables and is documented in detail below:
 
 ## Setup
 
 > [!NOTE]
 > `*.env` files now live in repository root, instead of `./env-config`, and are checked-in to source control. (`empower-config` repo is deprecated)
 
-1. In `local.env` fill in your personal `SENTRY_ORG` and DSNs (also sentry project names if different from standard subdirectory names).
+1. When setting up for the first time run `./deploy --env=local react` (or any other project) to create a `local.env`. In this new `local.env` fill in your personal `SENTRY_ORG` and DSNs (also sentry project names if different from standard subdirectory names).
 2. Confirm [Homebrew](https://brew.sh/) is installed with `brew -v`. If not, install using `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`.
 3. Confirm PostgreSQL is installed with `Postgres -V`. If not, install using `brew install postgresql`.
 4. As the application is compatible with specific versions of `node` and `npm`, install the following to be able to set the specific versions required (below describes how to achieve it using `n` package, but  you can use `nvm`):
@@ -79,20 +79,19 @@ Note: some of these may be out of date
 5. Configure Sentry CLI using [this](https://docs.sentry.io/product/cli/configuration/) document.
 6. Install [gcloud](https://cloud.google.com/sdk/docs/install) in the root of your project to be able to deploy to staging. Initialize the gcloud CLI by running `gcloud init`. When prompted, choose the project `sales-engineering-sf`.
 
-Following sub-projects might not work with `deploy.sh` at this moment. Consult their README's for how to run and deploy them (and feel free to submit a PR that fixes it):
+Following sub-projects might not work with `./deploy` at this moment. Consult their README's for how to run and deploy them (and feel free to submit a PR that fixes it):
 
 - vue
-- ruby
 - nextjs
 
-NOTE: `build.sh` and `run.sh` files in each project are not meant to be run directly, use top-level `deploy.sh` instead because it sets all required environment variables.
+NOTE: **`build.sh`, `deploy_project.sh` and `run_local.sh` files in each project are not meant to be run directly, use top-level `deploy` script instead** because it sets all required environment variables.
 
 If you run locally and only deploy `react` it will point to `staging` backends, however if you include a backend
 projects in the command `react` will magically point to it instead of staging (still requires `&backend=<backend>` url param).
 
-`deploy.sh` takes another argument `--env=<env>`, which can be either `local`, `staging` or `production`. Each value corresponds to one of the *.env files in the root directory. `local` is a special value, it will run all webservers locally instead of deploying to Google App Engine.
+`./deploy` takes another argument `--env=<env>`, which can be either `local`, `staging` or `production`. Each value corresponds to one of the *.env files in the root directory. `local` is a special value, it will run all webservers locally instead of deploying to Google App Engine/Cloud Run.
 
-`deploy.sh` does everything including validating that all required values are set in the `*.env`
+`./deploy` does everything including validating that all required values are set in the `*.env`
 
 It is highly recommended that you read the long comment at the top of `deploy`](https://github.com/sentry-demos/empower/blob/master/deploy) to get an idea how it works.
 
