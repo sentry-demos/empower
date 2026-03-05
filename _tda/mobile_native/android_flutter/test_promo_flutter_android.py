@@ -1,13 +1,16 @@
+import os
 import time
 
+import pytest
 import sentry_sdk
 from appium.webdriver.common.appiumby import AppiumBy
 
 
-def test_promo_flutter_android(android_flutter_driver, is_first_run_of_the_day):
-    if not is_first_run_of_the_day:
-        return
-
+@pytest.mark.skipif(
+    os.getenv("IS_FIRST_RUN_OF_THE_DAY") is None,
+    reason="Only runs on the first run of the day",
+)
+def test_promo_flutter_android(android_flutter_driver):
     try:
         # ------------------------------------------------------------------
         # Add an item to cart to reach the checkout screen
