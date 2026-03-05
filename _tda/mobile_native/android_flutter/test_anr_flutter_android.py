@@ -11,6 +11,13 @@ _ANR_TAP_COUNT = 10
 # Seconds to wait for the system to recover after dismissing the ANR dialog.
 _ANR_RECOVERY_WAIT_SECONDS = 3
 
+# Seconds to wait after relaunch for the ANR event and any traces to reach Sentry.
+# Sentry reports the ANR on the next app launch, so the relaunch is what triggers sending.
+_ANR_SEND_WAIT_SECONDS = 8
+
+# Flutter app component to relaunch after the ANR dialog closes the app.
+_FLUTTER_COMPONENT = "com.example.empower_flutter/.MainActivity"
+
 
 def test_anr_flutter_android(android_flutter_driver):
     try:
@@ -42,8 +49,17 @@ def test_anr_flutter_android(android_flutter_driver):
             AppiumBy.ID, "android:id/aerr_close"
         ).click()
 
-        # Allow time for the ANR event to be sent to Sentry
+        # Give the system time to recover before relaunching.
         time.sleep(_ANR_RECOVERY_WAIT_SECONDS)
+
+        # Relaunch the app — Sentry captures the ANR event on the next launch,
+        # so the relaunch is required for the event to be sent to the server.
+        android_flutter_driver.execute_script("mobile: startActivity", {
+            "component": _FLUTTER_COMPONENT,
+        })
+
+        # Wait for the ANR event and any traces to reach Sentry.
+        time.sleep(_ANR_SEND_WAIT_SECONDS)
 
     except Exception as err:
         sentry_sdk.capture_exception(err)
