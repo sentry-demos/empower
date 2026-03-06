@@ -531,6 +531,13 @@ ALTER TABLE ONLY public.reviews
 
 
 --
+-- Name: reviews_productid_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX reviews_productid_idx ON public.reviews USING btree (productid);
+
+
+--
 -- Name: SCHEMA public; Type: ACL; Schema: -; Owner: cloudsqlsuperuser
 --
 
