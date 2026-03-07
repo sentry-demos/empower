@@ -107,15 +107,30 @@ function Products({ frontendSlowdown, backend, productsApi, productsExtremelySlo
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
       });
-      const data = await response.json();
 
       if (!response.ok) {
         Sentry.setContext('err', {
           status: response.status,
           statusText: response.statusText,
         });
+        Sentry.captureException(new Error(`Failed to fetch products: ${response.status} - ${response.statusText}`));
         return;
       }
+
+      const text = await response.text();
+      if (!text) {
+        Sentry.captureException(new Error('Empty response from products endpoint'));
+        return;
+      }
+
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (err) {
+        Sentry.captureException(new Error('Failed to parse products response as JSON: ' + err.message));
+        return;
+      }
+
       renderProducts(data);
       stopMeasurement();
     })

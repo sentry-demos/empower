@@ -375,7 +375,13 @@ class App extends Component {
               <Route
                 path="/products-fes" // fes = frontend slowdown (only frontend)
                 element={
-                  <Products backend={BACKEND_URL} frontendSlowdown={true} />
+                  <Products backend={BACKEND_URL}
+                    frontendSlowdown={true}
+                    productsApi={PRODUCTS_API}
+                    productsExtremelySlow={PRODUCTS_EXTREMELY_SLOW}
+                    productsBeError={PRODUCTS_BE_ERROR}
+                    addToCartJsError={ADD_TO_CART_JS_ERROR}
+                  />
                 }
               ></Route>
               <Route
