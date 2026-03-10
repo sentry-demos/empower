@@ -45,6 +45,12 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
+# Install dependencies if needed
+if [ ! -d "node_modules" ]; then
+    echo "📦 Installing dependencies..."
+    pnpm install
+fi
+
 echo "🚀 Starting MCP server on port $MCP_PORT..."
 
 # Start MCP server in background

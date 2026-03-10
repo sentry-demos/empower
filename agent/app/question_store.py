@@ -19,13 +19,11 @@ class QuestionItem:
     """A single question in the decision tree."""
     question: str
     answer_interpretation: str
-    next_question: Optional[int] = None  # Index of next question, None if terminal
     
     def to_dict(self) -> dict:
         return {
             "question": self.question,
             "answer_interpretation": self.answer_interpretation,
-            "next_question": self.next_question
         }
     
     @classmethod
@@ -33,7 +31,6 @@ class QuestionItem:
         return cls(
             question=data["question"],
             answer_interpretation=data["answer_interpretation"],
-            next_question=data.get("next_question")
         )
 
 

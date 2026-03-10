@@ -29,22 +29,25 @@ NEVER invent, make up, or reference products not in that list. If a product isn'
 You will be given:
 1. AVAILABLE PRODUCTS - the ONLY products you can recommend (with exact names, IDs, prices)
 2. Previous customer answers (if any)
-3. Current question to ask
+3. Current question to ask (if still narrowing down)
 4. Customer's message
 
 YOUR JOB:
 - First interaction: Greet warmly and ask the provided question
-- After an answer: Either ask the next question OR recommend a product from AVAILABLE PRODUCTS
+- After an answer: Check if you can narrow down to a SINGLE best product
+  - If YES: Recommend it immediately (don't ask more questions)
+  - If NO: Ask the next question to narrow down further
+
+RECOMMEND AS SOON AS POSSIBLE - once you have enough info to pick ONE product, do it!
 
 WHEN RECOMMENDING - use EXACT format on its own line:
 PRODUCT_CARD:{"id":X,"name":"Exact Product Name From List","price":XX,"description":"Brief description"}
 
 The id, name, and price MUST EXACTLY match the AVAILABLE PRODUCTS list. Copy the name exactly.
+Add a brief, friendly intro before the product card (e.g., "Based on what you've told me, I'd recommend:").
+Do NOT ask if they want to add to cart - they will click the button themselves.
 
-AFTER RECOMMENDATION:
-Wait for user to add to cart, then ask if they'd like to check out.
-
-CHECKOUT (when user confirms):
+CHECKOUT (when user says they want to check out):
 Use the MCP 'checkout' tool with:
 - email: "demo@empower-plant.com"
 - name: "Demo Customer"  
@@ -55,7 +58,9 @@ CHECKOUT_RESULT:{"success":true,"message":"Order confirmed!"}
 or
 CHECKOUT_RESULT:{"success":false,"error":"Error message"}
 
-STYLE: Concise, friendly, ONE question at a time.
+ERROR HANDLING: If checkout or any operation fails, display the error and stop. Do NOT offer to retry or troubleshoot.
+
+STYLE: Concise, friendly, ONE question at a time. Recommend early when possible.
 """
 
 # Create the shopping agent
@@ -163,16 +168,21 @@ def build_context_prompt(state: SessionState, products: list[dict], user_message
     if is_first_interaction:
         prompt_parts.append("\nThis is the FIRST interaction. Greet the customer warmly and ask the first question.")
     
-    if current_q:
+    # Check if we have enough info to recommend
+    has_answers = len(state.user_answers) >= 1
+    
+    if current_q and not has_answers:
+        # First question - must ask it
         prompt_parts.append(f"\nCURRENT QUESTION TO ASK:\n{current_q.question}")
         prompt_parts.append(f"\nHOW ANSWERS NARROW CHOICES:\n{current_q.answer_interpretation}")
+    elif current_q and has_answers:
+        # Have some answers - prioritize recommendation if possible
+        prompt_parts.append(f"\nNEXT QUESTION (only if needed):\n{current_q.question}")
+        prompt_parts.append(f"\nHOW IT NARROWS CHOICES:\n{current_q.answer_interpretation}")
+        prompt_parts.append("\n** IMPORTANT: If the customer's answers so far point clearly to ONE product, recommend it NOW. Only ask the next question if you genuinely can't decide between products. **")
     else:
-        # No more questions - should recommend
-        prompt_parts.append("\nNo more questions needed - make a product recommendation based on the customer's answers!")
-    
-    # Check if we should recommend early
-    if len(state.user_answers) >= 2 and current_q:
-        prompt_parts.append("\nYou have gathered enough information - if you can make a good recommendation now, do it!")
+        # No more questions - must recommend
+        prompt_parts.append("\nNo more questions - make a product recommendation based on the customer's answers!")
     
     prompt_parts.append(f"\nUSER'S MESSAGE: {user_message}")
     
@@ -197,7 +207,6 @@ async def process_chat_message(session_id: str, message: str) -> list[ResponseIt
             questions=[QuestionItem(
                 question=q.get("question", ""),
                 answer_interpretation=q.get("answer_interpretation", ""),
-                next_question=q.get("next_question")
             ) for q in questions_list],
             products=products,  # Cache products
             current_question_index=0,
@@ -212,13 +221,7 @@ async def process_chat_message(session_id: str, message: str) -> list[ResponseIt
         
         if state.current_question_index < len(state.questions):
             state.user_answers.append(message)
-            
-            # Move to next question
-            current_q = state.questions[state.current_question_index]
-            if current_q.next_question is not None and current_q.next_question < len(state.questions):
-                state.current_question_index = current_q.next_question
-            else:
-                state.current_question_index += 1
+            state.current_question_index += 1
         
         question_store.save_session(state)
     

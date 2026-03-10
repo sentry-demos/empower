@@ -27,28 +27,26 @@ QUESTION_GENERATOR_INSTRUCTIONS = """
 You are a product analysis specialist. You will be given a list of ACTUAL products from the Empower Plant store.
 
 YOUR TASK:
-1. Analyze the products provided below
+1. Analyze the products and their reviews provided below
 2. Identify KEY DIFFERENCES: price ranges, features, use cases
 3. Generate 2-3 questions that efficiently narrow down the choice
+4. For each of the questions, describe how exactly it will help narrow down the choice
 
 CRITICAL RULES:
-- ONLY reference products from the list provided - NEVER make up product names
-- Every answer_interpretation MUST name actual products from the list
+- Every answer_interpretation MUST name actual products from the list - NEVER make up product names
 - Questions should help differentiate between the ACTUAL products
 
 OUTPUT FORMAT - JSON ARRAY ONLY:
 [
   {
-    "question": "Question text referencing actual products",
-    "answer_interpretation": "If X -> recommend [actual product names]. If Y -> recommend [other actual products].",
-    "next_question": 1
+    "question": "Simple, short, generic question",
+    "answer_interpretation": "If X -> recommend [actual product names]. If Y -> recommend [other actual products]."
   }
 ]
 
 RULES:
 1. Max 3 questions
-2. next_question = index of next question (0-indexed), or null if last
-3. Output ONLY the JSON array, nothing else
+2. Output ONLY the JSON array, nothing else
 """
 
 # Create the product fetcher agent with MCP tool
@@ -129,7 +127,7 @@ async def generate_questions() -> tuple[list[dict], list[dict]]:
     
     Returns:
         Tuple of (questions_list, products_list)
-        - questions_list: List of question dicts with question, answer_interpretation, next_question
+        - questions_list: List of question dicts with question, answer_interpretation
         - products_list: List of product dicts from MCP
         
     Raises:

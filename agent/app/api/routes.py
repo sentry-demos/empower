@@ -18,7 +18,7 @@ router = APIRouter()
 @router.get("/health", response_model=HealthResponse)  # type: ignore[misc]
 async def health_check() -> HealthResponse:
     """Health check endpoint."""
-    return HealthResponse(status="healthy", agent_name="shopping_agent", version="2.0.0")
+    return HealthResponse(status="healthy", agent_name="shopping_agent", version="1.0.0")
 
 
 @router.post("/chat", response_model=ChatResponse)  # type: ignore[misc]
