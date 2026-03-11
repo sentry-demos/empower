@@ -2,8 +2,8 @@ name: cleanup_projects.yml
 run-name: Run triggered by ${{ github.event_name }}
 
 on:
-  schedule: # every 4 hours
-    - cron:  '0 */4 * * *'
+  schedule: # every 2 hours
+    - cron:  '0 */2 * * *'
     # see https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#schedule
   workflow_dispatch:
 
