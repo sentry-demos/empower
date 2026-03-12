@@ -28,8 +28,8 @@ echo "PHP version check passed: $(php -r 'echo PHP_VERSION;')"
 # To rebuild: ./build-excimer.sh
 # =============================================================================
 if [ ! -f "excimer.so" ]; then
-    echo "ERROR: excimer.so not found. Run ./build-excimer.sh to compile it."
-    exit 1
+    echo "excimer.so not found — building automatically..."
+    ./build-excimer.sh
 fi
 
 # =============================================================================
