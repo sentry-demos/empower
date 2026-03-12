@@ -11,7 +11,7 @@ from flask_caching import Cache
 from statsig.statsig_user import StatsigUser
 from statsig import statsig, StatsigOptions, StatsigEnvironmentTier
 import dotenv
-from .db import decrement_inventory, get_products, get_products_join, get_inventory, get_promo_code
+from .db import decrement_inventory, get_products, get_products_join, get_inventory, get_all_inventory, get_promo_code
 from .utils import parseHeaders, get_iterator, evaluate_statsig_flags
 from .queues.tasks import sendEmail
 import sentry_sdk
@@ -273,6 +273,15 @@ def products():
     in_stock_only = request.args.get('in_stock_only')
     timeout_seconds = (EXTREMELY_SLOW_PROFILE if fetch_promotions else NORMAL_SLOW_PROFILE)
 
+    if in_stock_only:
+        try:
+            inventory_records = get_all_inventory()
+            product_inventory = set(record.productid for record in inventory_records)
+        except Exception as err:
+            logger.error('Failed to get inventory for in_stock_only filter')
+            sentry_sdk.capture_exception(err)
+            product_inventory = set()
+
     logger.info('Processing /products')
 
     # Adding 0.5 seconds to the ruby /api_request in order to show caching
@@ -303,7 +312,7 @@ def products():
 
                         for i, description in enumerate(descriptions):
                             for pest in pests:
-                                if in_stock_only and productsJSON[i] not in product_inventory:
+                                if in_stock_only and productsJSON[i]['id'] not in product_inventory:
                                     continue
                                 if pest in description:
                                     try:
