@@ -10,7 +10,7 @@ from config import settings
 
 from ..api.models import ResponseItem
 from ..question_store import question_store, SessionState, QuestionItem
-from .question_generator import generate_questions
+from .question_generator import fetch_products_via_mcp, HARDCODED_QUESTIONS
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -23,28 +23,27 @@ SHOPPING_AGENT_NAME = "shopping_agent"
 SHOPPING_AGENT_INSTRUCTIONS = """
 You are a friendly shopping assistant for Empower Plant store.
 
-CRITICAL: You can ONLY recommend products from the AVAILABLE PRODUCTS list provided below.
+CRITICAL: You can ONLY recommend products from the AVAILABLE PRODUCTS list provided in this conversation.
 NEVER invent, make up, or reference products not in that list. If a product isn't listed, it doesn't exist.
 
 You will be given:
-1. AVAILABLE PRODUCTS - the ONLY products you can recommend (with exact names, IDs, prices)
-2. Previous customer answers (if any)
-3. Current question to ask (if still narrowing down)
+1. AVAILABLE PRODUCTS with descriptions and customer reviews (provided once, refer to them throughout)
+2. Previous customer Q&A (if any)
+3. Instructions on what to do next (recommend or ask a specific question)
 4. Customer's message
 
 YOUR JOB:
-- First interaction: Greet warmly and ask the provided question
-- After an answer: Check if you can narrow down to a SINGLE best product
-  - If YES: Recommend it immediately (don't ask more questions)
-  - If NO: Ask the next question to narrow down further
-
-RECOMMEND AS SOON AS POSSIBLE - once you have enough info to pick ONE product, do it!
+- When told to ask a question, ask it naturally and conversationally
+- When told to decide between recommending or asking the next question: carefully analyze the products,
+  their descriptions, and customer reviews against ALL the customer's answers so far.
+  Only recommend if the answers unambiguously narrow it down to a single product.
+  When in doubt, ask the next question — more information leads to better recommendations.
 
 WHEN RECOMMENDING - use EXACT format on its own line:
 PRODUCT_CARD:{"id":X,"name":"Exact Product Name From List","price":XX,"description":"Brief description"}
 
 The id, name, and price MUST EXACTLY match the AVAILABLE PRODUCTS list. Copy the name exactly.
-Add a brief, friendly intro before the product card (e.g., "Based on what you've told me, I'd recommend:").
+Add a brief, friendly intro before the product card explaining why this product fits their needs.
 Do NOT ask if they want to add to cart - they will click the button themselves.
 
 CHECKOUT (when user says they want to check out):
@@ -60,7 +59,7 @@ CHECKOUT_RESULT:{"success":false,"error":"Error message"}
 
 ERROR HANDLING: If checkout or any operation fails, display the error and stop. Do NOT offer to retry or troubleshoot.
 
-STYLE: Concise, friendly, ONE question at a time. Recommend early when possible.
+STYLE: Concise, friendly, ONE question at a time.
 """
 
 # Create the shopping agent
@@ -141,48 +140,43 @@ def parse_agent_output(output: str) -> list[ResponseItem]:
 def build_context_prompt(state: SessionState, products: list[dict], user_message: str, is_first_interaction: bool = False) -> str:
     """Build a context-aware prompt for the agent."""
     
-    # Format products for context
-    products_text = json.dumps(products, indent=2) if products else "No products loaded"
+    prompt_parts = []
     
-    # Get current question info
-    current_q = None
-    if state.questions and state.current_question_index < len(state.questions):
-        current_q = state.questions[state.current_question_index]
+    num_answers = len(state.user_answers)
     
-    # Build conversation summary
-    answers_summary = ""
+    if num_answers == 1:
+        products_text = json.dumps(products, indent=2)
+        prompt_parts.append(
+            f"AVAILABLE PRODUCTS (analyze descriptions AND customer reviews):\n{products_text}\n"
+        )
+    elif num_answers > 1:
+        prompt_parts.append(
+            "Refer to the AVAILABLE PRODUCTS already listed earlier in this conversation.\n"
+        )
+    
     if state.user_answers:
-        answers_summary = "Previous answers from this customer:\n"
+        answers_summary = "Customer's answers so far:\n"
         for i, ans in enumerate(state.user_answers):
-            if i < len(state.questions):
-                answers_summary += f"- Q: {state.questions[i].question}\n  A: {ans}\n"
-    
-    # Build prompt
-    prompt_parts = [
-        f"AVAILABLE PRODUCTS:\n{products_text}\n",
-    ]
-    
-    if answers_summary:
+            if i < len(HARDCODED_QUESTIONS):
+                answers_summary += f"- Q: {HARDCODED_QUESTIONS[i]}\n  A: {ans}\n"
         prompt_parts.append(answers_summary)
     
     if is_first_interaction:
-        prompt_parts.append("\nThis is the FIRST interaction. Greet the customer warmly and ask the first question.")
-    
-    # Check if we have enough info to recommend
-    has_answers = len(state.user_answers) >= 1
-    
-    if current_q and not has_answers:
-        # First question - must ask it
-        prompt_parts.append(f"\nCURRENT QUESTION TO ASK:\n{current_q.question}")
-        prompt_parts.append(f"\nHOW ANSWERS NARROW CHOICES:\n{current_q.answer_interpretation}")
-    elif current_q and has_answers:
-        # Have some answers - prioritize recommendation if possible
-        prompt_parts.append(f"\nNEXT QUESTION (only if needed):\n{current_q.question}")
-        prompt_parts.append(f"\nHOW IT NARROWS CHOICES:\n{current_q.answer_interpretation}")
-        prompt_parts.append("\n** IMPORTANT: If the customer's answers so far point clearly to ONE product, recommend it NOW. Only ask the next question if you genuinely can't decide between products. **")
+        prompt_parts.append(
+            f'Greet the customer warmly and ask: "{HARDCODED_QUESTIONS[0]}"'
+        )
+    elif state.current_question_index < len(HARDCODED_QUESTIONS):
+        next_q = HARDCODED_QUESTIONS[state.current_question_index]
+        prompt_parts.append(
+            "Based on the customer's answers, analyze the products and their reviews."
+            " If the answers unambiguously point to ONE best product, recommend it using the PRODUCT_CARD format."
+            f' If multiple products could still be a good fit, ask this next question: "{next_q}"'
+        )
     else:
-        # No more questions - must recommend
-        prompt_parts.append("\nNo more questions - make a product recommendation based on the customer's answers!")
+        prompt_parts.append(
+            "All questions have been asked. Based on ALL the customer's answers,"
+            " analyze the products and their reviews and recommend the ONE best product."
+        )
     
     prompt_parts.append(f"\nUSER'S MESSAGE: {user_message}")
     
@@ -198,30 +192,28 @@ async def process_chat_message(session_id: str, message: str) -> list[ResponseIt
     is_first_interaction = state is None
     
     if is_first_interaction:
-        # First interaction - generate questions and fetch products
-        logging.debug("First interaction - generating questions...")
-        questions_list, products = await generate_questions()
+        logging.debug("First interaction - creating session (products fetched lazily)...")
         
         state = SessionState(
             session_id=session_id,
-            questions=[QuestionItem(
-                question=q.get("question", ""),
-                answer_interpretation=q.get("answer_interpretation", ""),
-            ) for q in questions_list],
-            products=products,  # Cache products
+            questions=[QuestionItem(question=q, answer_interpretation="") for q in HARDCODED_QUESTIONS],
             current_question_index=0,
-            remaining_product_ids=[p.get("id") for p in products if p.get("id")]
         )
         
         question_store.save_session(state)
-        logging.debug(f"Created session with {len(state.questions)} questions and {len(products)} products")
+        logging.debug(f"Created session with {len(HARDCODED_QUESTIONS)} questions")
     else:
-        # Returning user - record their answer and advance
         logging.debug(f"Returning user. Current question index: {state.current_question_index}, answers so far: {len(state.user_answers)}")
         
-        if state.current_question_index < len(state.questions):
+        if state.recommended_product_id is None and state.current_question_index < len(HARDCODED_QUESTIONS):
             state.user_answers.append(message)
             state.current_question_index += 1
+        
+        # Fetch products on first answer if not yet cached
+        if not state.products and state.user_answers:
+            logging.debug("Fetching products for first time...")
+            state.products = await fetch_products_via_mcp()
+            state.remaining_product_ids = [p.get("id") for p in state.products if p.get("id")]
         
         question_store.save_session(state)
     
@@ -241,5 +233,12 @@ async def process_chat_message(session_id: str, message: str) -> list[ResponseIt
     
     # Parse and return response
     items = parse_agent_output(str(result.final_output))
+    
+    # Track if a recommendation was made so we stop recording answers
+    for item in items:
+        if item.type == "product_card":
+            state.recommended_product_id = item.content.get("id")
+            question_store.save_session(state)
+            break
     
     return items
