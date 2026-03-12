@@ -32,13 +32,12 @@ class ProductController extends Controller
      * Get all products with reviews
      * Extracted from the original /products route
      */
-    public function index(Request $request): JsonResponse
+    public function products(Request $request): JsonResponse
     {
         Log::info('Received /products endpoint request');
 
         $fetchPromotions = $request->query('fetch_promotions');
         $inStockOnly = $request->query('in_stock_only');
-        $runSlowProfile = env('RUN_SLOW_PROFILE', true);
         $timeoutSeconds = $fetchPromotions ? self::EXTREMELY_SLOW_PROFILE : self::NORMAL_SLOW_PROFILE;
 
         Log::info('Processing /products');
@@ -91,26 +90,24 @@ class ProductController extends Controller
                 return $productArray;
             })->toArray();
 
-            // Simulate computation-heavy work when RUN_SLOW_PROFILE is enabled
-            if ($runSlowProfile) {
-                $startTime = microtime(true);
-                $descriptions = array_column($completeProductsWithReviews, 'description');
-                $loop = count($descriptions) * 6 + ($fetchPromotions ? 2 : -1);
+            // Simulate computation-heavy work
+            $startTime = microtime(true);
+            $descriptions = array_column($completeProductsWithReviews, 'description');
+            $loop = count($descriptions) * 6 + ($fetchPromotions ? 2 : -1);
 
-                for ($i = 0; $i < $loop * 10; $i++) {
-                    $timeDelta = microtime(true) - $startTime;
-                    if ($timeDelta > $timeoutSeconds) {
-                        break;
-                    }
+            for ($i = 0; $i < $loop * 10; $i++) {
+                $timeDelta = microtime(true) - $startTime;
+                if ($timeDelta > $timeoutSeconds) {
+                    break;
+                }
 
-                    foreach ($descriptions as $index => $description) {
-                        foreach (self::PESTS as $pest) {
-                            if ($inStockOnly && !isset($completeProductsWithReviews[$index])) {
-                                continue;
-                            }
-                            if (str_contains($description ?? '', $pest)) {
-                                array_splice($completeProductsWithReviews, $index, 1);
-                            }
+                foreach ($descriptions as $index => $description) {
+                    foreach (self::PESTS as $pest) {
+                        if ($inStockOnly && !isset($completeProductsWithReviews[$index])) {
+                            continue;
+                        }
+                        if (str_contains($description ?? '', $pest)) {
+                            array_splice($completeProductsWithReviews, $index, 1);
                         }
                     }
                 }

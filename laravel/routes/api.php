@@ -11,7 +11,7 @@ Route::get('/user', function (Request $request) {
 })->middleware('auth:sanctum');
 
 // Product routes (extracted from original Laravel 8.x)
-Route::get('/products', [ProductController::class, 'index']);
+Route::get('/products', [ProductController::class, 'products']);
 Route::post('/checkout', [ProductController::class, 'checkout']);
 
 // Inventory routes
