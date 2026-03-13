@@ -38,7 +38,7 @@ fi
 # fails with "Call to a member function make() on null" during composer install.
 # See: https://github.com/laravel/framework/issues/56098
 # =============================================================================
-composer install --no-scripts
+composer install --no-scripts --ignore-platform-req=ext-excimer
 
 # Run composer scripts manually (except package:discover which has the bug)
 composer dump-autoload --optimize
