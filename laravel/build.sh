@@ -23,6 +23,16 @@ fi
 echo "PHP version check passed: $(php -r 'echo PHP_VERSION;')"
 
 # =============================================================================
+# Verify excimer.so is present (pre-built for Linux x86_64, checked into repo)
+# GAE standard doesn't bundle excimer, so we ship a pre-compiled .so
+# To rebuild: ./build-excimer.sh
+# =============================================================================
+if [ ! -f "excimer.so" ]; then
+    echo "excimer.so not found — building automatically..."
+    ./build-excimer.sh
+fi
+
+# =============================================================================
 # Install dependencies
 # Using --no-scripts to work around Laravel 12 bug where package:discover
 # fails with "Call to a member function make() on null" during composer install.
