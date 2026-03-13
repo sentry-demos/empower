@@ -1,10 +1,13 @@
 import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import './products.css';
 import * as Sentry from '@sentry/react';
 import { connect } from 'react-redux';
 import { setProducts, addProduct, setFlag } from '../actions';
 
 function ProductCard(props) {
+  const [categoryData, setCategoryData] = useState(null);
+
   let inventory = [3, 4, 5, 6]
   if (props.addToCartJsError) {
     inventory = undefined
@@ -14,6 +17,28 @@ function ProductCard(props) {
   const product = props.product;
   const itemLink = '/product/' + product.id;
   const stars = props.stars;
+  const backend = props.backend;
+
+  // Fetch category metadata for badge styling
+  useEffect(() => {
+    async function fetchCategoryData() {
+      try {
+        const response = await fetch(`${backend}/api/categories/${product.category.id}`, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setCategoryData(data);
+        }
+      } catch (err) {
+        Sentry.captureException(err);
+      }
+    }
+    fetchCategoryData();
+  }, [product.category.id, backend]);
+
+  const categoryBadge = categoryData?.name?.toUpperCase() || props.categoryBadge;
 
   function validate_inventory(product) {
     return product && inventory.includes(product.id)
@@ -22,6 +47,7 @@ function ProductCard(props) {
   return (
     <li key={product.id}>
       <div
+        className="product-card"
         onClick={(event) => {
           if (
             event.target.id !== 'addToCart' &&
@@ -31,7 +57,9 @@ function ProductCard(props) {
           }
         }}
       >
-        <img src={product.img} alt="product" className="sentry-block" />
+        <div className="product-image-container">
+          <img src={product.img} alt="product" className="sentry-block" />
+          {categoryBadge && <span className="category-badge">{categoryBadge}</span>}</div>
         <div>
           <h2>{product.title}</h2>
           <p className="product-description">{product.description}</p>
