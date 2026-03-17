@@ -58,6 +58,7 @@ class Api::V1::CheckoutController < ApplicationController
 
     total = ""
     cart_contents = Hash.new
+    validate_inventory = "true"
     params.each do |key, value|
       if key.to_s == "cart"
         Sentry.logger.debug("Processing cart data for checkout")
@@ -72,6 +73,9 @@ class Api::V1::CheckoutController < ApplicationController
            Sentry.logger.debug("Cart total: %{total}", total: total)
          end
         end
+      elsif key.to_s == "validate_inventory"
+        validate_inventory = value.to_s
+        Sentry.logger.debug("Validate inventory parameter: %{validate_inventory}", validate_inventory: validate_inventory)
       end
     end
 
@@ -88,18 +92,23 @@ class Api::V1::CheckoutController < ApplicationController
 
     span_logic = transaction.start_child(op: "custom.inventory_vs_cart_logic")
 
-    products_in_inventory.each_with_index { |inv_objs, i|
-      if !enough_inventory?(cart_contents)
-        begin
-          Sentry.logger.error("Failed to process payment. Insufficient inventory for product: %{product_id}", product_id: inv_objs["productid"])
-          raise Exception.new "Not enough inventory for product: #{inv_objs["productid"]}"
-          STDERR.puts "Not enough inventory for productid " + inv_objs["productid"].to_s
-          logged = "Error: Not enough inventory"
-          render json: {"message": logged}, status: 500
-          break # breaks on first error. might be more inventory errors.
+    if validate_inventory == "true"
+      Sentry.logger.debug("Inventory validation enabled")
+      products_in_inventory.each_with_index { |inv_objs, i|
+        if !enough_inventory?(cart_contents)
+          begin
+            Sentry.logger.error("Failed to process payment. Insufficient inventory for product: %{product_id}", product_id: inv_objs["productid"])
+            raise Exception.new "Not enough inventory for product: #{inv_objs["productid"]}"
+            STDERR.puts "Not enough inventory for productid " + inv_objs["productid"].to_s
+            logged = "Error: Not enough inventory"
+            render json: {"message": logged}, status: 500
+            break # breaks on first error. might be more inventory errors.
+          end
         end
-      end
-    }
+      }
+    else
+      Sentry.logger.debug("Inventory validation skipped based on validate_inventory parameter")
+    end
 
     span_logic.finish
 
