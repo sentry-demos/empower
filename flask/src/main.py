@@ -241,6 +241,7 @@ def checkout():
         raise Exception("Error validating enough inventory for product") from err
 
     if len(out_of_stock) == 0:
+        sentry_sdk.metrics.distribution("checkout.captured.revenue", cart["total"], unit="none")
         result = {'status': 'success'}
         logging.info("Checkout successful")
     else:
