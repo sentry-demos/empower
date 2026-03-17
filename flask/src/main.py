@@ -285,6 +285,12 @@ def checkout():
         else:
             result = {'status': 'partial', 'out_of_stock': out_of_stock}
 
+    sentry_sdk.metrics.distribution(
+        "checkout.captured.revenue",
+        cart["total"],
+        unit="usd",
+    )
+
     return make_response(json.dumps(result))
 
 
