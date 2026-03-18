@@ -101,11 +101,11 @@ function CheckoutForm({ backend, rageclick, checkout_success, cart }) {
       checkout_span.setAttribute("checkout_submit.error", 1);
       Sentry.metrics.count("checkout_submit.error", 1);
 
-      if (!response.error || response.status === undefined) {
+      if (!response.error && response.status !== undefined) {
         checkout_span.setAttribute("status", response.status);
         Sentry.metrics.gauge("checkout_submit.status", response.status);
 
-        throw new Error([response.status, response.statusText || ' Internal Server Error'].join(' -'));
+        throw new Error([response.status, response.statusText || 'Internal Server Error'].join(' - '));
       } else {
         checkout_span.setAttribute("status", "unknown_error");
         if (response.error instanceof TypeError && response.error.message === "Failed to fetch") {
