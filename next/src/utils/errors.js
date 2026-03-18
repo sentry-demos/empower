@@ -46,7 +46,7 @@ const crasher = () => {
     if (crash) {
       console.log('> crash', crash);
       const errnum =
-        queryParams.get('errnum') ||
+        parseInt(queryParams.get('errnum')) ||
         parseInt(Math.random() * randomErrors.length);
       if (crash === 'true' || probability(parseFloat(crash))) {
         throwErrorNumber(errnum);
