@@ -177,6 +177,21 @@ def get_inventory(cart):
 
     return inventory
 
+@tracer.start_as_current_span(name="get_all_inventory")
+def get_all_inventory():
+    """Get all inventory records from database"""
+    print("> get_all_inventory")
+    
+    try:
+        connection = db.connect()
+        query = text("SELECT * FROM inventory WHERE count > 0")
+        inventory = connection.execute(query).fetchall()
+        trace.get_current_span().set_attribute("inventory", str(inventory))
+    except Exception as err:
+        raise DatabaseConnectionError('get_all_inventory') from err
+    
+    return inventory
+
 def decrement_inventory(id, count):
     pass
 
