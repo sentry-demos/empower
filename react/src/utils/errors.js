@@ -44,7 +44,12 @@ const crasher = () => {
       const errnum =
         queryParams.get('errnum') ||
         parseInt(Math.random() * randomErrors.length);
+      
       if (crash === 'true' || probability(parseFloat(crash))) {
+        const numericErrnum = parseInt(errnum);
+        if (numericErrnum < 0 || numericErrnum > 100) {
+          throw new RangeError('Parameter must be between 0 and 100');
+        }
         throwErrorNumber(errnum);
       }
     }

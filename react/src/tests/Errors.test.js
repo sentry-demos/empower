@@ -64,4 +64,22 @@ describe('Errors module', () => {
     Math.random = jest.fn(() => 0.2); // This should not cause the error to be thrown
     expect(() => crasher()).not.toThrow();
   });
+
+  test('should throw a RangeError when errnum is greater than 100', () => {
+    setQueryParams({ crash: 'true', errnum: '500' });
+    expect(() => crasher()).toThrow(RangeError);
+    expect(() => crasher()).toThrow('Parameter must be between 0 and 100');
+  });
+
+  test('should throw a RangeError when errnum is negative', () => {
+    setQueryParams({ crash: 'true', errnum: '-5' });
+    expect(() => crasher()).toThrow(RangeError);
+    expect(() => crasher()).toThrow('Parameter must be between 0 and 100');
+  });
+
+  test('should not throw a RangeError when errnum is 100', () => {
+    setQueryParams({ crash: 'true', errnum: '100' });
+    // errnum=100 maps to index 0 (100 % 5 = 0), which is notAFunctionError
+    expect(() => crasher()).toThrow(TypeError);
+  });
 });
