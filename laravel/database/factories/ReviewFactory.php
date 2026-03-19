@@ -31,9 +31,9 @@ class ReviewFactory extends Factory
         ];
 
         return [
-            'product_id' => Product::factory(),
+            'productid' => Product::factory(),
             'rating' => $this->faker->numberBetween(3, 5), // Mostly positive reviews
-            'customer_id' => $this->faker->numberBetween(1, 1000),
+            'customerid' => $this->faker->numberBetween(1, 1000),
             'description' => $this->faker->randomElement($reviews),
         ];
     }

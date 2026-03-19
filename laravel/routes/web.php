@@ -11,7 +11,7 @@ Route::get('/', function () {
 
 // Web routes matching original Laravel 8.x implementation
 Route::get('/products', [ProductController::class, 'products']);
-Route::get('/products-join', [ProductController::class, 'products_join']); // Same as products for now
+Route::get('/products-join', [ProductController::class, 'products_join']); // Optimized with JOIN queries
 Route::post('/checkout', [ProductController::class, 'checkout']);
 Route::get('/handled', [ProductController::class, 'handled']);
 Route::get('/unhandled', [ProductController::class, 'unhandled']);

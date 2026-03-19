@@ -143,7 +143,7 @@ class ProductController extends Controller
         }
 
         $reviews = DB::select(
-            'SELECT reviews.id, products.id AS productid, reviews.rating, reviews.customerid, reviews.description, reviews.created FROM reviews INNER JOIN products ON reviews.productid = products.id'
+            'SELECT reviews.id, reviews.productid, reviews.rating, reviews.customerid, reviews.description, reviews.created FROM reviews INNER JOIN products ON reviews.productid = products.id'
         );
 
         $results = [];
@@ -165,6 +165,8 @@ class ProductController extends Controller
             }
             $results[] = $result;
         }
+
+        Log::info('Completed /products-join request');
 
         return response()->json($results);
     }
