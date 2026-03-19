@@ -2,6 +2,7 @@ import json
 import operator
 import os
 import logging
+from urllib.parse import quote_plus
 import sentry_sdk
 import sqlalchemy
 from sqlalchemy import create_engine, text
@@ -22,7 +23,7 @@ class DatabaseConnectionError (Exception):
 
 if FLASK_ENVIRONMENT == "local":
     print("> ENVIRONMENT local ")
-    db = create_engine('postgresql://' + USERNAME + ':' + PASSWORD + '@' + HOST + ':5432/' + DATABASE)
+    db = create_engine('postgresql://' + USERNAME + ':' + quote_plus(PASSWORD) + '@' + HOST + ':5432/' + DATABASE)
 else:
     CLOUD_SQL_CONNECTION_NAME = os.environ["DB_CLOUD_SQL_CONNECTION_NAME"]
     print("> ENVIRONMENT production ")
