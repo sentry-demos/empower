@@ -38,30 +38,19 @@ class SendEmail implements ShouldQueue
      */
     public function handle()
     {
-        try {
-            // Simulate random error (20% chance - same as Python randrange(5) == 0)
-            $randomValue = rand(0, 4);
-            if ($randomValue === 0) {
-                throw new Exception("sending email error");
-            }
-
-            // Sleep for random amount of time (0-4 seconds)
-            sleep($randomValue);
-
-            // Log the email being sent
-            Log::info("Sending email to: " . $this->email);
-
-            return $randomValue;
-        } catch (Exception $e) {
-            // If we haven't exceeded max retries, throw the exception to trigger retry
-            if ($this->attempts() < $this->tries) {
-                throw $e;
-            }
-            
-            // If we've exceeded max retries, log the final failure
-            Log::error("Failed to send email to {$this->email} after {$this->tries} attempts: " . $e->getMessage());
-            throw $e;
+        // Simulate random error (20% chance - same as Python randrange(5) == 0)
+        $randomValue = rand(0, 4);
+        if ($randomValue === 0) {
+            throw new Exception("sending email error");
         }
+
+        // Sleep for random amount of time (0-4 seconds)
+        sleep($randomValue);
+
+        // Log the email being sent
+        Log::info("Sending email to: " . $this->email);
+
+        return $randomValue;
     }
 
     /**

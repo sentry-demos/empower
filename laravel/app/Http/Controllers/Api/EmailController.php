@@ -30,11 +30,21 @@ class EmailController extends Controller
 
         $email = $request->input('email');
 
-        // Dispatch the SendEmail job to the queue
-        $job = SendEmail::dispatch($email);
+        try {
+            // Dispatch the SendEmail job to the queue
+            $job = SendEmail::dispatch($email);
 
-        Log::info('Completed /enqueue request - email task enqueued');
+            Log::info('Completed /enqueue request - email task enqueued');
 
-        return response()->json(['status' => 'success'], 200);
+            return response()->json(['status' => 'success'], 200);
+        } catch (\Exception $e) {
+            // Handle job failures gracefully, especially for sync queue
+            Log::error('Failed to process email queue job: ' . $e->getMessage());
+            
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to enqueue email'
+            ], 500);
+        }
     }
 }
