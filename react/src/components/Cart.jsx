@@ -14,7 +14,7 @@ function Cart({ cart, removeProduct, addProduct }) {
   const span = Sentry.startInactiveSpan({ name: "items_added_to_cart", op: "function"});
   span.setAttributes(tags);
   span.end();
-  Sentry.metrics.gauge("items_in_cart", itemsInCart);
+  Sentry.metrics.distribution("items_in_cart", itemsInCart);
   return (
     <div className="cart-container">
       <h2 className="sentry-unmask">Cart</h2>
