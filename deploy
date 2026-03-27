@@ -6,7 +6,7 @@
 # 'run_local.sh' script instead of deploying to Google App Engine. If multiple projects are specified on
 # the command-line in this local mode, a webserver will be started for each project.
 #
-# In local mode, you can also specify a custom command to run instead of run_local.sh using the -- separator:
+# You can also specify a custom command to run instead of the default using the -- separator:
 # Usage: ./deploy --env=local flask                 # uses flask/run_local.sh - a setup similar to production
 # Usage: ./deploy --env=local react -- npm start    # any command after --, e.g. hot reload server or `cat .env`
 # Usage: ./deploy --env=production react            # deploy to production
@@ -45,6 +45,7 @@
 echo "[debug] Bash version: $BASH_VERSION" >&2
 gcloud --version
 mvn --version
+composer --version
 
 set -e
 
@@ -58,11 +59,14 @@ env=""
 custom_command=""
 custom_command_args=""
 found_separator=false
+debug=false
 
 for arg in "$@"; do
   if [[ $arg = --env=* ]]; then
     env=$(echo $arg | cut -d '=' -f 2)
     echo "env = $env"
+  elif [[ $arg = "--debug" ]]; then
+    debug=true
   elif [[ $arg = "--" ]]; then
     found_separator=true
   elif [[ $found_separator = true ]]; then
@@ -76,13 +80,20 @@ for arg in "$@"; do
   fi
 done
 
+# Enable debug mode if requested
+if [[ "$debug" = true ]]; then
+  echo "[DEBUG] Debug mode enabled - verbose output and temp files preserved"
+  set -x
+fi
+
 USAGE="[ERROR] Invalid arguments.\n\
 Usage: \n\
 ./deploy --env=local flask                 # uses flask/run_local.sh - a setup similar to production\n\
 ./deploy --env=local react -- npm start    # any command after --, e.g. hot reload server or 'cat .env'\n\
 ./deploy --env=production react            # deploy to production\n\
 ./deploy --env=staging express spring-boot # multiple projects\n\
-./deploy --env=local react flask laravel   # wires all 3 together automatically (see local.env)"
+./deploy --env=local react flask laravel   # wires all 3 together automatically (see local.env)\n\
+./deploy --env=local --debug flask         # enable 'set -x' tracing and preserve temp files"
 
 # Validate CLI arguments
 if [[ "$env" == "" || "$projects" == "" ]]; then
@@ -157,6 +168,7 @@ done
 projects="$be_projects $fe_projects"
 
 function cleanup {
+  echo "Cleaning up..."
   for pid in $run_sh_pids; do
     # each run_local.sh has it's own cleanup function
     if ps -p $pid > /dev/null; then
@@ -164,7 +176,11 @@ function cleanup {
     fi
   done
   if [ "$temp_files" != "" ]; then
-    rm -f $temp_files # bash only (passed as separate args)
+    if [[ "$debug" = true ]]; then
+      echo "[DEBUG] Preserving temporary files: $temp_files"
+    else
+      rm -f $temp_files # bash only (passed as separate args)
+    fi
   fi
 }
 trap cleanup EXIT
@@ -382,7 +398,7 @@ for proj in $projects; do # bash only
     RESOLVED_VARS+=("$var=$value")
   done < "$top/.resolved.env"
 
-  if [ -f build.sh ] && ([ "$env" == "local" ] || [ ! -f deploy_project.sh ] || [ "$proj" == "angular" ]); then
+  if [ -f build.sh ] && ([ "$env" == "local" ] || [ ! -f deploy_project.sh ]); then
     unset CI # prevents build failing in GitHub Actions
     # if needed build.sh is responsible for calling sentry-release.sh with appropriate arguments
     echo "Running build.sh with resolved environment..."
@@ -395,17 +411,21 @@ for proj in $projects; do # bash only
   fi
 
   # *** DEPLOY OR RUN ***
-  if [ "$env" == "local" ]; then
-    if [[ -n "$custom_command" ]]; then
-      echo "Running custom command '$custom_command $custom_command_args' with resolved environment..."
-      echo "[WARNING] we assume no secrets directly referenced by the custom command itself, any secrets used must be in *.template files"
-      env "${RESOLVED_VARS[@]}" $custom_command $custom_command_args &
-      pid="$!"
-    else
-      echo "Running run_local.sh with resolved environment..."
-      gcp_secret_wrapper.sh --pass $script_secrets -- env "${RESOLVED_VARS[@]}" ./run_local.sh &
-      pid="$!"
+  if [[ -n "$custom_command" ]]; then
+    echo "Running custom command '$custom_command $custom_command_args' with resolved environment..."
+    echo "[WARNING] we assume no secrets directly referenced by the custom command itself, any secrets used must be in *.template files"
+    set +e
+    env "${RESOLVED_VARS[@]}" $custom_command $custom_command_args
+    cmd_exit_code=$?
+    set -e
+    if [ $cmd_exit_code -ne 0 ]; then
+      echo "[ERROR] Custom command exited with code $cmd_exit_code"
+      exit 1
     fi
+  elif [ "$env" == "local" ]; then
+    echo "Running run_local.sh with resolved environment..."
+    gcp_secret_wrapper.sh --pass $script_secrets -- env "${RESOLVED_VARS[@]}" ./run_local.sh &
+    pid="$!"
     run_sh_pids+="$pid " # for later cleanup
 
     if [[ "$projects" != *"$proj " ]]; then # not last one
@@ -422,11 +442,7 @@ for proj in $projects; do # bash only
         exit 1
       fi
     else 
-      if [ "$proj" == "spring-boot" ]; then
-        mvn clean package appengine:deploy
-      else
-        gcloud app deploy --version v1 --quiet app.yaml
-      fi
+      gcloud app deploy --version v1 --quiet app.yaml
     fi
   fi
 done

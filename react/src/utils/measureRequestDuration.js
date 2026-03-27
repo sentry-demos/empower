@@ -8,7 +8,7 @@ import * as Sentry from '@sentry/react';
  */
 export default function measureRequestDuration(endpoint, requestSpan) {
   const start = Date.now();
-  
+
   function stopMeasurement() {
     const end = Date.now();
     const duration = end - start;
@@ -19,6 +19,10 @@ export default function measureRequestDuration(endpoint, requestSpan) {
         "endpoint": endpoint
       })
     }
+    Sentry.metrics.distribution('request.duration', duration, {
+      unit: 'millisecond',
+      attributes: { endpoint },
+    });
   }
 
   return stopMeasurement;

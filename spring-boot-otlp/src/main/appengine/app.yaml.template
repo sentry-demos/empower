@@ -1,0 +1,35 @@
+runtime: java
+env: flex
+runtime_config:
+  operating_system: "ubuntu22"
+  runtime_version: "17"
+service: ${SPRINGBOOTOTLP_APP_ENGINE_SERVICE}
+
+# Explicit entrypoint to tell buildpack which JAR is the application
+# (needed because there are multiple JARs with Main-Class manifest entries)
+entrypoint: java -jar /workspace/springboot-1.0.0-SNAPSHOT.jar
+
+# Environment variables for OpenTelemetry configuration
+env_variables:
+  # Let Spring Boot handle Sentry initialization via application.properties
+  SENTRY_AUTO_INIT: "false"
+  # Disable default OTLP exporters (Sentry handles exporting)
+  OTEL_TRACES_EXPORTER: "none"
+  OTEL_METRICS_EXPORTER: "none"
+  OTEL_LOGS_EXPORTER: "none"
+  # Attach the OpenTelemetry agent to the JVM
+  JAVA_TOOL_OPTIONS: "-javaagent:/workspace/sentry-opentelemetry-agent.jar"
+
+handlers:
+- url: /.*
+  script: this field is required, but ignored
+beta_settings:
+  cloud_sql_instances: ${DB_CLOUD_SQL_CONNECTION_NAME}
+readiness_check:
+  app_start_timeout_sec: 600
+manual_scaling:
+    instances: 1
+resources:
+  cpu: 1 
+  memory_gb: 2 
+  disk_size_gb: 10

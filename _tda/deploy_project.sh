@@ -41,7 +41,7 @@ trap - EXIT
 
 echo "Copying code to remote directory..."
 # for whatever reason can't delete or chmod __pycache__ directories
-export RSYNC_RSH='ssh -o "ProxyCommand gcloud compute start-iap-tunnel '$HOST' %p --listen-on-stdin --verbosity=warning" -o "StrictHostKeyChecking=accept-new"'
+export RSYNC_RSH='ssh -i ~/.ssh/google_compute_engine -o "ProxyCommand gcloud compute start-iap-tunnel '$HOST' %p --listen-on-stdin --verbosity=warning" -o "StrictHostKeyChecking=accept-new"'
 rsync -rz --delete --force-delete --exclude env/ --exclude __pycache__ --exclude .pytest_cache * $HOST:$DIR/
 ret="$?"
 

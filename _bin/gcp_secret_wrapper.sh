@@ -6,7 +6,7 @@ PREFIX=""
 PASS_MODE=0
 secrets=()
 
-# ./_bin/gcp_secret_wrapper.sh [--prefix=PREFIX] [--pass] [MY_VAR1=MY_SECRET_1 MY_VAR2=MY_SECRET_2] -- <the actual command>
+# ./_bin/gcp_secret_wrapper.sh [--prefix=PREFIX] [--pass] [MY_SECRET_1 MY_SECRET_2] -- <the actual command>
 # 
 # With --pass flag, the script will not error if no secrets are provided and will just execute the command after --
 
@@ -24,7 +24,12 @@ get_access_token() {
 get_secret() {
   local secret_name="$1"
   local access_token=$(get_access_token)
-  local project_id=$(get_project_id) # Using Metadata Server for project ID
+  #local project_id=$(get_project_id) # Using Metadata Server for project ID (unused)
+
+  if [ -z "$access_token" ]; then
+    echo "[ERROR] $0: Failed to get access token" >&2
+    exit 1
+  fi
 
   # Get the JSON response and convert newlines to a special character
   local response=$(curl -s -X GET \
@@ -46,9 +51,10 @@ get_secret() {
   echo "$data" | base64 --decode
 }
 
-get_project_id() {
-  curl -s -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/project/project-id
-}
+# This can be used on a GAE VM to get project ID. But we are now only running this locally.
+#get_project_id() {
+#  curl -s -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/project/project-id
+#}
 
 # Process command line arguments
 while [[ $# -gt 0 ]]; do

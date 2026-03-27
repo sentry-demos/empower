@@ -39,7 +39,7 @@ def test_rageclick(desktop_web_driver, endpoints, batch_size, backend, random, s
 
 
                 desktop_web_driver.find_element(By.CSS_SELECTOR, '.show-desktop #top-right-links a[href="/cart"]').click()
-                desktop_web_driver.find_element(By.CSS_SELECTOR, 'a[href="/checkout"]').click()
+                desktop_web_driver.find_element(By.CSS_SELECTOR, 'a[href="/checkout-form"]').click()
 
                 # Rage click
                 checkout_button = desktop_web_driver.find_element(By.CSS_SELECTOR, '.complete-checkout-btn')

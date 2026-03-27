@@ -30,7 +30,7 @@ import Footer from './components/Footer';
 import Nav from './components/Nav';
 import About from './components/About';
 import Cart from './components/Cart';
-import Checkout from './components/Checkout';
+import CheckoutForm from './components/CheckoutForm';
 import Complete from './components/Complete';
 import CompleteError from './components/CompleteError';
 import Employee from './components/Employee';
@@ -46,12 +46,11 @@ const tracingOrigins = [
   'empower-plant.com',
   'run.app',
   'appspot.com',
+  'empower-agent.sentry.gg',
   /^\//,
 ];
 
 const history = createBrowserHistory();
-
-const PREFERRED_BACKENDS = ['flask', 'laravel'];
 
 let BACKEND_URL;
 let BACKEND_TYPE;
@@ -142,11 +141,13 @@ Sentry.init({
         // SE Testing
         event.fingerprint = ['{{ default }}', seFingerprint];
       }
+    } else {
+      event.fingerprint = ['{{ default }}'];
     }
 
-    if ((PREFERRED_BACKENDS.includes(BACKEND_TYPE)) && is5xxError && (se && se.startsWith('prod-tda-'))) {
-      // Seer when run automatically will use the latest event. We want it to run on event with flask backend instead of taking chances.
-      event.fingerprint += ['tda-flagship-react-preferred-backends'];
+    if (is5xxError) {
+      // don't group different backends into the same issue to avoid mismatch between Seer autofix and latest event.
+      event.fingerprint.push(BACKEND_TYPE);
     }
 
     if (event.exception) {
@@ -214,7 +215,7 @@ class App extends Component {
     if (se) {
       // Route components (navigation changes) will now have 'se' tag on scope
       currentScope.setTag('se', se);
-      // for use in Checkout.js when deciding whether to pre-fill form
+      // for use in CheckoutForm.js when deciding whether to pre-fill form
       // lasts for as long as the tab is open
       sessionStorage.setItem('se', se);
     }
@@ -267,6 +268,12 @@ class App extends Component {
     sessionStorage.removeItem('lastErrorEventId');
 
     currentScope.setTag('backendType', backendType);
+
+    const metricScopeAttrs = { backendType };
+    if (cexp) {
+      metricScopeAttrs.cexp = cexp;
+    }
+    Sentry.getGlobalScope().setAttributes(metricScopeAttrs);
 
     let email = null;
     if (queryParams.get('userEmail')) {
@@ -339,9 +346,9 @@ class App extends Component {
               ></Route>
               <Route path="/cart" element={<Cart />} />
               <Route
-                path="/checkout"
+                path="/checkout-form"
                 element={
-                  <Checkout
+                  <CheckoutForm
                     backend={BACKEND_URL}
                     rageclick={RAGECLICK}
                     checkout_success={CHECKOUT_SUCCESS}

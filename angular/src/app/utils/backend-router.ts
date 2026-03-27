@@ -10,10 +10,12 @@ const DEFAULT_BACKEND = 'flask';
 const SUPPORTED_BACKEND_TYPES: { [key: string]: string | undefined } = {
   flask: environment.BACKEND_URL_FLASK,
   express: environment.BACKEND_URL_EXPRESS,
-  springboot: environment.BACKEND_URL_SPRINGBOOT,
+  'spring-boot': environment.BACKEND_URL_SPRINGBOOT,
   aspnetcore: environment.BACKEND_URL_ASPNETCORE,
   laravel: environment.BACKEND_URL_LARAVEL,
-  rails: environment.BACKEND_URL_RUBYONRAILS,
+  'ruby-on-rails': environment.BACKEND_URL_RUBYONRAILS,
+  'flask-otlp': environment.BACKEND_URL_FLASKOTLP,
+  'spring-boot-otlp': environment.BACKEND_URL_SPRINGBOOTOTLP,
 };
 
 /**
@@ -28,14 +30,13 @@ export const determineBackendType = (desiredBackend: string | null): string => {
     if (SUPPORTED_BACKEND_TYPES[desiredBackend]) {
       return desiredBackend;
     } else {
+      const supportedBackendsList = Object.keys(SUPPORTED_BACKEND_TYPES)
+        .map(type => `- ${type}`)
+        .join('\n');
       const warnText =
-        "You tried to set backend type as '" +
-        desiredBackend +
-        "', which is not supported. Proceeding with the default type: '" +
-        DEFAULT_BACKEND +
-        "'";
+        "?backend value not recognized.\nSupported backends:\n" +
+        supportedBackendsList;
       alert(warnText);
-      console.log(warnText);
     }
   }
   return DEFAULT_BACKEND;

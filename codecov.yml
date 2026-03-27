@@ -26,6 +26,7 @@ github_checks:
   annotations: true
 
 comment:
+  behavior: once # don't re-created deleted comments https://docs.codecov.com/docs/pull-request-comments#behavior
   layout: "newheader, diff, flags, components, files"
   require_changes: false # false :: posts comment regardless of whether coverage changes
   require_base: false # [false :: doesn't need a base report to post]

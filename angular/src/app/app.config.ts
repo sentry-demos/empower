@@ -17,6 +17,7 @@ export const appConfig: ApplicationConfig = {
     },
     {
       provide: Sentry.TraceService,
+      useClass: Sentry.TraceService,
       deps: [Router],
     },
     {

@@ -8,8 +8,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Bean;
 
-import org.springframework.boot.web.client.RestTemplateBuilder;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestClient;
 
 import io.sentry.Sentry;
 
@@ -17,7 +16,7 @@ import io.sentry.SentryOptions.TracesSamplerCallback;
 import io.sentry.SamplingContext;
 import io.sentry.CustomSamplingContext;
 import org.springframework.stereotype.Component;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,8 +33,8 @@ public class Application {
 	}
 
 	@Bean
-	RestTemplate restTemplate(RestTemplateBuilder builder) {
-		return builder.build();
+	RestClient restClient() {
+		return RestClient.create();
 	}
 
 	@Component

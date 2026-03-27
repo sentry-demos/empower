@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>3.4.0</version>
+		<relativePath/> <!-- lookup parent from repository -->
+	</parent>
+	<groupId>com.sentrydemos</groupId>
+	<artifactId>springboot</artifactId>
+	<version>1.0.0-SNAPSHOT</version>
+	<name>spring-boot</name>
+	<description>Demo project for Spring Boot</description>
+	<properties>
+		<java.version>17</java.version>
+		<sentry.version>8.28.0</sentry.version>
+	</properties>
+
+	<dependencies>
+		<!-- Sentry Spring Boot SDK for Jakarta EE -->
+		<dependency>
+			<groupId>io.sentry</groupId>
+			<artifactId>sentry-spring-boot-starter-jakarta</artifactId>
+			<version>${sentry.version}</version>
+		</dependency>
+		<!-- Sentry Logback SDK -->
+		<dependency>
+		    <groupId>io.sentry</groupId>
+		    <artifactId>sentry-logback</artifactId>
+		    <version>${sentry.version}</version>
+		</dependency>
+		<!-- OpenTelemetry API for custom instrumentation -->
+		<dependency>
+			<groupId>io.opentelemetry</groupId>
+			<artifactId>opentelemetry-api</artifactId>
+			<version>1.40.0</version>
+		</dependency>
+		<!-- Capture Sentry Transaction -->
+		<dependency>
+		    <groupId>org.springframework.boot</groupId>
+		    <artifactId>spring-boot-starter-aop</artifactId>
+		</dependency>
+		<!-- Required for REST calls -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web</artifactId>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.json/json -->
+		<dependency>
+			<groupId>org.json</groupId>
+			<artifactId>json</artifactId>
+			<version>20220924</version>
+		</dependency>
+		
+		<!-- All below dependencies are for DB connections -->
+		<!-- Spring JDBC jdbcTemplate-->
+		<dependency>
+		    <groupId>org.springframework.boot</groupId>
+		    <artifactId>spring-boot-starter-jdbc</artifactId>
+		</dependency>
+		
+		<!--  SQL Server JDBC postgresql driver org.postgresql.Driver -->
+		<dependency>
+			<groupId>org.postgresql</groupId>
+			<artifactId>postgresql</artifactId>
+			<version>42.7.2</version>
+		</dependency>
+		
+		<!-- Spring Boot DevTools for automatic restart during development -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-devtools</artifactId>
+			<scope>runtime</scope>
+			<optional>true</optional>
+		</dependency>
+		
+		<!-- GCLOUD Dependencies -->
+		<!-- Using CloudSqlJdbcInfoProvider bean to initialize DB connection with spring.cloud.gcp.sql.* values from application.properties -->
+		<dependency>
+			<groupId>com.google.cloud.sql</groupId>
+			<artifactId>postgres-socket-factory</artifactId>
+			<version>1.19.0</version>
+		</dependency>
+		
+		<!-- JUnit 5 for testing -->
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter</artifactId>
+			<scope>test</scope>
+		</dependency>
+				
+	</dependencies>
+	
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.12.1</version>
+				<configuration>
+					<source>17</source>
+					<target>17</target>
+				</configuration>
+			</plugin>
+		<!-- Download Sentry OpenTelemetry Agent to staging directory -->
+		<plugin>
+			<groupId>org.apache.maven.plugins</groupId>
+			<artifactId>maven-dependency-plugin</artifactId>
+			<version>3.6.1</version>
+			<executions>
+				<execution>
+					<id>copy-sentry-otel-agent</id>
+					<phase>package</phase>
+					<goals>
+						<goal>copy</goal>
+					</goals>
+					<configuration>
+						<artifactItems>
+							<artifactItem>
+								<groupId>io.sentry</groupId>
+								<artifactId>sentry-opentelemetry-agent</artifactId>
+								<version>${sentry.version}</version>
+								<type>jar</type>
+								<overWrite>true</overWrite>
+								<outputDirectory>${project.build.directory}/appengine-staging</outputDirectory>
+								<destFileName>sentry-opentelemetry-agent.jar</destFileName>
+							</artifactItem>
+						</artifactItems>
+					</configuration>
+				</execution>
+			</executions>
+		</plugin>
+		<!-- Prepare App Engine staging directory with all required files -->
+		<plugin>
+			<groupId>org.apache.maven.plugins</groupId>
+			<artifactId>maven-antrun-plugin</artifactId>
+			<version>3.1.0</version>
+			<executions>
+				<execution>
+					<id>prepare-appengine-staging</id>
+					<phase>package</phase>
+					<goals>
+						<goal>run</goal>
+					</goals>
+					<configuration>
+						<target>
+							<!-- Copy app.yaml to staging -->
+							<copy file="${project.basedir}/src/main/appengine/app.yaml"
+								  tofile="${project.build.directory}/appengine-staging/app.yaml"
+								  overwrite="true"/>
+							<!-- Copy application JAR to staging -->
+							<copy file="${project.build.directory}/${project.artifactId}-${project.version}.jar"
+								  tofile="${project.build.directory}/appengine-staging/${project.artifactId}-${project.version}.jar"
+								  overwrite="true"/>
+						</target>
+					</configuration>
+				</execution>
+			</executions>
+		</plugin>
+		<!-- Google Cloud Platform deploy -->
+		<plugin>
+			<groupId>com.google.cloud.tools</groupId>
+			<artifactId>appengine-maven-plugin</artifactId>
+			<version>2.4.1</version>
+			<configuration>
+				<projectId>GCLOUD_CONFIG</projectId>
+				<version>GCLOUD_CONFIG</version>
+				<!-- Deploy from staging directory that contains app.yaml, app JAR, and agent JAR -->
+				<!-- Using deployables to point to staging dir's app.yaml causes gcloud to deploy the whole directory -->
+				<deployables>
+					<deployable>${project.build.directory}/appengine-staging/app.yaml</deployable>
+				</deployables>
+			</configuration>
+		</plugin>
+		<!-- Sentry Maven Plugin for source context -->
+		<plugin>
+			<groupId>io.sentry</groupId>
+			<artifactId>sentry-maven-plugin</artifactId>
+			<version>0.10.0</version>
+			<extensions>true</extensions>
+		<configuration>
+			<includeSourceContext>true</includeSourceContext>
+			<org>${SENTRY_ORG}</org>
+			<project>${SPRINGBOOTOTLP_SENTRY_PROJECT}</project>
+			<authToken>${SENTRY_AUTH_TOKEN}</authToken>
+			<release>${SPRINGBOOTOTLP_RELEASE}</release>
+		</configuration>
+			<executions>
+				<execution>
+					<goals>
+						<goal>uploadSourceBundle</goal>
+					</goals>
+				</execution>
+			</executions>
+		</plugin>
+	</plugins>
+</build>
+</project>

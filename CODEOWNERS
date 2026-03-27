@@ -1,6 +1,6 @@
-/* @realkosty
-*.env @realkosty
-/bin/ @realkosty
+/* @maxkosty
+*.env @maxkosty
+/bin/ @maxkosty
 react/src/components @sentry-demos/am-team
 react/src/components @ndmanvar
 flask/ @sentry-demos/am-team

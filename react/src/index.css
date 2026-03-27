@@ -110,7 +110,6 @@ input {
 input[type='email'],
 input[type='text'] {
   display: block;
-  margin: 0.5rem auto 1rem;
   line-height: 1.5;
   font-size: 1.25rem;
   border: 1px solid;

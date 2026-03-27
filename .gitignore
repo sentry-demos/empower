@@ -108,3 +108,5 @@ aspnetcore/*.suo
 /laravel/storage/*.key
 /laravel/vendor
 .sentryclirc
+
+agent/agent_sessions.db

@@ -1,0 +1,24 @@
+# Note: this file is not used by Cloud Run, only locally
+# Most env vars are read from .env (generated from _.env.template by deploy script)
+# Only PORT needs to be passed explicitly (not in .env, comes from AGENT_LOCAL_PORT)
+services:
+  plant-agent:
+    build: .
+    ports:
+      - "${PORT}:${PORT}"
+    env_file:
+      - .env
+    environment:
+      # Override .env values for local development
+      - API_HOST=0.0.0.0
+      - API_RELOAD=true
+      - PORT=${PORT}
+    volumes:
+      - .:/app
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${PORT}/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
