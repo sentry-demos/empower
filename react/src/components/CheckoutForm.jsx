@@ -67,8 +67,8 @@ function CheckoutForm({ backend, rageclick, checkout_success, cart }) {
     checkout_span.setAttributes(tags);
 
     Sentry.metrics.count("checkout_submit.click", 1);
-    Sentry.metrics.gauge("checkout_submit.num_items", itemsInCart);
-    Sentry.metrics.gauge("checkout_submit.order_total", cart.total);
+    Sentry.metrics.distribution("checkout_submit.num_items", itemsInCart);
+    Sentry.metrics.distribution("checkout_submit.order_total", cart.total);
 
     const stopMeasurement = measureRequestDuration('/checkout');
 
@@ -103,7 +103,7 @@ function CheckoutForm({ backend, rageclick, checkout_success, cart }) {
 
       if (!response.error || response.status === undefined) {
         checkout_span.setAttribute("status", response.status);
-        Sentry.metrics.gauge("checkout_submit.status", response.status);
+        Sentry.metrics.distribution("checkout_submit.status", response.status);
 
         throw new Error([response.status, response.statusText || ' Internal Server Error'].join(' -'));
       } else {
