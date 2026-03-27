@@ -3,11 +3,10 @@ const DEFAULT_BACKEND = 'flask';
 const SUPPORTED_BACKEND_TYPES = {
   flask: import.meta.env.VITE_FLASK_BACKEND_URL,
   express: import.meta.env.VITE_EXPRESS_BACKEND_URL,
-  springboot: import.meta.env.VITE_SPRINGBOOT_BACKEND_URL,
+  'spring-boot': import.meta.env.VITE_SPRINGBOOT_BACKEND_URL,
   aspnetcore: import.meta.env.VITE_ASPNETCORE_BACKEND_URL,
   laravel: import.meta.env.VITE_LARAVEL_BACKEND_URL,
-  ruby: import.meta.env.VITE_RUBY_BACKEND_URL,
-  rails: import.meta.env.VITE_RUBYONRAILS_BACKEND_URL,
+  'ruby-on-rails': import.meta.env.VITE_RUBYONRAILS_BACKEND_URL
 };
 
 const determineBackendType = (desiredBackend) => {
