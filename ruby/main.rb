@@ -1,7 +1,7 @@
 require 'sentry-ruby'
 require 'dotenv'
 
-Dotenv.load('gloud-ignore-workaround.env')
+Dotenv.load('gcloud-ignore-workaround.env')
 
 Sentry.init do |config|
   config.dsn = ENV['RUBY_DSN']

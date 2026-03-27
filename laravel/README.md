@@ -34,7 +34,7 @@ web.php has multiple endpoints for showing different ways that errors are handle
 4. Install [artisan](https://github.com/artisan-roaster-scope/artisan/releases/tag/v2.8.2)
 5. In `laravel` folder, run `composer install` to install dependencies from `composer.json`
 6. Set your DSN key, projectID, and Sentry OrganizationID in `.env`
-7. Run `./deploy.sh --env=local react laravel` to spin up both the React FE + Laravel BE
+7. Run `./deploy --env=local react laravel` to spin up both the React FE + Laravel BE
 8. Configure Sentry based on [Laravel SDK docs](https://docs.sentry.io/platforms/php/guides/laravel/) including confirming the "My first Sentry error!" Exception is thrown in Sentry by hitting the `/debug-sentry' endpoint (described in the docs).
 9. Use `http://localhost:8000/handled` and `http://localhost:8000/unhandled` to trigger errors
 

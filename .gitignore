@@ -1,4 +1,14 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+local.env
+local.env.backup
+.local.env.last-merge-sha
+**/.env
+**/*.template.tmp
+**/.*.sh.tmp
+.resolved.env
+.resolved.tmp
+
 *.pyc
 # dependencies
 /node_modules
@@ -19,17 +29,10 @@ react/config-overrides.js
 react/build
 next/dist
 
-
 # misc
 .idea
 .vscode
 .DS_Store
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-.env
-**/.env
 venv
 **/venv
 npm-debug.log*
@@ -86,11 +89,7 @@ ruby/public/assets
 # Ignore master key for decrypting credentials and more.
 ruby/config/master.key
 
-env-config/*
-!env-config/example.env
-
-**/local.env
-tda/env
+_tda/env
 
 next/.env.sentry-build-plugin
 

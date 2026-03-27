@@ -4,7 +4,7 @@ import {
   determineBackendUrl,
 } from '../utils/backendrouter';
 
-process.env.REACT_APP_FLASK_BACKEND = 'http://flask-backend';
+process.env.REACT_APP_BACKEND_URL_FLASK = 'http://flask-backend';
 
 describe('Backend Router', () => {
   const originalEnv = process.env;
@@ -13,7 +13,7 @@ describe('Backend Router', () => {
   beforeEach(() => {
     jest.resetModules(); // Clears the cache
     process.env = { ...originalEnv }; // Make a copy of the environment variables
-    process.env.REACT_APP_FLASK_BACKEND = 'http://flask-backend';
+    process.env.REACT_APP_BACKEND_URL_FLASK = 'http://flask-backend';
     global.alert = jest.fn(); // Mock alert function
     // console.log = jest.fn(); // Mock console.log function
   });
@@ -25,7 +25,7 @@ describe('Backend Router', () => {
 
   describe('determineBackendType', () => {
     it('should return the desired backend type if it is supported', () => {
-      process.env.REACT_APP_FLASK_BACKEND = 'http://flask-backend';
+      process.env.REACT_APP_BACKEND_URL_FLASK = 'http://flask-backend';
       const backendType = determineBackendType('flask');
       expect(backendType).toBe('flask');
     });

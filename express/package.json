@@ -19,10 +19,9 @@
   "author": "Google Inc.",
   "license": "Apache-2.0",
   "dependencies": {
-    "@sentry/cli": "^2.28.6",
-    "@sentry/node": "^7.108.0",
-    "@sentry/profiling-node": "^1.2.6",
-    "@sentry/tracing": "^7.108.0",
+    "@sentry/cli": "^2.50.2",
+    "@sentry/node": "^10.1.0",
+    "@sentry/profiling-node": "^10.1.0",
     "axios": "^1.6.8",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",

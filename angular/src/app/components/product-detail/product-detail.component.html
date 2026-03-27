@@ -1,0 +1,18 @@
+<!-- Product Detail Page - matches React's Product component exactly -->
+<div *ngIf="product" class="product-layout">
+  <div>
+    <img [src]="product.imgcropped || product.img" alt="product" />
+  </div>
+  <div class="product-info">
+    <h1>{{ product.title }}</h1>
+    <p>{{ product.description }}</p>
+    <p *ngIf="product.descriptionfull">{{ product.descriptionfull }}</p> <!-- Full description like React -->
+    <button
+      class="add-cart-btn"
+      (click)="addToCart(product)"
+    >
+      <span>Add to cart —</span> ${{ product.price }}.00
+    </button>
+    <p>{{ averageRating }} Rating</p>
+  </div>
+</div>

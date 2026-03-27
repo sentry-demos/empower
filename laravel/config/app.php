@@ -119,7 +119,7 @@ return [
     |
     */
 
-    'key' => env('APP_KEY'),
+    'key' => env('LARAVEL_APP_KEY'),
 
     'cipher' => 'AES-256-CBC',
 

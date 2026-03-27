@@ -47,8 +47,8 @@ jobs:
       - name: Run cleanup scripts (more agressive for Flex instances)
         run: |
           EXCLUDE="application-monitoring-aspnetcore,application-monitoring-flask,application-monitoring-laravel,application-monitoring-node,application-monitoring-rails,application-monitoring-react,application-monitoring-ruby,application-monitoring-vue,springboot"
-          bin/cleanup_inactive_cloud_resources.sh --project sales-engineering-sf --max-inactive-time-hours 336 --exclude-services "$EXCLUDE"
-          bin/cleanup_inactive_cloud_resources.sh --project sales-engineering-sf --max-inactive-time-hours 48 --flexible-only --exclude-services "$EXCLUDE"
+          _bin/cleanup_inactive_cloud_resources.sh --project sales-engineering-sf --max-inactive-time-hours 336 --exclude-services "$EXCLUDE"
+          _bin/cleanup_inactive_cloud_resources.sh --project sales-engineering-sf --max-inactive-time-hours 48 --flexible-only --exclude-services "$EXCLUDE"
         working-directory: ./empower
           
       - run: echo "Job status is ${{ job.status }}."

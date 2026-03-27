@@ -51,14 +51,6 @@ const tracingOrigins = [
 
 const history = createBrowserHistory();
 
-let ENVIRONMENT;
-if (window.location.hostname === 'localhost') {
-  ENVIRONMENT = 'test';
-} else {
-  // App Engine
-  ENVIRONMENT = 'production';
-}
-    
 const PREFERRED_BACKENDS = ['flask', 'laravel'];
 
 let BACKEND_URL;
@@ -73,6 +65,7 @@ let CHECKOUT_SUCCESS;
 let ERROR_BOUNDARY;
 const DSN = process.env.REACT_APP_DSN;
 const RELEASE = process.env.REACT_APP_RELEASE;
+const ENVIRONMENT = process.env.REACT_APP_ENVIRONMENT;
 
 console.log('ENVIRONMENT', ENVIRONMENT);
 console.log('RELEASE', RELEASE);
@@ -88,7 +81,14 @@ Sentry.init({
   profilesSampleRate: 1.0,
   replaysSessionSampleRate: 1.0,
   debug: true,
-  _experiments: { enableLogs: true },
+  enableLogs: true,
+  beforeSendLog: (log) => {
+    const tags = Sentry.getIsolationScope().getScopeData().tags;
+    if ('user.email' in tags) {
+      log.attributes['user.email'] = tags['user.email'];
+    }
+    return log;
+  },
   integrations: (defaultIntegrations) => [
     // Filter out the Dedupe integration from the defaults
     ...defaultIntegrations.filter(integration => integration.name !== "Dedupe"),
@@ -218,7 +218,7 @@ class App extends Component {
       sessionStorage.setItem('se', se);
     }
 
-    // see `cexp` fixture in tda/conftest.py
+    // see `cexp` fixture in _tda/conftest.py
     let cexp = queryParams.get('cexp')
     if (cexp) {
       currentScope.setTag('cexp', cexp);
@@ -270,40 +270,14 @@ class App extends Component {
     let email = null;
     if (queryParams.get('userEmail')) {
       email = queryParams.get('userEmail');
+    } else if (se && !se.startsWith('prod-tda-')) {
+      email = se + '@example.com';
     } else {
-      // making fewer emails so event and user counts for an Issue are not the same
-      let array = [
-        'a',
-        'b',
-        'c',
-        'd',
-        'e',
-        'f',
-        'g',
-        'h',
-        'i',
-        'j',
-        'k',
-        'l',
-        'm',
-        'n',
-        'o',
-        'p',
-        'q',
-        'r',
-        's',
-        't',
-        'u',
-        'v',
-        'w',
-        'x',
-        'y',
-        'z',
-      ];
-      let a = array[Math.floor(Math.random() * array.length)];
-      let b = array[Math.floor(Math.random() * array.length)];
-      let c = array[Math.floor(Math.random() * array.length)];
-      email = a + b + c + '@example.com';
+      const letters = 'abcdefghijklmnopqrstuvwxyz';
+      email = Array(3)
+        .fill()
+        .map(() => letters[Math.floor(Math.random() * letters.length)])
+        .join('') + '@example.com';
     }
     currentScope.setUser({ email: email });
 
@@ -316,7 +290,7 @@ class App extends Component {
     // Automatically append `se`, `customerType` and `userEmail` query params to all requests
     // (except for requests to Sentry)
     const nativeFetch = window.fetch;
-    window.fetch = function (...args) {
+    window.fetch = async function (...args) {
       let url = args[0];
       // When TDA is run in 'mock' mode inside Docker mini-relay will be ingesting on port 9989, see:
       // https://github.com/sentry-demos/empower/blob/79bed0b78fb3d40dff30411ef26c31dc7d4838dc/mini-relay/Dockerfile#L9
@@ -331,7 +305,11 @@ class App extends Component {
           args[1].headers = { ...args[1].headers, se, customerType, email };
         });
       }
-      return nativeFetch.apply(window, args);
+      let res = nativeFetch.apply(window, args);
+      if (args[0].includes('/apply-promo-code')) { 
+        await new Promise(resolve => setTimeout(resolve, 1000)); // to avoid log lines reordering due to clock drift between FE/BE
+      }
+      return res;
     };
 
     // Crasher parses query params sent by /tests for triggering crashes for Release Health

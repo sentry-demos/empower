@@ -36,14 +36,6 @@ export default function SentryQueryInitializer() {
     //sessionStorage.setItem('se', query.se);
   }
 
-  if (query.frontendSlowdown === 'true') {
-    console.log('> frontend-only slowdown: true');
-    globalScope.setTag('frontendSlowdown', true);
-  } else {
-    console.log('> frontend + backend slowdown');
-    globalScope.setTag('frontendSlowdown', false);
-  }
-
   // TODO Determine if we need below
   // commenting out because its breaking the server component
   // if (query.userFeedback) {

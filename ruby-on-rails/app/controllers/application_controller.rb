@@ -9,7 +9,7 @@ class ApplicationController < ActionController::API
         Sentry.set_tags('se': value)
         # not tested yet
         if value.to_s.downcase.start_with?('prod-tda-')
-          # Sentry.event.fingerprint = [value, ENV["RELEASE"]]
+          # Sentry.event.fingerprint = [value, ENV["RUBYONRAILS_RELEASE"]]
         else
           # Sentry.event.fingerprint = [value]
         end
@@ -28,7 +28,7 @@ class ApplicationController < ActionController::API
         Sentry.set_tags('se': value)
         # not tested yet
         if value.to_s.downcase.start_with?('prod-tda-')
-          # Sentry.event.fingerprint = [value, ENV["RELEASE"]]
+          # Sentry.event.fingerprint = [value, ENV["RUBYONRAILS_RELEASE"]]
         else
           # Sentry.event.fingerprint = [value]
         end

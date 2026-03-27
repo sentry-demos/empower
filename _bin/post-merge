@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# Git post-merge hook to merge upstream changes from .local.env.base into local.env
+# This script runs after every git merge operation
+
+set -e
+
+# Use the new git-based merge system
+REPO_ROOT=$(git rev-parse --show-toplevel)
+"$REPO_ROOT/_bin/merge-local-env"
+
+exit 0

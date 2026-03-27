@@ -3,9 +3,7 @@ env: flex
 runtime_config:
   operating_system: "ubuntu22"
   runtime_version: "17"
-service: ${SERVICE}
-env_variables:
-  SPRINGBOOT_ENV: ${SPRINGBOOT_ENV}
+service: ${SPRINGBOOT_APP_ENGINE_SERVICE}
 handlers:
 - url: /.*
   script: this field is required, but ignored

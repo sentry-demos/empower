@@ -8,8 +8,7 @@ import { notFound } from 'next/navigation';
 
 export default async function Product({ params }) {
   const product = await getProduct((await params).id);
-  console.log(product);
-
+  
   if (!product) {
     notFound();
   }

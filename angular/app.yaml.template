@@ -1,0 +1,25 @@
+env: standard
+service: ${ANGULAR_APP_ENGINE_SERVICE}
+runtime: nodejs20
+
+handlers:
+  - url: /assets
+    static_dir: dist/empower-angular/assets
+  - url: /(.*\.(json|ico|js|css|png|jpg|gif|svg|woff|ttf|eot|otf|wasm))$
+    static_files: dist/empower-angular/\1
+    upload: dist/empower-angular/.*\.(json|ico|js|css|png|jpg|gif|svg|woff|ttf|eot|otf|wasm)$
+    http_headers:
+      Cache-Control: "public, max-age=0"
+  - url: .*
+    static_files: dist/empower-angular/index.html
+    upload: dist/empower-angular/index.html
+    http_headers:
+      Document-Policy: js-profiling
+
+instance_class: F2
+
+env_variables:
+  NODE_ENV: production
+
+vpc_access_connector:
+  name: projects/sales-engineering-sf/locations/us-central1/connectors/empower-plant-connector

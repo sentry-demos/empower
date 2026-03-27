@@ -2,9 +2,9 @@
 
 return [
 
-    'dsn' => env('LARAVEL_APP_DSN'),
+    'dsn' => env('LARAVEL_DSN'),
 
-    'release' => env('RELEASE'),
+    'release' => env('LARAVEL_RELEASE'),
 
     'breadcrumbs' => [
         // Capture Laravel logs in breadcrumbs

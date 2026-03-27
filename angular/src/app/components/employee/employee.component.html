@@ -1,0 +1,10 @@
+<div class="employee-page">
+  <div class="employee-image">
+    <img [src]="employee?.img" [alt]="employee?.name ?? 'Employee'" />
+  </div>
+  <div class="employee-info">
+    <h1>{{ employee?.name ?? 'Loading...' }}</h1>
+    <p>{{ employee?.bio ?? 'Loading employee information...' }}</p>
+    <a [routerLink]="['/about']" class="btn">Back to About</a>
+  </div>
+</div>

@@ -19,7 +19,6 @@ const divStyle = {
  
 export default function Page(props) {
 
-  console.log("in home page");
   const router = useRouter();
   const searchParams = useSearchParams();
   const backend = searchParams.get('backend');

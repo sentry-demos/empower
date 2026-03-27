@@ -22,7 +22,7 @@ jobs:
       # Need to run "npm run build" command for bundle analysis: https://docs.codecov.com/docs/webpack-quick-start
       - name: Build React and run tests
         run: |
-          CI=false ./build.sh
+          ../deploy --env=production react -- CI=false ./build.sh
           npm test -- --coverage --reporters=jest-junit || true
         working-directory: ./react
       - uses: codecov/codecov-action@v5

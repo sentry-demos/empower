@@ -1,4 +1,4 @@
-service: ${SERVICE}
+service: ${RUBY_APP_ENGINE_SERVICE}
 runtime: ruby32
 entrypoint: bundle exec ruby main.rb
 

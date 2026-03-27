@@ -1,5 +1,4 @@
 ﻿**/.dockerignore
-**/.env
 **/.git
 **/.gitignore
 **/.project
@@ -14,5 +13,4 @@
 **/obj
 *.sh
 *.template
-*.list
 README.md

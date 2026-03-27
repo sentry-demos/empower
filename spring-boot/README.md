@@ -6,7 +6,7 @@ This uses java version 8 and SpringBoot version 2.5.4 [spring-boot-starter-paren
 
 2. Set env-config/*.env with
 ```
-REACT_APP_SPRINGBOOT_BACKEND=<value>
+REACT_APP_BACKEND_URL_SPRINGBOOT=<value>
 ```
 
 3. Set other `spring-boot/src/main/resources/application.properties` property values

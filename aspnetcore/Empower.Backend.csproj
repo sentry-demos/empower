@@ -23,6 +23,7 @@
   <ItemGroup>
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
     <PackageReference Include="Sentry.AspNetCore" Version="5.3.0" />
+    <PackageReference Include="DotNetEnv" Version="3.0.0" />
   </ItemGroup>
   
 </Project>

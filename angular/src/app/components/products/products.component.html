@@ -1,0 +1,31 @@
+<div class="products-container">
+  <div *ngIf="loading" class="loader-container">
+    <app-three-dots color="#f6cfb2" [height]="150" [width]="150"></app-three-dots>
+  </div>
+  
+  <ul *ngIf="!loading && products.length > 0" class="products-list">
+    <li *ngFor="let product of products">
+      <div (click)="onProductClick($event, product)">
+        <img [src]="product.img" [alt]="product.title" class="sentry-block" />
+        <div>
+          <h2>{{ product.title }}</h2>
+          <p class="product-description">{{ product.description }}</p>
+        </div>
+        <button
+          id="addToCart"
+          (click)="addToCart($event, product)"
+        >
+          <span class="sentry-unmask">Add to cart — $</span>{{ product.price }}.00
+        </button>
+        <p>
+          <span *ngFor="let star of getStars(product); trackBy: trackByStar" class="star" [innerHTML]="star"></span>
+          ({{ getReviewCount(product) }})
+        </p>
+      </div>
+    </li>
+  </ul>
+  
+  <div *ngIf="!loading && products.length === 0" class="no-products">
+    <p>No products available.</p>
+  </div>
+</div>
