@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"math/rand"
 	"os"
 	"time"
@@ -15,16 +15,17 @@ import (
 func mustEnv(key string) string {
 	v := os.Getenv(key)
 	if v == "" {
-		log.Fatalf("missing env %s", key)
+		slog.Error("missing required env", "key", key)
+		os.Exit(1)
 	}
 	return v
 }
 
 func initSentry() {
 	_ = sentry.Init(sentry.ClientOptions{
-		Dsn:              mustEnv("GO_APP_DSN"),
+		Dsn:              mustEnv("GO_DSN"),
 		Release:          mustEnv("GO_RELEASE"),
-		Environment:      mustEnv("GO_ENV"),
+		Environment:      mustEnv("GO_ENVIRONMENT"),
 		EnableTracing:    true,
 		EnableLogs:       true,
 		TracesSampleRate: 1.0,
@@ -50,16 +51,17 @@ func main() {
 	// Ensure we can reach Redis
 	rdb := redis.NewClient(&redis.Options{Addr: addr, DB: 1})
 	if err := rdb.Ping(context.Background()).Err(); err != nil {
-		log.Fatalf("redis: %v", err)
+		slog.Error("redis connection failed", "error", err)
+		os.Exit(1)
 	}
 
 	// Simple loop to pop from Redis list and process
 	queue := "celery-new-subscriptions"
-	log.Printf("Worker listening on queue: %s", queue)
+	slog.Info("Worker listening", "queue", queue)
 	for {
 		res, err := rdb.BLPop(context.Background(), 0, queue).Result()
 		if err != nil {
-			log.Printf("BLPop error: %v", err)
+			slog.Error("BLPop error", "error", err)
 			time.Sleep(2 * time.Second)
 			continue
 		}
@@ -79,6 +81,6 @@ func main() {
 			continue
 		}
 		time.Sleep(time.Duration(x) * time.Second)
-		log.Printf("Sending email to: %s (delay=%ds)", email, x)
+		slog.Info("Sending email", "to", email, "delay_seconds", x)
 	}
 }
