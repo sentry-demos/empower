@@ -1,7 +1,8 @@
 """Simple API routes for the plant care agent."""
 
 
-from fastapi import APIRouter, HTTPException
+import sentry_sdk.ai
+from fastapi import APIRouter, HTTPException, Request
 
 from ..agents.manager_agent import process_user_request
 from .models import ChatResponse, HealthResponse, PlantPurchaseRequest
@@ -17,11 +18,14 @@ async def health_check() -> HealthResponse:
 
 
 @router.post("/buy-plants", response_model=ChatResponse)  # type: ignore[misc]
-async def buy_plants(request: PlantPurchaseRequest) -> ChatResponse:
+async def buy_plants(
+    request: PlantPurchaseRequest, raw_request: Request
+) -> ChatResponse:
     """Trigger the plant purchase workflow.
 
     Args:
         request: Request containing light and maintenance preferences
+        raw_request: Raw FastAPI request for reading headers
 
     Returns:
         Confirmation of plant purchase
@@ -29,6 +33,10 @@ async def buy_plants(request: PlantPurchaseRequest) -> ChatResponse:
     Raises:
         HTTPException: If processing fails
     """
+    conversation_id = raw_request.headers.get("x-conversation-id")
+    if conversation_id:
+        sentry_sdk.ai.set_conversation_id(conversation_id)
+
     try:
         response = await process_user_request(
             light=request.light, maintenance=request.maintenance
