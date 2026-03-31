@@ -221,11 +221,10 @@ def checkout():
     out_of_stock = [] # list of items that are out of stock
     try:
         if validate_inventory:
+            quantities = {int(k): v for k, v in cart['quantities'].items()}
             with sentry_sdk.start_span(op="code.block", name="checkout.process_order"):
                 if len(quantities) == 0:
                     raise Exception("Invalid checkout request: cart is empty")
-
-                quantities = {int(k): v for k, v in cart['quantities'].items()}
                 inventory_dict = {x.productid: x for x in inventory}
                 for product_id in quantities:
                     inventory_count = inventory_dict[product_id].count if product_id in inventory_dict else 0
