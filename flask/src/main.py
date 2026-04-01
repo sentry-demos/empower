@@ -193,18 +193,31 @@ def enqueue():
 def checkout():
     logger.info('Received /checkout endpoint request')
 
-
-
     try:
         evaluate_statsig_flags()
     except Exception as e:
         sentry_sdk.capture_exception(e)
         logger.error('Error evaluating Statsig flags')
 
-    order = json.loads(request.data)
-    cart = order["cart"]
-    form = order["form"]
-    validate_inventory = True if "validate_inventory" not in order else order["validate_inventory"] == "true"
+    try:
+        order = json.loads(request.data)
+        # Validate request structure
+        if "cart" not in order or "form" not in order:
+            logger.warning('Invalid checkout request: missing cart or form')
+            return jsonify({"error": "Invalid request: missing cart or form"}), 400
+        
+        cart = order["cart"]
+        form = order["form"]
+        
+        # Validate cart structure
+        if "items" not in cart or "quantities" not in cart:
+            logger.warning('Invalid checkout request: cart missing items or quantities')
+            return jsonify({"error": "Invalid request: cart missing items or quantities"}), 400
+        
+        validate_inventory = True if "validate_inventory" not in order else order["validate_inventory"] == "true"
+    except Exception as err:
+        logger.error('Failed to parse checkout request: %s', str(err))
+        return jsonify({"error": "Invalid request format"}), 400
 
     logger.info('Processing /checkout - validating order details')
 
@@ -213,19 +226,21 @@ def checkout():
         inventory = get_inventory(cart)
     except Exception as err:
         logger.error('Failed to get inventory')
-        raise (err)
-
-
+        sentry_sdk.capture_exception(err)
+        return jsonify({"error": "Failed to retrieve inventory"}), 500
 
     fulfilled_count = 0
     out_of_stock = [] # list of items that are out of stock
     try:
         if validate_inventory:
             with sentry_sdk.start_span(op="code.block", name="checkout.process_order"):
-                if len(quantities) == 0:
-                    raise Exception("Invalid checkout request: cart is empty")
-
+                # Parse quantities from cart
                 quantities = {int(k): v for k, v in cart['quantities'].items()}
+                
+                if len(quantities) == 0:
+                    logger.warning('Invalid checkout request: cart is empty')
+                    return jsonify({"error": "Cart is empty"}), 400
+
                 inventory_dict = {x.productid: x for x in inventory}
                 for product_id in quantities:
                     inventory_count = inventory_dict[product_id].count if product_id in inventory_dict else 0
@@ -236,14 +251,14 @@ def checkout():
                         title = list(filter(lambda x: x['id'] == product_id, cart['items']))[0]['title']
                         out_of_stock.append(title)
     except Exception as err:
-
         logger.error('Failed to validate inventory with cart: %s', cart)
-        raise Exception("Error validating enough inventory for product") from err
+        sentry_sdk.capture_exception(err)
+        return jsonify({"error": "Failed to validate inventory"}), 422
 
     if len(out_of_stock) == 0:
-        sentry_sdk.metrics.distribution("checkout.captured.revenue", cart["total"], unit="none")
+        sentry_sdk.metrics.distribution("checkout.captured.revenue", cart.get("total", 0), unit="none")
         result = {'status': 'success'}
-        logging.info("Checkout successful")
+        logger.info("Checkout successful")
     else:
         # react doesn't handle these yet, shows "Checkout complete" as long as it's HTTP 200
         if fulfilled_count == 0:
@@ -251,7 +266,7 @@ def checkout():
         else:
             result = {'status': 'partial', 'out_of_stock': out_of_stock}
 
-    return make_response(json.dumps(result))
+    return make_response(json.dumps(result)), 200
 
 
 @app.route('/success', methods=['GET'])
