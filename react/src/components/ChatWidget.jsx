@@ -8,6 +8,7 @@ const AGENT_URL = process.env.REACT_APP_BACKEND_URL_AGENT;
 
 let messageIdCounter = 0;
 const generateMessageId = () => `msg-${Date.now()}-${++messageIdCounter}`;
+const generateConversationId = () => `conv-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
 const ChatWidget = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -20,6 +21,7 @@ const ChatWidget = () => {
   });
   const messagesEndRef = useRef(null);
   const chatSpanRef = useRef(null);
+  const conversationIdRef = useRef(null);
   const typingSpanRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const inactivityTimeoutRef = useRef(null);
@@ -46,6 +48,7 @@ const ChatWidget = () => {
     initTimeoutsRef.current.forEach(timeoutId => clearTimeout(timeoutId));
     initTimeoutsRef.current = [];
     
+    Sentry.setConversationId(null);
     // Record how the session ended
     if (chatSpanRef.current) {
       const isTimeout = reason === 'inactivity_timeout';
@@ -261,13 +264,18 @@ const ChatWidget = () => {
       try {
         let response, data;
         
+        const requestHeaders = {
+          'Content-Type': 'application/json',
+        };
+        if (conversationIdRef.current) {
+          requestHeaders['x-conversation-id'] = conversationIdRef.current;
+        }
+
         if (chatSpanRef.current) {
           await Sentry.withActiveSpan(chatSpanRef.current, async () => {
             response = await fetch(`${AGENT_URL}/api/v1/buy-plants`, {
               method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
+              headers: requestHeaders,
               body: JSON.stringify({
                 light: userResponses.light,
                 maintenance: `Are you only looking for low-maintenance plants? Answer: ${maintenanceAnswer}`
@@ -278,9 +286,7 @@ const ChatWidget = () => {
         } else {
           response = await fetch(`${AGENT_URL}/api/v1/buy-plants`, {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
+            headers: requestHeaders,
             body: JSON.stringify({
               light: userResponses.light,
               maintenance: `Are you only looking for low-maintenance plants? Answer: ${maintenanceAnswer}`
@@ -318,11 +324,14 @@ const ChatWidget = () => {
 
   const openChat = () => {
     // Opening the chat - start a new trace
+    const conversationId = generateConversationId();
+    conversationIdRef.current = conversationId;
+    Sentry.setConversationId(conversationId);
     Sentry.startNewTrace(() => {
-      const span = Sentry.startInactiveSpan({ 
+      const span = Sentry.startInactiveSpan({
         op: 'ui.interaction.chat',
         name: 'AI Agent Chat Session',
-        forceTransaction: true
+        forceTransaction: true,
       });
       chatSpanRef.current = span;
     });
