@@ -11,7 +11,7 @@ env_variables:
   GO_REDISPORT: 6379
   STATSIG_SERVER_KEY: ${STATSIG_SERVER_KEY}
   GO_DSN: ${GO_DSN}
-  GO_ENV: ${GO_ENVIRONMENT}
+  GO_ENVIRONMENT: ${GO_ENVIRONMENT}
   GO_RELEASE: ${GO_RELEASE}
   # Database settings (shared with Flask)
   DB_HOST: ${DB_HOST}
