@@ -1,4 +1,4 @@
-service: ${SERVICE}
+service: ${GO_APP_ENGINE_SERVICE}
 runtime: go122
 
 instance_class: F2
@@ -10,9 +10,9 @@ env_variables:
   GO_REDISHOST: ${FLASK_REDISHOST}
   GO_REDISPORT: 6379
   STATSIG_SERVER_KEY: ${STATSIG_SERVER_KEY}
-  GO_APP_DSN: ${GO_APP_DSN}
-  GO_ENV: ${GO_ENV}
-  GO_RELEASE: ${RELEASE}
+  GO_DSN: ${GO_DSN}
+  GO_ENV: ${GO_ENVIRONMENT}
+  GO_RELEASE: ${GO_RELEASE}
   # Database settings (shared with Flask)
   DB_HOST: ${DB_HOST}
   DB_DATABASE: ${DB_DATABASE}
@@ -20,7 +20,7 @@ env_variables:
   DB_PASSWORD: ${DB_PASSWORD}
   DB_CLOUD_SQL_CONNECTION_NAME: ${DB_CLOUD_SQL_CONNECTION_NAME}
   # Cross-service backend URL parity
-  GO_RUBY_BACKEND: ${RUBY_BACKEND}
+  GO_RUBY_BACKEND: ${RUBYONRAILS_URL}
 
 vpc_access_connector:
   name: projects/sales-engineering-sf/locations/us-central1/connectors/empower-plant-connector
