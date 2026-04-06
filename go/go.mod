@@ -7,7 +7,7 @@ require (
 	github.com/getsentry/sentry-go/slog v0.44.1
 	github.com/go-errors/errors v1.5.1
 	github.com/jackc/pgx/v5 v5.6.0
-	github.com/redis/go-redis/v9 v9.6.1
+	github.com/redis/go-redis/v9 v9.6.3
 	github.com/sashabaranov/go-openai v1.27.0
 	github.com/statsig-io/go-sdk v1.26.0
 )
@@ -22,9 +22,9 @@ require (
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
 	github.com/statsig-io/ip3country-go v0.2.0 // indirect
 	github.com/ua-parser/uap-go v0.0.0-20211112212520-00c877edfe0f // indirect
-	golang.org/x/crypto v0.19.0 // indirect
-	golang.org/x/sync v0.1.0 // indirect
-	golang.org/x/sys v0.26.0 // indirect
-	golang.org/x/text v0.14.0 // indirect
+	golang.org/x/crypto v0.45.0 // indirect
+	golang.org/x/sync v0.18.0 // indirect
+	golang.org/x/sys v0.38.0 // indirect
+	golang.org/x/text v0.31.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
