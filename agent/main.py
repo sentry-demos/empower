@@ -28,8 +28,8 @@ sentry_sdk.init(
 
 # Create FastAPI app
 app = FastAPI(
-    title="Simple Plant Care API",
-    description="Simple AI plant care assistant - just provide a plant name!",
+    title="Empower Plant Shopping Agent",
+    description="AI shopping assistant for plant care gadgets and accessories",
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
@@ -52,11 +52,10 @@ app.include_router(router, prefix="/api/v1", tags=["agent"])
 async def root() -> dict[str, str]:
     """Root endpoint with basic information."""
     return {
-        "message": "Welcome to the Simple Plant Care API",
+        "message": "Welcome to Empower Plant Shopping Agent",
         "docs": "/docs",
         "health": "/api/v1/health",
-        "agent_info": "/api/v1/agent/info",
-        "plant_care": "/api/v1/plant-care",
+        "chat": "/api/v1/chat",
         "version": "1.0.0",
     }
 

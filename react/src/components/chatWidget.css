@@ -290,3 +290,116 @@
 .chat-messages::-webkit-scrollbar-thumb:hover {
   background: #555;
 }
+
+/* Product Card in Chat */
+.chat-product-card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  max-width: 280px;
+  border: 1px solid #e0e0e0;
+}
+
+.chat-product-card .product-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #002626;
+  margin: 0 0 8px 0;
+}
+
+.chat-product-card .product-price {
+  font-size: 18px;
+  font-weight: 700;
+  color: #2a7d2a;
+  margin: 0 0 8px 0;
+}
+
+.chat-product-card .product-description {
+  font-size: 13px;
+  color: #666;
+  margin: 0 0 12px 0;
+  line-height: 1.4;
+}
+
+.chat-product-card .add-to-cart-button {
+  width: 100%;
+  background-color: #dddc4e;
+  color: #002626;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.chat-product-card .add-to-cart-button:hover {
+  background-color: #c9c844;
+  transform: translateY(-1px);
+}
+
+.chat-product-card .add-to-cart-button:active {
+  transform: translateY(0);
+}
+
+.chat-product-card .add-to-cart-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Checkout Result */
+.checkout-result {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  max-width: 280px;
+}
+
+.checkout-result.success {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.checkout-result.error {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.checkout-result .checkout-icon {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.checkout-result.success .checkout-icon {
+  color: #28a745;
+}
+
+.checkout-result.error .checkout-icon {
+  color: #dc3545;
+}
+
+/* Disabled state for send button */
+.chat-send-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.chat-send-button:disabled:hover {
+  background-color: #ccc;
+  color: white;
+}
+
+/* Disabled state for input */
+.chat-input:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+}

@@ -1,0 +1,19 @@
+# Override root .gitignore for Cloud Build
+# We need .env to be included (generated from _.env.template)
+
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# TypeScript build output (we build in Docker)
+dist/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Local development only
+docker-compose.yml
+run_local.sh
