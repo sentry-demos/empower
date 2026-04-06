@@ -273,7 +273,7 @@ func main() {
 	// Note: sentryContextMiddleware must be INSIDE sentryHandler to access the hub
 	handler := withCORS(sentryHandler.Handle(sentryContextMiddleware(logged)))
 
-	port := os.Getenv("LOCAL_PORT")
+	port := os.Getenv("GO_LOCAL_PORT")
 	if port == "" {
 		port = "8080"
 	}

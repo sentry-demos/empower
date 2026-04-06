@@ -10,13 +10,13 @@ set -e
 required_secrets="$DB_HOST $DB_DATABASE $DB_USERNAME $DB_PASSWORD $DB_CLOUD_SQL_CONNECTION_NAME"
 
 function cleanup {
-  stop.sh go $LOCAL_PORT
+  stop.sh go $GO_LOCAL_PORT
 }
 trap cleanup EXIT
 
-if [ -z "$LOCAL_PORT" ]; then
-  export LOCAL_PORT=8080
+if [ -z "$GO_LOCAL_PORT" ]; then
+  export GO_LOCAL_PORT=8080
 fi
 
-echo "Starting Go server on port $LOCAL_PORT"
+echo "Starting Go server on port $GO_LOCAL_PORT"
 go run ./cmd/server/main.go
