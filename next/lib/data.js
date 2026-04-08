@@ -110,7 +110,7 @@ export async function checkoutAction(cart) {
         for (let inventoryItem of inventory) {
           itemId = inventoryItem.id;
           currentInventory = inventoryItem.count;
-          if (currentInventory < cart.quantities[itemId] || cart.quantities[itemId] >= currentInventory) {
+          if (cart.quantities[itemId] > currentInventory) {
             const error = new Error("Not enough inventory for product")  
             throw error;
           }
