@@ -107,15 +107,17 @@ function Products({ frontendSlowdown, backend, productsApi, productsExtremelySlo
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
       });
-      const data = await response.json();
 
       if (!response.ok) {
         Sentry.setContext('err', {
           status: response.status,
           statusText: response.statusText,
         });
+        Sentry.captureException(new Error(`Failed to fetch products: ${response.status} ${response.statusText}`));
         return;
       }
+
+      const data = await response.json();
       renderProducts(data);
       stopMeasurement();
     })
