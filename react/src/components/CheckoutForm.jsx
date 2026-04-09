@@ -101,7 +101,7 @@ function CheckoutForm({ backend, rageclick, checkout_success, cart }) {
       checkout_span.setAttribute("checkout_submit.error", 1);
       Sentry.metrics.count("checkout_submit.error", 1);
 
-      if (!response.error || response.status === undefined) {
+      if (!response.error && response.status !== undefined) {
         checkout_span.setAttribute("status", response.status);
         Sentry.metrics.distribution("checkout_submit.status", response.status);
 
