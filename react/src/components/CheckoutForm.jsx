@@ -101,21 +101,25 @@ function CheckoutForm({ backend, rageclick, checkout_success, cart }) {
       checkout_span.setAttribute("checkout_submit.error", 1);
       Sentry.metrics.count("checkout_submit.error", 1);
 
-      if (!response.error || response.status === undefined) {
-        checkout_span.setAttribute("status", response.status);
-        Sentry.metrics.distribution("checkout_submit.status", response.status);
-
-        throw new Error([response.status, response.statusText || ' Internal Server Error'].join(' -'));
-      } else {
+      if (response.error || response.status === undefined) {
         checkout_span.setAttribute("status", "unknown_error");
         if (response.error instanceof TypeError && response.error.message === "Failed to fetch") {
           /* A fetch() promise only rejects when e.g. badly-formed request URL or a network error. It does not reject if
           the server responds with HTTP 4xx or 5xx, etc. However some server frameworks might not attach CORS headers 
           when returning HTTP 500 causing promise to reject and response object not be accessible. */
-          Sentry.captureException(new Error("Fetch promise rejected in Checkout due to either an actual network issue, malformed URL, etc or CORS headers not set on HTTP 500: " + response.error));
+          const networkError = new Error("Fetch promise rejected in Checkout due to either an actual network issue, malformed URL, etc or CORS headers not set on HTTP 500: " + response.error);
+          Sentry.captureException(networkError);
+          throw networkError;
         } else {
-          Sentry.captureException(new Error("Checkout request failed: " + response.error));
+          const requestError = new Error("Checkout request failed: " + response.error);
+          Sentry.captureException(requestError);
+          throw requestError;
         }
+      } else {
+        checkout_span.setAttribute("status", response.status);
+        Sentry.metrics.distribution("checkout_submit.status", response.status);
+
+        throw new Error([response.status, response.statusText || ' Internal Server Error'].join(' -'));
       }
     } else {
       checkout_span.setAttribute("checkout_submit.success", 1)
