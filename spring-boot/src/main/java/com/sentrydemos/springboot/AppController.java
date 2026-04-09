@@ -246,8 +246,8 @@ public class AppController {
 				currentInventory = currentInventory - quantities.get(key);
 				Sentry.logger().info("Item " + key + " has quantity " + quantities.get(key) + " and current inventory " + currentInventory);
 				
-				if (!hasInventory()) {
-					String message = "No inventory for item";
+				if (!hasInventory(currentInventory)) {
+					String message = "No inventory for item " + key;
 					Sentry.logger().warn(message);
 					throw new RuntimeException(message);
 				}
@@ -266,8 +266,8 @@ public class AppController {
 		return "Hello " + fullName;
 	}
 	
-	public Boolean hasInventory() {
-		return false;
+	public Boolean hasInventory(int inventory) {
+		return inventory >= 0;
 	}
 	
 }
