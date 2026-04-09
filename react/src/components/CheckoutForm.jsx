@@ -107,9 +107,13 @@ function CheckoutForm({ backend, rageclick, checkout_success, cart }) {
           /* A fetch() promise only rejects when e.g. badly-formed request URL or a network error. It does not reject if
           the server responds with HTTP 4xx or 5xx, etc. However some server frameworks might not attach CORS headers 
           when returning HTTP 500 causing promise to reject and response object not be accessible. */
-          Sentry.captureException(new Error("Fetch promise rejected in Checkout due to either an actual network issue, malformed URL, etc or CORS headers not set on HTTP 500: " + response.error));
+          const networkError = new Error("Fetch promise rejected in Checkout due to either an actual network issue, malformed URL, etc or CORS headers not set on HTTP 500: " + response.error);
+          Sentry.captureException(networkError);
+          throw networkError;
         } else {
-          Sentry.captureException(new Error("Checkout request failed: " + response.error));
+          const requestError = new Error("Checkout request failed: " + response.error);
+          Sentry.captureException(requestError);
+          throw requestError;
         }
       } else {
         checkout_span.setAttribute("status", response.status);
