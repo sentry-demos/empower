@@ -1,11 +1,9 @@
 import json
-import operator
 import os
 import logging
 import sentry_sdk
 import sqlalchemy
 from sqlalchemy import create_engine, text
-from .utils import weighter
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -14,7 +12,6 @@ DATABASE = os.environ["DB_DATABASE"]
 USERNAME = os.environ["DB_USERNAME"]
 PASSWORD = os.environ["DB_PASSWORD"]
 FLASK_ENVIRONMENT = os.environ["FLASK_ENVIRONMENT"]
-PRODUCTS_NUM = 4
 
 class DatabaseConnectionError (Exception):
     pass
@@ -39,7 +36,6 @@ else:
         )
     )
 
-# N+1 because a sql query for every product n
 @sentry_sdk.trace
 def get_products():
     results = []
@@ -47,24 +43,15 @@ def get_products():
         with sentry_sdk.start_span(name="get_products", op="db.connect"):
             connection = db.connect()
 
-        n = weighter(operator.le, 12)
-        # adjust by number of products to get the same timeout as we had in the past
-        # before pg_sleep() was moved out of SELECT clause.
-        n *= PRODUCTS_NUM
-        query = text("SELECT * FROM products WHERE id IN (SELECT id from products, pg_sleep(:sleep_duration))")
-        products = connection.execute(query, sleep_duration=n).fetchall()
+        products = connection.execute(text("SELECT * FROM products")).fetchall()
+
+        reviews = connection.execute(
+            text("SELECT reviews.id, products.id AS productid, reviews.rating, reviews.customerId, reviews.description, reviews.created FROM reviews INNER JOIN products ON reviews.productId = products.id")
+        ).fetchall()
 
         for product in products:
-            # product_bundles is a "sleepy view", run the following query to get current sleep duration:
-            # SELECT pg_get_viewdef('product_bundles', true)
-            query = text("SELECT * FROM reviews, product_bundles WHERE productId = :x")
-            reviews = connection.execute(query, x=product.id).fetchall()
-
             result = dict(product)
-            result["reviews"] = []
-
-            for review in reviews:
-                result["reviews"].append(dict(review))
+            result["reviews"] = [dict(review) for review in reviews if review.productid == product.id]
             results.append(result)
 
         with sentry_sdk.start_span(name="get_products.combined_reviews.json", op="serialization"):
