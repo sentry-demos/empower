@@ -29,12 +29,8 @@ window.BACKEND_URL = BACKEND_URL;
 window.BACKEND_TYPE = backendType;
 
 // Global variables for experiment flags
-let FRONTEND_SLOWDOWN;
 let RAGECLICK;
 let PRODUCTS_API;
-let PRODUCTS_EXTREMELY_SLOW;
-let PRODUCTS_BE_ERROR;
-let ADD_TO_CART_JS_ERROR;
 let CHECKOUT_SUCCESS;
 
 const tracingOrigins = [
@@ -47,7 +43,7 @@ const tracingOrigins = [
 
 Sentry.init({
     app,
-    dsn: import.meta.env.VITE_APP_DSN,
+    dsn: import.meta.env.VITE_DSN,
     release: RELEASE,
     tracePropagationTargets: tracingOrigins,
     integrations:[
@@ -110,32 +106,13 @@ let cexp = queryParams.get('cexp');
 if (cexp) {
   currentScope.setTag('cexp', cexp);
 
-  if (cexp === 'products_extremely_slow') {
-    PRODUCTS_EXTREMELY_SLOW = true;
-  } else if (cexp === 'products_be_error') {
-    PRODUCTS_BE_ERROR = true;
-  } else if (cexp === 'add_to_cart_js_error') {
-    ADD_TO_CART_JS_ERROR = true;
-  } else if (cexp === 'checkout_success') {
+  if (cexp === 'checkout_success') {
     CHECKOUT_SUCCESS = true;
   }
 }
 
-// Frontend slowdown experiment
-if (queryParams.get('frontendSlowdown') === 'true') {
-  console.log('> frontend-only slowdown: true');
-  FRONTEND_SLOWDOWN = true;
-  currentScope.setTag('frontendSlowdown', true);
-} else {
-  console.log('> frontend + backend slowdown');
-  currentScope.setTag('frontendSlowdown', false);
-}
-
 // API type experiment
 if (queryParams.get('api') === 'join') {
-  if (PRODUCTS_EXTREMELY_SLOW || PRODUCTS_BE_ERROR || FRONTEND_SLOWDOWN) {
-    throw new Error('?products_api=join can\'t be combined with ?cexp=products_extremely_slow, ?cexp=products_be_error, or ?frontendSlowdown=true');
-  }
   PRODUCTS_API = 'products-join';
   currentScope.setTag('api', 'products-join');
 } else {
@@ -180,12 +157,8 @@ Sentry.setUser({
 });
 
 // Make experiment flags available globally
-window.FRONTEND_SLOWDOWN = FRONTEND_SLOWDOWN;
 window.RAGECLICK = RAGECLICK;
 window.PRODUCTS_API = PRODUCTS_API;
-window.PRODUCTS_EXTREMELY_SLOW = PRODUCTS_EXTREMELY_SLOW;
-window.PRODUCTS_BE_ERROR = PRODUCTS_BE_ERROR;
-window.ADD_TO_CART_JS_ERROR = ADD_TO_CART_JS_ERROR;
 window.CHECKOUT_SUCCESS = CHECKOUT_SUCCESS;
 
 app.mount("#app");

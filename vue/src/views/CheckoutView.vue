@@ -114,8 +114,11 @@ import { useCounterStore } from "../stores/cart";
       const store = useCounterStore();
       store.increaseQuantity(item)
     },
-    makeCheckoutRequest: function(requestOptions) {
+    makeCheckoutRequest: function(requestOptions, validateInventory) {
       const backendUrl = window.BACKEND_URL + '/checkout';
+      const body = JSON.parse(requestOptions.body);
+      body.validate_inventory = validateInventory ? "true" : "false";
+      requestOptions = { ...requestOptions, body: JSON.stringify(body) };
       Sentry.logger.debug(`Making checkout request to endpoint: ${backendUrl}`)
       return fetch(
           backendUrl,
@@ -138,6 +141,11 @@ import { useCounterStore } from "../stores/cart";
     },
 
     handleSubmit() {
+      if (window.RAGECLICK) {
+        // do nothing — after enough clicks, Sentry will detect a rage click
+        return;
+      }
+
       let success = null;
 
       Sentry.startNewTrace(() => {
@@ -160,7 +168,7 @@ import { useCounterStore } from "../stores/cart";
           };
 
           try {
-            success = await this.makeCheckoutRequest(requestOptions);
+            success = await this.makeCheckoutRequest(requestOptions, !window.CHECKOUT_SUCCESS);
           } catch (error) {
             Sentry.withActiveSpan(span, async () => {
               Sentry.captureException(error);

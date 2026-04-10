@@ -17,7 +17,7 @@ export default {
   },
 
   mounted() {
-    const backendUrl = window.BACKEND_URL + '/products';
+    const backendUrl = window.BACKEND_URL + '/' + window.PRODUCTS_API;
     Sentry.logger.trace(`Fetching products from endpoint: ${backendUrl}`)
     try {
       fetch(backendUrl)

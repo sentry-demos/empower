@@ -6,7 +6,9 @@ const SUPPORTED_BACKEND_TYPES = {
   'spring-boot': import.meta.env.VITE_SPRINGBOOT_BACKEND_URL,
   aspnetcore: import.meta.env.VITE_ASPNETCORE_BACKEND_URL,
   laravel: import.meta.env.VITE_LARAVEL_BACKEND_URL,
-  'ruby-on-rails': import.meta.env.VITE_RUBYONRAILS_BACKEND_URL
+  'ruby-on-rails': import.meta.env.VITE_RUBYONRAILS_BACKEND_URL,
+  'flask-otlp': import.meta.env.VITE_FLASKOTLP_BACKEND_URL,
+  'spring-boot-otlp': import.meta.env.VITE_SPRINGBOOTOTLP_BACKEND_URL,
 };
 
 const determineBackendType = (desiredBackend) => {

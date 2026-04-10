@@ -13,20 +13,3 @@ npm run build # defined in 'scripts' in package.json
 
 sentry-release.sh ${VUE_ENVIRONMENT} ${SENTRY_ORG} ${VUE_SENTRY_PROJECT} ${VUE_RELEASE}
 sentry-cli sourcemaps upload -o ${SENTRY_ORG} -p ${VUE_SENTRY_PROJECT} --release ${VUE_RELEASE} --url-prefix ~/assets --validate dist/assets
-
-# Create serve configuration with profiling headers in the current directory
-cat > serve.json << EOF
-{
-  "headers": [
-    {
-      "source": "**/*",
-      "headers": [
-        {
-          "key": "Document-Policy",
-          "value": "js-profiling"
-        }
-      ]
-    }
-  ]
-}
-EOF
