@@ -56,7 +56,7 @@
         <input type="text" id="zipCode" v-model="zipCode" required />
       </div>
 
-      <button type="submit" class="submit-button">Submit</button>
+      <button type="submit" class="complete-checkout-btn">Submit</button>
       <a href="/products" class="back-link">Back to products</a>
     </form>
   </div>
@@ -70,7 +70,7 @@ import { useCounterStore } from "../stores/cart";
   data() {
     return {
       store: useCounterStore(),
-      email: 'plant.lover@example.com',
+      email: '',
       subscribe: false,
       firstName: 'Jane',
       lastName: 'Greenthumb',
@@ -234,7 +234,7 @@ import { useCounterStore } from "../stores/cart";
     margin-right: 10px;
   }
 
-  .submit-button {
+  .complete-checkout-btn {
     width: 100%;
     padding: 10px;
     background-color: #333;
@@ -246,7 +246,7 @@ import { useCounterStore } from "../stores/cart";
     margin-top: 20px;
   }
 
-  .submit-button:hover {
+  .complete-checkout-btn:hover {
     background-color: #555;
   }
 

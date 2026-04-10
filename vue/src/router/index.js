@@ -6,6 +6,7 @@ import SubscribeView from '../views/SubscribeView.vue'
 import ErrorView from '../views/ErrorView.vue'
 import HomePage from "../components/HomePage.vue";
 import ProductsView from "../views/ProductsView.vue";
+import CartView from "../views/CartView.vue";
 import CheckoutView from "../views/CheckoutView.vue";
 
 const router = createRouter({
@@ -44,6 +45,11 @@ const router = createRouter({
       path: "/trigger",
       name: "trigger",
       component: ManualView,
+    },
+    {
+      path: "/cart",
+      name: "cart",
+      component: CartView,
     },
     {
       path: "/checkout",
