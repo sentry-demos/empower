@@ -267,7 +267,7 @@ public class AppController {
 	}
 	
 	public Boolean hasInventory() {
-		return false;
+		return true;
 	}
 	
 }
