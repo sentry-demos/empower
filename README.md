@@ -49,23 +49,6 @@ While not an Empower React app query param, we also have demo-specific query par
 ## User Feedback
 The [user feedback widget](https://docs.sentry.io/platforms/javascript/user-feedback/#user-feedback-widget) is enabled on all pages, in the bottom-right corner. Submit user feedback from any page to have it [show up in Sentry](https://demo.sentry.io/feedback/?project=5808623&statsPeriod=7d).
 
-## Frontend Applications
-
-### React (Primary)
-- **Status**: Actively maintained, production ready
-- **Documentation**: [react/README.md](./react/README.md)
-- **Features**: Full Sentry integration, multiple backend support
-
-### Angular 20
-- **Status**: Actively maintained, TDA test compatible
-- **Documentation**: [angular/README.md](./angular/README.md)
-- **Deployment Guide**: [angular/DEPLOYMENT.md](./angular/DEPLOYMENT.md)
-- **Features**: Modern Angular framework, Sentry integration, React-matching UI
-
-### Vue.js
-- **Status**: Available but may need updates
-- **Documentation**: [vue/README.md](./vue/README.md)
-
 ## Additional documentation
 
 Note: some of these may be out of date
@@ -74,19 +57,19 @@ Note: some of these may be out of date
 - **"empower/deploy"** (internal doc)
 - See [troubleshooting](./troubleshooting.md)
 - **"Checklist for adding new language/framework demo to Empower"** (internal documentation)
-- [comment at the top of `deploy.sh` file](https://github.com/sentry-demos/empower/blob/master/deploy.sh#L3-L47).
+- [comment at the top of `./deploy` file](https://github.com/sentry-demos/empower/blob/master/deploy#L3-L47).
 
 # Local Setup / Development
 
 > [!WARNING]
-> `npm run` won't work, please use the build system (`deploy.sh`). It sets all required env variables and is documented in detail below:
+> `npm run` won't work, please use the build system (`./deploy`). It sets all required env variables and is documented in detail below:
 
 ## Setup
 
 > [!NOTE]
 > `*.env` files now live in repository root, instead of `./env-config`, and are checked-in to source control. (`empower-config` repo is deprecated)
 
-1. In `local.env` fill in your personal `SENTRY_ORG` and DSNs (also sentry project names if different from standard subdirectory names).
+1. When setting up for the first time run `./deploy --env=local react` (or any other project) to create a `local.env`. In this new `local.env` fill in your personal `SENTRY_ORG` and DSNs (also sentry project names if different from standard subdirectory names).
 2. Confirm [Homebrew](https://brew.sh/) is installed with `brew -v`. If not, install using `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`.
 3. Confirm PostgreSQL is installed with `Postgres -V`. If not, install using `brew install postgresql`.
 4. As the application is compatible with specific versions of `node` and `npm`, install the following to be able to set the specific versions required (below describes how to achieve it using `n` package, but  you can use `nvm`):
@@ -96,20 +79,19 @@ Note: some of these may be out of date
 5. Configure Sentry CLI using [this](https://docs.sentry.io/product/cli/configuration/) document.
 6. Install [gcloud](https://cloud.google.com/sdk/docs/install) in the root of your project to be able to deploy to staging. Initialize the gcloud CLI by running `gcloud init`. When prompted, choose the project `sales-engineering-sf`.
 
-Following sub-projects might not work with `deploy.sh` at this moment. Consult their README's for how to run and deploy them (and feel free to submit a PR that fixes it):
+Following sub-projects might not work with `./deploy` at this moment. Consult their README's for how to run and deploy them (and feel free to submit a PR that fixes it):
 
 - vue
-- ruby
 - nextjs
 
-NOTE: `build.sh` and `run.sh` files in each project are not meant to be run directly, use top-level `deploy.sh` instead because it sets all required environment variables.
+NOTE: **`build.sh`, `deploy_project.sh` and `run_local.sh` files in each project are not meant to be run directly, use top-level `deploy` script instead** because it sets all required environment variables.
 
 If you run locally and only deploy `react` it will point to `staging` backends, however if you include a backend
 projects in the command `react` will magically point to it instead of staging (still requires `&backend=<backend>` url param).
 
-`deploy.sh` takes another argument `--env=<env>`, which can be either `local`, `staging` or `production`. Each value corresponds to one of the *.env files in the root directory. `local` is a special value, it will run all webservers locally instead of deploying to Google App Engine.
+`./deploy` takes another argument `--env=<env>`, which can be either `local`, `staging` or `production`. Each value corresponds to one of the *.env files in the root directory. `local` is a special value, it will run all webservers locally instead of deploying to Google App Engine/Cloud Run.
 
-`deploy.sh` does everything including validating that all required values are set in the `*.env`
+`./deploy` does everything including validating that all required values are set in the `*.env`
 
 It is highly recommended that you read the long comment at the top of `deploy`](https://github.com/sentry-demos/empower/blob/master/deploy) to get an idea how it works.
 
@@ -203,10 +185,6 @@ gcloud app logs tail -s <SERVICE>
 
 `gcloud app deploy` does not support `--update-env-vars RELEASE=$RELEASE` like `gcloud run deploy` does with Cloud Run
 
-## AI Suggestions (nextjs -> flask)
-
-1. Run next and flask (./deploy --env=local next flask)
-2. Get suggestion button should show automatically
 
 ## Caches & Queues (flask)
 
@@ -225,6 +203,10 @@ When the script is terminated (e.g., with Ctrl+C), it performs cleanup to ensure
 
 ## Next.js Demo
 
+### Accessing Vercel
+- The Next.js demo is hosted on Sentry's Vercel account. To run the the demo locally or access the production configuration of the demo, open a PR adding yourself to this file https://github.com/getsentry/security-as-code/blob/main/rbac/env/prod/role/sso/vercel-member.tf
+
+
 ### Running Next.js demo locally
 
 - Install Vercel CLI with `intall -g vercel` from command line
@@ -236,7 +218,6 @@ When the script is terminated (e.g., with Ctrl+C), it performs cleanup to ensure
     NEXT_SENTRY_PROJECT=your-project
     NEXT_SENTRY_ORG=your-org
     ```
-- From the empower repo, run `vercel dev` command. App should run on `localhost:3000`
-
-### Accessing Vercel
-- The Next.js demo is hosted on Sentry's Vercel account. If you need to access the production configuration of the demo, open a PR adding yourself to this file https://github.com/getsentry/security-as-code/blob/main/rbac/env/prod/role/sso/vercel-member.tf
+- Once you have Vercel access run `vercel dev` command from the `empower` repo
+- Following the prompts, select the Sentry org from and the empower project. A vercel config file will be created the first time you do this.
+- App should run on `localhost:3000`

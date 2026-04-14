@@ -1,0 +1,38 @@
+#Create local log
+#logging.file.name=log/spring-boot.log
+
+#https://docs.sentry.io/platforms/java/guides/spring-boot/logging-frameworks/
+
+sentry.logging.minimum-event-level=warn
+sentry.logging.minimum-breadcrumb-level=debug
+sentry.exception-resolver-order=-1
+sentry.enable-tracing=true
+sentry.traces-sample-rate=1.0
+sentry.logs.enabled=true
+
+spring.datasource.driver-class-name=org.postgresql.Driver
+spring.datasource.initialization-mode=always
+
+#So app starts despite "table already exists" errors.
+spring.datasource.continue-on-error=true
+#Enforces database initialization
+spring.sql.init.mode=always
+
+# Must be set for request body to be captured
+sentry.max-request-body-size=always
+sentry.send-default-pii=true
+
+sentry.dsn=${SPRINGBOOTOTLP_DSN}
+sentry.release=${SPRINGBOOTOTLP_RELEASE}
+
+# NOTE: if run.sh is called after build.sh it must overwrite this value
+spring.cloud.gcp.sql.enabled=${SPRINGBOOTOTLP_CLOUD_GCP_SQL_ENABLED}
+
+spring.datasource.username=${DB_USERNAME}
+spring.datasource.password=${DB_PASSWORD}
+# This value is formatted in the form: [gcp-project-id]:[region]:[instance-name]
+spring.cloud.gcp.sql.instance-connection-name=${DB_CLOUD_SQL_CONNECTION_NAME}
+
+spring.datasource.url=jdbc:postgresql://${DB_HOST}:5432/${DB_DATABASE}
+
+empower.rubyonrails_backend=${RUBYONRAILS_URL}

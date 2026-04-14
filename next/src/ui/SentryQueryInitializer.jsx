@@ -28,7 +28,7 @@ export default function SentryQueryInitializer() {
     globalScope.setTag('se', query.se);
     // Set se tag as cookie to persist on server runtime
     Cookies.set("se", query.se);
-    // for use in Checkout.js when deciding whether to pre-fill form
+    // for use in CheckoutForm.js when deciding whether to pre-fill form
     // lasts for as long as the tab is open
 
     // TODO Determine if we need below

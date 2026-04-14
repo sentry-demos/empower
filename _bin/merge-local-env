@@ -63,21 +63,40 @@ git show "$current_base_sha:.local.env.base" > /tmp/base_current 2>/dev/null || 
     exit 1
 }
 
-# Generate patch from last merged version to current base
-if diff -u /tmp/base_last_merged /tmp/base_current > /tmp/forward.patch; then
+# Use git merge-file for intelligent three-way merge
+# This preserves local customizations while applying upstream changes
+if diff -q /tmp/base_last_merged /tmp/base_current > /dev/null 2>&1; then
     echo "No changes needed - files are identical"
 else
     echo "Applying changes from .local.env.base..."
-    patch "$TARGET_FILE" < /tmp/forward.patch || {
-        echo "⚠️  CONFLICT: Patch application failed"
-        echo "   Backup saved as: $TARGET_FILE.backup"
-        echo "   Patch file saved as: /tmp/forward.patch"
-        echo "   Manual intervention required to resolve conflicts"
-        exit 1
-    }
-    echo "✓ Successfully applied changes from .local.env.base"
-    # Clean up backup file since merge was successful
-    rm -f "$TARGET_FILE.backup"
+    
+    # git merge-file performs a 3-way merge:
+    # - /tmp/base_last_merged: the common ancestor (old base)
+    # - "$TARGET_FILE": current file (with local changes)
+    # - /tmp/base_current: their changes (new base)
+    if git merge-file -p "$TARGET_FILE" /tmp/base_last_merged /tmp/base_current > /tmp/merged_result 2>/dev/null; then
+        # Merge succeeded without conflicts
+        mv /tmp/merged_result "$TARGET_FILE"
+        echo "✓ Successfully applied changes from .local.env.base"
+        rm -f "$TARGET_FILE.backup"
+    else
+        # Merge had conflicts - check if it's fatal or just markers
+        merge_exit=$?
+        if [ $merge_exit -eq 1 ]; then
+            # Exit code 1 means conflicts were found but file was generated with conflict markers
+            mv /tmp/merged_result "$TARGET_FILE"
+            echo "⚠️  CONFLICT: Merge completed with conflict markers"
+            echo "   Backup saved as: $TARGET_FILE.backup"
+            echo "   Please review and resolve conflicts marked with <<<<<<< ======= >>>>>>>"
+            exit 1
+        else
+            # Exit code > 1 means merge failed completely
+            echo "⚠️  CONFLICT: Merge failed"
+            echo "   Backup saved as: $TARGET_FILE.backup"
+            echo "   Manual intervention required to resolve conflicts"
+            exit 1
+        fi
+    fi
 fi
 
 # Update the last merge SHA
@@ -85,6 +104,6 @@ echo "$current_base_sha" > "$LAST_MERGE_SHA_FILE"
 echo "✓ Updated merge tracking to commit: $current_base_sha"
 
 # Clean up temp files
-rm -f /tmp/base_last_merged /tmp/base_current /tmp/forward.patch
+rm -f /tmp/base_last_merged /tmp/base_current /tmp/merged_result
 
 exit 0

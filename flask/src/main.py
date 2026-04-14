@@ -7,7 +7,6 @@ import redis
 import logging
 from datetime import datetime
 from flask import Flask, json, jsonify, request, make_response, send_from_directory
-from openai import OpenAI
 from flask_caching import Cache
 from statsig.statsig_user import StatsigUser
 from statsig import statsig, StatsigOptions, StatsigEnvironmentTier
@@ -20,7 +19,6 @@ from sentry_sdk.integrations.flask import FlaskIntegration
 from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 from sentry_sdk.integrations.redis import RedisIntegration
 from sentry_sdk.integrations.logging import LoggingIntegration
-from sentry_sdk.ai.monitoring import ai_track
 from sentry_sdk.integrations.statsig import StatsigIntegration
 from celery import Celery, states
 from celery.exceptions import Ignore
@@ -32,7 +30,7 @@ pests = ["aphids", "thrips", "spider mites", "lead miners", "scale", "whiteflies
 RELEASE = None
 DSN = None
 ENVIRONMENT = None
-BACKEND_URL_RUBY = None
+BACKEND_URL_RUBYONRAILS = None
 RUN_SLOW_PROFILE = None
 
 NORMAL_SLOW_PROFILE = 2 # seconds
@@ -53,7 +51,7 @@ def before_send(event, hint):
             # Now that TDA puts platform/browser and test path into SE tag we want to prevent
             # creating separate issues for those. See https://github.com/sentry-demos/empower/pull/332
             se_fingerprint = prefix[0]
-
+            
         if se.startswith('prod-tda-'):
             event['fingerprint'] = ['{{ default }}', se_fingerprint, RELEASE]
         else:
@@ -64,8 +62,7 @@ def before_send(event, hint):
 
 def traces_sampler(sampling_context):
     sentry_sdk.set_context("sampling_context", sampling_context)
-    wsgi_environ = sampling_context.get('wsgi_environ', {})
-    REQUEST_METHOD = wsgi_environ.get('REQUEST_METHOD', 'GET')
+    REQUEST_METHOD = sampling_context['wsgi_environ']['REQUEST_METHOD']
     if REQUEST_METHOD == 'OPTIONS':
         return 0.0
     else:
@@ -74,13 +71,13 @@ def traces_sampler(sampling_context):
 
 class MyFlask(Flask):
     def __init__(self, import_name, *args, **kwargs):
-        global RELEASE, DSN, ENVIRONMENT, BACKEND_URL_RUBY, RUN_SLOW_PROFILE, redis_client, cache;
+        global RELEASE, DSN, ENVIRONMENT, BACKEND_URL_RUBYONRAILS, RUN_SLOW_PROFILE, redis_client, cache;
         dotenv.load_dotenv()
 
         RELEASE = os.environ["FLASK_RELEASE"]
         DSN = os.environ["FLASK_DSN"]
         ENVIRONMENT = os.environ["FLASK_ENVIRONMENT"]
-        BACKEND_URL_RUBY = os.environ["BACKEND_URL_RUBY"]
+        BACKEND_URL_RUBYONRAILS = os.environ["BACKEND_URL_RUBYONRAILS"]
 
         RUN_SLOW_PROFILE = True
         if "RUN_SLOW_PROFILE" in os.environ:
@@ -96,7 +93,8 @@ class MyFlask(Flask):
                 FlaskIntegration(),
                 SqlalchemyIntegration(),
                 RedisIntegration(cache_prefixes=["flask.", "ruby."]),
-                StatsigIntegration()
+                StatsigIntegration(),
+                LoggingIntegration(event_level=None) # don't send ERROR level logs as events/errors
             ],
             traces_sample_rate=1.0,
             before_send=before_send,
@@ -191,41 +189,6 @@ def enqueue():
     return jsonify({"status": "success"}), 200
 
 
-@app.route('/suggestion', methods=['GET'])
-def suggestion():
-  logger.info('Received /suggestion endpoint request')
-
-  client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
-
-  catalog = request.args.get('catalog')
-  geo = request.args.get('geo')
-
-  logger.info('Processing /suggestion - starting AI pipeline')
-
-  prompt = f'''You are witty plant salesman. Here is your catalog of plants: {catalog}.
-    Provide a suggestion based on the user\'s location. Pick one plant from the catalog provided.
-    Keep your response short and concise. Try to incorporate the weather and current season.'''
-
-  @ai_track("Suggestion Pipeline")
-  def suggestion_pipeline():
-    with sentry_sdk.start_transaction(op="Suggestion AI", description="Suggestion ai pipeline"):
-      response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=
-        [
-          { "role" : "system", "content": prompt },
-          { "role": "user", "content": geo }
-        ]).choices[0].message.content
-      return response
-
-  response = suggestion_pipeline()
-
-  logger.info('Completed /suggestion request - AI suggestion generated')
-
-  return jsonify({"suggestion": response}), 200
-
-
 @app.route('/checkout', methods=['POST'])
 def checkout():
     logger.info('Received /checkout endpoint request')
@@ -247,8 +210,7 @@ def checkout():
 
     inventory = []
     try:
-        with sentry_sdk.start_span(op="/checkout.get_inventory", description="function"):
-            inventory = get_inventory(cart)
+        inventory = get_inventory(cart)
     except Exception as err:
         logger.error('Failed to get inventory')
         raise (err)
@@ -259,7 +221,7 @@ def checkout():
     out_of_stock = [] # list of items that are out of stock
     try:
         if validate_inventory:
-            with sentry_sdk.start_span(op="process_order", description="function"):
+            with sentry_sdk.start_span(op="code.block", name="checkout.process_order"):
                 if len(quantities) == 0:
                     raise Exception("Invalid checkout request: cart is empty")
 
@@ -279,6 +241,7 @@ def checkout():
         raise Exception("Error validating enough inventory for product") from err
 
     if len(out_of_stock) == 0:
+        sentry_sdk.metrics.distribution("checkout.captured.revenue", cart["total"], unit="none")
         result = {'status': 'success'}
         logging.info("Checkout successful")
     else:
@@ -322,14 +285,16 @@ def products():
         ruby_delay_time = 0.5
 
     try:
-        with sentry_sdk.start_span(op="/products.get_products", description="function"):
+        with sentry_sdk.start_span(op="code.block", name="products.get_and_process_products"):
             rows = get_products()
 
             if RUN_SLOW_PROFILE:
                 start_time = time.time()
                 productsJSON = json.loads(rows)
                 descriptions = [product["description"] for product in productsJSON]
-                with sentry_sdk.start_span(op="/get_iterator", description="function"):
+                # this is improper convention (op and name switched up)
+                # keeping it to avoid breaking changes in the demo
+                with sentry_sdk.start_span(op="/get_iterator", name="code.block"):
                     loop = get_iterator(len(descriptions) * 6 + (2 if fetch_promotions else -1))
 
                     for i in range(loop * 10):
@@ -353,48 +318,46 @@ def products():
 
     logger.info('Completed /products request')
 
-
-    get_api_request(cache_key, ruby_delay_time)
+    get_api_response_with_caching(cache_key, ruby_delay_time)
 
     return rows
 
-
-def get_api_request(key, delay):
+@sentry_sdk.trace
+def get_api_response_with_caching(key, delay):
     start_time = time.time()
     logger.info('Processing /products - starting API request')
 
-    with sentry_sdk.start_span(op="/ruby_cached_api_request", description="function"):
-      cached_response = redis_client.get("ruby.api.cache:" + str(key))
+    cached_response = redis_client.get("ruby.api.cache:" + str(key))
 
-      if cached_response is not None:
-          logger.info('Processing /products - cache hit for API request')
+    if cached_response is not None:
+        logger.info('Processing /products - cache hit for API request')
 
-          return cached_response
+        return cached_response
 
-      logger.info('Processing /products - cache miss for API request')
+    logger.info('Processing /products - cache miss for API request')
 
 
-      try:
-          with sentry_sdk.start_span(op="/api_request", description="function"):
-              headers = parseHeaders(RUBY_CUSTOM_HEADERS, request.headers)
-              r = requests.get(BACKEND_URL_RUBY + "/api", headers=headers)
-              r.raise_for_status()  # returns an HTTPError object if an error has occurred during the process
+    try:
+        with sentry_sdk.start_span(op="code.block", name="call_api_on_cache_miss"):
+            headers = parseHeaders(RUBY_CUSTOM_HEADERS, request.headers)
+            r = requests.get(BACKEND_URL_RUBYONRAILS + "/api", headers=headers)
+            r.raise_for_status()  # returns an HTTPError object if an error has occurred during the process
 
-              time_delta = time.time() - start_time
-              sleep_time = delay - time_delta
-              if sleep_time > 0:
+            time_delta = time.time() - start_time
+            sleep_time = delay - time_delta
+            if sleep_time > 0:
                 time.sleep(sleep_time)
 
-              # For demo show we want to show cache misses so only save 1 / 100
-              if key == 7:
+            # For demo show we want to show cache misses so only save 1 / 100
+            if key == 7:
                 logger.info('Processing /products - caching API response')
                 redis_client.set("ruby.api.cache:" + str(key), key)
 
-      except Exception as err:
-          logger.error('Processing /products - API request failed')
-          sentry_sdk.capture_exception(err)
+    except Exception as err:
+        logger.error('Processing /products - API request failed')
+        sentry_sdk.capture_exception(err)
 
-      return key
+    return key
 
 
 @app.route('/products-join', methods=['GET'])
@@ -402,9 +365,8 @@ def products_join():
     logger.info('Received /products-join endpoint request')
 
     try:
-        with sentry_sdk.start_span(op="/products-join.get_products_join", description="function"):
-            rows = get_products_join()
-            logger.info('Processing /products-join - data retrieved')
+        rows = get_products_join()
+        logger.info('Processing /products-join - data retrieved')
     except Exception as err:
         logger.error('Processing /products-join - error getting data')
         sentry_sdk.capture_exception(err)
@@ -412,7 +374,7 @@ def products_join():
 
     try:
         headers = parseHeaders(RUBY_CUSTOM_HEADERS, request.headers)
-        r = requests.get(BACKEND_URL_RUBY + "/api", headers=headers)
+        r = requests.get(BACKEND_URL_RUBYONRAILS + "/api", headers=headers)
         r.raise_for_status()  # returns an HTTPError object if an error has occurred during the process
         logger.info('Processing /products-join - backend API call successful')
     except Exception as err:
@@ -466,15 +428,6 @@ def connect():
     logger.info('Received /connect endpoint request')
     return "flask /connect"
 
-
-@app.route('/showSuggestion', methods=['GET'])
-def showSuggestion():
-    logger.info('Received /showSuggestion endpoint request')
-
-    has_openai_key = os.getenv("OPENAI_API_KEY") is not None
-    logger.info('Processing /showSuggestion - OpenAI key availability checked')
-
-    return jsonify({"response": has_openai_key}), 200
 
 @app.route('/apply-promo-code', methods=['POST'])
 def apply_promo_code():
@@ -573,6 +526,7 @@ def sentry_event_context():
     se = request.headers.get('se')
     customerType = request.headers.get('customerType')
     email = request.headers.get('email')
+    cexp = request.headers.get('cexp')
 
     # Log request context information
     logger.debug('Setting up request context')
@@ -591,3 +545,6 @@ def sentry_event_context():
 
     if email not in [None, "undefined"]:
         sentry_sdk.set_user({"email": email})
+
+    if cexp not in [None, "undefined"]:
+        sentry_sdk.set_tag("cexp", cexp)

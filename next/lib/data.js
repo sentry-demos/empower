@@ -9,7 +9,7 @@ import { cookies } from 'next/headers';
 
 const prisma = new PrismaClient();
 
-export async function getIterator(n = 20) {
+export async function getIterator(n = 35) {
   if (n <= 0) {
     return 0;
   }
@@ -63,18 +63,6 @@ export async function getProductsRaw() {
 
 }
 
-export async function getProductsOnly() {
-  try {
-    console.log("Fetching products...");
-    const products = await prisma.products.findMany();
-
-    return products;
-  } catch (error) {
-    console.error("Database Error:", error)
-    // do sentry stuff
-  }
-}
-
 export async function getProduct(index) {
   const i = Number(index);
   try {
@@ -110,6 +98,8 @@ export async function checkoutAction(cart) {
 
       console.log("> /checkout inventory", inventory)
       let hasError = false;
+      let itemId;
+      let currentInventory
       try {
         if (inventory.length === 0 || cart.quantities.length === 0) {
           const error = new Error("Not enough inventory for product")
@@ -118,15 +108,21 @@ export async function checkoutAction(cart) {
         }
 
         for (let inventoryItem of inventory) {
-          let id = inventoryItem.id;
-          if (inventoryItem.count < cart.quantities[id] || cart.quantities[id] >= inventoryItem.count) {
+          itemId = inventoryItem.id;
+          currentInventory = inventoryItem.count;
+          if (currentInventory < cart.quantities[itemId] || cart.quantities[itemId] >= currentInventory) {
             const error = new Error("Not enough inventory for product")  
             throw error;
           }
         }
       }
       catch (error) {
-        console.log("Failed to validate inventory with cart: ", cart);
+        Sentry.logger.info("Failed to validate inventory", {
+          total:cart.total,
+          itemId:itemId,
+          inventory:currentInventory,
+          quantity:cart.quantities[itemId],
+        });
         Sentry.captureException(error);
         hasError = true;
       }
@@ -149,7 +145,7 @@ export async function getInventory(cart) {
   let inventory;
   try {
     inventory = await prisma.inventory.findMany({
-      where: { id: { in: productIds } }
+      where: { id : { in : productIds } }
     });
   } catch (error) {
     console.log("Database Error:", error);

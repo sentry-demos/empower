@@ -238,10 +238,9 @@ envsubst_() {
     local char="${input:$i:1}"
 
     if [ "$in_var" -eq 1 ]; then
-      if [[ "$char" =~ [a-zA-Z0-9_] ]]; then
-        var_name="$var_name$char"
-      elif [ "$char" = '}' ]; then
-        if [ -n "$var_name" ]; then
+      if [ "$char" = '}' ]; then
+        # Check if var_name is a valid shell variable name
+        if [[ "$var_name" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
           if should_ignore "$var_name"; then
             output="$output\${$var_name}" # output variable name's characters but not the value
           else
@@ -249,13 +248,15 @@ envsubst_() {
             local substitution_result=$(get_variable_substitution "$var_name")
             output="$output$substitution_result" # in --list mode we still do this but discard the output later
           fi
-          var_name=""
+        else
+          # Invalid variable name - output unchanged
+          output="$output\${$var_name}"
         fi
-        in_var=0
-      else
-        output="$output\${$var_name}$char"
         var_name=""
         in_var=0
+      else
+        # Collect any character until we hit }
+        var_name="$var_name$char"
       fi
     elif [ "$char" = '$' ]; then
       local next_char="${input:$((i+1)):1}"

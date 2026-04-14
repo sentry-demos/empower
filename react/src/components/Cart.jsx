@@ -14,6 +14,7 @@ function Cart({ cart, removeProduct, addProduct }) {
   const span = Sentry.startInactiveSpan({ name: "items_added_to_cart", op: "function"});
   span.setAttributes(tags);
   span.end();
+  Sentry.metrics.distribution("items_in_cart", itemsInCart);
   return (
     <div className="cart-container">
       <h2 className="sentry-unmask">Cart</h2>
@@ -66,7 +67,7 @@ function Cart({ cart, removeProduct, addProduct }) {
             <span className="sentry-unmask">Cart Subtotal: $</span>
             {cart.total}.00
           </h3>
-          <Button to="/checkout" className="sentry-unmask">
+          <Button to="/checkout-form" className="sentry-unmask">
             Proceed to checkout
           </Button>
         </>

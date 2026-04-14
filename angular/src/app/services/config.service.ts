@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { environment } from '../../environments/environment';
+import { determineBackendType, determineBackendUrl } from '../utils/backend-router';
 
 /**
  * CheckoutForm interface - represents the checkout form data
@@ -42,6 +43,7 @@ export interface CheckoutForm {
  * 
  * Backend Switching:
  * - Default: Flask backend
+ * - Switch via URL parameter: ?backend=ruby-on-rails, ?backend=express, etc.
  */
 @Injectable({
   providedIn: 'root'
@@ -80,11 +82,10 @@ export class ConfigService {
     // Handle 'backend' parameter (like React)
     // This determines which backend to use for all API calls
     const backendParam = urlParams.get('backend');
-    if (backendParam === 'laravel') {
-      sessionStorage.setItem('backend', 'laravel');
-    } else {
-      sessionStorage.setItem('backend', 'flask');
-    }
+    const backendType = determineBackendType(backendParam);
+    sessionStorage.setItem('backend', backendType);
+    
+    console.log(`> backendType: ${backendType} | backendUrl: ${determineBackendUrl(backendType)}`);
     
     // Handle 'se' parameter (session storage)
     // This identifies which sales engineer is running the demo
@@ -174,25 +175,28 @@ export class ConfigService {
    * URL Examples:
    * - / → Uses Flask backend (default)
    * - /?backend=laravel → Uses Laravel backend
-   * - /?backend=laravel&se=wassim → Uses Laravel + SE tagging
+   * - /?backend=ruby-on-rails&se=wassim → Uses Ruby on Rails + SE tagging
    * 
    * @returns Backend URL string for API calls
    */
   getBackendUrl(): string | undefined {
     const backendPreference = sessionStorage.getItem('backend') || 'flask';
     
-    if (backendPreference === 'laravel') {
-      return environment.BACKEND_URL_LARAVEL;
+    // Use backend-router to get the URL for the selected backend
+    const backendUrl = determineBackendUrl(backendPreference);
+    
+    if (backendUrl) {
+      return backendUrl;
     }
     
-    // Default to Flask backend (Angular default, same as React's Flask default)
-    return environment.BACKEND_URL_FLASK;
+    // Fallback to Flask if no URL found for the backend
+    console.warn(`Backend URL not found for type: ${backendPreference}, falling back to Flask`);
+    return environment.BACKEND_URL_FLASK || '';
   }
 
   getCurrentBackendType(): string {
-    const backendPreference = sessionStorage.getItem('backend') || 'flask';
-    
-    return backendPreference === 'laravel' ? 'laravel' : 'flask';
+    // Get backend preference from session storage (like React)
+    return sessionStorage.getItem('backend') || 'flask';
   }
 
   getSe(): string | null {

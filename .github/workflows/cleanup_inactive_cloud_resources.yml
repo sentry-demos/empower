@@ -41,12 +41,12 @@ jobs:
           service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
 
       - name: 'Set up Google Cloud SDK'
-        uses: 'google-github-actions/setup-gcloud@v0'
+        uses: 'google-github-actions/setup-gcloud@v3'
         
       # TODO: instead of hardcoding generate EXCLUDE list dynamically based on directory names (once naming is standardized)
       - name: Run cleanup scripts (more agressive for Flex instances)
         run: |
-          EXCLUDE="application-monitoring-aspnetcore,application-monitoring-flask,application-monitoring-laravel,application-monitoring-node,application-monitoring-rails,application-monitoring-react,application-monitoring-ruby,application-monitoring-vue,springboot"
+          EXCLUDE="aspnetcore,flask,laravel,experess,ruby-on-rails,react,vue,spring-boot,flask-otlp,spring-boot-otlp,angular,go"
           _bin/cleanup_inactive_cloud_resources.sh --project sales-engineering-sf --max-inactive-time-hours 336 --exclude-services "$EXCLUDE"
           _bin/cleanup_inactive_cloud_resources.sh --project sales-engineering-sf --max-inactive-time-hours 48 --flexible-only --exclude-services "$EXCLUDE"
         working-directory: ./empower

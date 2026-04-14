@@ -5,7 +5,7 @@ import { ProductDetailComponent } from './components/product-detail/product-deta
 import { AboutComponent } from './components/about/about.component';
 import { EmployeeComponent } from './components/employee/employee.component';
 import { CartComponent } from './components/cart/cart.component';
-import { CheckoutComponent } from './components/checkout/checkout.component';
+import { CheckoutFormComponent } from './components/checkout-form/checkout-form.component';
 import { CompleteComponent } from './components/complete/complete.component';
 import { CompleteErrorComponent } from './components/complete-error/complete-error.component';
 
@@ -18,7 +18,7 @@ export const routes: Routes = [
   { path: 'product/:id', component: ProductDetailComponent }, // Product detail route like React
   { path: 'employee/:id', component: EmployeeComponent }, // Employee detail route like React
   { path: 'cart', component: CartComponent }, // Cart route like React
-  { path: 'checkout', component: CheckoutComponent }, // Checkout route like React
+  { path: 'checkout-form', component: CheckoutFormComponent }, // Checkout route like React
   { path: 'complete', component: CompleteComponent }, // Success page like React
   { path: 'error', component: CompleteErrorComponent }, // Error page like React
   { path: '**', redirectTo: '/' }

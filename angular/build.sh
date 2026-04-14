@@ -9,23 +9,32 @@ rm -rf dist
 echo "📥 Installing dependencies..."
 npm install
 
-# This creates optimized production bundles with minification and tree-shaking
-echo "🔨 Building Angular application..."
-npm run build:ng
-
+# Validate required Sentry environment variables before build
 if [ -z "${ANGULAR_SENTRY_ENVIRONMENT}" -o -z "${SENTRY_ORG}" -o -z "${ANGULAR_SENTRY_PROJECT}" -o -z "${ANGULAR_RELEASE}" ]; then
     echo "❌ One of the required env variables not set: ANGULAR_SENTRY_ENVIRONMENT, SENTRY_ORG, ANGULAR_SENTRY_PROJECT, ANGULAR_RELEASE"
     exit 1
-fi   
+fi
 
-# Process source maps for Sentry using the shared script
-echo "Uploading Sentry source maps..."
+# Validate SENTRY_AUTH_TOKEN is available for source map upload
+if [ -z "${SENTRY_AUTH_TOKEN}" ]; then
+    echo "❌ SENTRY_AUTH_TOKEN is not set. Required for source map upload."
+    exit 1
+fi
+
+# This creates optimized production bundles with minification and tree-shaking
+# The @sentry/webpack-plugin will automatically upload source maps during the build
+echo "🔨 Building Angular application (with automatic source map upload)..."
+npm run build:ng
+
+# Associate git commits with the release for suspect commits feature
+# This enables Sentry to show which commits likely caused an error
+echo "📝 Linking git commits to release..."
 sentry-release.sh ${ANGULAR_SENTRY_ENVIRONMENT} ${SENTRY_ORG} ${ANGULAR_SENTRY_PROJECT} ${ANGULAR_RELEASE}
 
 # Verify build output
-# Check that the build completed successfully and show build information
 if [ -d "dist" ]; then
     echo "✅ Build completed successfully!"
+    echo "✅ Source maps uploaded and commits linked (release: ${ANGULAR_RELEASE})"
 else
     echo "❌ Build failed! dist/ directory not found."
     exit 1

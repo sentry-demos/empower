@@ -30,7 +30,7 @@ import Footer from './components/Footer';
 import Nav from './components/Nav';
 import About from './components/About';
 import Cart from './components/Cart';
-import Checkout from './components/Checkout';
+import CheckoutForm from './components/CheckoutForm';
 import Complete from './components/Complete';
 import CompleteError from './components/CompleteError';
 import Employee from './components/Employee';
@@ -46,12 +46,11 @@ const tracingOrigins = [
   'empower-plant.com',
   'run.app',
   'appspot.com',
+  'empower-agent.sentry.gg',
   /^\//,
 ];
 
 const history = createBrowserHistory();
-
-const PREFERRED_BACKENDS = ['flask', 'laravel'];
 
 let BACKEND_URL;
 let BACKEND_TYPE;
@@ -78,6 +77,7 @@ Sentry.init({
   environment: ENVIRONMENT,
   tracesSampleRate: 1.0,
   tracePropagationTargets: tracingOrigins,
+  propagateTraceparent: true, // Sentry <-> OTLP distributed tracing
   profilesSampleRate: 1.0,
   replaysSessionSampleRate: 1.0,
   debug: true,
@@ -141,11 +141,13 @@ Sentry.init({
         // SE Testing
         event.fingerprint = ['{{ default }}', seFingerprint];
       }
+    } else {
+      event.fingerprint = ['{{ default }}'];
     }
 
-    if ((PREFERRED_BACKENDS.includes(BACKEND_TYPE)) && is5xxError && (se && se.startsWith('prod-tda-'))) {
-      // Seer when run automatically will use the latest event. We want it to run on event with flask backend instead of taking chances.
-      event.fingerprint += ['tda-flagship-react-preferred-backends'];
+    if (is5xxError) {
+      // don't group different backends into the same issue to avoid mismatch between Seer autofix and latest event.
+      event.fingerprint.push(BACKEND_TYPE);
     }
 
     if (event.exception) {
@@ -213,7 +215,7 @@ class App extends Component {
     if (se) {
       // Route components (navigation changes) will now have 'se' tag on scope
       currentScope.setTag('se', se);
-      // for use in Checkout.js when deciding whether to pre-fill form
+      // for use in CheckoutForm.js when deciding whether to pre-fill form
       // lasts for as long as the tab is open
       sessionStorage.setItem('se', se);
     }
@@ -267,6 +269,12 @@ class App extends Component {
 
     currentScope.setTag('backendType', backendType);
 
+    const metricScopeAttrs = { backendType };
+    if (cexp) {
+      metricScopeAttrs.cexp = cexp;
+    }
+    Sentry.getGlobalScope().setAttributes(metricScopeAttrs);
+
     let email = null;
     if (queryParams.get('userEmail')) {
       email = queryParams.get('userEmail');
@@ -299,15 +307,14 @@ class App extends Component {
       );
       if (!ignore_match) {
         Sentry.withScope(function (scope) {
-          let se, customerType, email;
-          [se, customerType] = [scope._tags.se, scope._tags.customerType];
-          email = scope._user.email;
-          args[1].headers = { ...args[1].headers, se, customerType, email };
+          let se, customerType, email, cexp;
+          [se, customerType, email, cexp] = [scope._tags.se, scope._tags.customerType, scope._user.email, scope._tags.cexp];
+          args[1].headers = { ...args[1].headers, se, customerType, email, cexp };
         });
       }
       let res = nativeFetch.apply(window, args);
       if (args[0].includes('/apply-promo-code')) { 
-        await new Promise(resolve => setTimeout(resolve, 1000)); // to avoid log lines reordering due to clock drift between FE/BE
+        await new Promise(resolve => setTimeout(resolve, 1500)); // to avoid log lines reordering due to clock drift between FE/BE
       }
       return res;
     };
@@ -339,9 +346,9 @@ class App extends Component {
               ></Route>
               <Route path="/cart" element={<Cart />} />
               <Route
-                path="/checkout"
+                path="/checkout-form"
                 element={
-                  <Checkout
+                  <CheckoutForm
                     backend={BACKEND_URL}
                     rageclick={RAGECLICK}
                     checkout_success={CHECKOUT_SUCCESS}

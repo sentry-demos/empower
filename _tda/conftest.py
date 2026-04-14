@@ -115,7 +115,7 @@ BATCH_SIZE = os.getenv("IS_CANARY") and "1" or (os.getenv("BATCH_SIZE") or "1")
 SLEEP_LENGTH = os.getenv("SLEEP_LENGTH") or "random_2_1"
 
 # Currently only used in desktop_web/ tests. Mobile apps have it hardcoded.
-BACKENDS = (os.getenv("BACKENDS") or "flask,express,springboot,laravel,rails,aspnetcore").split(',')
+BACKENDS = (os.getenv("BACKENDS") or "flask,express,spring-boot,laravel,ruby-on-rails,aspnetcore,flask-otlp,spring-boot-otlp").split(',')
 
 # set in loop.sh
 IS_FIRST_RUN_OF_THE_DAY = os.getenv("IS_FIRST_RUN_OF_THE_DAY")
@@ -333,10 +333,13 @@ def cexp(random):
 def endpoints():
     return CONFIG
 
-@pytest.fixture(params=CONFIG.browsers, ids=[b.param_display for b in CONFIG.browsers])
+@pytest.fixture
 def current_browser(request):
     """Provides the current browser configuration to test functions"""
-    return request.param
+    # Get the browser configuration from the desktop_web_driver fixture
+    # This avoids duplicate parametrization while maintaining the same interface
+    import builtins
+    return getattr(builtins, '_current_browser_config')
 
 @pytest.fixture
 def is_first_run_of_the_day():
@@ -494,6 +497,10 @@ def _local_browser(request, se):
 
 @pytest.fixture(params=CONFIG.browsers, ids=[b.param_display for b in CONFIG.browsers])
 def desktop_web_driver(request, se_prefix):
+    # Store the current browser configuration globally so current_browser can access it
+    import builtins
+    builtins._current_browser_config = request.param
+    
     if request.param.remote:
         se = f'{se_prefix}-sauce-{request.param.param_display}'
         sentry_sdk.set_tag("se", se)
@@ -504,6 +511,24 @@ def desktop_web_driver(request, se_prefix):
         sentry_sdk.set_tag("se", se)
         with _local_browser(request, se) as b:
             yield b
+
+
+@pytest.fixture
+def desktop_web_1browser_driver(request, se_prefix):
+    """Like desktop_web_driver but only uses the first browser from CONFIG.browsers (no parameterization)"""
+    browser_config = CONFIG.browsers[0]
+    
+    import builtins
+    builtins._current_browser_config = browser_config
+    
+    # Create a wrapper that mimics request.param for _sauce_browser
+    request.param = browser_config
+    
+    se = f'{se_prefix}-sauce-{browser_config.param_display}'
+    sentry_sdk.set_tag("se", se)
+    with _sauce_browser(request, se) as b:
+        yield b
+
 
 @pytest.fixture
 def android_react_native_emu_driver(request, se_prefix):

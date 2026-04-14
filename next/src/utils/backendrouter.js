@@ -1,13 +1,14 @@
 const DEFAULT_BACKEND = 'flask';
 
 const SUPPORTED_BACKEND_TYPES = {
-  flask: process.env.NEXT_PUBLIC_BACKEND_URL_FLASK,
-  express: process.env.REACT_APP_BACKEND_URL_EXPRESS,
-  springboot: process.env.REACT_APP_BACKEND_URL_SPRINGBOOT,
-  aspnetcore: process.env.REACT_APP_BACKEND_URL_ASPNETCORE,
-  laravel: process.env.REACT_APP_BACKEND_URL_LARAVEL,
-  ruby: process.env.REACT_APP_BACKEND_URL_RUBY,
-  rails: process.env.REACT_APP_BACKEND_URL_RUBYONRAILS,
+  flask: process.env.NEXT_PUBLIC_FLASK_BACKEND,
+  express: process.env.NEXT_PUBLIC_EXPRESS_BACKEND,
+  'spring-boot': process.env.NEXT_PUBLIC_SPRINGBOOT_BACKEND,
+  aspnetcore: process.env.NEXT_PUBLIC_ASPNETCORE_BACKEND,
+  laravel: process.env.NEXT_PUBLIC_LARAVEL_BACKEND,
+  'ruby-on-rails': process.env.NEXT_PUBLIC_RUBYONRAILS_BACKEND,
+  'flask-otlp': process.env.NEXT_PUBLIC_FLASKOTLP_BACKEND,
+  'spring-boot-otlp': process.env.NEXT_PUBLIC_SPRINGBOOTOTLP_BACKEND,
 };
 
 const determineBackendType = (desiredBackend) => {
@@ -15,14 +16,13 @@ const determineBackendType = (desiredBackend) => {
     if (SUPPORTED_BACKEND_TYPES[desiredBackend]) {
       return desiredBackend;
     } else {
+      const supportedBackendsList = Object.keys(SUPPORTED_BACKEND_TYPES)
+        .map(type => `- ${type}`)
+        .join('\n');
       const warnText =
-        "You tried to set backend type as '" +
-        desiredBackend +
-        "', which is not supported. Proceeding with the default type: '" +
-        DEFAULT_BACKEND +
-        "'";
+        "?backend value not recognized.\nSupported backends:\n" +
+        supportedBackendsList;
       alert(warnText);
-      console.log(warnText);
     }
   }
   return DEFAULT_BACKEND;

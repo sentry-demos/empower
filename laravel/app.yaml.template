@@ -4,5 +4,8 @@ runtime: php83
 env_variables:
   APP_STORAGE: "/tmp"
   IS_APP_ENGINE: true
+  CACHE_STORE: file
+  VIEW_COMPILED_PATH: /tmp/laravel-views
+  LOG_PATH: /tmp/laravel.log
 manual_scaling:
-  instances: 1
+  instances: 1 

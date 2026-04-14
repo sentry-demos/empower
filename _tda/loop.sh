@@ -57,9 +57,5 @@ echo "[$(date '+%Y-%m-%d %H:%M:%S')] loop.sh started with PID $$, command: $*"
 
 while true; do 
   echo "[$(date '+%Y-%m-%d %H:%M:%S')] [loop.sh] running: $@"
-  
-  # sets IS_FIRST_RUN_OF_THE_DAY accordingly
-  check_is_first_run_of_the_day
-  
   "$@"
 done
