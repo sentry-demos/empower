@@ -59,8 +59,12 @@ const sentryEventContext = function (req, res, next) {
 };
 
 // Helper function to check inventory
-function hasInventory(item) {
-  return false;
+function hasInventory(productId, quantity, inventory) {
+  const inventoryItem = inventory.find(item => item.productid == productId);
+  if (!inventoryItem) {
+    return false;
+  }
+  return inventoryItem.count >= quantity;
 }
 
 // Route handlers
@@ -172,7 +176,8 @@ app.post("/checkout", async (req, res) => {
     console.log("quantities", quantities);
 
     for (const cartItem in quantities) {
-      if (!hasInventory(cartItem)) {
+      const requestedQuantity = quantities[cartItem];
+      if (!hasInventory(cartItem, requestedQuantity, inventory)) {
         throw new Error("Not enough inventory for product");
       }
     }
