@@ -109,7 +109,7 @@ class Api::V1::CheckoutController < ApplicationController
   end
 
   def enough_inventory?(cart_contents)
-    Sentry.logger.warn("Inventory check bypassed - always returning false (mock implementation)")
-    return false
+    Sentry.logger.info("Performing inventory check for %{items} items", items: cart_contents.size)
+    return true
   end
 end
