@@ -172,7 +172,10 @@ app.post("/checkout", async (req, res) => {
     console.log("quantities", quantities);
 
     for (const cartItem in quantities) {
-      if (!hasInventory(cartItem)) {
+      const requestedQty = quantities[cartItem];
+      const inventoryItem = inventory.find(inv => inv.productid == cartItem);
+      
+      if (!inventoryItem || inventoryItem.count < requestedQty) {
         throw new Error("Not enough inventory for product");
       }
     }
