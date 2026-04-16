@@ -319,6 +319,9 @@ class App extends Component {
       return res;
     };
 
+  }
+
+  componentDidMount() {
     // Crasher parses query params sent by /tests for triggering crashes for Release Health
     crasher();
   }
@@ -397,4 +400,9 @@ class App extends Component {
 }
 
 // React-router in use here https://reactrouter.com/web/guides/quick-start
-ReactDOM.render(<App />, document.getElementById('root'));
+ReactDOM.render(
+  <Sentry.ErrorBoundary fallback={<p>An error has occurred.</p>}>
+    <App />
+  </Sentry.ErrorBoundary>,
+  document.getElementById('root')
+);
