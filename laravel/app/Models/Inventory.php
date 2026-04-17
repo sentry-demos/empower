@@ -13,7 +13,7 @@ class Inventory extends Model
     /**
      * The table associated with the model.
      */
-    protected $table = 'inventory';
+    protected $table = 'inventories';
 
     /**
      * Indicates if the model should be timestamped.
@@ -23,12 +23,12 @@ class Inventory extends Model
     protected $fillable = [
         'sku',
         'count',
-        'productid',
+        'product_id',
     ];
 
     protected $casts = [
         'count' => 'integer',
-        'productid' => 'integer',
+        'product_id' => 'integer',
     ];
 
     /**
@@ -36,7 +36,7 @@ class Inventory extends Model
      */
     public function product(): BelongsTo
     {
-        return $this->belongsTo(Product::class, 'productid');
+        return $this->belongsTo(Product::class, 'product_id');
     }
 
     /**

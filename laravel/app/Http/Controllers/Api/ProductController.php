@@ -200,17 +200,17 @@ class ProductController extends Controller
         $out_of_stock = []; // list of items that are out of stock
         try {
             if ($validate_inventory) {
-                if (empty($quantities)) {
-                    throw new Exception("Invalid checkout request: cart is empty");
-                }
-
                 $quantities = [];
                 foreach ($cart['quantities'] as $key => $value) {
                     $quantities[(int)$key] = $value;
                 }
+
+                if (empty($quantities)) {
+                    throw new Exception("Invalid checkout request: cart is empty");
+                }
                 $inventory_dict = [];
                 foreach ($inventory as $x) {
-                    $inventory_dict[$x->productid] = $x;
+                    $inventory_dict[$x->product_id] = $x;
                 }
 
                 foreach ($quantities as $product_id => $quantity) {
@@ -388,7 +388,7 @@ function get_inventory($cart) {
     }
     
     try {
-        $inventory = DB::select('SELECT * FROM inventory WHERE productid IN (' . implode(',', array_fill(0, count($productIds), '?')) . ')', $productIds);
+        $inventory = DB::select('SELECT * FROM inventories WHERE product_id IN (' . implode(',', array_fill(0, count($productIds), '?')) . ')', $productIds);
     } catch (Exception $err) {
         throw new Exception('get_inventory', 0, $err);
     }
