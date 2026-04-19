@@ -128,6 +128,10 @@ def get_inventory(cart):
 
     print("> productIds", productIds)
 
+    # Handle empty cart case to avoid PostgreSQL type inference issues
+    if not productIds:
+        return []
+
     try:
         with sentry_sdk.start_span(name="get_inventory", op="db.connect"):
             connection = db.connect()
