@@ -11,7 +11,7 @@ from flask_caching import Cache
 from statsig.statsig_user import StatsigUser
 from statsig import statsig, StatsigOptions, StatsigEnvironmentTier
 import dotenv
-from .db import decrement_inventory, get_products, get_products_join, get_inventory, get_promo_code
+from .db import decrement_inventory, get_products, get_products_join, get_inventory, get_all_inventory, get_promo_code
 from .utils import parseHeaders, get_iterator, evaluate_statsig_flags
 from .queues.tasks import sendEmail
 import sentry_sdk
@@ -287,6 +287,12 @@ def products():
     try:
         with sentry_sdk.start_span(op="code.block", name="products.get_and_process_products"):
             rows = get_products()
+            
+            # Fetch inventory if in_stock_only filter is requested
+            if in_stock_only:
+                inventory = get_all_inventory()
+                # Create a set of product IDs that are in stock for efficient lookup
+                product_inventory = {inv.productid for inv in inventory}
 
             if RUN_SLOW_PROFILE:
                 start_time = time.time()
@@ -304,7 +310,7 @@ def products():
 
                         for i, description in enumerate(descriptions):
                             for pest in pests:
-                                if in_stock_only and productsJSON[i] not in product_inventory:
+                                if in_stock_only and productsJSON[i]["id"] not in product_inventory:
                                     continue
                                 if pest in description:
                                     try:
