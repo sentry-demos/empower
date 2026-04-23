@@ -28,43 +28,52 @@ public class DatabaseHelper {
 	
 	
 	public String mapAllProducts(ISpan span) throws Exception {
-		return executeWithSpan("db", "SELECT * FROM products", () -> {
-			List<Item> allItems = jdbcTemplate.query("SELECT * FROM products",
-					(rs, rowNum) -> {
-						try {
-							return new Item(rs.getInt("id"), rs.getString("title"), rs.getString("description"),
-									rs.getString("descriptionfull"), rs.getInt("price"), rs.getString("img"),
-									rs.getString("imgcropped"), mapAllReviews(rs.getInt("id"), span));
-						} catch (Exception e) {
-							throw new RuntimeException("Failed to map reviews for product " + rs.getInt("id"), e);
-						}
-					});
-			
-			JSONArray ja = new JSONArray();
-			for (Item i : allItems) {
-				JSONObject jsonItemObject = new JSONObject(i);
-				ja.put(jsonItemObject);
-			}
-			
-			Sentry.logger().info("Products retrieved successfully", 
-				"total_products", allItems.size(),
-				"sql_query", "SELECT * FROM products");
-			
-			return ja.toString();
+		String productsSql = "SELECT * FROM products";
+		List<Item> allItems = executeWithSpan("db", productsSql, () -> {
+			List<Item> items = jdbcTemplate.query(productsSql,
+					(rs, rowNum) -> new Item(rs.getInt("id"), rs.getString("title"), rs.getString("description"),
+							rs.getString("descriptionfull"), rs.getInt("price"), rs.getString("img"),
+							rs.getString("imgcropped"), null));
+			return items;
 		});
-	}
 
-	public List<Review> mapAllReviews(int productId, ISpan span) throws Exception {
-		// weekly_promotions is a "sleepy view", run the following query to get current sleep duration:
-		// SELECT pg_get_viewdef('weekly_promotions', true)
-		String sql = "SELECT * FROM reviews, weekly_promotions WHERE productId = " + String.valueOf(productId);
-		
-		return executeWithSpan("db", sql, () -> {
-			List<Review> allReviews = jdbcTemplate.query(sql, (rs, rowNum) -> new Review(rs.getInt("id"), rs.getInt("productid"),
-					rs.getInt("rating"), rs.getInt("customerid"), rs.getString("description"), rs.getString("created")));
-			//TODO: sqlSpan.setData() on reviews. setData() currently unavailable
-			return allReviews;
+		String reviewsSql = "SELECT reviews.id, products.id AS productid, reviews.rating, reviews.customerId, reviews.description, reviews.created FROM reviews INNER JOIN products ON reviews.productId = products.id";
+		executeWithSpan("db", reviewsSql, () -> {
+			Map<Integer, List<Review>> reviewsMap = new HashMap<>();
+			List<Map<String, Object>> resultList = jdbcTemplate.queryForList(reviewsSql);
+			for (Map<String, Object> m : resultList) {
+				String desc = "";
+				if (m.containsKey("description") && m.get("description") != null) {
+					desc = String.valueOf(m.get("description"));
+				}
+				int custId = 0;
+				if (m.containsKey("customerId") && m.get("customerId") != null) {
+					custId = (int) m.get("customerId");
+				}
+
+				Review r = new Review((int) m.get("id"), (int) m.get("productid"),
+						(int) m.get("rating"), custId, desc, m.get("created").toString());
+
+				reviewsMap.computeIfAbsent((int) m.get("productid"), k -> new ArrayList<>()).add(r);
+			}
+
+			for (Item i : allItems) {
+				i.setReviews(reviewsMap.get(i.getId()));
+			}
+			return null;
 		});
+
+		JSONArray ja = new JSONArray();
+		for (Item i : allItems) {
+			JSONObject jsonItemObject = new JSONObject(i);
+			ja.put(jsonItemObject);
+		}
+
+		Sentry.logger().info("Products retrieved successfully",
+			"total_products", allItems.size(),
+			"sql_query", productsSql);
+
+		return ja.toString();
 	}
 
 	public String mapAllProductsJoin(ISpan transaction) throws Exception {
