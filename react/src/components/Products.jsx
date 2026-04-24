@@ -91,7 +91,7 @@ function Products({ frontendSlowdown, backend, productsApi, productsExtremelySlo
     fixed with hooks (no transform on that class method anymore)"
   */
   async function getProducts(frontendSlowdown) {
-    [('/api', '/connect', '/organization')].forEach((endpoint, activeSpan) => {
+    ['/api', '/connect', '/organization'].forEach((endpoint, activeSpan) => {
       fetch(backend + endpoint, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
