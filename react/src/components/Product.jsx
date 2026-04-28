@@ -34,7 +34,12 @@ function Product(props) {
         <p>{product.descriptionfull}</p>
         <button
           className="add-cart-btn"
-          onClick={() => props.addProduct(product)}
+          onClick={() => {
+            props.addProduct(product);
+            Sentry.metrics.count('cart.add', 1, {
+              attributes: { source: 'product_detail', product_id: product.id },
+            });
+          }}
         >
           <span className="sentry-unmask">Add to cart —</span> ${product.price}
           .00

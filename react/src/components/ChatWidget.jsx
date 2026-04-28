@@ -227,7 +227,14 @@ const ChatWidget = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!userInput.trim()) return;
-    
+
+    Sentry.metrics.count('chat.message_sent', 1, {
+      attributes: { step: conversationState },
+    });
+    if (conversationState === 'awaiting_light') {
+      Sentry.metrics.count('chat.conversation_started', 1);
+    }
+
     // Track the send click
     handleSendClick();
 
@@ -323,6 +330,7 @@ const ChatWidget = () => {
   };
 
   const openChat = () => {
+    Sentry.metrics.count('chat.open', 1);
     // Opening the chat - start a new trace
     const conversationId = generateConversationId();
     conversationIdRef.current = conversationId;
