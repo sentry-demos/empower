@@ -267,7 +267,7 @@ def success():
 def products():
     logger.info('Received /products endpoint request')
 
-    cache_key = str(random.randrange(100))
+    cache_key = "7"
 
     product_inventory = None
     fetch_promotions = request.args.get('fetch_promotions')
@@ -348,8 +348,7 @@ def get_api_response_with_caching(key, delay):
             if sleep_time > 0:
                 time.sleep(sleep_time)
 
-            # For demo show we want to show cache misses so only save 1 / 100
-            if key == 7:
+            if key == "7":
                 logger.info('Processing /products - caching API response')
                 redis_client.set("ruby.api.cache:" + str(key), key)
 
