@@ -25,6 +25,7 @@ const ChatWidget = () => {
   const typingSpanRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const inactivityTimeoutRef = useRef(null);
+  const conversationStartedRef = useRef(false);
   const initTimeoutsRef = useRef([]);
 
   const scrollToBottom = () => {
@@ -231,7 +232,8 @@ const ChatWidget = () => {
     Sentry.metrics.count('chat.message_sent', 1, {
       attributes: { step: conversationState },
     });
-    if (conversationState === 'awaiting_light') {
+    if (conversationState === 'awaiting_light' && !conversationStartedRef.current) {
+      conversationStartedRef.current = true;
       Sentry.metrics.count('chat.conversation_started', 1);
     }
 
@@ -331,7 +333,7 @@ const ChatWidget = () => {
 
   const openChat = () => {
     Sentry.metrics.count('chat.open', 1);
-    // Opening the chat - start a new trace
+    conversationStartedRef.current = false;
     const conversationId = generateConversationId();
     conversationIdRef.current = conversationId;
     Sentry.setConversationId(conversationId);
