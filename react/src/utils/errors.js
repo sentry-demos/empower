@@ -9,8 +9,9 @@ const notAFunctionError = () => {
 const referenceError = () => {
   throw new ReferenceError('undefinedVariable is not defined');
 };
-//eslint-disable-next-line
-const syntaxError = () => eval('foo bar');
+const syntaxError = () => {
+  throw new SyntaxError("Expected ';' after expression");
+};
 const rangeError = () => {
   throw new RangeError('Parameter must be between 1 and 100');
 };
