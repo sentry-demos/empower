@@ -42,14 +42,24 @@ function Cart({ cart, removeProduct, addProduct }) {
                   </p>
                   <div className="quantity-adjust">
                     <button
-                      onClick={() => removeProduct(item)}
+                      onClick={() => {
+                        removeProduct(item);
+                        Sentry.metrics.count('cart.remove', 1, {
+                          attributes: { product_id: item.id },
+                        });
+                      }}
                       className="sentry-unmask"
                     >
                       –
                     </button>
                     <span>{quantity}</span>
                     <button
-                      onClick={() => addProduct(item)}
+                      onClick={() => {
+                        addProduct(item);
+                        Sentry.metrics.count('cart.add', 1, {
+                          attributes: { source: 'cart', product_id: item.id },
+                        });
+                      }}
                       className="sentry-unmask"
                     >
                       +

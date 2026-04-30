@@ -69,8 +69,6 @@ const ENVIRONMENT = process.env.REACT_APP_ENVIRONMENT;
 console.log('ENVIRONMENT', ENVIRONMENT);
 console.log('RELEASE', RELEASE);
 
-
-
 Sentry.init({
   dsn: DSN,
   release: RELEASE,
@@ -91,7 +89,9 @@ Sentry.init({
   },
   integrations: (defaultIntegrations) => [
     // Filter out the Dedupe integration from the defaults
-    ...defaultIntegrations.filter(integration => integration.name !== "Dedupe"),
+    ...defaultIntegrations.filter(
+      (integration) => integration.name !== 'Dedupe'
+    ),
     // Add custom integrations with options
     Sentry.feedbackIntegration({
       // Additional SDK configuration goes in here, for example:
@@ -111,10 +111,11 @@ Sentry.init({
       blockAllMedia: false,
       // https://docs.sentry.io/platforms/javascript/session-replay/configuration/#network-details
       networkDetailAllowUrls: [/.*/],
-      unmask: [".sentry-unmask"],
+      unmask: ['.sentry-unmask'],
     }),
     Sentry.statsigIntegration({ featureFlagClient: statsigClient }),
     Sentry.consoleLoggingIntegration(), // All console logs are sent to Sentry
+    Sentry.elementTimingIntegration(),
   ],
   beforeSend(event, hint) {
     // Parse from tags because src/index.js already set it there. Once there are React route changes, it is no longer in the URL bar
@@ -123,7 +124,8 @@ Sentry.init({
       se = scope._tags.se;
     });
 
-    let is5xxError = event.exception && /^5\d{2} - .*$/.test(event.exception.values[0].value);
+    let is5xxError =
+      event.exception && /^5\d{2} - .*$/.test(event.exception.values[0].value);
     if (se && is5xxError) {
       // Create a separate issue for each SE and RELEASE combination
       const seTdaPrefixRegex = /[^-]+-tda-[^-]+-/;
@@ -201,7 +203,7 @@ class App extends Component {
     // recommended (https://docs.sentry.io/platforms/javascript/enriching-events/scopes/#isolation-scope),
     // because that would set the tag on the isolation scope, and make it inaccessible
     // when it's time to set the headers.
-    let currentScope = Sentry.getCurrentScope()
+    let currentScope = Sentry.getCurrentScope();
 
     const customerType = [
       'medium-plan',
@@ -221,7 +223,7 @@ class App extends Component {
     }
 
     // see `cexp` fixture in _tda/conftest.py
-    let cexp = queryParams.get('cexp')
+    let cexp = queryParams.get('cexp');
     if (cexp) {
       currentScope.setTag('cexp', cexp);
 
@@ -247,7 +249,9 @@ class App extends Component {
 
     if (queryParams.get('api') === 'join') {
       if (PRODUCTS_EXTREMELY_SLOW || PRODUCTS_BE_ERROR || FRONTEND_SLOWDOWN) {
-        throw new Error('?products_api=join can\'t be combined with ?cexp=products_extremely_slow, ?cexp=products_be_error, or ?frontendSlowdown=true');
+        throw new Error(
+          "?products_api=join can't be combined with ?cexp=products_extremely_slow, ?cexp=products_be_error, or ?frontendSlowdown=true"
+        );
       }
       PRODUCTS_API = 'products-join';
       currentScope.setTag('api', 'products-join');
@@ -282,10 +286,11 @@ class App extends Component {
       email = se + '@example.com';
     } else {
       const letters = 'abcdefghijklmnopqrstuvwxyz';
-      email = Array(3)
-        .fill()
-        .map(() => letters[Math.floor(Math.random() * letters.length)])
-        .join('') + '@example.com';
+      email =
+        Array(3)
+          .fill()
+          .map(() => letters[Math.floor(Math.random() * letters.length)])
+          .join('') + '@example.com';
     }
     currentScope.setUser({ email: email });
 
@@ -308,13 +313,24 @@ class App extends Component {
       if (!ignore_match) {
         Sentry.withScope(function (scope) {
           let se, customerType, email, cexp;
-          [se, customerType, email, cexp] = [scope._tags.se, scope._tags.customerType, scope._user.email, scope._tags.cexp];
-          args[1].headers = { ...args[1].headers, se, customerType, email, cexp };
+          [se, customerType, email, cexp] = [
+            scope._tags.se,
+            scope._tags.customerType,
+            scope._user.email,
+            scope._tags.cexp,
+          ];
+          args[1].headers = {
+            ...args[1].headers,
+            se,
+            customerType,
+            email,
+            cexp,
+          };
         });
       }
       let res = nativeFetch.apply(window, args);
-      if (args[0].includes('/apply-promo-code')) { 
-        await new Promise(resolve => setTimeout(resolve, 1500)); // to avoid log lines reordering due to clock drift between FE/BE
+      if (args[0].includes('/apply-promo-code')) {
+        await new Promise((resolve) => setTimeout(resolve, 1500)); // to avoid log lines reordering due to clock drift between FE/BE
       }
       return res;
     };
@@ -363,7 +379,8 @@ class App extends Component {
               <Route
                 path="/products"
                 element={
-                  <Products backend={BACKEND_URL}
+                  <Products
+                    backend={BACKEND_URL}
                     frontendSlowdown={false}
                     productsApi={PRODUCTS_API}
                     productsExtremelySlow={PRODUCTS_EXTREMELY_SLOW}
