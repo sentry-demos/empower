@@ -125,8 +125,8 @@ public class DemoCommandInterceptor : DbCommandInterceptor
         InterceptionResult<DbDataReader> result,
         CancellationToken cancellationToken = default)
     {
-        // for demoing slowness of db query
-        await Task.Delay(TimeSpan.FromSeconds(Random.Shared.Next(1, 3)), cancellationToken);
+        // Demo slow query — 1 to 3 seconds inclusive (Next upper bound is exclusive).
+        await Task.Delay(TimeSpan.FromSeconds(Random.Shared.Next(1, 4)), cancellationToken);
         
         return await base.ReaderExecutingAsync(command, eventData, result, cancellationToken);
     }

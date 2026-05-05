@@ -1,9 +1,7 @@
 namespace Empower.Backend;
 
-/// <summary>
-/// This is custom middleware used in this app.
-/// It sets Sentry tags and user info based on incoming request headers, for every request in the app.
-/// </summary>
+// Reads request headers (se, customerType, email, cexp) and stamps them onto
+// the Sentry scope so every event from this request carries them.
 public class AppMiddleware
 {
     private readonly RequestDelegate _next;
@@ -18,32 +16,21 @@ public class AppMiddleware
     public async Task InvokeAsync(HttpContext context)
     {
         _logger.LogInformation("Running custom middleware.");
-        
+
         var headers = context.Request.Headers;
-        
+
+        // StringValues casts to "" (not null) when missing — use IsNullOrEmpty, not `is not null`.
         var se = (string?) headers["se"];
         var customerType = (string?) headers["customerType"];
         var email = (string?) headers["email"];
+        var cexp = (string?) headers["cexp"];
 
         SentrySdk.ConfigureScope(scope =>
         {
-            if (se is not null)
-            {
-                scope.SetTag("se", se);
-            }
-
-            if (customerType is not null)
-            {
-                scope.SetTag("customerType", customerType);
-            }
-
-            if (email is not null)
-            {
-                scope.User = new SentryUser
-                {
-                    Email = email
-                };
-            }
+            if (!string.IsNullOrEmpty(se)) scope.SetTag("se", se);
+            if (!string.IsNullOrEmpty(customerType)) scope.SetTag("customerType", customerType);
+            if (!string.IsNullOrEmpty(cexp)) scope.SetTag("cexp", cexp);
+            if (!string.IsNullOrEmpty(email)) scope.User = new SentryUser { Email = email };
         });
 
         await _next(context);
