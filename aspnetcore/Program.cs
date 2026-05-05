@@ -3,80 +3,146 @@ using DotNetEnv;
 
 Env.Load();
 
-// Create the web application builder.
 var builder = WebApplication.CreateBuilder(args);
 
-// Configure API controllers, and JSON serialization options.
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
-        // Prevent cycles due to EF Core navigation properties.
         options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
-        
-        // Don't serialize properties that are null.
         options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
     });
 
-// Setup CORS to allow anything.
 builder.Services.AddCors(options => options.AddDefaultPolicy(policy => policy
     .AllowAnyOrigin()
     .AllowAnyHeader()
     .AllowAnyMethod()));
 
-// Add the database context.
 builder.Services.AddDbContext<HardwareStoreContext>(options =>
 {
     var connectionString = AppUtils.GetConnectionString(builder.Configuration);
     options.UseNpgsql(connectionString);
-
     options.AddInterceptors(new DemoCommandInterceptor());
 });
 
-// Initialize Sentry.
 builder.WebHost.UseSentry(options =>
 {
-    // Set the DSN from the environment variable set by the `deploy` script, if available.
-    // But don't overwrite any existing DSN with null, as that would disable Sentry.
     var dsn = Environment.GetEnvironmentVariable("ASPNETCORE_DSN");
-    if (dsn != null)
+    if (!string.IsNullOrEmpty(dsn))
     {
         options.Dsn = dsn;
     }
 
-    // Set the release from the environment variable set by the `deploy` script, if available.
     options.Release = Environment.GetEnvironmentVariable("ASPNETCORE_RELEASE");
 
-    // Enable some features.
+    // Map Development/Staging/Production to local/staging/production so cross-backend filters work.
+    options.Environment = builder.Environment.EnvironmentName.ToLowerInvariant() switch
+    {
+        "development" => "local",
+        var name => name,
+    };
+
+    options.DefaultTags["backendType"] = "aspnetcore";
+
     options.TracesSampleRate = 1.0;
     options.AutoSessionTracking = true;
-    options.SendDefaultPii = true;
 
-    // In development, allow the Sentry SDK to emit debug info to the console.
+    // Drop OPTIONS preflights, otherwise stamp method/path onto scope so issues show why a transaction was sampled.
+    options.TracesSampler = samplingContext =>
+    {
+        string? method = null;
+        string? path = null;
+
+        if (samplingContext.CustomSamplingContext.TryGetValue("HttpContext", out var ctx)
+            && ctx is HttpContext httpContext)
+        {
+            method = httpContext.Request.Method;
+            path = httpContext.Request.Path.Value;
+        }
+
+        if (string.IsNullOrEmpty(method))
+        {
+            var name = samplingContext.TransactionContext.Name ?? string.Empty;
+            var spaceIdx = name.IndexOf(' ');
+            if (spaceIdx > 0)
+            {
+                method = name[..spaceIdx];
+                path = name[(spaceIdx + 1)..];
+            }
+        }
+
+        var isOptions = !string.IsNullOrEmpty(method) && HttpMethods.IsOptions(method);
+        double? decision = isOptions ? 0.0 : null;
+
+        SentrySdk.ConfigureScope(scope =>
+        {
+            scope.Contexts["sampling_context"] = new Dictionary<string, object?>
+            {
+                ["http.method"] = method,
+                ["http.path"] = path,
+                ["decision"] = isOptions ? "drop (OPTIONS preflight)" : "keep (TracesSampleRate=1.0)",
+            };
+        });
+
+        return decision;
+    };
+
+    options.SendDefaultPii = false;
+
     if (builder.Environment.IsDevelopment())
     {
         options.Debug = true;
     }
 
-    // https://docs.sentry.io/platforms/dotnet/guides/aspnetcore/#captureblockingcalls
-    // Disabling until we make some improvements:
-    // https://github.com/getsentry/sentry-dotnet/issues/4263
-    // https://github.com/getsentry/sentry-dotnet/issues/4262
-    // options.CaptureBlockingCalls = true;
+    options.CaptureBlockingCalls = true;
+    options.MaxRequestBodySize = RequestSize.Always;
+    options.StackTraceMode = StackTraceMode.Enhanced;
+    options.AttachStacktrace = true;
 
-    options.MaxRequestBodySize = RequestSize.Always; // Capture request body
+    options.EnableLogs = true;
+    options.EnableMetrics = true;
+    options.AddIntegration(new Sentry.Profiling.ProfilingIntegration(TimeSpan.FromMilliseconds(500)));
+    options.ProfilesSampleRate = 1.0;
+
+    // ILogger.LogError shouldn't auto-create Sentry events; we capture explicitly where we want them.
+    options.MinimumEventLevel = LogLevel.None;
+    options.MinimumBreadcrumbLevel = LogLevel.Information;
+
+    options.SetBeforeSendLog(log =>
+    {
+        string? email = null;
+        SentrySdk.ConfigureScope(scope => email = scope.User?.Email);
+        if (!string.IsNullOrEmpty(email))
+        {
+            log.SetAttribute("user.email", email);
+        }
+        return log;
+    });
+
+    options.SetBeforeSend((sentryEvent, hint) =>
+    {
+        IssueFingerprinter.Fingerprint(sentryEvent);
+        PiiScrubber.Scrub(sentryEvent);
+        return sentryEvent;
+    });
+
+    options.SetBeforeBreadcrumb((breadcrumb, hint) => PiiScrubber.Scrub(breadcrumb));
+
+    // Transactions carry request body separately from events — needs its own scrub hook.
+    options.SetBeforeSendTransaction((transaction, hint) =>
+    {
+        PiiScrubber.ScrubRequest(transaction.Request);
+        return transaction;
+    });
 });
 
-// Add the HTTP Client factory.
 builder.Services.AddHttpClient();
 
-// Build the application.
 var app = builder.Build();
 
-// Add middleware components, including Sentry Tracing.
 app.UseMiddleware<AppMiddleware>();
 app.UseCors();
 
-// Add global exception handler to ensure CORS headers are applied to error responses
+// Capture to Sentry before swallowing — without this the catch hides errors from Sentry's diagnostic listener.
 app.Use(async (context, next) =>
 {
     try
@@ -85,20 +151,17 @@ app.Use(async (context, next) =>
     }
     catch (Exception ex)
     {
-        // Ensure CORS headers are applied even when exceptions occur
-        context.Response.Headers.Add("Access-Control-Allow-Origin", "*");
-        
-        // Set error response
+        SentrySdk.CaptureException(ex);
+
+        // Append, not Add — Add throws if header is already set upstream.
+        context.Response.Headers.Append("Access-Control-Allow-Origin", "*");
         context.Response.StatusCode = 500;
         context.Response.ContentType = "application/json";
-        
-        var errorResponse = new { error = "Internal Server Error" };
-        await context.Response.WriteAsJsonAsync(errorResponse);
+        await context.Response.WriteAsJsonAsync(new { error = "Internal Server Error" });
     }
 });
 
 app.UseSentryTracing();
 app.MapControllers();
 
-// Run the application.
 app.Run();
