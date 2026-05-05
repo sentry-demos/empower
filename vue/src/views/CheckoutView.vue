@@ -56,7 +56,7 @@
         <input type="text" id="zipCode" v-model="zipCode" required />
       </div>
 
-      <button type="submit" class="submit-button">Submit</button>
+      <button type="submit" class="complete-checkout-btn">Submit</button>
       <a href="/products" class="back-link">Back to products</a>
     </form>
   </div>
@@ -70,7 +70,7 @@ import { useCounterStore } from "../stores/cart";
   data() {
     return {
       store: useCounterStore(),
-      email: 'plant.lover@example.com',
+      email: '',
       subscribe: false,
       firstName: 'Jane',
       lastName: 'Greenthumb',
@@ -114,9 +114,14 @@ import { useCounterStore } from "../stores/cart";
       const store = useCounterStore();
       store.increaseQuantity(item)
     },
-    makeCheckoutRequest: function(requestOptions) {
+    makeCheckoutRequest: function(requestOptions, validateInventory) {
+      const backendUrl = window.BACKEND_URL + '/checkout';
+      const body = JSON.parse(requestOptions.body);
+      body.validate_inventory = validateInventory ? "true" : "false";
+      requestOptions = { ...requestOptions, body: JSON.stringify(body) };
+      Sentry.logger.debug(`Making checkout request to endpoint: ${backendUrl}`)
       return fetch(
-          "https://application-monitoring-flask-dot-sales-engineering-sf.appspot.com/checkout",
+          backendUrl,
           requestOptions
         ).then(function (response) {
           if (!response.ok) {
@@ -125,14 +130,22 @@ import { useCounterStore } from "../stores/cart";
                 " -- " +
                 (response.statusText || "Internal Server Error")
             );
+            Sentry.logger.error(`Checkout request failed with status: ${response.status}`)
             throw err
+            
           } else {
+            Sentry.logger.trace(`Checkout request successful`)
             return true;
           }
         });
     },
 
     handleSubmit() {
+      if (window.RAGECLICK) {
+        // do nothing — after enough clicks, Sentry will detect a rage click
+        return;
+      }
+
       let success = null;
 
       Sentry.startNewTrace(() => {
@@ -155,7 +168,7 @@ import { useCounterStore } from "../stores/cart";
           };
 
           try {
-            success = await this.makeCheckoutRequest(requestOptions);
+            success = await this.makeCheckoutRequest(requestOptions, !window.CHECKOUT_SUCCESS);
           } catch (error) {
             Sentry.withActiveSpan(span, async () => {
               Sentry.captureException(error);
@@ -229,7 +242,7 @@ import { useCounterStore } from "../stores/cart";
     margin-right: 10px;
   }
 
-  .submit-button {
+  .complete-checkout-btn {
     width: 100%;
     padding: 10px;
     background-color: #333;
@@ -241,7 +254,7 @@ import { useCounterStore } from "../stores/cart";
     margin-top: 20px;
   }
 
-  .submit-button:hover {
+  .complete-checkout-btn:hover {
     background-color: #555;
   }
 
