@@ -68,7 +68,7 @@ ALTER SEQUENCE public.inventory_id_seq OWNED BY public.inventory.id;
 --
 
 CREATE VIEW public.product_bundles AS
- SELECT (pg_sleep(((0.0625 * ((ARRAY[3, 10, 7, 5, 3])[floor(((random() * (5)::double precision) + (1)::double precision))])::numeric))::double precision))::text AS pg_sleep;
+ SELECT NULL::text AS pg_sleep;
 
 
 ALTER TABLE public.product_bundles OWNER TO postgres;
