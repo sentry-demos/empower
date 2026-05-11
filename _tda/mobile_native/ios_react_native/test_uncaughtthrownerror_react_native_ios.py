@@ -13,5 +13,7 @@ def test_uncaughtthrownerror_react_native_ios(ios_react_native_sim_driver):
         # launch app again or the error does not get sent to Sentry
         ios_react_native_sim_driver.launch_app()
 
+        time.sleep(10) # replay success rate is ~ 75% for sleep >= 10 seconds and ~ 50% for sleep = 5 seconds
+
     except Exception as err:
         sentry_sdk.capture_exception(err)
