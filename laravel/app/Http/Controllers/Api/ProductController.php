@@ -200,14 +200,15 @@ class ProductController extends Controller
         $out_of_stock = []; // list of items that are out of stock
         try {
             if ($validate_inventory) {
-                if (empty($quantities)) {
-                    throw new Exception("Invalid checkout request: cart is empty");
-                }
-
                 $quantities = [];
                 foreach ($cart['quantities'] as $key => $value) {
                     $quantities[(int)$key] = $value;
                 }
+
+                if (empty($quantities)) {
+                    throw new Exception("Invalid checkout request: cart is empty");
+                }
+
                 $inventory_dict = [];
                 foreach ($inventory as $x) {
                     $inventory_dict[$x->productid] = $x;
@@ -232,7 +233,7 @@ class ProductController extends Controller
             }
         } catch (Exception $err) {
             Log::error('Failed to validate inventory with cart: ' . json_encode($cart));
-            throw new Exception("Error validating enough inventory for product", 0, $err);
+            return response()->json(['error' => 'Insufficient inventory for product'], 422);
         }
 
         if (empty($out_of_stock)) {
