@@ -20,6 +20,10 @@ def test_checkout_react_native_ios(ios_react_native_sim_driver):
         if ios_react_native_sim_driver.is_keyboard_shown():
             ios_react_native_sim_driver.find_element(AppiumBy.ACCESSIBILITY_ID, 'Return').click()
 
+        # click 'Apply' promo code button
+        ios_react_native_sim_driver.find_element(AppiumBy.XPATH, '(//XCUIElementTypeOther[@name="Apply"])').click()
+        time.sleep(3)
+
         ios_react_native_sim_driver.find_element(AppiumBy.XPATH, '(//XCUIElementTypeOther[@name="Place your order"])').click()
 
     except Exception as err:
