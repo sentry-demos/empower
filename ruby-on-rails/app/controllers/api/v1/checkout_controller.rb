@@ -109,7 +109,12 @@ class Api::V1::CheckoutController < ApplicationController
   end
 
   def enough_inventory?(cart_contents)
-    Sentry.logger.warn("Inventory check bypassed - always returning false (mock implementation)")
-    return false
+    cart_contents.each do |product_id, quantity|
+      inventory = Inventory.find_by(productid: product_id.to_i)
+      if inventory.nil? || inventory.count < quantity.to_i
+        return false
+      end
+    end
+    true
   end
 end
