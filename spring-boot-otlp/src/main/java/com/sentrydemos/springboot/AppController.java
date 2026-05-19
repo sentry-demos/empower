@@ -269,5 +269,79 @@ public class AppController {
 	public Boolean hasInventory() {
 		return false;
 	}
+
+	@CrossOrigin
+	@GetMapping("/uncompressed_assets/**")
+	public ResponseEntity<Resource> getUncompressedAssets(HttpServletRequest request) {
+		try {
+			logger.info("Received /uncompressed_assets request");
+			
+			// Extract the path after /uncompressed_assets/
+			String requestPath = request.getRequestURI();
+			String filePath = requestPath.substring("/uncompressed_assets/".length());
+			
+			// Load the resource from the flask directory
+			Resource resource = resourceLoader.getResource("file:flask/uncompressed_assets/" + filePath);
+			
+			if (!resource.exists() || !resource.isReadable()) {
+				logger.warn("Resource not found or not readable: " + filePath);
+				return ResponseEntity.notFound().build();
+			}
+			
+			// Add a delay to simulate the Flask implementation
+			Thread.sleep(550);
+			
+			// Build response with appropriate headers
+			HttpHeaders responseHeaders = new HttpHeaders();
+			responseHeaders.set("Timing-Allow-Origin", "*");
+			responseHeaders.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+			
+			logger.info("Completed /uncompressed_assets request");
+			return ResponseEntity.ok()
+				.headers(responseHeaders)
+				.body(resource);
+				
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			logger.error("Interrupted while serving uncompressed asset", e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+		} catch (Exception e) {
+			logger.error("Error serving uncompressed asset", e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+		}
+	}
+
+	@CrossOrigin
+	@GetMapping("/compressed_assets/**")
+	public ResponseEntity<Resource> getCompressedAssets(HttpServletRequest request) {
+		try {
+			logger.info("Received /compressed_assets request");
+			
+			// Extract the path after /compressed_assets/
+			String requestPath = request.getRequestURI();
+			String filePath = requestPath.substring("/compressed_assets/".length());
+			
+			// Load the resource from the flask directory
+			Resource resource = resourceLoader.getResource("file:flask/compressed_assets/" + filePath);
+			
+			if (!resource.exists() || !resource.isReadable()) {
+				logger.warn("Resource not found or not readable: " + filePath);
+				return ResponseEntity.notFound().build();
+			}
+			
+			// Build response with appropriate headers
+			HttpHeaders responseHeaders = new HttpHeaders();
+			responseHeaders.set("Timing-Allow-Origin", "*");
+			
+			logger.info("Completed /compressed_assets request");
+			return ResponseEntity.ok()
+				.headers(responseHeaders)
+				.body(resource);
+				
+		} catch (Exception e) {
+			logger.error("Error serving compressed asset", e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+		}
+	}
 	
 }
