@@ -6,11 +6,13 @@ import { setProducts, addProduct } from '../actions';
 import measureRequestDuration from '../utils/measureRequestDuration';
 import Loader from 'react-loader-spinner';
 import ProductCard from './ProductCard';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { updateStatsigUserAndEvaluate } from '../utils/statsig';
 
 function Products({ frontendSlowdown, backend, productsApi, productsExtremelySlow, productsBeError, addToCartJsError }) {
   const [products, setProducts] = useState([]);
+  const startTime = useRef(performance.now());
+  const productsRendered = useRef(false);
 
   function determineProductsEndpoint() {
     if (productsApi !== 'products-join') {
@@ -128,6 +130,16 @@ function Products({ frontendSlowdown, backend, productsApi, productsExtremelySlo
       Sentry.captureException(error)
      }
   }, []);
+
+  useEffect(() => {
+    if (products.length > 0 && !productsRendered.current) {
+      productsRendered.current = true;
+      const duration = performance.now() - startTime.current;
+      Sentry.metrics.distribution('products.load_duration', duration, {
+        unit: 'millisecond',
+      });
+    }
+  }, [products]);
 
   return products.length > 0 ? (
     <div>

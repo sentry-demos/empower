@@ -361,7 +361,6 @@ function CheckoutForm({ backend, rageclick, checkout_success, cart }) {
                   borderRadius: '4px',
                   cursor: promoLoading ? 'not-allowed' : 'pointer',
                   fontSize: '1.25rem',
-                  marginTop: '0px'
                 }}
               >
                 {promoLoading ? 'Applying...' : 'Apply'}

@@ -31,7 +31,12 @@ function ProductCard(props) {
           }
         }}
       >
-        <img src={product.img} alt="product" className="sentry-block" />
+        <img
+          src={product.img}
+          alt="product"
+          className="sentry-block"
+          elementtiming="product-card-image"
+        />
         <div>
           <h2>{product.title}</h2>
           <p className="product-description">{product.description}</p>
@@ -41,6 +46,9 @@ function ProductCard(props) {
           onClick={() => {
             if (validate_inventory(product)) {
               props.addProduct(product);
+              Sentry.metrics.count('cart.add', 1, {
+                attributes: { source: 'products_list', product_id: product.id },
+              });
             }
           }}
         >
