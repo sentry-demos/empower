@@ -110,3 +110,11 @@ aspnetcore/*.suo
 .sentryclirc
 
 agent/agent_sessions.db
+
+# Local AI tooling (Claude, Cursor, agents — machine-specific, not for commits)
+.agents/
+.claude/
+.cursor/
+.mcp.json
+agents.lock
+agents.toml

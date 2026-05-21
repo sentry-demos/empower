@@ -12,6 +12,7 @@ module.exports = function override(config, env) {
   config.plugins.push(
     SentryWebpackPlugin.sentryWebpackPlugin({
       authToken: process.env.SENTRY_AUTH_TOKEN,
+      release: { name: process.env.REACT_APP_RELEASE },
       include: '.',
       org: '${SENTRY_ORG}',
       project: '${REACT_SENTRY_PROJECT}',
