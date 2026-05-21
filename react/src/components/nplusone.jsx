@@ -1,21 +1,17 @@
 import { useEffect } from 'react';
 
 function Nplusone({ backend }) {
-  const idRequests = 20;
-
   useEffect(() => {
-    for (let i = 0; i < idRequests; i++) {
-      fetch(backend + '/product/0/info?id=' + i, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
+    fetch(backend + '/products', {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    });
   }, []);
 
   return (
     <div>
-      <h1>API N+1 Performance Issue</h1>
-      executed GET product id's {idRequests} times
+      <h1>API N+1 Performance Issue (Fixed)</h1>
+      fetched all products in a single batched request
       <h3>
         look at the query{' '}
         <a
