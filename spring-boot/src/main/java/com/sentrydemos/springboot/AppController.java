@@ -9,7 +9,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -246,10 +248,10 @@ public class AppController {
 				currentInventory = currentInventory - quantities.get(key);
 				Sentry.logger().info("Item " + key + " has quantity " + quantities.get(key) + " and current inventory " + currentInventory);
 				
-				if (!hasInventory()) {
-					String message = "No inventory for item";
+				if (!hasInventory(currentInventory)) {
+					String message = "No inventory for item " + key;
 					Sentry.logger().warn(message);
-					throw new RuntimeException(message);
+					throw new ResponseStatusException(HttpStatus.BAD_REQUEST, message);
 				}
 
 				tempInventory.put(key, currentInventory);
@@ -266,8 +268,8 @@ public class AppController {
 		return "Hello " + fullName;
 	}
 	
-	public Boolean hasInventory() {
-		return false;
+	public Boolean hasInventory(int currentInventory) {
+		return currentInventory >= 0;
 	}
 	
 }
