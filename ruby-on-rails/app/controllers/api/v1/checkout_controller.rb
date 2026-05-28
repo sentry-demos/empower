@@ -89,7 +89,7 @@ class Api::V1::CheckoutController < ApplicationController
     span_logic = transaction.start_child(op: "custom.inventory_vs_cart_logic")
 
     products_in_inventory.each_with_index { |inv_objs, i|
-      if !enough_inventory?(cart_contents)
+      if !enough_inventory?(inv_objs, cart_contents)
         begin
           Sentry.logger.error("Failed to process payment. Insufficient inventory for product: %{product_id}", product_id: inv_objs["productid"])
           raise Exception.new "Not enough inventory for product: #{inv_objs["productid"]}"
@@ -108,8 +108,9 @@ class Api::V1::CheckoutController < ApplicationController
 
   end
 
-  def enough_inventory?(cart_contents)
-    Sentry.logger.warn("Inventory check bypassed - always returning false (mock implementation)")
-    return false
+  def enough_inventory?(inv_item, cart_contents)
+    product_id = inv_item["productid"].to_s
+    return true unless cart_contents.key?(product_id)
+    inv_item["count"].to_i >= cart_contents[product_id].to_i
   end
 end
