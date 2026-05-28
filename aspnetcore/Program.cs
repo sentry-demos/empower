@@ -137,6 +137,14 @@ builder.WebHost.UseSentry(options =>
 
 builder.Services.AddHttpClient();
 
+// Periodic Sentry cron check-ins for the "demo-job-aspnetcore" monitor.
+builder.Services.AddHostedService<CheckInHostedService>();
+
+// In-process Channel-backed email queue + background consumer. Demonstrates
+// Sentry trace propagation from HTTP request -> background worker via ContinueTrace.
+builder.Services.AddSingleton<IEmailQueue, ChannelEmailQueue>();
+builder.Services.AddHostedService<EmailWorkerHostedService>();
+
 var app = builder.Build();
 
 app.UseMiddleware<AppMiddleware>();
