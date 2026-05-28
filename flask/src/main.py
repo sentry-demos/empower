@@ -482,7 +482,7 @@ def apply_promo_code():
 
 
 @app.route('/product/0/info', methods=['GET'])
-def send_report(path):
+def product_info():
     logger.info('Received /product/0/info endpoint request')
 
     time.sleep(.55)
