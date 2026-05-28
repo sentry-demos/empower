@@ -60,6 +60,50 @@ class ProductApiTest extends TestCase
         $response->assertStatus(500); // Exception should be thrown
     }
 
+    public function test_checkout_succeeds_with_valid_cart(): void
+    {
+        $product = Product::factory()->create([
+            'id' => 1,
+            'title' => 'Test Product',
+            'price' => 1000
+        ]);
+        Inventory::factory()->create(['product_id' => $product->id, 'count' => 10]);
+
+        $response = $this->postJson('/api/checkout', [
+            'cart' => [
+                'items' => [
+                    ['id' => $product->id, 'title' => 'Test Product', 'price' => 1000]
+                ],
+                'quantities' => [
+                    (string)$product->id => 2
+                ]
+            ],
+            'form' => [
+                'email' => 'test@example.com'
+            ],
+            'validate_inventory' => 'true'
+        ]);
+
+        $response->assertStatus(200)
+                ->assertJson(['status' => 'success']);
+    }
+
+    public function test_checkout_with_empty_cart_throws_exception(): void
+    {
+        $response = $this->postJson('/api/checkout', [
+            'cart' => [
+                'items' => [],
+                'quantities' => []
+            ],
+            'form' => [
+                'email' => 'test@example.com'
+            ],
+            'validate_inventory' => 'true'
+        ]);
+
+        $response->assertStatus(500);
+    }
+
     public function test_can_get_inventory_levels(): void
     {
         $product1 = Product::factory()->create();
