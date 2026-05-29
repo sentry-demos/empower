@@ -149,6 +149,7 @@ class MyFlask(Flask):
         if "RUN_SLOW_PROFILE" in os.environ:
             RUN_SLOW_PROFILE = os.environ["RUN_SLOW_PROFILE"].lower() == "true"
 
+        otel_collector_url = os.environ.get("OTEL_COLLECTOR_URL")
 
         sentry_sdk.init(
             dsn=DSN,
@@ -160,7 +161,7 @@ class MyFlask(Flask):
                 SqlalchemyIntegration(),
                 RedisIntegration(cache_prefixes=["flask.", "ruby."]),
                 StatsigIntegration(),
-                OTLPIntegration(),
+                OTLPIntegration(collector_url=otel_collector_url),
                 LoggingIntegration(event_level=None) # don't send ERROR level logs as events/errors
             ],
             trace_propagation_targets=[
