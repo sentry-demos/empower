@@ -110,3 +110,6 @@ aspnetcore/*.suo
 .sentryclirc
 
 agent/agent_sessions.db
+
+# OTel collector config (contains auth tokens)
+otlp-collector/config.yaml
