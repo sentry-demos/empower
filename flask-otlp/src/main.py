@@ -34,6 +34,7 @@ from opentelemetry.instrumentation.flask import FlaskInstrumentor
 from opentelemetry.instrumentation.redis import RedisInstrumentor
 from opentelemetry.instrumentation.requests import RequestsInstrumentor
 from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
+from urllib.parse import urljoin
 
 RUBY_CUSTOM_HEADERS = ['se', 'customerType', 'email']
 pests = ["aphids", "thrips", "spider mites", "lead miners", "scale", "whiteflies", "earwigs", "cutworms", "mealybugs",
@@ -149,7 +150,8 @@ class MyFlask(Flask):
         if "RUN_SLOW_PROFILE" in os.environ:
             RUN_SLOW_PROFILE = os.environ["RUN_SLOW_PROFILE"].lower() == "true"
 
-        otel_collector_url = os.environ.get("OTLPCOLLECTOR_URL", None)
+        use_collector = os.environ.get("FLASKOTLP_USE_COLLECTOR", "false").lower() == "true"
+        otel_collector_url = urljoin(os.environ.get("OTLPCOLLECTOR_URL"), 'v1/traces') if use_collector else None
 
         sentry_sdk.init(
             dsn=DSN,
