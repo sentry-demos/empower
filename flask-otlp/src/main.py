@@ -15,6 +15,8 @@ import dotenv
 from .db import decrement_inventory, get_products, get_products_join, get_inventory, get_promo_code, db
 from .utils import parseHeaders, get_iterator, evaluate_statsig_flags
 import sentry_sdk
+from sentry_sdk.consts import VERSION, EndpointType
+from sentry_sdk.utils import Dsn
 from sentry_sdk.integrations.flask import FlaskIntegration
 from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 from sentry_sdk.integrations.redis import RedisIntegration
@@ -34,6 +36,10 @@ from opentelemetry.instrumentation.flask import FlaskInstrumentor
 from opentelemetry.instrumentation.redis import RedisInstrumentor
 from opentelemetry.instrumentation.requests import RequestsInstrumentor
 from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
+from opentelemetry._logs import set_logger_provider
+from opentelemetry.sdk._logs import LoggerProvider, LoggingHandler
+from opentelemetry.sdk._logs.export import BatchLogRecordProcessor
+from opentelemetry.exporter.otlp.proto.http._log_exporter import OTLPLogExporter
 
 RUBY_CUSTOM_HEADERS = ['se', 'customerType', 'email']
 pests = ["aphids", "thrips", "spider mites", "lead miners", "scale", "whiteflies", "earwigs", "cutworms", "mealybugs",
@@ -45,6 +51,9 @@ ENVIRONMENT = None
 BACKEND_URL_RUBYONRAILS = None
 RUN_SLOW_PROFILE = None
 tracer = None  # Global OpenTelemetry tracer
+
+# Resource attribute attached to all OTel log records.
+SERVICE_NAME = "flask-otlp"
 
 NORMAL_SLOW_PROFILE = 2 # seconds
 EXTREMELY_SLOW_PROFILE = 24
@@ -135,6 +144,44 @@ class SentryProfilerSpanProcessor(SpanProcessor):
         return True
 
 
+def setup_otlp_logs_exporter():
+    """
+    Send OpenTelemetry logs directly to Sentry's OTLP logs endpoint.
+
+    The Sentry SDK's OTLPIntegration only wires up a traces exporter, so we set
+    up the logs signal ourselves. The OTLP logs endpoint and auth header are
+    derived from the same DSN the SDK uses: the SDK exposes an OTLP traces
+    endpoint via EndpointType, and the logs endpoint is the same URL with the
+    signal path swapped to /v1/logs.
+
+    Python's stdlib logging is bridged to OTel by attaching a LoggingHandler to
+    the root logger, so existing logger.info/error/etc. calls are emitted as
+    OTel log records.
+    """
+    if not DSN:
+        logger.info("OTLP logs exporter not configured (no DSN)")
+        return
+
+    auth = Dsn(DSN).to_auth(f"sentry.python/{VERSION}")
+    traces_endpoint = auth.get_api_url(EndpointType.OTLP_TRACES)
+    logs_endpoint = traces_endpoint.replace("v1/traces", "v1/logs")
+    headers = {"X-Sentry-Auth": auth.to_header()}
+
+    resource = Resource.create({ResourceAttributes.SERVICE_NAME: SERVICE_NAME})
+    logger_provider = LoggerProvider(resource=resource)
+    set_logger_provider(logger_provider)
+
+    log_exporter = OTLPLogExporter(endpoint=logs_endpoint, headers=headers)
+    logger_provider.add_log_record_processor(BatchLogRecordProcessor(log_exporter))
+
+    # Attach to the root logger so all module loggers (including this one) are
+    # emitted to Sentry as OTel logs.
+    otel_handler = LoggingHandler(level=logging.INFO, logger_provider=logger_provider)
+    logging.getLogger().addHandler(otel_handler)
+
+    logger.info("OTLP logs exporter sending to Sentry at %s", logs_endpoint)
+
+
 class MyFlask(Flask):
     def __init__(self, import_name, *args, **kwargs):
         global RELEASE, DSN, ENVIRONMENT, BACKEND_URL_RUBYONRAILS, RUN_SLOW_PROFILE, redis_client, cache, tracer;
@@ -154,14 +201,16 @@ class MyFlask(Flask):
             dsn=DSN,
             release=RELEASE,
             environment=ENVIRONMENT,
-            enable_logs=True,
+            enable_logs=False,  # logs are sent via OTLP (setup_otlp_logs_exporter), not the SDK
             integrations=[
                 FlaskIntegration(),
                 SqlalchemyIntegration(),
                 RedisIntegration(cache_prefixes=["flask.", "ruby."]),
                 StatsigIntegration(),
                 OTLPIntegration(),
-                LoggingIntegration(event_level=None) # don't send ERROR level logs as events/errors
+                # don't send logs via the SDK: no events (event_level) and no
+                # Sentry logs forwarding (sentry_logs_level). Logs go out as OTLP.
+                LoggingIntegration(event_level=None, sentry_logs_level=None)
             ],
             trace_propagation_targets=[
                 r"https://.*\.empower-plant\.com.*",
@@ -182,6 +231,9 @@ class MyFlask(Flask):
         if hasattr(tracer_provider, 'add_span_processor'):
             tracer_provider.add_span_processor(SentryProfilerSpanProcessor())
             logger.info("Added SentryProfilerSpanProcessor to TracerProvider")
+
+        # Send OpenTelemetry logs directly to Sentry's OTLP logs endpoint
+        setup_otlp_logs_exporter()
 
         statsig.initialize(os.environ["STATSIG_SERVER_KEY"])
 
@@ -218,6 +270,19 @@ class MyFlask(Flask):
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+# Console handler on the root logger so all module logs are visible locally
+# (in addition to being exported to Sentry via OTLP). Guarded so gunicorn's
+# multiple workers / repeated imports don't stack duplicate handlers.
+_root_logger = logging.getLogger()
+_root_logger.setLevel(logging.INFO)
+if not any(isinstance(h, logging.StreamHandler) for h in _root_logger.handlers):
+    _console_handler = logging.StreamHandler()
+    _console_handler.setFormatter(
+        logging.Formatter("%(asctime)s %(levelname)s [%(name)s] %(message)s")
+    )
+    _root_logger.addHandler(_console_handler)
+
 logger.info("Flask application initialized")
 logger.info("RELEASE: %s", RELEASE)
 logger.info("ENVIRONMENT: %s", ENVIRONMENT)
