@@ -11,12 +11,14 @@ exporters:
     auth_token: ${SENTRY_AUTH_TOKEN}
     routing:
       project_from_attribute: service.name
+  debug:
+    verbosity: normal
 
 service:
   pipelines:
     traces:
       receivers: [otlp]
-      exporters: [sentry]
+      exporters: [sentry, debug]
     logs:
       receivers: [otlp]
-      exporters: [sentry]
+      exporters: [sentry, debug]
