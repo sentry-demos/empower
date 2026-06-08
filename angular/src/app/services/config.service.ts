@@ -7,15 +7,16 @@ import { determineBackendType, determineBackendUrl } from '../utils/backend-rout
  * Contains all the fields needed for customer checkout information
  */
 export interface CheckoutForm {
-  email: string;        // Customer's email address
-  subscribe: string;    // Newsletter subscription preference
-  firstName: string;    // Customer's first name
-  lastName: string;     // Customer's last name
-  address: string;      // Customer's street address
-  city: string;         // Customer's city
-  country: string;      // Customer's country
-  state: string;        // Customer's state/province
-  zipCode: string;      // Customer's postal/zip code
+  email: string;
+  subscribe: string;
+  firstName: string;
+  lastName: string;
+  address: string;
+  city: string;
+  country: string;
+  state: string;
+  zipCode: string;
+  promoCode: string;
 }
 
 /**
@@ -138,8 +139,6 @@ export class ConfigService {
     const seTdaPrefixRegex = /[^-]+-tda-[^-]+-/;
     
     if (se && seTdaPrefixRegex.test(se)) {
-      // Empty form for TDA (realistic-looking Replay)
-      // This makes the demo look more realistic for automated testing
       return {
         email: '',
         subscribe: '',
@@ -150,10 +149,9 @@ export class ConfigService {
         country: '',
         state: '',
         zipCode: '',
+        promoCode: '',
       };
     } else {
-      // Pre-filled form for demos (like React)
-      // This makes it easier for demo presenters to show the checkout flow
       return {
         email: 'plant.lover@example.com',
         subscribe: '',
@@ -164,6 +162,7 @@ export class ConfigService {
         country: 'United States of America',
         state: 'CA',
         zipCode: '94122',
+        promoCode: 'SAVE20',
       };
     }
   }

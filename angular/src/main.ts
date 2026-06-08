@@ -48,13 +48,14 @@ const customerType = [
   'enterprise',
 ][Math.floor(Math.random() * 4)] || 'medium-plan';
 
-// Store customerType in sessionStorage for access in components
 sessionStorage.setItem('customerType', customerType);
 
+// Handle cexp parameter (like React)
+const cexp = queryParams.get('cexp');
+if (cexp) {
+  sessionStorage.setItem('cexp', cexp);
+}
 
-// TODO: Temporarily disabled window.fetch override to fix deployment issue
-// This was causing the 404 error on staging deployment
-// Will re-enable after deployment is fixed
 const tracingOrigins = [
     'localhost',
     'empower-plant.com',
@@ -69,17 +70,29 @@ Sentry.init({
     environment: environment.SENTRY_ENVIRONMENT,
     release: environment.RELEASE,
     tracePropagationTargets: tracingOrigins,
+    propagateTraceparent: true,
     tracesSampleRate: 1,
+    profilesSampleRate: 1.0,
     replaysSessionSampleRate: 1.0,
     replaysOnErrorSampleRate: 1,
     enableLogs: true,
     debug: true,
+    beforeSendLog: (log: any) => {
+        const tags = Sentry.getIsolationScope().getScopeData().tags;
+        if ('user.email' in tags) {
+            log.attributes = log.attributes || {};
+            log.attributes['user.email'] = tags['user.email'];
+        }
+        return log;
+    },
 
     integrations: (defaultIntegrations) => [
-        // Filter out the Dedupe integration from the defaults (like React)
         ...defaultIntegrations.filter(integration => integration.name !== "Dedupe"),
+        Sentry.feedbackIntegration({
+            colorScheme: 'system',
+        }),
+        Sentry.browserProfilingIntegration(),
         Sentry.browserTracingIntegration({
-            // Enable Angular Router instrumentation to capture route names (like React Router)
             instrumentNavigation: true,
             instrumentPageLoad: true,
         }), 
@@ -95,93 +108,102 @@ Sentry.init({
     ],
   
     beforeSend(event) {
-        // Get SE value from sessionStorage (like React)
         const se = sessionStorage.getItem('se') || undefined;
-        
-        // Handle SE tag fingerprinting for errors (like React)
-        if (se && event.exception) {
-            const is5xxError = event.exception.values && 
-                /^5\d{2} - .*$/.test(event.exception.values[0]?.value || '');
-            
-            if (is5xxError) {
-                // Create a separate issue for each SE and RELEASE combination
-                const seTdaPrefixRegex = /[^-]+-tda-[^-]+-/;
-                let seFingerprint = se;
-                let prefix = seTdaPrefixRegex.exec(se);
-                
-                if (prefix) {
-                    // Now that TDA puts platform/browser and test path into SE tag we want to prevent
-                    // creating separate issues for those. See https://github.com/sentry-demos/empower/pull/332
-                    seFingerprint = prefix[0];
-                }
-                
-                if (se.startsWith('prod-tda-') && environment.RELEASE) {
-                    // Release Health
-                    event.fingerprint = ['{{ default }}', seFingerprint, environment.RELEASE];
-                } else {
-                    // SE Testing
-                    event.fingerprint = ['{{ default }}', seFingerprint];
-                }
+
+        const is5xxError = event.exception &&
+            event.exception.values &&
+            /^5\d{2} - .*$/.test(event.exception.values[0]?.value || '');
+
+        if (se && is5xxError) {
+            const seTdaPrefixRegex = /[^-]+-tda-[^-]+-/;
+            let seFingerprint = se;
+            const prefix = seTdaPrefixRegex.exec(se);
+
+            if (prefix) {
+                seFingerprint = prefix[0];
             }
+
+            if (se.startsWith('prod-tda-') && environment.RELEASE) {
+                event.fingerprint = ['{{ default }}', seFingerprint, environment.RELEASE];
+            } else {
+                event.fingerprint = ['{{ default }}', seFingerprint];
+            }
+        } else {
+            event.fingerprint = ['{{ default }}'];
         }
-        
-        // Store last error event ID in sessionStorage (like React)
+
+        if (is5xxError) {
+            event.fingerprint = event.fingerprint || ['{{ default }}'];
+            event.fingerprint.push(backendType);
+        }
+
         if (event.exception && event.event_id) {
             sessionStorage.setItem('lastErrorEventId', event.event_id);
         }
-        
+
         return event;
     }
 })
 
-// Set SE parameter in Sentry context (for Angular project)
+const currentScope = Sentry.getCurrentScope();
+
 if (seValue) {
-  Sentry.setTag('se', seValue);
+  currentScope.setTag('se', seValue);
 }
 
-// Set backendType tag in Sentry context (like React)
-Sentry.setTag('backendType', backendType);
+currentScope.setTag('backendType', backendType);
+currentScope.setTag('customerType', customerType);
 
-// Set customerType tag in Sentry context (like React)
-Sentry.setTag('customerType', customerType);
+if (cexp) {
+  currentScope.setTag('cexp', cexp);
+}
 
-// Set user email in Sentry context (like React)
+const metricScopeAttrs: Record<string, string> = { backendType };
+if (cexp) {
+  metricScopeAttrs['cexp'] = cexp;
+}
+(Sentry.getGlobalScope() as any).setAttributes(metricScopeAttrs);
+
 Sentry.setUser({ email: email ?? undefined });
+currentScope.setTag('user.email', email ?? '');
 
-// Store values for use in fetch override
 const globalSe = seValue;
 const globalEmail = email;
 const globalCustomerType = customerType;
+const globalCexp = cexp;
 
-// Automatically append SE, customerType, and email headers to all backend requests (like React)
 const nativeFetch = window.fetch;
-window.fetch = function (...args) {
+window.fetch = function (...args: any[]) {
   try {
-    let url = args[0];
-    // Convert to string if it's a Request or URL object
+    const url = args[0];
     const urlString = typeof url === 'string' ? url : url.toString();
-    
-    // Don't add headers to Sentry requests
-    let ignore_match = urlString.match(
+
+    const ignore_match = urlString.match(
       /^http[s]:\/\/([^.]+\.ingest\.sentry\.io\/|localhost:9989|127.0.0.1:9989).*/
     );
-    
+
     if (!ignore_match) {
       args[1] = args[1] || {};
       const headers: Record<string, string> = { ...(args[1].headers as Record<string, string>) };
       if (globalSe) headers['se'] = globalSe;
       if (globalCustomerType) headers['customerType'] = globalCustomerType;
       if (globalEmail) headers['email'] = globalEmail;
+      if (globalCexp) headers['cexp'] = globalCexp;
       args[1].headers = headers;
     }
-    
-    return nativeFetch.apply(window, args);
+
+    let res = nativeFetch.apply(window, args as any);
+    if (urlString.includes('/apply-promo-code')) {
+      res = res.then((response: Response) =>
+        new Promise<Response>(resolve => setTimeout(() => resolve(response), 1500))
+      );
+    }
+    return res;
   } catch (error) {
-    // If anything goes wrong with the fetch override, fall back to native fetch
     console.warn('Fetch override failed, using native fetch:', error);
-    return nativeFetch.apply(window, args);
+    return nativeFetch.apply(window, args as any);
   }
-};
+} as typeof window.fetch;
 
 // Track Angular bootstrapping performance
 Sentry.startSpan(

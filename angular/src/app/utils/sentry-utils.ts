@@ -1,13 +1,9 @@
-/**
- * Utility functions for Sentry integration
- * Provides easy access to Sentry tags and context across components
- */
+import * as Sentry from '@sentry/angular';
 
-/**
- * Get the SE tag value from sessionStorage
- * This matches React's behavior of storing SE in sessionStorage
- * @returns The SE tag value or undefined if not set
- */
+export function getTag(tag: string): string | undefined {
+  return (Sentry.getCurrentScope() as any)._tags?.[tag];
+}
+
 export function getSeTag(): string | undefined {
   return sessionStorage.getItem('se') || undefined;
 }
