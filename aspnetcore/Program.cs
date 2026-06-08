@@ -29,7 +29,7 @@ builder.Services.AddDbContext<HardwareStoreContext>(options =>
     var connectionString = AppUtils.GetConnectionString(builder.Configuration);
     options.UseNpgsql(connectionString);
 
-    options.AddInterceptors(new DemoCommandInterceptor());
+
 });
 
 // Initialize Sentry.
@@ -101,4 +101,4 @@ app.UseSentryTracing();
 app.MapControllers();
 
 // Run the application.
-app.Run();
+app.Run();
