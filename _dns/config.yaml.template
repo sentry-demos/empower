@@ -49,6 +49,9 @@ services:
   - host: "${SPRINGBOOTOTLP_SUBDOMAIN}.${DOMAIN}"
     gae_service: ${SPRINGBOOTOTLP_APP_ENGINE_SERVICE}
 
+  - host: "${VUE_SUBDOMAIN}.${DOMAIN}"
+    gae_service: ${VUE_APP_ENGINE_SERVICE}
+
   # Cloud Run services
   - host: "${AGENT_SUBDOMAIN}.${DOMAIN}"
     gcr_service: ${AGENT_CLOUD_RUN_SERVICE}

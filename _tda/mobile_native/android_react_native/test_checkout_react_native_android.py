@@ -29,6 +29,10 @@ def test_checkout_react_native_android(android_react_native_emu_driver):
         # unless we scroll down to it
         android_react_native_emu_driver.scroll(bottom_of_screen_element, top_of_screen_element)
 
+        # click 'Apply' promo code button
+        android_react_native_emu_driver.find_element(AppiumBy.XPATH, '//android.view.ViewGroup[@content-desc="Apply"]').click()
+        time.sleep(3)
+
         # Place order button
         android_react_native_emu_driver.find_element(AppiumBy.XPATH, '//android.view.ViewGroup[@content-desc="Place your order"]').click()
         # text element of the button is '//android.widget.TextView[@text="Place your order"]'

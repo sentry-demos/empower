@@ -3,11 +3,13 @@
 import os
 import sentry_sdk
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sentry_sdk.integrations.fastapi import FastApiIntegration
 from sentry_sdk.integrations.openai import OpenAIIntegration
 from sentry_sdk.integrations.openai_agents import OpenAIAgentsIntegration
+from starlette.middleware.base import RequestResponseEndpoint
+from starlette.responses import Response
 
 from app.api.routes import router
 from config import settings
@@ -43,6 +45,32 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# Extract context information
+@app.middleware("http")
+async def sentry_event_context(
+    request: Request, call_next: RequestResponseEndpoint
+) -> Response:
+    se = request.headers.get("se")
+    customer_type = request.headers.get("customerType")
+    email = request.headers.get("email")
+    cexp = request.headers.get("cexp")
+
+    if se not in (None, "undefined"):
+        sentry_sdk.set_tag("se", se)
+
+    if customer_type not in (None, "undefined"):
+        sentry_sdk.set_tag("customerType", customer_type)
+
+    if email not in (None, "undefined"):
+        sentry_sdk.set_user({"email": email})
+
+    if cexp not in (None, "undefined"):
+        sentry_sdk.set_tag("cexp", cexp)
+
+    return await call_next(request)
+
 
 # Include API routes
 app.include_router(router, prefix="/api/v1", tags=["agent"])

@@ -1,39 +1,31 @@
 <template>
-  <div>
-    <ul className="products-list">
-      <li v-for="product in products" :key="product.id">
-        <div>
-          <img :src="product.img" :alt="'product'" />
-          <div>
-            <h2>{{ product.title }}</h2>
-            <p :className="'product-description'">
-              {{ product.description }}
-            </p>
-          </div>
-          <!-- <button @click="onClick()"> -->
-          <!-- <button @click="addToCartPrice(product.price)">
-          Add to cart — {{ product.price }}.00
-          </button> -->
-          <button @click="addToCartPrice(product)">
-            Add to cart — {{ product.price }}.00
-          </button>
+  <ul class="products-list">
+    <li v-for="product in products" :key="product.id">
+      <div class="product-card">
+        <div class="product-image-wrap">
+          <img :src="product.img" :alt="product.title" />
         </div>
-      </li>
-    </ul>
-  </div>
+        <div class="product-info">
+          <h2 class="product-title">{{ product.title }}</h2>
+          <p class="product-description">{{ product.description }}</p>
+        </div>
+        <button @click="addToCartPrice(product)" class="add-to-cart-btn">
+          Add to cart — ${{ product.price }}.00
+        </button>
+      </div>
+    </li>
+  </ul>
 </template>
 
 <script>
 import { useCounterStore } from "../stores/cart";
 
 export default {
-  // props: ['products']
   props: {
     products: Array,
-    onClick: Function,
   },
   methods: {
-    addToCartPrice: function (product) {
+    addToCartPrice(product) {
       const store = useCounterStore();
       store.updateCart(product);
       store.updatePrice(product.price);
@@ -45,71 +37,75 @@ export default {
 <style scoped>
 .products-list {
   list-style: none;
-  padding: 0 0 0;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.product-card {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: box-shadow 0.2s;
 }
 
-.products-list li {
-  flex-basis: 100%;
-  margin-bottom: 2rem;
+.product-card:hover {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
-@media screen and (min-width: 600px) {
-  .products-list li {
-    flex-basis: calc(50% - 1rem);
-  }
+.product-image-wrap {
+  background: #f9fafb;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
 }
 
-.products-list li > div {
-  padding: 1.5rem;
-  border-radius: 0.25rem;
-  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.07), 0 6px 20px 0 rgba(0, 0, 0, 0.05);
-}
-
-.products-list li img {
+.product-image-wrap img {
   width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
-.products-list li a {
-  text-decoration: none;
+.product-info {
+  padding: 1rem 1.25rem 0.5rem;
+  flex: 1;
 }
 
-.loader-container {
-  text-align: center;
-}
-
-button {
-  font-family: "Poppins", sans-serif;
-}
-
-button,
-a.btn,
-input[type="submit"] {
-  -webkit-appearance: none;
-  display: inline-block;
-  background-color: #002626;
-  color: #fff;
-  padding: 0.75rem 1rem;
-  line-height: 1.5;
-  border-radius: 0.25em;
-  border: none;
-  text-decoration: none;
+.product-title {
   font-size: 1rem;
-  margin: 0.5rem 0;
+  font-weight: 600;
+  color: #111;
+  margin-bottom: 0.35rem;
 }
 
-button:hover,
-a.btn:hover,
-input[type="submit"]:hover {
-  cursor: pointer;
-  background-color: #dddc4e;
-  color: #002626;
+.product-description {
+  font-size: 0.875rem;
+  color: #6b7280;
+  line-height: 1.5;
 }
-button:active,
-a.btn:active,
-input[type="submit"]:active {
-  background-color: #f6cfb2;
+
+.add-to-cart-btn {
+  margin: 0.75rem 1.25rem 1.25rem;
+  padding: 0.6rem 1rem;
+  background: #111;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.add-to-cart-btn:hover {
+  background: #333;
+}
+
+.add-to-cart-btn:active {
+  background: #000;
 }
 </style>
