@@ -46,7 +46,6 @@ else:
         )
     )
 
-# N+1 because a sql query for every product n
 @sentry_sdk.trace
 def get_products():
     results = []
@@ -54,31 +53,37 @@ def get_products():
         with sentry_sdk.start_span(name="get_products", op="db.connect"):
             connection = db.connect()
 
-        n = weighter(operator.le, 12)
-        # adjust by number of products to get the same timeout as we had in the past
-        # before pg_sleep() was moved out of SELECT clause.
-        n *= PRODUCTS_NUM
-        query = text("SELECT * FROM products WHERE id IN (SELECT id from products, pg_sleep(:sleep_duration))")
-        products = connection.execute(query, sleep_duration=n).fetchall()
+        with sentry_sdk.start_span(name="get_products", op="db.query") as span:
+            products = connection.execute(
+                "SELECT * FROM products"
+            ).fetchall()
+            span.set_tag("totalProducts", len(products))
+            span.set_data("products", products)
 
+        with sentry_sdk.start_span(name="get_products.reviews", op="db.query") as span:
+            reviews = connection.execute(
+                "SELECT reviews.id, products.id AS productid, reviews.rating, reviews.customerId, reviews.description, reviews.created FROM reviews INNER JOIN products ON reviews.productId = products.id"
+            ).fetchall()
+            span.set_data("reviews", reviews)
+    except Exception as err:
+        raise DatabaseConnectionError('get_products') from err
+
+    with sentry_sdk.start_span(name="get_products.format_results", op="code.block") as span:
         for product in products:
-            # product_bundles is a "sleepy view", run the following query to get current sleep duration:
-            # SELECT pg_get_viewdef('product_bundles', true)
-            query = text("SELECT * FROM reviews, product_bundles WHERE productId = :x")
-            reviews = connection.execute(query, x=product.id).fetchall()
-
             result = dict(product)
             result["reviews"] = []
 
             for review in reviews:
-                result["reviews"].append(dict(review))
+                productId = review[1]
+                if productId == product["id"]:
+                    result["reviews"].append(dict(review))
             results.append(result)
+        span.set_data("results", results)
 
-        with sentry_sdk.start_span(name="get_products.combined_reviews.json", op="serialization"):
-            result = json.dumps(results, default=str)
-        return result
-    except Exception as err:
-        raise DatabaseConnectionError('get_products') from err
+    with sentry_sdk.start_span(name="get_products.combined_reviews.json", op="serialization"):
+        result = json.dumps(results, default=str)
+    
+    return result
 
 # 2 sql queries max, then sort in memory
 @sentry_sdk.trace

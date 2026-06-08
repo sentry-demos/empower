@@ -50,43 +50,67 @@ else:
         )
     )
 
-# N+1 because a sql query for every product n
 @tracer.start_as_current_span(name="get_products")
 def get_products():
     results = []
     try:
         connection = db.connect()
 
-        n = weighter(operator.le, 12)
-        # adjust by number of products to get the same timeout as we had in the past
-        # before pg_sleep() was moved out of SELECT clause.
-        n *= PRODUCTS_NUM
-        query = text("SELECT * FROM products WHERE id IN (SELECT id from products, pg_sleep(:sleep_duration))")
-        products = connection.execute(query, sleep_duration=n).fetchall()
+        with tracer.start_as_current_span(
+            "get_products",
+            attributes={
+                "db.system": "postgresql",
+                "db.operation": "query",
+                "db.statement": "SELECT * FROM products"
+            }
+        ) as span:
+            products = connection.execute(
+                "SELECT * FROM products"
+            ).fetchall()
+            span.set_attribute("totalProducts", len(products))
+            span.set_attribute("products", str(products))
 
+        with tracer.start_as_current_span(
+            "get_products.reviews",
+            attributes={
+                "db.system": "postgresql",
+                "db.operation": "query",
+                "db.statement": "SELECT reviews.id, products.id AS productid..."
+            }
+        ) as span:
+            reviews = connection.execute(
+                "SELECT reviews.id, products.id AS productid, reviews.rating, reviews.customerId, reviews.description, reviews.created FROM reviews INNER JOIN products ON reviews.productId = products.id"
+            ).fetchall()
+            span.set_attribute("reviews", str(reviews))
+    except Exception as err:
+        raise DatabaseConnectionError('get_products') from err
+
+    with tracer.start_as_current_span(
+        "get_products.format_results",
+        attributes={
+            "sentry.op": "code.block"
+        }
+    ) as span:
         for product in products:
-            # product_bundles is a "sleepy view", run the following query to get current sleep duration:
-            # SELECT pg_get_viewdef('product_bundles', true)
-            query = text("SELECT * FROM reviews, product_bundles WHERE productId = :x")
-            reviews = connection.execute(query, x=product.id).fetchall()
-
             result = dict(product)
             result["reviews"] = []
 
             for review in reviews:
-                result["reviews"].append(dict(review))
+                productId = review[1]
+                if productId == product["id"]:
+                    result["reviews"].append(dict(review))
             results.append(result)
+        span.set_attribute("results", str(results))
 
-        with tracer.start_as_current_span(
-            "get_products.combined_reviews.json",
-            attributes={
-                "sentry.op": "serialization"
-            }
-        ):
-            result = json.dumps(results, default=str)
-        return result
-    except Exception as err:
-        raise DatabaseConnectionError('get_products') from err
+    with tracer.start_as_current_span(
+        "get_products.combined_reviews.json",
+        attributes={
+            "sentry.op": "serialization"
+        }
+    ):
+        result = json.dumps(results, default=str)
+    
+    return result
 
 # 2 sql queries max, then sort in memory
 @tracer.start_as_current_span(name="get_products_join")
