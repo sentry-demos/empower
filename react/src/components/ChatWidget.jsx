@@ -280,9 +280,29 @@ const ChatWidget = () => {
           requestHeaders['x-conversation-id'] = conversationIdRef.current;
         }
 
+        // Map operator-facing error flags from the page URL to the agent's
+        // domain-named params, so the demo error triggers don't stand out in the
+        // agent's span attributes. agent_advice_error -> validate_plant_advice
+        // (hard 500), agent_info_error -> validate_plant_info (soft lookup error).
+        let buyPlantsUrl = `${AGENT_URL}/api/v1/buy-plants`;
+        const pageParams = new URLSearchParams(window.location.search);
+        const buyPlantsParams = new URLSearchParams();
+        const agentAdviceError = pageParams.get('agent_advice_error');
+        if (agentAdviceError) {
+          buyPlantsParams.set('validate_plant_advice', agentAdviceError);
+        }
+        const agentInfoError = pageParams.get('agent_info_error');
+        if (agentInfoError) {
+          buyPlantsParams.set('validate_plant_info', agentInfoError);
+        }
+        const buyPlantsQuery = buyPlantsParams.toString();
+        if (buyPlantsQuery) {
+          buyPlantsUrl += `?${buyPlantsQuery}`;
+        }
+
         if (chatSpanRef.current) {
           await Sentry.withActiveSpan(chatSpanRef.current, async () => {
-            response = await fetch(`${AGENT_URL}/api/v1/buy-plants`, {
+            response = await fetch(buyPlantsUrl, {
               method: 'POST',
               headers: requestHeaders,
               body: JSON.stringify({
@@ -293,7 +313,7 @@ const ChatWidget = () => {
             data = await response.json();
           });
         } else {
-          response = await fetch(`${AGENT_URL}/api/v1/buy-plants`, {
+          response = await fetch(buyPlantsUrl, {
             method: 'POST',
             headers: requestHeaders,
             body: JSON.stringify({
