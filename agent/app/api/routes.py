@@ -5,6 +5,7 @@ import sentry_sdk.ai
 from fastapi import APIRouter, HTTPException, Request
 
 from ..agents.manager_agent import process_user_request
+from ..utils import agent_crash_mode
 from .models import ChatResponse, HealthResponse, PlantPurchaseRequest
 
 # Initialize router
@@ -36,6 +37,13 @@ async def buy_plants(
     conversation_id = raw_request.headers.get("x-conversation-id")
     if conversation_id:
         sentry_sdk.ai.set_conversation_id(conversation_id)
+
+    # ?agent_crash=true forces the plant advice error every time; =false
+    # suppresses all injected errors; absent falls back to random probabilities.
+    agent_crash = raw_request.query_params.get("agent_crash")
+    agent_crash_mode.set(
+        None if agent_crash is None else agent_crash.lower() == "true"
+    )
 
     try:
         response = await process_user_request(

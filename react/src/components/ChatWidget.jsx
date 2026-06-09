@@ -280,9 +280,17 @@ const ChatWidget = () => {
           requestHeaders['x-conversation-id'] = conversationIdRef.current;
         }
 
+        // Forward the agent_crash query param from the page URL to the agent
+        // so the backend can force the plant advice error on demand.
+        let buyPlantsUrl = `${AGENT_URL}/api/v1/buy-plants`;
+        const agentCrash = new URLSearchParams(window.location.search).get('agent_crash');
+        if (agentCrash) {
+          buyPlantsUrl += `?agent_crash=${encodeURIComponent(agentCrash)}`;
+        }
+
         if (chatSpanRef.current) {
           await Sentry.withActiveSpan(chatSpanRef.current, async () => {
-            response = await fetch(`${AGENT_URL}/api/v1/buy-plants`, {
+            response = await fetch(buyPlantsUrl, {
               method: 'POST',
               headers: requestHeaders,
               body: JSON.stringify({
@@ -293,7 +301,7 @@ const ChatWidget = () => {
             data = await response.json();
           });
         } else {
-          response = await fetch(`${AGENT_URL}/api/v1/buy-plants`, {
+          response = await fetch(buyPlantsUrl, {
             method: 'POST',
             headers: requestHeaders,
             body: JSON.stringify({

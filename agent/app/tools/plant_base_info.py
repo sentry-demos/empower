@@ -5,7 +5,7 @@ from typing import Any
 
 from agents import FunctionTool
 
-from ..utils import maybe_throw
+from ..utils import agent_crash_mode, maybe_throw
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -64,6 +64,8 @@ async def _invoke_plant_advice(context: Any, input_json: str) -> str:
     """Invoke the plant advice tool."""
     import json
 
+    if agent_crash_mode.get() is True:
+        raise Exception("Could not get plant advice: File not found")
     maybe_throw(0.2, Exception("Could not get plant advice: File not found"))
 
     try:
