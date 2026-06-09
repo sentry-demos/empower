@@ -1,0 +1,34 @@
+name: close_bot_prs_except_label_example
+run-name: Run triggered by ${{ github.event_name }}
+
+on:
+  schedule: # every hour
+    - cron:  '0 * * * *'
+    # see https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#schedule
+  workflow_dispatch:
+
+# Only run 1 workflow at a time. If new one starts abort any that are already running.
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  default-job:
+    if: github.repository_owner == 'sentry-demos' # don't run in forks
+    permissions:
+      pull-requests: 'write'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out this repository code
+        uses: actions/checkout@v3
+        with:
+          path: empower
+
+      - name: Close stale bot PRs (except 'example' label)
+        # TEST FIRST WITH --dry-run before removing it
+        run: |
+            python3 _bin/close_bot_prs.py sentry-demos/empower ${{ secrets.GITHUB_TOKEN }} --authors "cursor[bot]" "sentry" --exclude-label example --max-age-minutes 60 --dry-run
+        working-directory: ./empower
+
+      - run: echo "Job status is ${{ job.status }}."
