@@ -8,16 +8,19 @@ describe('Errors module', () => {
   beforeAll(() => {
     originalMathRandom = Math.random;
     history = createBrowserHistory();
+    process.env.REACT_APP_ENABLE_CRASHER = 'true';
   });
 
   afterAll(() => {
     Math.random = originalMathRandom;
+    delete process.env.REACT_APP_ENABLE_CRASHER;
   });
 
   const setQueryParams = (obj) => {
     // const searchParams = new URLSearchParams(params);
     // history.push({ search: searchParams.toString() });
     jest.spyOn(URLSearchParams.prototype, 'get').mockImplementation((key) => obj[key]);
+    jest.spyOn(URLSearchParams.prototype, 'has').mockImplementation((key) => key in obj);
   };
 
   test('should throw a notAFunctionError when "crash" is true and errnum is 0', () => {

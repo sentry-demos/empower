@@ -36,20 +36,20 @@ var probability = function (n) {
 };
 
 const crasher = () => {
+  if (process.env.REACT_APP_ENABLE_CRASHER !== 'true') {
+    return;
+  }
+
   const queryParams = new URLSearchParams(history.location.search);
-  if (queryParams !== '') {
+  if (queryParams.has('crash')) {
     const crash = queryParams.get('crash');
-    if (crash) {
-      console.log('> crash', crash);
-      const errnum =
-        queryParams.get('errnum') ||
-        parseInt(Math.random() * randomErrors.length);
-      if (crash === 'true' || probability(parseFloat(crash))) {
-        throwErrorNumber(errnum);
-      }
+    console.log('> crash', crash);
+    const errnum =
+      queryParams.get('errnum') ||
+      parseInt(Math.random() * randomErrors.length);
+    if (crash === 'true' || probability(parseFloat(crash))) {
+      throwErrorNumber(errnum);
     }
-  } else {
-    console.log('> queryParam was', queryParams);
   }
 };
 
