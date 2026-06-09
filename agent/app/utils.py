@@ -1,21 +1,15 @@
 import contextvars
-import random
-from typing import Optional
 
-# Controls the demo error injection via the ?agent_crash query param. Tri-state:
-#   True  -> force the plant advice error 100% of the time
-#   False -> suppress all injected errors (never crash)
-#   None  -> no override; fall back to the default random probabilities
-# Set in the API route and read inside the tool, which is invoked by the agents
-# SDK; a contextvar propagates through the awaited async chain.
-agent_crash_mode: contextvars.ContextVar[Optional[bool]] = contextvars.ContextVar(
-    "agent_crash_mode", default=None
+# Set from query params on the /buy-plants request. When true, the corresponding
+# plant lookup fails, surfacing a demo error. Unset means false. Set in the API
+# route and read inside the tool, which is invoked by the agents SDK; a contextvar
+# propagates through the awaited async chain.
+#
+#   validate_plant_advice -> plant advice lookup fails (File not found)
+#   validate_plant_info   -> plant basic info lookup fails (Unknown plant)
+validate_plant_advice: contextvars.ContextVar[bool] = contextvars.ContextVar(
+    "validate_plant_advice", default=False
 )
-
-
-def maybe_throw(probability: float, exception: Exception) -> None:
-    # An explicit ?agent_crash=false disables injected errors entirely.
-    if agent_crash_mode.get() is False:
-        return
-    if random.random() < probability:
-        raise exception
+validate_plant_info: contextvars.ContextVar[bool] = contextvars.ContextVar(
+    "validate_plant_info", default=False
+)

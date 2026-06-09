@@ -5,7 +5,7 @@ import sentry_sdk.ai
 from fastapi import APIRouter, HTTPException, Request
 
 from ..agents.manager_agent import process_user_request
-from ..utils import agent_crash_mode
+from ..utils import validate_plant_advice, validate_plant_info
 from .models import ChatResponse, HealthResponse, PlantPurchaseRequest
 
 # Initialize router
@@ -38,11 +38,14 @@ async def buy_plants(
     if conversation_id:
         sentry_sdk.ai.set_conversation_id(conversation_id)
 
-    # ?agent_crash=true forces the plant advice error every time; =false
-    # suppresses all injected errors; absent falls back to random probabilities.
-    agent_crash = raw_request.query_params.get("agent_crash")
-    agent_crash_mode.set(
-        None if agent_crash is None else agent_crash.lower() == "true"
+    # ?validate_plant_advice=true makes the plant advice lookup fail;
+    # ?validate_plant_info=true makes the plant basic info lookup fail.
+    # Unset/anything else is false (no failure).
+    validate_plant_advice.set(
+        raw_request.query_params.get("validate_plant_advice", "").lower() == "true"
+    )
+    validate_plant_info.set(
+        raw_request.query_params.get("validate_plant_info", "").lower() == "true"
     )
 
     try:
