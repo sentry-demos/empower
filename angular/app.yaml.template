@@ -1,6 +1,6 @@
 env: standard
 service: ${ANGULAR_APP_ENGINE_SERVICE}
-runtime: nodejs20
+runtime: nodejs22
 
 handlers:
   - url: /assets
