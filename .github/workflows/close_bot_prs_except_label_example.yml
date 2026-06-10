@@ -28,7 +28,7 @@ jobs:
       - name: Close stale bot PRs (except 'example' label)
         # TEST FIRST WITH --dry-run before removing it
         run: |
-            python3 _bin/close_bot_prs.py sentry-demos/empower ${{ secrets.GITHUB_TOKEN }} --authors "cursor[bot]" "sentry" --exclude-label example --min-age-minutes 60 --dry-run
+            python3 _bin/close_bot_prs.py sentry-demos/empower ${{ secrets.GITHUB_TOKEN }} --authors "cursor[bot]" "sentry[bot]" --exclude-label example --min-age-minutes 60 --dry-run
         working-directory: ./empower
 
       - run: echo "Job status is ${{ job.status }}."
