@@ -101,7 +101,7 @@ def main():
         help="PRs carrying this label are never closed (default: example)",
     )
     parser.add_argument(
-        "--max-age-minutes",
+        "--min-age-minutes",
         type=int,
         default=60,
         help="Only close PRs older than this many minutes (default: 60)",
@@ -114,33 +114,50 @@ def main():
 
     args = parser.parse_args()
 
-    max_age = timedelta(minutes=args.max_age_minutes)
+    min_age = timedelta(minutes=args.min_age_minutes)
     authors = set(args.authors)
 
+    print("=== close_bot_prs configuration ===")
+    print(f"  repo:          {args.repo}")
+    print(f"  authors:       {sorted(authors)}")
+    print(f"  exclude-label: {args.exclude_label!r}")
+    print(f"  min-age:       {args.min_age_minutes} min")
+    print(f"  dry-run:       {args.dry_run}")
+    print("===================================")
+
     pulls = get_open_pulls(args.repo, args.auth_token)
+    print(f"Fetched {len(pulls)} open pull request(s)")
 
     count_closed = 0
     count_skipped = 0
     for pull in pulls:
         number = pull["number"]
         author = pull["user"]["login"]
+        labels = {label["name"] for label in pull.get("labels", [])}
+        age = get_pull_age(pull["created_at"])
+        age_min = int(age.total_seconds() // 60)
+
+        print(
+            f"PR #{number}: author={author!r} created_at={pull['created_at']} "
+            f"age={age_min}min labels={sorted(labels)}"
+        )
 
         if author not in authors:
             count_skipped += 1
+            print(f"  -> skip: author {author!r} not in target authors")
             continue
 
-        labels = {label["name"] for label in pull.get("labels", [])}
         if args.exclude_label in labels:
             count_skipped += 1
-            print(f"Skipping PR #{number} (has '{args.exclude_label}' label)")
+            print(f"  -> skip: has excluded label {args.exclude_label!r}")
             continue
 
-        age = get_pull_age(pull["created_at"])
-        if age < max_age:
+        if age < min_age:
             count_skipped += 1
-            print(f"Skipping PR #{number} (only {int(age.total_seconds() // 60)} min old)")
+            print(f"  -> skip: only {age_min}min old (< {args.min_age_minutes}min)")
             continue
 
+        print(f"  -> close: matches author, no excluded label, {age_min}min old")
         close_pull(args.repo, number, args.auth_token, args.dry_run)
         count_closed += 1
 
