@@ -11,7 +11,7 @@ from flask_caching import Cache
 from statsig.statsig_user import StatsigUser
 from statsig import statsig, StatsigOptions, StatsigEnvironmentTier
 import dotenv
-from .db import decrement_inventory, get_products, get_products_join, get_inventory, get_promo_code
+from .db import decrement_inventory, get_products_join, get_inventory, get_promo_code
 from .utils import parseHeaders, get_iterator, evaluate_statsig_flags
 from .queues.tasks import sendEmail
 import sentry_sdk
@@ -286,7 +286,7 @@ def products():
 
     try:
         with sentry_sdk.start_span(op="code.block", name="products.get_and_process_products"):
-            rows = get_products()
+            rows = get_products_join()
 
             if RUN_SLOW_PROFILE:
                 start_time = time.time()
