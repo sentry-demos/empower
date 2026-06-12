@@ -97,6 +97,11 @@ class Api::V1::CheckoutController < ApplicationController
           logged = "Error: Not enough inventory"
           render json: {"message": logged}, status: 500
           break # breaks on first error. might be more inventory errors.
+        rescue Exception => e
+          Sentry.capture_exception(e)
+          logged = "Error: Not enough inventory"
+          render json: {"message": logged}, status: 500
+          break
         end
       end
     }
@@ -109,7 +114,12 @@ class Api::V1::CheckoutController < ApplicationController
   end
 
   def enough_inventory?(cart_contents)
-    Sentry.logger.warn("Inventory check bypassed - always returning false (mock implementation)")
-    return false
+    cart_contents.each do |product_id, quantity|
+      inventory_item = Inventory.find_by(productid: product_id.to_i)
+      if inventory_item.nil? || inventory_item.count < quantity.to_i
+        return false
+      end
+    end
+    true
   end
 end
