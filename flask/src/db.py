@@ -29,7 +29,7 @@ if FLASK_ENVIRONMENT == "local":
         host=HOST,
         port=5432,
         database=DATABASE
-    ))
+    ), pool_pre_ping=True)
 else:
     CLOUD_SQL_CONNECTION_NAME = os.environ["DB_CLOUD_SQL_CONNECTION_NAME"]
     print("> ENVIRONMENT production ")
@@ -43,7 +43,8 @@ else:
             query={
                 'unix_sock': '/cloudsql/{}/.s.PGSQL.5432'.format(CLOUD_SQL_CONNECTION_NAME)
             }
-        )
+        ),
+        pool_pre_ping=True
     )
 
 # N+1 because a sql query for every product n
