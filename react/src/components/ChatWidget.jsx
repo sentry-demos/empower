@@ -229,13 +229,16 @@ const ChatWidget = () => {
     e.preventDefault();
     if (!userInput.trim()) return;
 
-    Sentry.metrics.count('chat.message_sent', 1, {
-      attributes: { step: conversationState },
+    Sentry.withActiveSpan(chatSpanRef.current, () => {
+      Sentry.logger.info("Chat message sent")
+      Sentry.metrics.count('chat.message_sent', 1, {
+        attributes: { step: conversationState },
+      });
+      if (conversationState === 'awaiting_light' && !conversationStartedRef.current) {
+        conversationStartedRef.current = true;
+        Sentry.metrics.count('chat.conversation_started', 1);
+      }
     });
-    if (conversationState === 'awaiting_light' && !conversationStartedRef.current) {
-      conversationStartedRef.current = true;
-      Sentry.metrics.count('chat.conversation_started', 1);
-    }
 
     // Track the send click
     handleSendClick();
@@ -352,7 +355,6 @@ const ChatWidget = () => {
   };
 
   const openChat = () => {
-    Sentry.metrics.count('chat.open', 1);
     conversationStartedRef.current = false;
     const conversationId = generateConversationId();
     conversationIdRef.current = conversationId;
@@ -364,6 +366,8 @@ const ChatWidget = () => {
         forceTransaction: true,
       });
       chatSpanRef.current = span;
+      Sentry.logger.info('Chat session started');
+      Sentry.metrics.count('chat.open', 1);
     });
     setIsOpen(true);
   };
