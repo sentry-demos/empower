@@ -68,7 +68,7 @@ def test_otlp_flutter_android(android_flutter_driver):
             ).send_keys("Broken")
 
             android_flutter_driver.find_element(
-                AppiumBy.ANDROID_UIAUTOMATOR, 'text("Send")'
+                AppiumBy.ACCESSIBILITY_ID, "Send"
             ).click()
         except Exception:
             pass  # Dialog only appears on checkout failure; safe to skip if absent
