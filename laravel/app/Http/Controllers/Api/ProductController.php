@@ -200,7 +200,7 @@ class ProductController extends Controller
         $out_of_stock = []; // list of items that are out of stock
         try {
             if ($validate_inventory) {
-                if (empty($quantities)) {
+                if (empty($cart['quantities'])) {
                     throw new Exception("Invalid checkout request: cart is empty");
                 }
 
