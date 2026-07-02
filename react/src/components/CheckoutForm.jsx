@@ -105,6 +105,17 @@ function CheckoutForm({ backend, rageclick, checkout_success, cart }) {
         checkout_span.setAttribute("status", response.status);
         Sentry.metrics.distribution("checkout_submit.status", response.status);
 
+        if (response.status === 400) {
+          let errorMessage = "Bad request";
+          try {
+            const body = await response.json();
+            errorMessage = body.message || errorMessage;
+          } catch (e) {
+            // ignore JSON parse errors
+          }
+          throw new Error(errorMessage);
+        }
+
         throw new Error([response.status, response.statusText || ' Internal Server Error'].join(' -'));
       } else {
         checkout_span.setAttribute("status", "unknown_error");

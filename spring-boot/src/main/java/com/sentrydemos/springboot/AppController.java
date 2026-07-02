@@ -205,7 +205,7 @@ public class AppController {
 
 	@CrossOrigin
 	@PostMapping("/checkout")
-	public String CheckoutCart(HttpServletRequest request, @RequestBody String payload) throws Exception {
+	public ResponseEntity<String> CheckoutCart(HttpServletRequest request, @RequestBody String payload) throws Exception {
 		Sentry.logger().info("[spring-boot] - Checkout process started", "payload_size", payload.length());
     	setTags(request);
 
@@ -227,11 +227,21 @@ public class AppController {
 			}
 		});
 		
-		// Process checkout with span tracking
-		executeWithSpan("process_order", "Checkout Cart quantities", () -> checkout(cart.getQuantities()));
+		try {
+			// Process checkout with span tracking
+			executeWithSpan("process_order", "Checkout Cart quantities", () -> checkout(cart.getQuantities()));
+		} catch (RuntimeException e) {
+			if ("No inventory for item".equals(e.getMessage())) {
+				Sentry.logger().warn("Checkout failed due to insufficient inventory");
+				return ResponseEntity.badRequest()
+					.header("Content-Type", "application/json")
+					.body("{\"error\": \"out_of_stock\", \"message\": \"Not enough inventory for requested items\"}");
+			}
+			throw e;
+		}
 		
 		Sentry.logger().info("Checkout completed successfully");
-		return "Checkout completed";
+		return ResponseEntity.ok("Checkout completed");
 	}
 
 	private void checkout(Map<String, Integer> quantities) throws Exception {
