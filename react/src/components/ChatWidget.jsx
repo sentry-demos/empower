@@ -290,10 +290,6 @@ const ChatWidget = () => {
         let buyPlantsUrl = `${AGENT_URL}/api/v1/buy-plants`;
         const pageParams = new URLSearchParams(window.location.search);
         const buyPlantsParams = new URLSearchParams();
-        const agentAdviceError = pageParams.get('agent_advice_error');
-        if (agentAdviceError) {
-          buyPlantsParams.set('validate_plant_advice', agentAdviceError);
-        }
         const agentInfoError = pageParams.get('agent_info_error');
         if (agentInfoError) {
           buyPlantsParams.set('validate_plant_info', agentInfoError);
