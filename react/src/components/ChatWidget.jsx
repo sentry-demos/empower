@@ -229,13 +229,16 @@ const ChatWidget = () => {
     e.preventDefault();
     if (!userInput.trim()) return;
 
-    Sentry.metrics.count('chat.message_sent', 1, {
-      attributes: { step: conversationState },
+    Sentry.withActiveSpan(chatSpanRef.current, () => {
+      Sentry.logger.info("Chat message sent")
+      Sentry.metrics.count('chat.message_sent', 1, {
+        attributes: { step: conversationState },
+      });
+      if (conversationState === 'awaiting_light' && !conversationStartedRef.current) {
+        conversationStartedRef.current = true;
+        Sentry.metrics.count('chat.conversation_started', 1);
+      }
     });
-    if (conversationState === 'awaiting_light' && !conversationStartedRef.current) {
-      conversationStartedRef.current = true;
-      Sentry.metrics.count('chat.conversation_started', 1);
-    }
 
     // Track the send click
     handleSendClick();
@@ -280,9 +283,29 @@ const ChatWidget = () => {
           requestHeaders['x-conversation-id'] = conversationIdRef.current;
         }
 
+        // Map operator-facing error flags from the page URL to the agent's
+        // domain-named params, so the demo error triggers don't stand out in the
+        // agent's span attributes. agent_advice_error -> validate_plant_advice
+        // (hard 500), agent_info_error -> validate_plant_info (soft lookup error).
+        let buyPlantsUrl = `${AGENT_URL}/api/v1/buy-plants`;
+        const pageParams = new URLSearchParams(window.location.search);
+        const buyPlantsParams = new URLSearchParams();
+        const agentAdviceError = pageParams.get('agent_advice_error');
+        if (agentAdviceError) {
+          buyPlantsParams.set('validate_plant_advice', agentAdviceError);
+        }
+        const agentInfoError = pageParams.get('agent_info_error');
+        if (agentInfoError) {
+          buyPlantsParams.set('validate_plant_info', agentInfoError);
+        }
+        const buyPlantsQuery = buyPlantsParams.toString();
+        if (buyPlantsQuery) {
+          buyPlantsUrl += `?${buyPlantsQuery}`;
+        }
+
         if (chatSpanRef.current) {
           await Sentry.withActiveSpan(chatSpanRef.current, async () => {
-            response = await fetch(`${AGENT_URL}/api/v1/buy-plants`, {
+            response = await fetch(buyPlantsUrl, {
               method: 'POST',
               headers: requestHeaders,
               body: JSON.stringify({
@@ -293,7 +316,7 @@ const ChatWidget = () => {
             data = await response.json();
           });
         } else {
-          response = await fetch(`${AGENT_URL}/api/v1/buy-plants`, {
+          response = await fetch(buyPlantsUrl, {
             method: 'POST',
             headers: requestHeaders,
             body: JSON.stringify({
@@ -332,7 +355,6 @@ const ChatWidget = () => {
   };
 
   const openChat = () => {
-    Sentry.metrics.count('chat.open', 1);
     conversationStartedRef.current = false;
     const conversationId = generateConversationId();
     conversationIdRef.current = conversationId;
@@ -344,6 +366,8 @@ const ChatWidget = () => {
         forceTransaction: true,
       });
       chatSpanRef.current = span;
+      Sentry.logger.info('Chat session started');
+      Sentry.metrics.count('chat.open', 1);
     });
     setIsOpen(true);
   };

@@ -69,6 +69,39 @@ const ENVIRONMENT = process.env.REACT_APP_ENVIRONMENT;
 console.log('ENVIRONMENT', ENVIRONMENT);
 console.log('RELEASE', RELEASE);
 
+// Distributed tracing handoff: when this app is opened from another Sentry SDK
+// (e.g. the Flutter app's in-app Web View), the upstream trace is passed via the
+// `sentry-trace` / `baggage` URL query params. The browser SDK continues a trace
+// from <meta name="sentry-trace"> / <meta name="baggage"> tags, so we promote the
+// params to meta tags BEFORE Sentry.init runs. This makes the React pageload a
+// child of the upstream trace, and the existing tracePropagationTargets carry the
+// same trace on to the backend — yielding one Flutter → React → backend trace.
+(function continueIncomingTrace() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const sentryTrace = params.get('sentry-trace');
+    if (!sentryTrace) return;
+    const baggage = params.get('baggage');
+
+    const upsertMeta = (name, content) => {
+      if (!content) return;
+      let meta = document.querySelector(`meta[name="${name}"]`);
+      if (!meta) {
+        meta = document.createElement('meta');
+        meta.setAttribute('name', name);
+        document.head.appendChild(meta);
+      }
+      meta.setAttribute('content', content);
+    };
+
+    upsertMeta('sentry-trace', sentryTrace);
+    upsertMeta('baggage', baggage);
+    console.log('> continuing incoming trace from URL:', sentryTrace);
+  } catch (e) {
+    console.warn('Failed to continue incoming trace from URL params', e);
+  }
+})();
+
 Sentry.init({
   dsn: DSN,
   release: RELEASE,

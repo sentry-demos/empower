@@ -9,6 +9,9 @@ VOLUME_FACTOR = 0.185 # reduce token usage
 WAIT_BEFORE_CLOSE_SECONDS = 80  # Allow time for Sentry trace capture
 BASE_ITERATIONS = 3
 JITTER_PERCENT = 30
+# Fraction of chat interactions that exercise each failing plant lookup.
+PLANT_ADVICE_FAILURE_RATE = 0.2
+PLANT_INFO_FAILURE_RATE = 0.1
 
 LIGHT_OPTIONS = ["low light", "medium light", "full sun"]
 MAINTENANCE_OPTIONS = ["yes", "no"]
@@ -55,6 +58,17 @@ def get_random_inputs() -> tuple[str, str]:
 
 
 def run_single_chat_interaction(driver, url: str, light: str, maintenance: str, iteration: int):
+    # Trigger each failing plant lookup for a fraction of interactions. These are
+    # the operator-facing flags the ChatWidget maps to the agent's domain params.
+    failure_params = []
+    if random.random() < PLANT_ADVICE_FAILURE_RATE:
+        failure_params.append("agent_advice_error=true")
+    if random.random() < PLANT_INFO_FAILURE_RATE:
+        failure_params.append("agent_info_error=true")
+    for param in failure_params:
+        separator = "&" if "?" in url else "?"
+        url = f"{url}{separator}{param}"
+
     driver.get(url)
     time.sleep(3)
     

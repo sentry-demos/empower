@@ -2,7 +2,11 @@ version: 2
 updates:
   - package-ecosystem: npm
     open-pull-requests-limit: 0 # security updates only
-    directory: '/'
+    
+    # 1. Use the plural "directories" key with a wildcard glob
+    directories:
+      - "/**" # Recursively scans the root and ALL subdirectories for package.json files
+      
     schedule:
       interval: daily
       timezone: America/Los_Angeles
@@ -10,12 +14,10 @@ updates:
     reviewers:
       - '@sentry-demos/am-team'
     labels: []
-    # Group dependency updates together in one PR
-    # https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file#groups
-    #groups:
-      # The name of the group, it will be used in PR titles and branch
-      #babel-dependencies:
-        #patterns:
-         # - '@babel/*'
-    #ignore:
-      #- dependency-name: '@sentry/node'
+
+    # 2. Tell Dependabot to handle grouping dynamically
+    groups:
+      all-monorepo-security:
+        applies-to: security-updates
+        patterns:
+          - '*'
