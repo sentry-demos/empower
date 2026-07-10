@@ -286,7 +286,9 @@ def products():
 
     try:
         with sentry_sdk.start_span(op="code.block", name="products.get_and_process_products"):
-            rows = get_products()
+            # Use the join-based query (2 queries, in-memory join) instead of
+            # get_products(), which used pg_sleep() plus an N+1 per-product loop.
+            rows = get_products_join()
 
             if RUN_SLOW_PROFILE:
                 start_time = time.time()
