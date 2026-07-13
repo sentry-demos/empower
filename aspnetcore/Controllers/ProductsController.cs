@@ -6,16 +6,19 @@ public class ProductsController : ControllerBase
 {
     private readonly HardwareStoreContext _dbContext;
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly SentryCache _cache;
     private readonly ILogger<ProductsController> _logger;
     private readonly string? _rubyBackendBaseUrl;
 
     public ProductsController(
         HardwareStoreContext dbContext,
         IHttpClientFactory httpClientFactory,
+        SentryCache cache,
         ILogger<ProductsController> logger)
     {
         _dbContext = dbContext;
         _httpClientFactory = httpClientFactory;
+        _cache = cache;
         _logger = logger;
         _rubyBackendBaseUrl = Environment.GetEnvironmentVariable("BACKEND_URL_RUBYONRAILS");
     }
@@ -88,6 +91,18 @@ public class ProductsController : ControllerBase
 
     private async Task<List<Product>> GetProductsAsync()
     {
+        // Cache-aside: emit a cache.get span (lights up Insights > Caches). On a
+        // hit we skip the deliberately-slow DB query entirely — exactly the win
+        // the Caches dashboard is meant to surface.
+        const string cacheKey = "products:all";
+        if (_cache.TryGet<List<Product>>(cacheKey, out var cached) && cached is not null)
+        {
+            SentrySdk.Metrics.EmitDistribution("products.fetched", cached.Count,
+                MeasurementUnit.Custom("product"),
+                [new KeyValuePair<string, object>("source", "cache")]);
+            return cached;
+        }
+
         var span = SentrySdk.GetSpan()?.StartChild("code.block", "products.get_products");
         var startedAt = DateTimeOffset.UtcNow;
 
@@ -102,11 +117,22 @@ public class ProductsController : ControllerBase
             span.SetData("duration_ms", (DateTimeOffset.UtcNow - startedAt).TotalMilliseconds);
         }
 
-        SentrySdk.Metrics.EmitDistribution("products.fetched", products.Count);
+        // Distributions with explicit units + a tag: Sentry renders fetch_duration_ms
+        // as a millisecond histogram you can slice by source. Mirrors react's
+        // "products.load_duration". The "source" tag lets us compare db vs cache.
+        SentrySdk.Metrics.EmitDistribution("products.fetched", products.Count,
+            MeasurementUnit.Custom("product"),
+            [new KeyValuePair<string, object>("source", "db")]);
         SentrySdk.Metrics.EmitDistribution("products.fetch_duration_ms",
-            (DateTimeOffset.UtcNow - startedAt).TotalMilliseconds);
+            (DateTimeOffset.UtcNow - startedAt).TotalMilliseconds,
+            MeasurementUnit.Duration.Millisecond,
+            [new KeyValuePair<string, object>("source", "db")]);
 
         span?.Finish();
+
+        // Short TTL → a natural miss-then-hit pattern: the first request eats the
+        // 1-3s DemoCommandInterceptor query, subsequent ones hit cache.
+        _cache.Set(cacheKey, products, TimeSpan.FromSeconds(30));
 
         return products;
     }

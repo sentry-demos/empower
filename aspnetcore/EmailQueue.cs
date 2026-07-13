@@ -14,6 +14,9 @@ public interface IEmailQueue
 {
     ValueTask EnqueueAsync(EmailTask task, CancellationToken cancellationToken = default);
     IAsyncEnumerable<EmailTask> DequeueAllAsync(CancellationToken cancellationToken);
+
+    // Current backlog depth — emitted as the queue.email.depth gauge.
+    int Count { get; }
 }
 
 // Single-process Channel-backed queue. Real .NET apps would point this at Hangfire,
@@ -30,4 +33,6 @@ public class ChannelEmailQueue : IEmailQueue
 
     public IAsyncEnumerable<EmailTask> DequeueAllAsync(CancellationToken cancellationToken) =>
         _channel.Reader.ReadAllAsync(cancellationToken);
+
+    public int Count => _channel.Reader.CanCount ? _channel.Reader.Count : 0;
 }

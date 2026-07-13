@@ -17,11 +17,14 @@ builder.Services.AddCors(options => options.AddDefaultPolicy(policy => policy
     .AllowAnyHeader()
     .AllowAnyMethod()));
 
-builder.Services.AddDbContext<HardwareStoreContext>(options =>
+// The slow-query interceptor reads ?slow from the current request, so it needs the accessor.
+builder.Services.AddHttpContextAccessor();
+
+builder.Services.AddDbContext<HardwareStoreContext>((sp, options) =>
 {
     var connectionString = AppUtils.GetConnectionString(builder.Configuration);
     options.UseNpgsql(connectionString);
-    options.AddInterceptors(new DemoCommandInterceptor());
+    options.AddInterceptors(new DemoCommandInterceptor(sp.GetRequiredService<IHttpContextAccessor>()));
 });
 
 builder.WebHost.UseSentry(options =>
@@ -98,6 +101,11 @@ builder.WebHost.UseSentry(options =>
     options.StackTraceMode = StackTraceMode.Enhanced;
     options.AttachStacktrace = true;
 
+    // Mark our own assembly's frames as "in-app" so Sentry highlights them and the
+    // "App Only" toggle collapses framework/Sentry frames. This is the difference between
+    // a wall of runtime internals and a stack trace that points straight at YOUR code.
+    options.AddInAppInclude("Empower");
+
     options.EnableLogs = true;
     options.EnableMetrics = true;
     options.AddIntegration(new Sentry.Profiling.ProfilingIntegration(TimeSpan.FromMilliseconds(500)));
@@ -120,6 +128,21 @@ builder.WebHost.UseSentry(options =>
 
     options.SetBeforeSend((sentryEvent, hint) =>
     {
+        // Blocking-call detection (CaptureBlockingCalls=true) also fires on framework-
+        // internal locks — e.g. Sentry's profiler emitting a Debug log through the
+        // synchronous console sink. Those events have NO in-app frame, so they point at
+        // runtime internals a customer can't act on. Drop them so "Blocking call detected"
+        // only surfaces blocks that happen in our own code (see GET /blocking).
+        var isBlockingCall = sentryEvent.SentryExceptions?
+            .Any(e => string.Equals(e.Mechanism?.Type, "BlockingCallDetector", StringComparison.Ordinal)) ?? false;
+        if (isBlockingCall &&
+            !sentryEvent.SentryExceptions!
+                .SelectMany(e => e.Stacktrace?.Frames ?? Enumerable.Empty<SentryStackFrame>())
+                .Any(f => f.InApp == true))
+        {
+            return null;
+        }
+
         IssueFingerprinter.Fingerprint(sentryEvent);
         PiiScrubber.Scrub(sentryEvent);
         return sentryEvent;
@@ -136,6 +159,12 @@ builder.WebHost.UseSentry(options =>
 });
 
 builder.Services.AddHttpClient();
+
+// In-memory cache + a Sentry-instrumented wrapper. Emitting cache.get/cache.put
+// spans is what lights up Sentry > Insights > Caches for this service (the .NET
+// SDK doesn't auto-instrument caches the way the Python SDK does).
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<SentryCache>();
 
 // Periodic Sentry cron check-ins for the "demo-job-aspnetcore" monitor.
 builder.Services.AddHostedService<CheckInHostedService>();

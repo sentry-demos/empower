@@ -45,6 +45,11 @@ public class EnqueueController : ControllerBase
 
         span?.Finish();
 
+        // Gauge — a point-in-time level, not a count of events. Queue backlog depth is
+        // the textbook gauge ("how deep is the queue right now?") and ideal for alerting.
+        SentrySdk.Metrics.EmitGauge("queue.email.depth", _queue.Count,
+            MeasurementUnit.Custom("task"));
+
         _logger.LogInformation("Enqueued welcome email for {Email}", body.Email);
         return Accepted(new { status = "enqueued", email = body.Email });
     }

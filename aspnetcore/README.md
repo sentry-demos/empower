@@ -71,6 +71,7 @@ locally to see issues / transactions land in your project.
 | GET    | `/handled`    | Triggers a `FormatException`, captures it manually, returns `"failed"`  |
 | GET    | `/unhandled`  | Throws `KeyNotFoundException` (no local catch)                           |
 | POST   | `/enqueue`    | Puts a welcome-email task on an in-process Channel queue. Background `EmailWorkerHostedService` consumes it; trace continues from request into worker via `SentrySdk.ContinueTrace`. Matches Flask's Celery `/enqueue`. 10% simulated send failure produces a `queue.process` issue. |
+| POST   | `/apply-promo-code` | Flask-parity promo lookup. Posts `{value}`, queries `promo_codes` (`get_promo_code` span). `400` missing · `404` unknown · `410` expired · `200` `{success, promo_code}`. Table is unseeded by default, so codes 404 until rows are inserted. |
 | POST   | `/feedback`   | Captures user feedback via `SentrySdk.CaptureFeedback` (User Feedback SKU) |
 | GET    | `/cron-ok`    | On-demand OK check-in for monitor `demo-job-aspnetcore-manual` (Crons SKU) |
 | GET    | `/cron-fail`  | On-demand Error check-in for monitor `demo-job-aspnetcore-manual` (opens an issue at FailureIssueThreshold=1) |
@@ -102,8 +103,9 @@ http://localhost:8091/demo | jq` during a live call.
 | **Errors (handled)** | `curl http://localhost:8091/handled` | Issues → `FormatException`, level=error, handled=true |
 | **Custom fingerprinting** | `curl -X POST http://localhost:8091/checkout` | Same fingerprint across Flask/React/.NET — see `IssueFingerprinter.cs` |
 | **PII / data scrubbing** | `curl -X POST -H 'Authorization: Bearer secret' -d '{"password":"hunter2","card":"4111111111111111"}' -H 'Content-Type: application/json' http://localhost:8091/checkout` | Event payload shows `[Filtered]` / `[REDACTED]` / `[CARD_REDACTED]` |
-| **Performance / Tracing** | `curl http://localhost:8091/products` | Traces → transaction with `code.block` + `db.query` + `http.client` spans |
-| **Performance Issue: N+1** | `curl http://localhost:8091/products-n1` | Performance Issues → "N+1 Query" with repeated `reviews.by_product_id` spans |
+| **Performance / Tracing** | `curl 'http://localhost:8091/products?slow=true'` | Traces → transaction with `code.block` + `db.query` + `http.client` spans |
+| **Caches (Insights)** | `curl 'http://localhost:8091/products?slow=true' && curl 'http://localhost:8091/products?slow=true'` | Insights → Caches lists `backend-aspnetcore` (hit rate, throughput, item size). `cache.get`/`cache.put` spans via `SentryCache`; 1st call misses (slow DB), 2nd hits. Manually instrumented — the .NET SDK has no auto cache instrumentation |
+| **Performance Issue: N+1** | `curl 'http://localhost:8091/products-n1?slow=true'` | Performance Issues → "N+1 Query" with repeated `reviews.by_product_id` spans |
 | **Profiling** | `curl 'http://localhost:8091/products?fetch_promotions=1'` | Profile tab on the transaction, `ScanDescriptionsForPests` hot |
 | **Sentry Logs** | `curl http://localhost:8091/handled` | Explore → Logs (filter `trace_id:<id>`); user.email attached |
 | **Metrics** | `curl -X POST http://localhost:8091/checkout` | Counters: `checkout.received`, `checkout.failed`; Distribution: `products.fetched` |
@@ -111,8 +113,16 @@ http://localhost:8091/demo | jq` during a live call.
 | **Crons (auto)** | (nothing — background service) | Crons → `demo-job-aspnetcore`, OK every minute |
 | **Crons (manual)** | `curl http://localhost:8091/cron-ok` / `curl http://localhost:8091/cron-fail` | Crons → `demo-job-aspnetcore-manual`. Failure opens an issue. |
 | **User Feedback** | `curl -X POST -H 'Content-Type: application/json' -d '{"name":"Demo","email":"demo@example.com","message":"the plant stroller scared my cat"}' http://localhost:8091/feedback` | User Feedback list in Sentry |
+| **Promo code lookup (DB parity)** | `curl -X POST -H 'Content-Type: application/json' -d '{"value":"SAVE20"}' http://localhost:8091/apply-promo-code` | Traces → `POST /apply-promo-code` with a `get_promo_code` db.query span; `promo.apply` counter sliceable by `result` |
 | **Background worker / queue tracing** | `curl -X POST -H 'Content-Type: application/json' -d '{"email":"newsletter@example.com"}' http://localhost:8091/enqueue` | Single trace spans `POST /Enqueue` (request) + `queue.process_email` (worker), connected via `ContinueTrace`. With ~10% chance produces a worker-side error issue. |
 | **Distributed tracing across services** | start Rails + `curl http://localhost:8091/products` | Trace waterfall spans both `backend-aspnetcore` (server) and `backend-rubyonrails` (server) |
+
+**Slow-query control.** DB reads run at their real speed by default (a wall of
+uniform 1–3s query spans is a giveaway on a customer call). Opt into the
+slow-query demo per request with `?slow=true` (random 1–3s) or `?slow=<ms>` for
+an exact delay — the N+1, slow-query, and cache SKUs above use it. Set
+`DB_SLOW_ALWAYS=true` to force every query slow (deployed-demo parity). See
+`DemoCommandInterceptor` in `HardwareStoreContext.cs`.
 
 Out of scope on this backend (covered by other services in the repo): Session
 Replay (frontend SDKs in `react/`, `angular/`, `vue/`), AI/Agent Monitoring

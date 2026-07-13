@@ -15,6 +15,11 @@ public class ProductInfoController : ControllerBase
     public string Get([FromQuery] int? id = null)
     {
         _logger.LogInformation("Received /product/0/info endpoint request (id={Id})", id);
+
+        // Counter with a dimension: product views sliceable by product_id in the dashboard.
+        SentrySdk.Metrics.EmitCounter("product.info.viewed", 1,
+            [new KeyValuePair<string, object>("product_id", id ?? 0)]);
+
         return "aspnetcore /product/0/info";
     }
 }

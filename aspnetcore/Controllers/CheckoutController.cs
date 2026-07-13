@@ -42,8 +42,22 @@ public class CheckoutController : ControllerBase
             level: BreadcrumbLevel.Warning,
             category: "checkout");
 
-        SentrySdk.Metrics.EmitCounter("checkout.received", 1);
-        SentrySdk.Metrics.EmitCounter("checkout.failed", 1);
+        // Metrics — each type answers a different question; tags make them sliceable.
+        //   Counter      → how often does this happen? (broken down by outcome)
+        //   Distribution → what's the shape? (avg/sum + p50/p90/p99 of value & size)
+        SentrySdk.Metrics.EmitCounter("checkout.received", 1,
+            [new KeyValuePair<string, object>("result", "failed")]);
+
+        // Order shape. Mirrors flask's "checkout.captured.revenue" and
+        // react's "checkout_submit.order_total" / "num_items".
+        SentrySdk.Metrics.EmitDistribution("checkout.order_total", 42.99,
+            MeasurementUnit.Custom("usd"),
+            [new KeyValuePair<string, object>("currency", "USD")]);
+        SentrySdk.Metrics.EmitDistribution("checkout.order_items", 3);
+
+        // Failures broken down by reason → a dashboard can show WHY checkout fails.
+        SentrySdk.Metrics.EmitCounter("checkout.failed", 1,
+            [new KeyValuePair<string, object>("reason", "insufficient_inventory")]);
 
         throw new OutOfInventoryException("Not enough inventory");
     }

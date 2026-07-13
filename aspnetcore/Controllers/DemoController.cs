@@ -51,16 +51,23 @@ public class DemoController : ControllerBase
             new Demo {
                 Sku = "Performance / Tracing",
                 Method = "GET", Path = "/products",
-                Description = "Loads products + reviews via JOIN, scans descriptions, calls Rails for cross-service trace.",
+                Description = "Loads products + reviews via JOIN, scans descriptions, calls Rails for cross-service trace. DB queries run at real speed by default; add ?slow=true (or ?slow=<ms>) to simulate a slow query.",
                 ExpectInSentry = "Transaction with code.block spans (get_products, scan_descriptions, api_request). DB query span. http.client span to Rails (Rails server span joins if Rails is running).",
-                Curl = "curl http://localhost:8091/products",
+                Curl = "curl 'http://localhost:8091/products?slow=true'",
             },
             new Demo {
                 Sku = "Performance Issue: N+1 query",
                 Method = "GET", Path = "/products-n1",
-                Description = "Deliberate N+1: fetches reviews in a per-product loop instead of with .Include.",
+                Description = "Deliberate N+1: fetches reviews in a per-product loop instead of with .Include. Use ?slow=true so each per-product query is slow enough to trip Sentry's N+1 detector.",
                 ExpectInSentry = "Transaction with N similar reviews.by_product_id spans. Sentry surfaces this as 'N+1 Query' under Performance Issues.",
-                Curl = "curl http://localhost:8091/products-n1",
+                Curl = "curl 'http://localhost:8091/products-n1?slow=true'",
+            },
+            new Demo {
+                Sku = "Caches (Insights)",
+                Method = "GET", Path = "/products",
+                Description = "Cache-aside via SentryCache (IMemoryCache wrapper). Emits cache.get (cache.hit) + cache.put (cache.item_size) spans. First call after a 30s TTL misses (add ?slow=true to make the backing DB query slow and show the cache's value); subsequent calls hit. The .NET SDK does NOT auto-instrument caches — these spans are emitted manually to the Caches span convention.",
+                ExpectInSentry = "Insights > Caches lists backend-aspnetcore (like flask/laravel): hit rate, throughput, avg item size. cache.get spans sliceable by cache.hit. Hit avoids the get_products db.query span entirely.",
+                Curl = "curl 'http://localhost:8091/products?slow=true' && curl 'http://localhost:8091/products?slow=true'  # 1st miss (slow DB), 2nd hit (fast)",
             },
             new Demo {
                 Sku = "Profiling",
@@ -79,8 +86,8 @@ public class DemoController : ControllerBase
             new Demo {
                 Sku = "Metrics",
                 Method = "POST", Path = "/checkout",
-                Description = "Emits checkout.received and checkout.failed counters via SentrySdk.Metrics.",
-                ExpectInSentry = "Metrics > Counters: checkout.received, checkout.failed. Also Distribution metric products.fetched from /products.",
+                Description = "All 3 metric types via SentrySdk.Metrics: counters checkout.received{result}/checkout.failed{reason}, distributions checkout.order_total(usd)/checkout.order_items. /products adds products.* distributions; POST /enqueue emits the queue.email.depth gauge; /product/0/info emits product.info.viewed{product_id}.",
+                ExpectInSentry = "Metrics: counters (sliceable by result/reason), distributions checkout.order_total + products.fetch_duration_ms(ms), gauge queue.email.depth. Tags appear as filterable dimensions.",
                 Curl = "curl -X POST http://localhost:8091/checkout",
             },
             new Demo {
@@ -105,6 +112,13 @@ public class DemoController : ControllerBase
                 Curl = "curl -X POST -H 'Content-Type: application/json' -d '{\"email\":\"newsletter@example.com\"}' http://localhost:8091/enqueue",
             },
             new Demo {
+                Sku = "Promo code lookup (DB + parity)",
+                Method = "POST", Path = "/apply-promo-code",
+                Description = "Flask-parity promo lookup. Posts {value}, queries promo_codes (get_promo_code span). 400 missing, 404 unknown, 410 expired, 200 applied. promo_codes is unseeded by default, so any code returns 404 until rows are inserted.",
+                ExpectInSentry = "Transaction POST /apply-promo-code with a get_promo_code db.query span. promo.apply counter sliceable by result (applied/not_found/expired).",
+                Curl = "curl -X POST -H 'Content-Type: application/json' -d '{\"value\":\"SAVE20\"}' http://localhost:8091/apply-promo-code",
+            },
+            new Demo {
                 Sku = "User Feedback",
                 Method = "POST", Path = "/feedback",
                 Description = "Captures user feedback via SentrySdk.CaptureFeedback.",
@@ -126,9 +140,10 @@ public class DemoController : ControllerBase
             },
             new Demo {
                 Sku = "Blocking-call detection",
-                Method = "GET", Path = "/products",
-                Description = "CaptureBlockingCalls=true; any sync I/O on the request thread is flagged.",
-                ExpectInSentry = "If sync I/O is present: 'Blocking call detected' performance issue on the transaction.",
+                Method = "GET", Path = "/blocking",
+                Description = "Deliberate sync-over-async (Task.Delay(500).Wait()) on the request thread. CaptureBlockingCalls=true flags it; AddInAppInclude(\"Empower\") marks the frame in-app.",
+                ExpectInSentry = "'Blocking call detected' whose stack trace points at Controllers/BlockingController.cs (in-app, with source) — not framework internals. Framework-only blocking calls are dropped in BeforeSend. Fix = await instead of .Wait().",
+                Curl = "curl http://localhost:8091/blocking",
             },
         };
 
