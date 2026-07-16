@@ -12,7 +12,7 @@ from flask_caching import Cache
 from statsig.statsig_user import StatsigUser
 from statsig import statsig, StatsigOptions, StatsigEnvironmentTier
 import dotenv
-from .db import decrement_inventory, get_products, get_products_join, get_inventory, get_promo_code, db
+from .db import decrement_inventory, get_products_join, get_inventory, get_promo_code, db
 from .utils import parseHeaders, get_iterator, evaluate_statsig_flags
 import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
@@ -368,7 +368,7 @@ def products():
                 "sentry.op": "code.block"
             }
         ):
-            rows = get_products()
+            rows = get_products_join()
 
             if RUN_SLOW_PROFILE:
                 start_time = time.time()
@@ -490,7 +490,7 @@ def organization():
     #   to populate "Found In" endpoints in Queries
     if random.random() < 0.01:
         logger.info('Processing /organization - executing random products query')
-        rows = get_products()
+        rows = get_products_join()
     return "flask /organization"
 
 
