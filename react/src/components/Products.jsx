@@ -32,10 +32,14 @@ function Products({ frontendSlowdown, backend, productsApi, productsExtremelySlo
     let se; // `se` is automatically added to all fetch requests, but need to do manually for script tags
     Sentry.withScope(function (scope) { se = scope._tags.se; });
 
+    // Static assets only exist in the Flask backend, so always fetch from there
+    // regardless of which backend is currently selected
+    const flaskBackend = process.env.REACT_APP_BACKEND_URL_FLASK;
+
     let uc_small_script = document.createElement('script');
     uc_small_script.async = false;
     uc_small_script.src =
-      backend +
+      flaskBackend +
       '/compressed_assets/compressed_small_file.js' +
       `?cacheBuster=${Math.random()}&se=${se}`;
     document.body.appendChild(uc_small_script);
@@ -45,7 +49,7 @@ function Products({ frontendSlowdown, backend, productsApi, productsExtremelySlo
     c_big_script.async = false;
 
     c_big_script.src =
-      backend +
+      flaskBackend +
       '/uncompressed_assets/uncompressed_big_file.js' +
       `?cacheBuster=${Math.random()}&se=${se}`;
     document.body.appendChild(c_big_script);
