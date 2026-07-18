@@ -109,7 +109,10 @@ Sentry.init({
   tracesSampleRate: 1.0,
   tracePropagationTargets: tracingOrigins,
   propagateTraceparent: true, // Sentry <-> OTLP distributed tracing
-  profilesSampleRate: 1.0,
+  // Span streaming uses v2 profiling: profiler runs while sampled root spans
+  // exist. (Legacy `profilesSampleRate` is not compatible with span streaming.)
+  profileSessionSampleRate: 1.0,
+  profileLifecycle: 'trace',
   replaysSessionSampleRate: 1.0,
   debug: true,
   enableLogs: true,
@@ -126,6 +129,10 @@ Sentry.init({
       (integration) => integration.name !== 'Dedupe'
     ),
     // Add custom integrations with options
+    // Enable span streaming: spans are sent individually as they complete
+    // instead of being batched into a transaction. This also implicitly sets
+    // `traceLifecycle: 'stream'`.
+    Sentry.spanStreamingIntegration(),
     Sentry.feedbackIntegration({
       // Additional SDK configuration goes in here, for example:
       colorScheme: 'system',
@@ -245,11 +252,14 @@ class App extends Component {
       'enterprise',
     ][Math.floor(Math.random() * 4)];
     currentScope.setTag('customerType', customerType);
+    // In span streaming mode tags don't apply to spans, only attributes do.
+    currentScope.setAttribute('customerType', customerType);
 
     let se = queryParams.get('se');
     if (se) {
       // Route components (navigation changes) will now have 'se' tag on scope
       currentScope.setTag('se', se);
+      currentScope.setAttribute('se', se);
       // for use in CheckoutForm.js when deciding whether to pre-fill form
       // lasts for as long as the tab is open
       sessionStorage.setItem('se', se);
@@ -259,6 +269,7 @@ class App extends Component {
     let cexp = queryParams.get('cexp');
     if (cexp) {
       currentScope.setTag('cexp', cexp);
+      currentScope.setAttribute('cexp', cexp);
 
       if (cexp === 'products_extremely_slow') {
         PRODUCTS_EXTREMELY_SLOW = true;
@@ -275,9 +286,11 @@ class App extends Component {
       console.log('> frontend-only slowdown: true');
       FRONTEND_SLOWDOWN = true;
       currentScope.setTag('frontendSlowdown', true);
+      currentScope.setAttribute('frontendSlowdown', true);
     } else {
       console.log('> frontend + backend slowdown');
       currentScope.setTag('frontendSlowdown', false);
+      currentScope.setAttribute('frontendSlowdown', false);
     }
 
     if (queryParams.get('api') === 'join') {
@@ -288,9 +301,11 @@ class App extends Component {
       }
       PRODUCTS_API = 'products-join';
       currentScope.setTag('api', 'products-join');
+      currentScope.setAttribute('api', 'products-join');
     } else {
       PRODUCTS_API = 'products';
       currentScope.setTag('api', 'products');
+      currentScope.setAttribute('api', 'products');
     }
 
     if (queryParams.get('rageclick') === 'true') {
@@ -305,6 +320,7 @@ class App extends Component {
     sessionStorage.removeItem('lastErrorEventId');
 
     currentScope.setTag('backendType', backendType);
+    currentScope.setAttribute('backendType', backendType);
 
     const metricScopeAttrs = { backendType };
     if (cexp) {
@@ -331,6 +347,7 @@ class App extends Component {
     if (errorBoundary) {
       ERROR_BOUNDARY = errorBoundary;
       currentScope.setTag('error_boundary', errorBoundary);
+      currentScope.setAttribute('error_boundary', errorBoundary);
     }
 
     // Automatically append `se`, `customerType` and `userEmail` query params to all requests
