@@ -307,8 +307,13 @@ def cexp(random):
         #d4 = now.hour // 4
         #return 4 if d4 == 5 else d4
 
-        # 5 - 1 - 5 - 1 - 5 - 1 - 5 - 1
-        return (now.hour // 6) * 2 + (0 if now.hour % 6 < 5 else 1)
+        # 24-hour cycle: 5 - 1 - 5 - 1 - 5 - 1 - 5 - 1 (hours normal/broken)
+        #return (now.hour // 6) * 2 + (0 if now.hour % 6 < 5 else 1)
+
+        # 7-day cycle: same 5:1 proportion scaled 7x -> 35 - 7 - 35 - 7 - 35 - 7 - 35 - 7 (hours normal/broken)
+        # 4 blocks of 42 hours (35h healthy + 7h broken) across 168 hours; each broken experience rotates every 1.75 days
+        h = now.weekday() * 24 + now.hour
+        return (h // 42) * 2 + (0 if h % 42 < 35 else 1)
 
     # array length must match number of possible time segments
     probabilities = {       # segments    0    1    2    3    4    5    6    7   
