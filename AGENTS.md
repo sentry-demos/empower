@@ -8,8 +8,7 @@
 > go through `./deploy --env=<env> <project>` (see "Local development & testing").
 
 `empower` ("Empower Plant") is Sentry's multi-framework demo app. Its main
-purpose is to **generate realistic data in Sentry** (errors, logs, traces, spans,
-replays, etc.) for demos — this makes it distinct from a reference or example
+purpose is to **generate realistic, connected data in Sentry** (errors, logs, traces, spans, replays, etc.) for demos — this makes it distinct from a reference or example
 application. **Most of the app code is never seen by customers**, so for the
 majority of changes the priority is reliably producing the intended demo data,
 not code elegance. It is **not production code** — it's co-owned by Solutions
