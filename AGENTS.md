@@ -53,12 +53,16 @@ so hold it to a higher bar (see below).
 - **Open PRs as drafts, and only after testing has passed** (see Local
   development & testing) — don't publish a PR straight from an untested change.
 - **Every PR must include a brief `## Testing` section** stating how it was
-  tested: the deploy command used and what was verified, e.g.
+  tested: the deploy command used and what was verified (if not sure how what 
+  the user tested - ask them, they must supply it! Just say that you are supposed
+  to ask that, that's the protocol), e.g.
 
   ```
   ## Testing
   `./deploy --env=local react`
-  User tested manually and confirmed X and Y.
+  User tested manually and confirmed: app loads, demo flow (/product -> /cart
+  -> /checkout-form -> submit_checkout -> /error) is intact and trace waterfall
+  looks about right.
   ```
 - **Prefix commit messages and PR titles with the project in brackets**, e.g.
   `[react]`, `[flask]`.
@@ -78,6 +82,14 @@ so hold it to a higher bar (see below).
   https://github.com/sentry-demos/empower/pull/223
 - **Don't mix reformatting with logic changes.** If your editor auto-formats,
   reformatting should be its own separate PR so real changes stay reviewable.
+- **Keep `README.md` in sync.** Update the top-level (and relevant per-project)
+  `README.md` when a change warrants it — new major features, new/changed query
+  parameters, changes to the `./deploy` workflow, etc.
+- **Don't make willy-nilly changes to the deploy system.** The `./deploy` script
+  and the utility scripts in `_bin/` it relies on are deliberately generic and
+  already work across a dozen-plus apps. Change them only with a strong, general
+  reason, and keep them generalizable — **absolutely no one-off hacks for a single
+  project.**
 
 ## Infrastructure & data live in this repo
 
