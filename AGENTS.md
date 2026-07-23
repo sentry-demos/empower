@@ -1,5 +1,12 @@
 # Guidelines for AI agents working in `empower`
 
+> [!IMPORTANT]
+> **This repo uses a custom `./deploy` framework. NEVER run or build a project
+> directly** (`npm run`, `npm start`, `npm build`, `mvn`, `flask run`, `go run`,
+> etc.). Those commands will fail or misbehave, because `./deploy` first generates
+> each project's `*.template` files and injects the required env/secrets. Always
+> go through `./deploy --env=<env> <project>` (see "Local development & testing").
+
 `empower` ("Empower Plant") is Sentry's multi-framework demo app. Its main
 purpose is to **generate realistic data in Sentry** (errors, logs, traces, spans,
 replays, etc.) for demos — this makes it distinct from a reference or example
