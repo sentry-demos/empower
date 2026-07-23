@@ -135,3 +135,8 @@ so hold it to a higher bar (see below).
   `INFO  Accepting connections at http://localhost:3000`. Verifying demo behavior
   requires manual interaction in a browser, so **prompt the user to test once you
   see that line** instead of assuming success.
+- **After the user tests manually, ask them for links to the Sentry
+  events/artifacts** their testing generated (issues, traces, replays, profiles,
+  etc.) — in their personal org for `--env=local`, or `team-se` for staging. Use
+  them to confirm the change works and reference them in the PR's `## Testing`
+  section.
