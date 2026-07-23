@@ -6,7 +6,7 @@ import * as Sentry from '@sentry/react';
 import { connect } from 'react-redux';
 import Loader from 'react-loader-spinner';
 import { countItemsInCart } from '../utils/cart';
-import { getTag } from '../utils/utils';
+import { getTag, withCurrentLocation } from '../utils/utils';
 import { updateStatsigUserAndEvaluate } from '../utils/statsig';
 
 function CheckoutForm({ backend, rageclick, checkout_success, cart }) {
@@ -199,7 +199,7 @@ function CheckoutForm({ backend, rageclick, checkout_success, cart }) {
       try {
         await checkout(cart, span);
       } catch (error) {
-        Sentry.captureException(error);
+        Sentry.captureException(error, withCurrentLocation());
         hadError = true;
       }
       setLoading(false);
