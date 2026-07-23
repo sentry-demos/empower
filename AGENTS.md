@@ -66,9 +66,21 @@ so hold it to a higher bar (see below).
   use `npm ci`, not `npm install`, unless you're intentionally upgrading — which is
   its own dedicated change.
 - **Don't fake slowness with `pg_sleep()`** (or equivalent); use the "sleepy
-  views" pattern already in the backends.
+  views" pattern already in the backends, ideally existing ones, see: 
+  https://github.com/sentry-demos/empower/pull/223
 - **Don't mix reformatting with logic changes.** If your editor auto-formats,
   reformatting should be its own separate PR so real changes stay reviewable.
+
+## Infrastructure & data live in this repo
+
+- **The demo Postgres schema and seed content are defined in code** under
+  `_postgres/` (e.g. `_postgres/data/empowerplant.sql`). Change the demo data and
+  schema there — don't hand-edit a live database.
+- **DNS / domain mappings are defined in code** under `_dns/`. Services are
+  exposed at short `*.empower-plant.com` hostnames.
+- **When talking to the user, refer to services by their short
+  `*.empower-plant.com` URLs** (e.g. `staging-flask.empower-plant.com`), not the
+  long App Engine URLs that `gcloud` prints.
 
 ## Local development & testing
 
