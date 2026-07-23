@@ -5,7 +5,9 @@ purpose is to **generate realistic data in Sentry** (errors, logs, traces, spans
 replays, etc.) for demos — this makes it distinct from a reference or example
 application. **Most of the app code is never seen by customers**, so for the
 majority of changes the priority is reliably producing the intended demo data,
-not code elegance.
+not code elegance. It is **not production code** — it's co-owned by Solutions
+Engineers (SEs) who aren't all expert SWEs, so minimize unnecessary change and
+complexity.
 
 The exception is **code that shows up in the Sentry UI during a demo** — e.g. the
 source lines shown as stack-trace / code context around a captured error, or certain
@@ -23,6 +25,15 @@ so hold it to a higher bar (see below).
   the call site.** This applies to code a customer will see in the Sentry UI
   (stack-trace context around a captured error, etc.). There the plain SDK usage is
   the point, e.g. `Sentry.captureException(...)` — don't hide it behind wrappers or abstractions. A helper may *prepare* context (scope, tags, captured location, etc.), but the actual SDK call should stay where a viewer can see it.
+- **Chesterton's Fence — don't remove or "modernize" what you don't understand.**
+  Hacks, scaffolding, "internal" comments, and deliberately outdated instrumentation
+  are often intentional to keep the picture in `demo.sentry.io` looking right. Don't
+  delete them or proactively upgrade the Sentry SDK / other instrumentation; when
+  unsure about the purpose of existing code, ask the user (an SE) before changing it.
+- **Never touch Sentry Org or Project settings** as part of a code change.
+- **No real or real-looking PII in demo data.** Emails must always be
+  `@example.com` (never a plausible real address); don't introduce real names,
+  tokens, or secrets.
 
 ## Git / PR workflow
 
@@ -34,6 +45,23 @@ so hold it to a higher bar (see below).
   - If cleanup is needed, rebase onto `origin/master` rather than merging.
 - **Open PRs as drafts, and only after testing has passed** (see Local
   development & testing) — don't publish a PR straight from an untested change.
+- **Prefix commit messages and PR titles with the project in brackets**, e.g.
+  `[react]`, `[flask]`.
+- **Merging to `master` auto-deploys to production** for every sub-project except
+  those listed in `auto-deploy.exclude`. Treat a merge as a production deploy.
+
+## Code conventions
+
+- **Don't break TDA selectors.** In web projects, don't change HTML `id`s,
+  `class`es, or other element selectors — the `_tda` test automation relies on
+  them to drive the app.
+- **Freeze dependencies.** Pin versions (in `package.json` use `~`, not `^`) and
+  use `npm ci`, not `npm install`, unless you're intentionally upgrading — which is
+  its own dedicated change.
+- **Don't fake slowness with `pg_sleep()`** (or equivalent); use the "sleepy
+  views" pattern already in the backends.
+- **Don't mix reformatting with logic changes.** If your editor auto-formats,
+  reformatting should be its own separate PR so real changes stay reviewable.
 
 ## Local development & testing
 
@@ -42,9 +70,14 @@ so hold it to a higher bar (see below).
   staging deploy (`./deploy --env=staging <project>` — it's fine to overwrite
   whatever is currently deployed in staging). Only once local testing (plus
   staging where warranted) has passed should you publish the PR, as a draft.
+- **Apps must be run through the `./deploy` script, never directly** (`npm run`,
+  etc.) — `deploy` populates `*.template` files and env/secrets they depend on.
+  Read the top-level `README.md` (and any per-project `README`) first.
 - **Run a project locally with `./deploy --env=local <project>`** (e.g.
   `./deploy --env=local react`). Multiple projects can be listed to wire them
   together (e.g. `./deploy --env=local react flask`).
+- The production frontend is `empower-plant.com`; switch its backend with the
+  `/?backend=<project dir>` query param. The demo org slug is `demo`.
 - **For changes that need a full distributed trace to verify** (e.g. the flagship
   performance trace, usually the `/products` page), deploy **frontend and backend
   together** in the same environment so the trace stays connected in one org
