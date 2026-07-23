@@ -52,6 +52,14 @@ so hold it to a higher bar (see below).
   - If cleanup is needed, rebase onto `origin/master` rather than merging.
 - **Open PRs as drafts, and only after testing has passed** (see Local
   development & testing) — don't publish a PR straight from an untested change.
+- **Every PR must include a brief `## Testing` section** stating how it was
+  tested: the deploy command used and what was verified, e.g.
+
+  ```
+  ## Testing
+  `./deploy --env=local react`
+  User tested manually and confirmed X and Y.
+  ```
 - **Prefix commit messages and PR titles with the project in brackets**, e.g.
   `[react]`, `[flask]`.
 - **Merging to `master` auto-deploys to production** for every sub-project except
