@@ -15,7 +15,12 @@ function itemsInCart(cart) {
 // window.location and scope data supplies `transaction` during prepareEvent),
 // so an event captured right before a redirect would otherwise be tagged with
 // the destination page. The location is snapshotted now, at call time, and
-// re-applied via a scope event processor that runs last in the pipeline.
+// re-applied via a scope event processor.
+//
+// This override is deterministic, not a race with httpContext: httpContext sets
+// request.url in the SDK's `preprocessEvent` phase, which runs before ANY event
+// processor, and scope event processors run last of all processors (see
+// @sentry/core `prepareEvent`). So this processor reliably wins.
 function withCurrentLocation() {
     const url = window.location.href;
     const transaction = window.location.pathname;
