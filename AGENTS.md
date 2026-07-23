@@ -32,12 +32,25 @@ so hold it to a higher bar (see below).
 - **Keep each PR to a single focused change.** Before pushing, confirm scope by 
   running git diff and git log.
   - If cleanup is needed, rebase onto `origin/master` rather than merging.
+- **Open PRs as drafts, and only after testing has passed** (see Local
+  development & testing) — don't publish a PR straight from an untested change.
 
 ## Local development & testing
 
+- **When a change is complete, always offer to test it before opening a PR.**
+  Offer a local run first (`--env=local`); for more complex changes also offer a
+  staging deploy (`./deploy --env=staging <project>` — it's fine to overwrite
+  whatever is currently deployed in staging). Only once local testing (plus
+  staging where warranted) has passed should you publish the PR, as a draft.
 - **Run a project locally with `./deploy --env=local <project>`** (e.g.
   `./deploy --env=local react`). Multiple projects can be listed to wire them
   together (e.g. `./deploy --env=local react flask`).
+- **For changes that need a full distributed trace to verify** (e.g. the flagship
+  performance trace, usually the `/products` page), deploy **frontend and backend
+  together** in the same environment so the trace stays connected in one org
+  (local → the user's own Sentry org; staging → `team-se`). Default to the Flask
+  backend unless there's a reason to use another, e.g.
+  `./deploy --env=local react flask`.
 - **Use Node 22** (`nvm use 22`). `package.json` engines require `node >=22 <23`;
   Node 20 fails `npm ci` with `EBADENGINE`.
 - `./deploy` needs Google Cloud auth to fetch secrets. If it stops at
