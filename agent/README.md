@@ -1,6 +1,6 @@
 # Simple Plant Care AI Agent
 
-A simple FastAPI-based plant care AI assistant powered by the OpenAI Agents SDK. Just provide a plant name and get personalized care advice!
+A simple FastAPI-based plant care AI assistant powered by the OpenAI Agents SDK, routed through OpenRouter. Just provide a plant name and get personalized care advice!
 
 ## Features
 
@@ -15,7 +15,7 @@ A simple FastAPI-based plant care AI assistant powered by the OpenAI Agents SDK.
 ### Prerequisites
 
 - Python 3.11+
-- OpenAI API key
+- OpenRouter API key
 
 ### Installation
 
@@ -29,7 +29,8 @@ A simple FastAPI-based plant care AI assistant powered by the OpenAI Agents SDK.
 2. **Set up environment variables**
 
    ```bash
-   export OPENAI_API_KEY=sk-your-api-key-here
+   export OPENAI_API_KEY=sk-or-your-openrouter-key-here
+   export OPENAI_BASE_URL=https://openrouter.ai/api/v1
    ```
 
 3. **Install dependencies**
@@ -124,8 +125,9 @@ config.py                       # Configuration management
 
 Set these environment variables:
 
-- `OPENAI_API_KEY`: Your OpenAI API key (required)
-- `light_model`: Model for the agent (default: "gpt-4o-mini")
+- `OPENAI_API_KEY`: Your OpenRouter API key (required; mapped from `AGENT_OPENROUTER_API_KEY` in deploy envs)
+- `OPENAI_BASE_URL`: OpenAI-compatible base URL (default: `https://openrouter.ai/api/v1`)
+- `agent_model` / `light_model`: OpenRouter model ids (defaults: `openai/gpt-5-mini`, `openai/gpt-5-nano`)
 - `API_HOST`: API host (default: "0.0.0.0")
 - `PORT`: API port (default: 8000)
 

@@ -1,9 +1,8 @@
 """Plant Expert Agent to handle plant recommendation requests."""
 
 import logging
-import os
 
-from agents import Agent, Runner
+from agents import Agent, ModelSettings, Runner
 
 from config import settings
 
@@ -27,11 +26,15 @@ match the user's criteria.
 Once you have provided the recommendations, handoff the task
 back to the Manager Agent."""
 
+# OpenRouter's Responses API is stateless and rejects store=true.
+_model_settings = ModelSettings(store=False)
+
 # Create the plant expert agent
 plant_expert_agent = Agent(
     name=PLANT_EXPERT_AGENT_NAME,
     instructions=PLANT_EXPERT_AGENT_INSTRUCTIONS,
     model=settings.light_model,  # Use a cheaper model for simple recommendations
+    model_settings=_model_settings,
     tools=[plant_base_info_tool, plant_recommendation_tool],
 )
 
