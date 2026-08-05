@@ -204,7 +204,7 @@ public class AppController {
 
 	@CrossOrigin
 	@PostMapping("/checkout")
-	public String CheckoutCart(HttpServletRequest request, @RequestBody String payload) throws Exception {
+	public ResponseEntity<String> CheckoutCart(HttpServletRequest request, @RequestBody String payload) throws Exception {
 		Sentry.logger().info("Checkout process started", "payload_size", payload.length());
     	setTags(request);
 
@@ -226,11 +226,17 @@ public class AppController {
 			}
 		});
 		
-		// Process checkout with span tracking
-		executeWithSpan("process_order", "Checkout Cart quantities", () -> checkout(cart.getQuantities()));
-		
-		Sentry.logger().info("Checkout completed successfully");
-		return "Checkout completed";
+		try {
+			// Process checkout with span tracking
+			executeWithSpan("process_order", "Checkout Cart quantities", () -> checkout(cart.getQuantities()));
+			
+			Sentry.logger().info("Checkout completed successfully");
+			return ResponseEntity.ok("Checkout completed");
+		} catch (IllegalStateException e) {
+			// Handle out-of-stock scenario with HTTP 409 Conflict
+			Sentry.logger().warn("Checkout failed due to insufficient inventory", "error", e.getMessage());
+			return ResponseEntity.status(409).body(e.getMessage());
+		}
 	}
 
 	private void checkout(Map<String, Integer> quantities) throws Exception {
@@ -246,10 +252,10 @@ public class AppController {
 				currentInventory = currentInventory - quantities.get(key);
 				Sentry.logger().info("Item " + key + " has quantity " + quantities.get(key) + " and current inventory " + currentInventory);
 				
-				if (!hasInventory()) {
-					String message = "No inventory for item";
+				if (!hasInventory(currentInventory)) {
+					String message = "No inventory for item " + key;
 					Sentry.logger().warn(message);
-					throw new RuntimeException(message);
+					throw new IllegalStateException(message);
 				}
 
 				tempInventory.put(key, currentInventory);
@@ -266,8 +272,8 @@ public class AppController {
 		return "Hello " + fullName;
 	}
 	
-	public Boolean hasInventory() {
-		return false;
+	public Boolean hasInventory(int currentInventory) {
+		return currentInventory >= 0;
 	}
 	
 }

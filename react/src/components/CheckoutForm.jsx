@@ -105,6 +105,12 @@ function CheckoutForm({ backend, rageclick, checkout_success, cart }) {
         checkout_span.setAttribute("status", response.status);
         Sentry.metrics.distribution("checkout_submit.status", response.status);
 
+        // Handle out-of-stock scenario with user-friendly message
+        if (response.status === 409) {
+          const errorMessage = await response.text();
+          throw new Error('Item out of stock - ' + (errorMessage || 'Unable to complete checkout due to insufficient inventory'));
+        }
+
         throw new Error([response.status, response.statusText || ' Internal Server Error'].join(' -'));
       } else {
         checkout_span.setAttribute("status", "unknown_error");
