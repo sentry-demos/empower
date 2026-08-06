@@ -205,7 +205,7 @@ public class AppController {
 
 	@CrossOrigin
 	@PostMapping("/checkout")
-	public String CheckoutCart(HttpServletRequest request, @RequestBody String payload) throws Exception {
+	public ResponseEntity<String> CheckoutCart(HttpServletRequest request, @RequestBody String payload) throws Exception {
 		Sentry.logger().info("[spring-boot] - Checkout process started", "payload_size", payload.length());
     	setTags(request);
 
@@ -228,10 +228,18 @@ public class AppController {
 		});
 		
 		// Process checkout with span tracking
-		executeWithSpan("process_order", "Checkout Cart quantities", () -> checkout(cart.getQuantities()));
+		try {
+			executeWithSpan("process_order", "Checkout Cart quantities", () -> checkout(cart.getQuantities()));
+		} catch (RuntimeException e) {
+			if (e.getMessage() != null && e.getMessage().contains("No inventory for item")) {
+				Sentry.logger().warn("Checkout rejected: insufficient inventory");
+				return ResponseEntity.badRequest().body("Insufficient inventory for one or more items");
+			}
+			throw e;
+		}
 		
 		Sentry.logger().info("Checkout completed successfully");
-		return "Checkout completed";
+		return ResponseEntity.ok("Checkout completed");
 	}
 
 	private void checkout(Map<String, Integer> quantities) throws Exception {
@@ -243,14 +251,15 @@ public class AppController {
 				logger.info("[logback] - Item " + key + " has quantity " + quantities.get(key));
 
 				int currentInventory = tempInventory.get(key);
-				currentInventory = currentInventory - quantities.get(key);
-				Sentry.logger().info("Item " + key + " has quantity " + quantities.get(key) + " and current inventory " + currentInventory);
-				
-				if (!hasInventory()) {
+
+				if (!hasInventory(currentInventory)) {
 					String message = "No inventory for item";
 					Sentry.logger().warn(message);
 					throw new RuntimeException(message);
 				}
+
+				currentInventory = currentInventory - quantities.get(key);
+				Sentry.logger().info("Item " + key + " has quantity " + quantities.get(key) + " and current inventory " + currentInventory);
 
 				tempInventory.put(key, currentInventory);
 			}
@@ -266,8 +275,8 @@ public class AppController {
 		return "Hello " + fullName;
 	}
 	
-	public Boolean hasInventory() {
-		return false;
+	public Boolean hasInventory(int currentInventory) {
+		return currentInventory > 0;
 	}
 	
 }
