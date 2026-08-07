@@ -3,7 +3,11 @@
 import os
 from pathlib import Path
 
-from agents import set_default_openai_client, set_tracing_disabled
+from agents import (
+    set_default_openai_api,
+    set_default_openai_client,
+    set_tracing_disabled,
+)
 from dotenv import load_dotenv
 from openai import AsyncOpenAI
 from pydantic import Field
@@ -38,6 +42,9 @@ def configure_openrouter_client() -> None:
     # OpenRouter keys are not valid for OpenAI tracing uploads.
     set_default_openai_client(client, use_for_tracing=False)
     set_tracing_disabled(True)
+    # OpenRouter only implements the Chat Completions API, not OpenAI's
+    # Responses API (which the Agents SDK uses by default -> 404 on /responses).
+    set_default_openai_api("chat_completions")
 
 
 configure_openrouter_client()
