@@ -93,7 +93,7 @@ function CheckoutForm({ backend, rageclick, checkout_success, cart }) {
     .catch((error) => {
       return { ok: false, error: error};
     })
-    .then((res) => {
+    .then(async (res) => {
       stopMeasurement();
       return res;
     });
@@ -105,7 +105,19 @@ function CheckoutForm({ backend, rageclick, checkout_success, cart }) {
         checkout_span.setAttribute("status", response.status);
         Sentry.metrics.distribution("checkout_submit.status", response.status);
 
-        throw new Error([response.status, response.statusText || ' Internal Server Error'].join(' -'));
+        // Handle specific error responses from the backend
+        if (response.status === 409) {
+          // Insufficient inventory
+          try {
+            const errorData = await response.json();
+            const outOfStockItems = errorData.out_of_stock ? errorData.out_of_stock.join(', ') : 'some items';
+            throw new Error(`Insufficient inventory: ${outOfStockItems} out of stock`);
+          } catch (jsonError) {
+            throw new Error('409 - Insufficient inventory for requested items');
+          }
+        } else {
+          throw new Error([response.status, response.statusText || ' Internal Server Error'].join(' - '));
+        }
       } else {
         checkout_span.setAttribute("status", "unknown_error");
         if (response.error instanceof TypeError && response.error.message === "Failed to fetch") {

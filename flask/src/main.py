@@ -222,10 +222,12 @@ def checkout():
     try:
         if validate_inventory:
             with sentry_sdk.start_span(op="code.block", name="checkout.process_order"):
-                if len(quantities) == 0:
-                    raise Exception("Invalid checkout request: cart is empty")
-
                 quantities = {int(k): v for k, v in cart['quantities'].items()}
+                
+                if len(quantities) == 0:
+                    logger.warning('Checkout attempted with empty cart')
+                    return make_response(json.dumps({'status': 'failed', 'error': 'Cart is empty'}), 400)
+
                 inventory_dict = {x.productid: x for x in inventory}
                 for product_id in quantities:
                     inventory_count = inventory_dict[product_id].count if product_id in inventory_dict else 0
@@ -236,22 +238,27 @@ def checkout():
                         title = list(filter(lambda x: x['id'] == product_id, cart['items']))[0]['title']
                         out_of_stock.append(title)
     except Exception as err:
-
-        logger.error('Failed to validate inventory with cart: %s', cart)
-        raise Exception("Error validating enough inventory for product") from err
+        logger.error('Failed to process checkout with cart: %s', cart)
+        sentry_sdk.capture_exception(err)
+        return make_response(json.dumps({'status': 'failed', 'error': 'Failed to process checkout'}), 500)
 
     if len(out_of_stock) == 0:
         sentry_sdk.metrics.distribution("checkout.captured.revenue", cart["total"], unit="none")
         result = {'status': 'success'}
-        logging.info("Checkout successful")
+        logger.info("Checkout successful")
+        return make_response(json.dumps(result), 200)
     else:
-        # react doesn't handle these yet, shows "Checkout complete" as long as it's HTTP 200
+        # Return appropriate error status codes for out-of-stock scenarios
         if fulfilled_count == 0:
-            result = {'status': 'failed'} # All items are out of stock
+            # All items are out of stock
+            result = {'status': 'failed', 'error': 'All items are out of stock', 'out_of_stock': out_of_stock}
+            logger.warning("Checkout failed - all items out of stock: %s", out_of_stock)
+            return make_response(json.dumps(result), 409)  # 409 Conflict
         else:
-            result = {'status': 'partial', 'out_of_stock': out_of_stock}
-
-    return make_response(json.dumps(result))
+            # Partial fulfillment
+            result = {'status': 'partial', 'error': 'Some items are out of stock', 'out_of_stock': out_of_stock}
+            logger.warning("Checkout partially fulfilled - out of stock items: %s", out_of_stock)
+            return make_response(json.dumps(result), 409)  # 409 Conflict
 
 
 @app.route('/success', methods=['GET'])
