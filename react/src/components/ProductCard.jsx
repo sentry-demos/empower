@@ -5,18 +5,19 @@ import { connect } from 'react-redux';
 import { setProducts, addProduct, setFlag } from '../actions';
 
 function ProductCard(props) {
-  let inventory = [3, 4, 5, 6]
-  if (props.addToCartJsError) {
-    inventory = undefined
-  }
-
   const navigate = useNavigate();
   const product = props.product;
   const itemLink = '/product/' + product.id;
   const stars = props.stars;
+  const inventory = props.inventory || {};
+  const inventoryCount = inventory[product.id] || 0;
+  const isOutOfStock = inventoryCount === 0;
+  const isLowStock = inventoryCount > 0 && inventoryCount <= 3;
 
   function validate_inventory(product) {
-    return product && inventory.includes(product.id)
+    // Check if the product has inventory available
+    const count = inventory[product.id] || 0;
+    return count > 0;
   }
 
   return (
@@ -40,6 +41,14 @@ function ProductCard(props) {
         <div>
           <h2>{product.title}</h2>
           <p className="product-description">{product.description}</p>
+          {isOutOfStock && (
+            <p style={{ color: 'red', fontWeight: 'bold' }}>Out of Stock</p>
+          )}
+          {isLowStock && (
+            <p style={{ color: 'orange', fontWeight: 'bold' }}>
+              Only {inventoryCount} left in stock!
+            </p>
+          )}
         </div>
         <button
           id="addToCart"
@@ -49,11 +58,24 @@ function ProductCard(props) {
               Sentry.metrics.count('cart.add', 1, {
                 attributes: { source: 'products_list', product_id: product.id },
               });
+            } else {
+              Sentry.captureMessage(`Attempted to add out-of-stock product: ${product.title}`);
             }
           }}
+          disabled={isOutOfStock}
+          style={{
+            backgroundColor: isOutOfStock ? '#ccc' : undefined,
+            cursor: isOutOfStock ? 'not-allowed' : 'pointer',
+          }}
         >
-          <span className="sentry-unmask">Add to cart — $</span>
-          {product.price}.00
+          {isOutOfStock ? (
+            <span className="sentry-unmask">Out of Stock</span>
+          ) : (
+            <>
+              <span className="sentry-unmask">Add to cart — $</span>
+              {product.price}.00
+            </>
+          )}
         </button>
         <p>
           {stars} ({product.reviews.length})
@@ -68,6 +90,7 @@ const mapStateToProps = (state, ownProps) => {
     cart: state.cart,
     products: state.products,
     flag: state.flag,
+    inventory: state.inventory,
   };
 };
 

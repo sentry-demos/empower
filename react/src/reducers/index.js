@@ -7,13 +7,15 @@ const initialState = {
   },
   products: [],
   flag: false,
+  inventory: {},
 };
 
-const newState = (cart, products, flag) => {
+const newState = (cart, products, flag, inventory) => {
   return {
     cart,
     products,
     flag,
+    inventory: inventory !== undefined ? inventory : {},
   };
 };
 
@@ -32,12 +34,12 @@ const reducer = (state = structuredClone(initialState), action) => {
         const itemTotal = item.price * cart.quantities[item.id];
         return a + itemTotal;
       }, 0);
-      return Object.assign({}, newState(cart, state.products));
+      return Object.assign({}, newState(cart, state.products, state.flag, state.inventory));
 
     case 'REMOVE_PRODUCT':
       var cart1 = Object.assign({}, state.cart);
       let item1 = cart1.items.find((x) => x.id === payload.product.id);
-      if (!item1) Object.assign({}, newState(cart1, state.products));
+      if (!item1) return Object.assign({}, newState(cart1, state.products, state.flag, state.inventory));
       cart1.quantities[payload.product.id]--;
       if (cart1.quantities[payload.product.id] === 0) {
         delete cart1.quantities[payload.product.id];
@@ -49,20 +51,23 @@ const reducer = (state = structuredClone(initialState), action) => {
         const itemTotal = item.price * cart1.quantities[item.id];
         return a + itemTotal;
       }, 0);
-      return Object.assign({}, newState(cart1, state.products));
+      return Object.assign({}, newState(cart1, state.products, state.flag, state.inventory));
 
     case 'RESET_CART':
-      return Object.assign({}, newState(structuredClone(initialState.cart), state.products));
+      return Object.assign({}, newState(structuredClone(initialState.cart), state.products, state.flag, state.inventory));
 
     case 'SET_PRODUCTS':
-      return Object.assign({}, newState(state.cart, payload.products));
+      return Object.assign({}, newState(state.cart, payload.products, state.flag, state.inventory));
 
     case 'SET_FLAG':
       // Toggles the state of the flag, which changes props in ProductCard.js and gives us the ui.react.update span
       return Object.assign(
         {},
-        newState(state.cart, state.products, !state.flag)
+        newState(state.cart, state.products, !state.flag, state.inventory)
       );
+
+    case 'SET_INVENTORY':
+      return Object.assign({}, newState(state.cart, state.products, state.flag, payload.inventory));
 
     default:
       return state;

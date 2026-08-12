@@ -2,14 +2,14 @@ import { Component } from 'react';
 import './products.css';
 import * as Sentry from '@sentry/react';
 import { connect } from 'react-redux';
-import { setProducts, addProduct } from '../actions';
+import { setProducts, addProduct, setInventory } from '../actions';
 import measureRequestDuration from '../utils/measureRequestDuration';
 import Loader from 'react-loader-spinner';
 import ProductCard from './ProductCard';
 import { useState, useEffect, useRef } from 'react';
 import { updateStatsigUserAndEvaluate } from '../utils/statsig';
 
-function Products({ frontendSlowdown, backend, productsApi, productsExtremelySlow, productsBeError, addToCartJsError }) {
+function Products({ frontendSlowdown, backend, productsApi, productsExtremelySlow, productsBeError, addToCartJsError, setInventory }) {
   const [products, setProducts] = useState([]);
   const startTime = useRef(performance.now());
   const productsRendered = useRef(false);
@@ -120,7 +120,30 @@ function Products({ frontendSlowdown, backend, productsApi, productsExtremelySlo
       }
       renderProducts(data);
       stopMeasurement();
+      
+      // Fetch inventory data after products are loaded
+      fetchInventory();
     })
+  }
+
+  async function fetchInventory() {
+    try {
+      const response = await fetch(backend + '/inventory', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      
+      if (response.ok) {
+        const inventoryData = await response.json();
+        setInventory(inventoryData);
+      } else {
+        console.error('Failed to fetch inventory:', response.status);
+        Sentry.captureException(new Error(`Failed to fetch inventory: ${response.status}`));
+      }
+    } catch (error) {
+      console.error('Error fetching inventory:', error);
+      Sentry.captureException(error);
+    }
   }
 
   useEffect(() => {
@@ -186,6 +209,6 @@ const mapStateToProps = (state, ownProps) => {
   };
 };
 
-export default connect(mapStateToProps, { setProducts, addProduct })(
+export default connect(mapStateToProps, { setProducts, addProduct, setInventory })(
   Sentry.withProfiler(Products, { name: 'Products' })
 );

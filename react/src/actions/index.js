@@ -4,6 +4,7 @@ import {
   RESET_CART,
   SET_PRODUCTS,
   SET_FLAG,
+  SET_INVENTORY,
 } from './types';
 
 export const addProduct = (product) => ({
@@ -31,4 +32,10 @@ export const removeProduct = (product) => ({
 export const setFlag = () => ({
   type: SET_FLAG,
   payload: {},
+});
+export const setInventory = (inventory) => ({
+  type: SET_INVENTORY,
+  payload: {
+    inventory,
+  },
 });

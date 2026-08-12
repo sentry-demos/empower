@@ -104,6 +104,11 @@ function CheckoutForm({ backend, rageclick, checkout_success, cart }) {
       if (!response.error || response.status === undefined) {
         checkout_span.setAttribute("status", response.status);
         Sentry.metrics.distribution("checkout_submit.status", response.status);
+        
+        // Check if it's an inventory error (500)
+        if (response.status === 500) {
+          throw new Error('Some items in your cart are out of stock. Please remove them and try again.');
+        }
 
         throw new Error([response.status, response.statusText || ' Internal Server Error'].join(' -'));
       } else {

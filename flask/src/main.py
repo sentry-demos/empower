@@ -222,10 +222,11 @@ def checkout():
     try:
         if validate_inventory:
             with sentry_sdk.start_span(op="code.block", name="checkout.process_order"):
+                quantities = {int(k): v for k, v in cart['quantities'].items()}
+                
                 if len(quantities) == 0:
                     raise Exception("Invalid checkout request: cart is empty")
 
-                quantities = {int(k): v for k, v in cart['quantities'].items()}
                 inventory_dict = {x.productid: x for x in inventory}
                 for product_id in quantities:
                     inventory_count = inventory_dict[product_id].count if product_id in inventory_dict else 0
@@ -261,6 +262,28 @@ def success():
 
     logger.info('Completed /success request')
     return "success from flask"
+
+
+@app.route('/inventory', methods=['GET'])
+def inventory():
+    logger.info('Received /inventory endpoint request')
+    
+    try:
+        with sentry_sdk.start_span(name="inventory", op="db.connect"):
+            connection = db.connect()
+        
+        with sentry_sdk.start_span(name="inventory", op="db.query") as span:
+            inventory_results = connection.execute("SELECT productid, count FROM inventory").fetchall()
+            span.set_data("inventory", inventory_results)
+        
+        inventory_dict = {row.productid: row.count for row in inventory_results}
+        
+        logger.info('Completed /inventory request')
+        return jsonify(inventory_dict)
+    except Exception as err:
+        logger.error('Processing /inventory - error occurred')
+        sentry_sdk.capture_exception(err)
+        raise (err)
 
 
 @app.route('/products', methods=['GET'])
