@@ -192,22 +192,29 @@ class ProductController extends Controller
             $inventory = get_inventory($cart);
             // id | sku | count | productid
         } catch (Exception $err) {
-            Log::error('Failed to get inventory');
-            throw $err;
+            Log::error('Failed to get inventory: ' . $err->getMessage());
+            return response()->json([
+                'error' => 'Failed to retrieve inventory',
+                'message' => 'Unable to process checkout request'
+            ], 422);
         }
 
         $fulfilled_count = 0;
         $out_of_stock = []; // list of items that are out of stock
         try {
             if ($validate_inventory) {
-                if (empty($quantities)) {
-                    throw new Exception("Invalid checkout request: cart is empty");
-                }
-
                 $quantities = [];
                 foreach ($cart['quantities'] as $key => $value) {
                     $quantities[(int)$key] = $value;
                 }
+
+                if (empty($quantities)) {
+                    Log::error('Invalid checkout request: cart is empty');
+                    return response()->json([
+                        'error' => 'Invalid checkout request: cart is empty'
+                    ], 400);
+                }
+
                 $inventory_dict = [];
                 foreach ($inventory as $x) {
                     $inventory_dict[$x->productid] = $x;
@@ -231,8 +238,11 @@ class ProductController extends Controller
                 }
             }
         } catch (Exception $err) {
-            Log::error('Failed to validate inventory with cart: ' . json_encode($cart));
-            throw new Exception("Error validating enough inventory for product", 0, $err);
+            Log::error('Failed to validate inventory with cart: ' . json_encode($cart) . ' - Error: ' . $err->getMessage());
+            return response()->json([
+                'error' => 'Error validating inventory for product',
+                'message' => 'Unable to validate product availability'
+            ], 422);
         }
 
         if (empty($out_of_stock)) {

@@ -48,16 +48,27 @@ class ProductApiTest extends TestCase
                 ]);
     }
 
-    public function test_checkout_throws_exception_for_insufficient_inventory(): void
+    public function test_checkout_returns_error_for_insufficient_inventory(): void
     {
         $product = Product::factory()->create();
         Inventory::factory()->create(['product_id' => $product->id, 'count' => 0]);
 
         $response = $this->postJson('/api/checkout', [
-            'items' => [$product->id]
+            'cart' => [
+                'quantities' => [$product->id => 1],
+                'items' => [
+                    ['id' => $product->id, 'title' => 'Test Product']
+                ]
+            ],
+            'form' => [],
+            'validate_inventory' => 'true'
         ]);
 
-        $response->assertStatus(500); // Exception should be thrown
+        $response->assertStatus(422) // Should return 422 for validation error
+                 ->assertJsonStructure([
+                     'error',
+                     'message'
+                 ]);
     }
 
     public function test_can_get_inventory_levels(): void
