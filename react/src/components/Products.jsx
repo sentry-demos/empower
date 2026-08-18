@@ -14,6 +14,16 @@ function Products({ frontendSlowdown, backend, productsApi, productsExtremelySlo
   const startTime = useRef(performance.now());
   const productsRendered = useRef(false);
 
+  useEffect(() => {
+    return () => {
+      const timeOnPage = (performance.now() - startTime.current) / 1000;
+      Sentry.metrics.distribution('page.time_spent', timeOnPage, {
+        tags: { page: 'products' },
+        unit: 'second',
+      });
+    };
+  }, []);
+
   function determineProductsEndpoint() {
     if (productsApi !== 'products-join') {
       if (productsExtremelySlow) {

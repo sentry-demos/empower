@@ -6,9 +6,22 @@ import { connect } from 'react-redux';
 import { setProducts, addProduct, removeProduct } from '../actions';
 import { countItemsInCart } from '../utils/cart';
 import { getTag } from '../utils/utils';
+import { useEffect, useRef } from 'react';
 
 
 function Cart({ cart, removeProduct, addProduct }) {
+  const startTime = useRef(performance.now());
+
+  useEffect(() => {
+    return () => {
+      const timeOnPage = (performance.now() - startTime.current) / 1000;
+      Sentry.metrics.distribution('page.time_spent', timeOnPage, {
+        tags: { page: 'cart' },
+        unit: 'second',
+      });
+    };
+  }, []);
+
   const itemsInCart = countItemsInCart(cart);
   let tags = { 'backendType': getTag('backendType'), 'cexp': getTag('cexp'), 'items_in_cart': itemsInCart };
   const span = Sentry.startInactiveSpan({ name: "items_added_to_cart", op: "function"});

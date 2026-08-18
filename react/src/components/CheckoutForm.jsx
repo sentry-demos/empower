@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import measureRequestDuration from '../utils/measureRequestDuration';
 import './checkout.css';
@@ -11,7 +11,18 @@ import { updateStatsigUserAndEvaluate } from '../utils/statsig';
 
 function CheckoutForm({ backend, rageclick, checkout_success, cart }) {
   const navigate = useNavigate();
+  const startTime = useRef(performance.now());
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      const timeOnPage = (performance.now() - startTime.current) / 1000;
+      Sentry.metrics.distribution('page.time_spent', timeOnPage, {
+        tags: { page: 'checkout_form' },
+        unit: 'second',
+      });
+    };
+  }, []);
   let initialFormValues;
   let se = sessionStorage.getItem('se');
   const seTdaPrefixRegex = /[^-]+-tda-[^-]+-/;

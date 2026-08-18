@@ -2,13 +2,25 @@ import * as Sentry from '@sentry/react';
 import plantsBackground from '../assets/plants-background-img.jpg';
 import Button from './ButtonLink';
 import ChatWidget from './ChatWidget';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 const divStyle = {
   backgroundImage: 'url(' + plantsBackground + ')',
 };
 
 function Home({ frontendSlowdown, backend }) {
+  const startTime = useRef(performance.now());
+
+  useEffect(() => {
+    return () => {
+      const timeOnPage = (performance.now() - startTime.current) / 1000;
+      Sentry.metrics.distribution('page.time_spent', timeOnPage, {
+        tags: { page: 'home' },
+        unit: 'second',
+      });
+    };
+  }, []);
+
   useEffect(() => {
     try {
       // This should be the only http request for home page, for health check purposes
