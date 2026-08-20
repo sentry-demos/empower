@@ -21,28 +21,33 @@ describe('Errors module', () => {
   };
 
   test('should throw a notAFunctionError when "crash" is true and errnum is 0', () => {
-    setQueryParams({ crash: 'true', errnum: '0' });
+    setQueryParams({ se: 'test', crash: 'true', errnum: '0' });
     expect(() => crasher()).toThrow(TypeError);
   });
   
   test('should throw a ReferenceError when "crash" is true and errnum is 1', () => {
-    setQueryParams({ crash: 'true', errnum: '1' });
+    setQueryParams({ se: 'test', crash: 'true', errnum: '1' });
     expect(() => crasher()).toThrow(ReferenceError);
   });
 
   test('should throw a SyntaxError when "crash" is true and errnum is 2', () => {
-    setQueryParams({ crash: 'true', errnum: '2' });
+    setQueryParams({ se: 'test', crash: 'true', errnum: '2' });
     expect(() => crasher()).toThrow(SyntaxError);
   });
 
   test('should throw a RangeError when "crash" is true and errnum is 3', () => {
-    setQueryParams({ crash: 'true', errnum: '3' });
+    setQueryParams({ se: 'test', crash: 'true', errnum: '3' });
     expect(() => crasher()).toThrow(RangeError);
   });
 
   test('should throw an UnhandledException when "crash" is true and errnum is 4', () => {
-    setQueryParams({ crash: 'true', errnum: '4' });
+    setQueryParams({ se: 'test', crash: 'true', errnum: '4' });
     expect(() => crasher()).toThrow(UnhandledException);
+  });
+
+  test('should not throw when "se" is missing, even if a crash is requested', () => {
+    setQueryParams({ crash: '1.0', errnum: '1' });
+    expect(() => crasher()).not.toThrow();
   });
 
 // This test is failing, need to look into this later
@@ -54,13 +59,13 @@ describe('Errors module', () => {
 //   });
 
   test('should throw a random error based on probability', () => {
-    setQueryParams({ crash: '0.5' });
+    setQueryParams({ se: 'test', crash: '0.5' });
     Math.random = jest.fn(() => 0.4); // This should cause the error to be thrown
     expect(() => crasher()).toThrow();
   });
 
   test('should not throw an error if probability does not match', () => {
-    setQueryParams({ crash: '0.1' });
+    setQueryParams({ se: 'test', crash: '0.1' });
     Math.random = jest.fn(() => 0.2); // This should not cause the error to be thrown
     expect(() => crasher()).not.toThrow();
   });

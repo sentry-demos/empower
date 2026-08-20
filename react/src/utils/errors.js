@@ -40,6 +40,15 @@ const crasher = () => {
   if (queryParams !== '') {
     const crash = queryParams.get('crash');
     if (crash) {
+      // Only demo/test traffic may crash the app. Such traffic always identifies
+      // itself with the `se` query param: TDA appends `se=prod-tda-...` to every
+      // URL it visits (see _tda/conftest.py) and SEs use `?se=<name>` when demoing.
+      // Without this guard a real visitor landing on a URL that happens to carry
+      // `?crash=...` would get an unhandled error (e.g. ReferenceError).
+      if (!queryParams.get('se')) {
+        console.log('> crash ignored, requires `se` query param:', crash);
+        return;
+      }
       console.log('> crash', crash);
       const errnum =
         queryParams.get('errnum') ||
