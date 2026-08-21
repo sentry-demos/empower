@@ -222,10 +222,10 @@ def checkout():
     try:
         if validate_inventory:
             with sentry_sdk.start_span(op="code.block", name="checkout.process_order"):
+                quantities = {int(k): v for k, v in cart['quantities'].items()}
                 if len(quantities) == 0:
                     raise Exception("Invalid checkout request: cart is empty")
 
-                quantities = {int(k): v for k, v in cart['quantities'].items()}
                 inventory_dict = {x.productid: x for x in inventory}
                 for product_id in quantities:
                     inventory_count = inventory_dict[product_id].count if product_id in inventory_dict else 0
@@ -233,7 +233,7 @@ def checkout():
                         decrement_inventory(inventory_dict[product_id].id, quantities[product_id])
                         fulfilled_count += 1
                     else:
-                        title = list(filter(lambda x: x['id'] == product_id, cart['items']))[0]['title']
+                        title = list(filter(lambda x: int(x['id']) == product_id, cart['items']))[0]['title']
                         out_of_stock.append(title)
     except Exception as err:
 
