@@ -5,7 +5,7 @@ from typing import Any
 
 from agents import FunctionTool
 
-from ..utils import validate_plant_advice, validate_plant_info
+from ..utils import validate_plant_info
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -64,9 +64,6 @@ def get_plant_basic_info(plant_names: list) -> str:
 async def _invoke_plant_advice(context: Any, input_json: str) -> str:
     """Invoke the plant advice tool."""
     import json
-
-    if validate_plant_advice.get():
-        raise Exception("Could not get plant advice: File not found")
 
     try:
         logging.debug(f"Invoking get_plant_basic_info with input: {input_json}")
