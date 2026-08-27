@@ -29,8 +29,8 @@ A simple FastAPI-based plant care AI assistant powered by the OpenAI Agents SDK,
 2. **Set up environment variables**
 
    ```bash
-   export OPENAI_API_KEY=sk-or-your-openrouter-key-here
-   export OPENAI_BASE_URL=https://openrouter.ai/api/v1
+   export OPENROUTER_API_KEY=sk-or-your-openrouter-key-here
+   export OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
    ```
 
 3. **Install dependencies**
@@ -40,6 +40,7 @@ A simple FastAPI-based plant care AI assistant powered by the OpenAI Agents SDK,
    ```
 
 4. **Run the application**
+
    ```bash
    python main.py
    ```
@@ -125,9 +126,12 @@ config.py                       # Configuration management
 
 Set these environment variables:
 
-- `OPENAI_API_KEY`: Your OpenRouter API key (required; mapped from `AGENT_OPENROUTER_API_KEY` in deploy envs)
-- `OPENAI_BASE_URL`: OpenAI-compatible base URL (default: `https://openrouter.ai/api/v1`)
-- `agent_model` / `light_model`: OpenRouter model ids (defaults: `openai/gpt-5-mini`, `openai/gpt-5-nano`)
+- `OPENROUTER_API_KEY`: Your OpenRouter API key. The deploy configuration
+  maps it from `AGENT_OPENROUTER_API_KEY`.
+- `OPENROUTER_BASE_URL`: OpenRouter's OpenAI-compatible base URL. It defaults
+  to `https://openrouter.ai/api/v1`.
+- `agent_model` / `light_model`: OpenRouter model IDs. They default to
+  `openai/gpt-5-mini` and `openai/gpt-5-nano`.
 - `API_HOST`: API host (default: "0.0.0.0")
 - `PORT`: API port (default: 8000)
 
