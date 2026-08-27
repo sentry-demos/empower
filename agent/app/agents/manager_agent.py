@@ -3,7 +3,8 @@
 import logging
 import os
 
-from agents import Agent, HostedMCPTool, Runner
+from agents import Agent, ModelSettings, Runner
+from agents.mcp import MCPServerStreamableHttp
 
 from config import settings
 
@@ -37,12 +38,16 @@ proceed directly with the workflow.
 Report back to the user with the ordered plants and the products that
  would fit well with the plants."""
 
+# OpenRouter's Responses API is stateless and rejects store=true.
+_model_settings = ModelSettings(store=False)
+
 # Create the manager agent
 manager_agent = Agent(
     name=MANAGER_AGENT_NAME,
     instructions=MANAGER_AGENT_INSTRUCTIONS,
     model=settings.agent_model,  # Use a more expansive model for managing tasks
-    tools=[],  # Add buyPlants tool later
+    model_settings=_model_settings,
+    tools=[buy_plants_tool],
 )
 
 # Set up handoffs
@@ -52,22 +57,6 @@ manager_agent.handoffs = [
 plant_expert_agent.handoffs = [
     manager_agent
 ]  # Plant expert agent can handoff back to manager agent
-
-
-# Update the manager agent to include the buyPlants tool
-manager_agent.tools.append(buy_plants_tool)
-
-# Configure the MCP tool
-mcp_tool = HostedMCPTool(
-    tool_config={
-        "type": "mcp",  # Specify the tool type
-        "server_label": "empower-mcp",
-        "server_url": os.environ["MCP_URL"],
-        "require_approval": "never",
-    }
-)
-
-manager_agent.tools.append(mcp_tool)
 
 
 async def process_user_request(light: str, maintenance: str) -> str:
@@ -87,8 +76,18 @@ async def process_user_request(light: str, maintenance: str) -> str:
     # Create a message with user preferences
     message = f"I want to buy plants for {light} light and {maintenance} maintenance."
 
-    # Run the agent to get recommendations
-    result = await Runner.run(manager_agent, message)
+    # Hosted MCP tools are OpenAI-only. Talk to empower-mcp from the app instead
+    # so OpenRouter can still use the remote tools.
+    async with MCPServerStreamableHttp(
+        name="empower-mcp",
+        params={"url": os.environ["MCP_URL"]},
+        cache_tools_list=True,
+    ) as mcp_server:
+        manager_agent.mcp_servers = [mcp_server]
+        try:
+            result = await Runner.run(manager_agent, message)
+        finally:
+            manager_agent.mcp_servers = []
 
     logging.debug(f"manager_agent completed purchase: {result.final_output}")
     print(result)
