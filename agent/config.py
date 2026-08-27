@@ -13,24 +13,22 @@ from openai import AsyncOpenAI
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-# Load .env into os.environ so other libraries (OpenAI SDK, Sentry) can access their env vars
-# Use explicit path relative to this file's location
-# override=True ensures .env values take precedence over any existing env vars
+# Load local .env values without overriding runtime configuration such as
+# Cloud Run environment variables and Secret Manager references.
 env_path = Path(__file__).parent / ".env"
-load_dotenv(env_path, override=True)
+load_dotenv(env_path, override=False)
 
 DEFAULT_OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
 
 def configure_openrouter_client() -> None:
     """Point the OpenAI Agents SDK at OpenRouter instead of api.openai.com."""
-    api_key = os.environ.get("OPENAI_API_KEY") or os.environ.get("OPENROUTER_API_KEY")
+    api_key = os.environ.get("OPENROUTER_API_KEY")
     if not api_key:
-        raise RuntimeError(
-            "Missing OpenRouter API key. Set OPENAI_API_KEY or OPENROUTER_API_KEY."
-        )
+        raise RuntimeError("Set OPENROUTER_API_KEY.")
 
-    base_url = os.environ.get("OPENAI_BASE_URL", DEFAULT_OPENROUTER_BASE_URL)
+    base_url = os.environ.get("OPENROUTER_BASE_URL")
+    base_url = base_url or DEFAULT_OPENROUTER_BASE_URL
     client = AsyncOpenAI(
         api_key=api_key,
         base_url=base_url,
@@ -42,8 +40,8 @@ def configure_openrouter_client() -> None:
     # OpenRouter keys are not valid for OpenAI tracing uploads.
     set_default_openai_client(client, use_for_tracing=False)
     set_tracing_disabled(True)
-    # OpenRouter only implements the Chat Completions API, not OpenAI's
-    # Responses API (which the Agents SDK uses by default -> 404 on /responses).
+    # OpenRouter only implements the Chat Completions API, not the Responses
+    # API that the Agents SDK uses by default.
     set_default_openai_api("chat_completions")
 
 
@@ -57,7 +55,8 @@ class Settings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=False,
-        extra="ignore",  # Allow extra env vars (OPENAI_API_KEY, AGENT_DSN, etc.)
+        # Other libraries read these variables directly from the environment.
+        extra="ignore",
     )
 
     # API settings (read from environment / .env file)
@@ -78,4 +77,4 @@ class Settings(BaseSettings):
 
 
 # Instantiate settings
-settings = Settings()
+settings = Settings()  # type: ignore[call-arg]
