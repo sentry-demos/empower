@@ -112,6 +112,17 @@ REPEATABLE_RANDOM = False
 # IS_CANARY always overrides BATCH_SIZE
 BATCH_SIZE = os.getenv("IS_CANARY") and "1" or (os.getenv("BATCH_SIZE") or "1")
 
+# Share of weekly checkout volume by weekday (Mon–Sun). Applied as a multiplier of
+# BATCH_SIZE * 7 so env-configured batch settings still work and the daily average
+# follows this shape (weekly mean of BATCH_SIZE is unchanged).
+DAY_OF_WEEK_VOLUME = [0.134, 0.161, 0.176, 0.160, 0.150, 0.111, 0.108]
+
+# Share of daily volume by hour (0–23 local). From sample-data-clean-rl: accepted
+# transaction/error/span/replay per org, timezone-aligned by averaging peak/trough
+# offsets to canonical 14:00 / 04:00, then equal-weight average of orgs with a
+# usable diurnal cycle. Same *24 scaling as weekday so mean BATCH_SIZE is unchanged.
+HOUR_OF_DAY_VOLUME = [0.031, 0.027, 0.024, 0.023, 0.026, 0.029, 0.032, 0.037, 0.042, 0.048, 0.052, 0.052, 0.053, 0.054, 0.053, 0.051, 0.052, 0.052, 0.051, 0.049, 0.046, 0.042, 0.039, 0.035]
+
 SLEEP_LENGTH = os.getenv("SLEEP_LENGTH") or "random_2_1"
 
 # Currently only used in desktop_web/ tests. Mobile apps have it hardcoded.
@@ -184,8 +195,7 @@ def sleep_length(random):
     return random_sleep_length
 
 
-@pytest.fixture
-def batch_size(random):
+def _base_batch_size(random):
     if BATCH_SIZE.startswith("random_"):
         parts = BATCH_SIZE.split('_')
         if len(parts) == 2:
@@ -199,6 +209,28 @@ def batch_size(random):
     else:
         r = random.random() # unused, to make sure we call random same number of times
         return int(BATCH_SIZE)
+
+
+def scale_batch_size_seasonally(base_size):
+    now = datetime.now()
+    dow = DAY_OF_WEEK_VOLUME[now.weekday()]
+    hod = HOUR_OF_DAY_VOLUME[now.hour]
+    return max(0, round(
+        base_size
+        * dow * len(DAY_OF_WEEK_VOLUME)
+        * hod * len(HOUR_OF_DAY_VOLUME)
+    ))
+
+
+@pytest.fixture
+def batch_size(random):
+    return _base_batch_size(random)
+
+
+# Like batch_size, but scaled by weekday and hour-of-day volume shares.
+@pytest.fixture
+def seasonal_batch_size(random):
+    return scale_batch_size_seasonally(_base_batch_size(random))
 
 @pytest.fixture
 def backend(random):
