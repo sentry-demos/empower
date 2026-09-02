@@ -13,7 +13,7 @@ CEXP_RATIO = 0.3
 BYPASS_PREFERRED_BACKENDS_RATIO = 0.6 # backends that have a realistic autofixable error
 BYPASS_PREFERRED_BACKENDS = ['flask', 'laravel']
 
-def test_cexp_checkout(desktop_web_driver, endpoints, batch_size, backend, random, sleep_length, cexp, is_first_run_of_the_day, current_browser):
+def test_cexp_checkout(desktop_web_driver, endpoints, seasonal_batch_size, backend, random, sleep_length, cexp, is_first_run_of_the_day, current_browser):
     is_first_browser = CONFIG.browsers.index(current_browser) == 0
     
     for endpoint in [endpoints.react_endpoint]:
@@ -21,9 +21,9 @@ def test_cexp_checkout(desktop_web_driver, endpoints, batch_size, backend, rando
         endpoint_products = endpoint + "/products"
 
         sentry_sdk.set_tag("endpoint", endpoint_products)
-        sentry_sdk.set_tag("batch_size", batch_size)
+        sentry_sdk.set_tag("batch_size", seasonal_batch_size)
 
-        for b in range(batch_size):
+        for b in range(seasonal_batch_size):
             query_string = {}
             
             if random.random() < CEXP_RATIO: # Determine if this iteration should use CExp flow
