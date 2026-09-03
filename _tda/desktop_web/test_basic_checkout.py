@@ -1,19 +1,27 @@
 import time
+import pytest
 import sentry_sdk
 from urllib.parse import urlencode
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
 
 
-def test_basic_checkout(desktop_web_driver, endpoints, random, sleep_length, cexp, seasonal_batch_size):
+# Skip before desktop_web_driver so a 0-draw does not open a Sauce session.
+@pytest.fixture(autouse=True)
+def _skip_if_no_seasonal_volume(unit_seasonal_batch_size):
+    if unit_seasonal_batch_size == 0:
+        pytest.skip("seasonal skip")
+
+
+def test_basic_checkout(desktop_web_driver, endpoints, random, sleep_length, cexp, unit_seasonal_batch_size):
     for endpoint in [endpoints.nextjs_endpoint, endpoints.angular_endpoint, endpoints.vue_endpoint]:
 
         endpoint_products = endpoint + "/products"
 
         sentry_sdk.set_tag("endpoint", endpoint_products)
-        sentry_sdk.set_tag("batch_size", seasonal_batch_size)
+        sentry_sdk.set_tag("batch_size", unit_seasonal_batch_size)
 
-        for b in range(seasonal_batch_size):
+        for b in range(unit_seasonal_batch_size):
             # to generate more flagship errors than Slow DB Query, other performance issues
             checkout_attempts = 3
 

@@ -211,15 +211,16 @@ def _base_batch_size(random):
         return int(BATCH_SIZE)
 
 
-def scale_batch_size_seasonally(base_size):
+def scale_batch_size_seasonally(base_size, random):
     now = datetime.now()
-    dow = DAY_OF_WEEK_VOLUME[now.weekday()]
-    hod = HOUR_OF_DAY_VOLUME[now.hour]
-    return max(0, round(
+    exact = (
         base_size
-        * dow * len(DAY_OF_WEEK_VOLUME)
-        * hod * len(HOUR_OF_DAY_VOLUME)
-    ))
+        * DAY_OF_WEEK_VOLUME[now.weekday()] * len(DAY_OF_WEEK_VOLUME)
+        * HOUR_OF_DAY_VOLUME[now.hour] * len(HOUR_OF_DAY_VOLUME)
+    )
+    # Stochastic rounding so E[n] == exact (avoids all-or-nothing at a given hour).
+    floor = int(exact)
+    return floor + (1 if random.random() < (exact - floor) else 0)
 
 
 @pytest.fixture
@@ -230,7 +231,14 @@ def batch_size(random):
 # Like batch_size, but scaled by weekday and hour-of-day volume shares.
 @pytest.fixture
 def seasonal_batch_size(random):
-    return scale_batch_size_seasonally(_base_batch_size(random))
+    return scale_batch_size_seasonally(_base_batch_size(random), random)
+
+
+# Seasonality around 1 so a test that used to run once keeps that mean volume.
+# Drawn independently per test item (e.g. per browser) for finer sampling.
+@pytest.fixture
+def unit_seasonal_batch_size(random):
+    return scale_batch_size_seasonally(1, random)
 
 @pytest.fixture
 def backend(random):
