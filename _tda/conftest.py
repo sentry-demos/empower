@@ -614,6 +614,30 @@ def android_react_native_emu_driver(request, se_prefix):
     except Exception as err:
         sentry_sdk.capture_exception(err)
 
+# On Android 15 (API level 35) and higher, UI Profiling runs through the Android
+# ProfilingManager, which rate limits profiling requests on top of the SDK's own sampling
+# rate, so not every request produces a profile:
+# https://docs.sentry.io/platforms/android/profiling/#limitations
+# The framework restriction can be lifted for testing via device_config. Sauce Labs only
+# exposes `mobile: shell` for an allowlisted set of ADB commands (and documents it as real
+# devices only), so this is best effort: when it's rejected the run continues with profiles
+# still subject to the framework rate limiter. Check the tag below to see which happened.
+def _disable_android_profiling_rate_limiter(driver):
+    try:
+        driver.execute_script('mobile: shell', {
+            'command': 'device_config',
+            'args': ['put', 'profiling_testing', 'rate_limiter.disabled', 'true'],
+        })
+        sentry_sdk.set_tag('androidProfilingRateLimiterDisabled', 'true')
+    except WebDriverException as err:
+        sentry_sdk.set_tag('androidProfilingRateLimiterDisabled', 'false')
+        sentry_sdk.add_breadcrumb(
+            category='android.profiling',
+            level='warning',
+            message=f'Could not disable the ProfilingManager rate limiter: {err}',
+        )
+
+
 @pytest.fixture
 def android_emu_driver(request, se_prefix):
 
@@ -624,7 +648,7 @@ def android_emu_driver(request, se_prefix):
 
         options = UiAutomator2Options().load_capabilities({
             'deviceName': 'Android GoogleAPI Emulator',
-            'platformVersion': '14.0',
+            'platformVersion': '15.0',
             'platformName': 'Android',
             'app': f'https://github.com/sentry-demos/android/releases/download/{release_version}/app-release.apk',
             'sauce:options': {
@@ -640,6 +664,8 @@ def android_emu_driver(request, se_prefix):
         driver.implicitly_wait(20)
 
         sentry_sdk.set_tag("sauceLabsUrl", f"https://app.saucelabs.com/tests/{driver.session_id}")
+
+        _disable_android_profiling_rate_limiter(driver)
 
         yield driver
         sauce_result = "failed" if request.node.rep_call.failed else "passed"
