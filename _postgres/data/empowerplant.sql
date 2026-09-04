@@ -474,7 +474,7 @@ SELECT pg_catalog.setval('public.inventory_id_seq', 181, true);
 -- Name: promo_codes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.promo_codes_id_seq', 1, true);
+SELECT pg_catalog.setval('public.promo_codes_id_seq', 4, true);
 
 --
 -- Name: products_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
@@ -544,6 +544,7 @@ ALTER TABLE ONLY public.reviews
 --
 
 INSERT INTO public.promo_codes (id, code, percent_discount, max_dollar_savings, is_active, expires_at, created_at) VALUES (3, 'SAVE20', 20, 50, true, '2025-09-09 00:05:48.263006', '2025-09-07 00:00:00');
+INSERT INTO public.promo_codes (id, code, percent_discount, max_dollar_savings, is_active, expires_at, created_at) VALUES (4, 'SAVE10', 10, 25, true, '2099-01-01 00:00:00', '2025-09-07 00:00:00');
 
 
 --

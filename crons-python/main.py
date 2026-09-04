@@ -32,9 +32,20 @@ def job():
         print("Success.")
 
 if __name__ == "__main__":
-    sentry_sdk.init(dsn=DSN)
+    sentry_sdk.init(
+        dsn=DSN,
+        # Without traces_sample_rate the SDK creates no transactions/spans, so
+        # outbound HTTP from this job wouldn't carry sentry-trace/baggage and
+        # the downstream service couldn't join the trace.
+        traces_sample_rate=1.0,
+        release=os.environ.get("CRONSPYTHON_RELEASE"),
+        environment=os.environ.get("CRONSPYTHON_ENVIRONMENT"),
+    )
     sentry_sdk.set_context("monitor", {
         "slug": MONITOR_SLUG,
     })
-    job()
+    # Wrap the job in an explicit transaction so the urllib call below becomes
+    # a child span that propagates trace headers to the downstream API.
+    with sentry_sdk.start_transaction(op="cron.job", name=f"cron:{MONITOR_SLUG}"):
+        job()
     exit(0)

@@ -1,0 +1,29 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "aspnetcore", "aspnetcore", "{D70FA35D-25AA-0A46-E46A-25A48C79F5AD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Empower.Backend", "aspnetcore\Empower.Backend.csproj", "{91C7212E-5657-D9D9-0065-DF434EB86182}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{91C7212E-5657-D9D9-0065-DF434EB86182}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{91C7212E-5657-D9D9-0065-DF434EB86182}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{91C7212E-5657-D9D9-0065-DF434EB86182}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{91C7212E-5657-D9D9-0065-DF434EB86182}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{91C7212E-5657-D9D9-0065-DF434EB86182} = {D70FA35D-25AA-0A46-E46A-25A48C79F5AD}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {38E5F75B-C9D3-43ED-BA2A-35F351118BC5}
+	EndGlobalSection
+EndGlobal
