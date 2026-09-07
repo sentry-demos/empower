@@ -2,8 +2,11 @@ import random
 import time
 from datetime import datetime
 
+import pytest
 import sentry_sdk
 from selenium.webdriver.common.by import By
+
+from conftest import scale_batch_size_opposite_hour
 
 VOLUME_FACTOR = 0.185 # reduce token usage
 WAIT_BEFORE_CLOSE_SECONDS = 80  # Allow time for Sentry trace capture
@@ -94,6 +97,14 @@ def run_single_chat_interaction(driver, url: str, light: str, maintenance: str, 
     
     chat_button.click()
     time.sleep(5)
+
+
+# Skip before the Sauce session. This file has no batch loop, so we only coin-flip
+# whether to run this round (more often when cexp checkout is in its off-peak hours).
+@pytest.fixture(autouse=True)
+def _skip_when_cexp_is_busy(random):
+    if scale_batch_size_opposite_hour(1, random) == 0:
+        pytest.skip("not running this round — this test fills in when cexp checkout is off-peak")
 
 
 def test_ai_agent(desktop_web_1browser_driver, endpoints):

@@ -110,6 +110,8 @@ REPEATABLE_RANDOM = False
 # number of times between 0 and <NUMBER> - 1
 # e.g. BATCH_SIZE=5, or BATCH_SIZE=random_100
 # IS_CANARY always overrides BATCH_SIZE
+# This is the mean before seasonality: cexp checkout then scales by weekday+hour;
+# other batched desktop_web tests scale by the opposite hour (hour+12).
 BATCH_SIZE = os.getenv("IS_CANARY") and "1" or (os.getenv("BATCH_SIZE") or "1")
 
 # Share of weekly checkout volume by weekday (Mon–Sun). Applied as a multiplier of
@@ -121,6 +123,8 @@ DAY_OF_WEEK_VOLUME = [0.134, 0.161, 0.176, 0.160, 0.150, 0.111, 0.108]
 # transaction/error/span/replay per org, timezone-aligned by averaging peak/trough
 # offsets to canonical 14:00 / 04:00, then equal-weight average of orgs with a
 # usable diurnal cycle. Same *24 scaling as weekday so mean BATCH_SIZE is unchanged.
+# Cexp checkout uses this in-phase; the rest of the desktop_web suite uses hour+12
+# so it fills workers when cexp is in its trough.
 HOUR_OF_DAY_VOLUME = [0.031, 0.027, 0.024, 0.023, 0.026, 0.029, 0.032, 0.037, 0.042, 0.048, 0.052, 0.052, 0.053, 0.054, 0.053, 0.051, 0.052, 0.052, 0.051, 0.049, 0.046, 0.042, 0.039, 0.035]
 
 SLEEP_LENGTH = os.getenv("SLEEP_LENGTH") or "random_2_1"
@@ -211,34 +215,47 @@ def _base_batch_size(random):
         return int(BATCH_SIZE)
 
 
+def _hourly_volume_weight(offset_hours=0):
+    return HOUR_OF_DAY_VOLUME[(datetime.now().hour + offset_hours) % 24]
+
+
+def _stochastic_round(exact, random):
+    floor = int(exact)
+    return floor + (1 if random.random() < (exact - floor) else 0)
+
+
 def scale_batch_size_seasonally(base_size, random):
     now = datetime.now()
     exact = (
         base_size
         * DAY_OF_WEEK_VOLUME[now.weekday()] * len(DAY_OF_WEEK_VOLUME)
-        * HOUR_OF_DAY_VOLUME[now.hour] * len(HOUR_OF_DAY_VOLUME)
+        * _hourly_volume_weight() * len(HOUR_OF_DAY_VOLUME)
     )
-    # Stochastic rounding so E[n] == exact (avoids all-or-nothing at a given hour).
-    floor = int(exact)
-    return floor + (1 if random.random() < (exact - floor) else 0)
+    return _stochastic_round(exact, random)
+
+
+def scale_batch_size_opposite_hour(base_size, random):
+    """Hour+12 vs cexp checkout, no weekday scaling. Mean of the hour multiplier is 1."""
+    exact = base_size * _hourly_volume_weight(12) * len(HOUR_OF_DAY_VOLUME)
+    return _stochastic_round(exact, random)
 
 
 @pytest.fixture
 def batch_size(random):
-    return _base_batch_size(random)
+    return scale_batch_size_opposite_hour(_base_batch_size(random), random)
 
 
-# Like batch_size, but scaled by weekday and hour-of-day volume shares.
+# Cexp checkout: weekday + in-phase hour.
 @pytest.fixture
 def seasonal_batch_size(random):
     return scale_batch_size_seasonally(_base_batch_size(random), random)
 
 
-# Seasonality around 1 so a test that used to run once keeps that mean volume.
+# Basic checkout: opposite-hour scaling around 1 (old mean volume).
 # Drawn independently per test item (e.g. per browser) for finer sampling.
 @pytest.fixture
 def unit_seasonal_batch_size(random):
-    return scale_batch_size_seasonally(1, random)
+    return scale_batch_size_opposite_hour(1, random)
 
 @pytest.fixture
 def backend(random):
