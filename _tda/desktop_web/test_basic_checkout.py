@@ -10,7 +10,7 @@ from selenium.common.exceptions import NoSuchElementException
 @pytest.fixture(autouse=True)
 def _skip_if_no_seasonal_volume(unit_seasonal_batch_size):
     if unit_seasonal_batch_size == 0:
-        pytest.skip("seasonal skip")
+        pytest.skip("not running this round — this test fills in when cexp checkout is off-peak")
 
 
 def test_basic_checkout(desktop_web_driver, endpoints, random, sleep_length, cexp, unit_seasonal_batch_size):
