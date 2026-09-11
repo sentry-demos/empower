@@ -207,6 +207,179 @@
   }
 }
 
+/* Tool-progress ticker, shown while a tool runs (e.g. "Searching products…") */
+.chat-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 18px;
+  border-bottom-left-radius: 4px;
+  width: fit-content;
+}
+
+.chat-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #002626;
+  animation: typing 1.4s infinite;
+  flex-shrink: 0;
+}
+
+.chat-status-label {
+  font-size: 14px;
+  color: #002626;
+}
+
+/* Structured cards (products now; cart / checkout next) */
+.chat-widget-card {
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 8px;
+  width: 100%;
+}
+
+.chat-widget-empty {
+  font-size: 14px;
+  color: #555;
+  margin: 8px;
+}
+
+.chat-product-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.chat-product {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px;
+  border-radius: 8px;
+}
+
+.chat-product + .chat-product {
+  border-top: 1px solid #f0f0f0;
+}
+
+.chat-product-img {
+  width: 44px;
+  height: 44px;
+  object-fit: cover;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.chat-product-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.chat-product-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #002626;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chat-product-price {
+  font-size: 13px;
+  color: #555;
+}
+
+.chat-product-add {
+  background-color: #002626;
+  color: white;
+  border: none;
+  border-radius: 14px;
+  padding: 6px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 0.2s;
+}
+
+.chat-product-add:hover:not(:disabled) {
+  background-color: #dddc4e;
+  color: #002626;
+}
+
+.chat-product-add:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Error bubble */
+.chat-error {
+  border-color: #e8a2a2;
+  background-color: #fdf3f3;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+}
+
+.chat-error-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #8c2b2b;
+}
+
+.chat-error-message {
+  font-size: 14px;
+  color: #5c2020;
+  margin: 0;
+}
+
+.chat-error-code {
+  font-size: 12px;
+  color: #8c6b6b;
+}
+
+/* Suggestion pills */
+.chat-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 16px 0;
+  background: white;
+}
+
+.chat-pill {
+  background: #ffffff;
+  color: #002626;
+  border: 1px solid #002626;
+  border-radius: 16px;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-family: 'Poppins', sans-serif;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+  margin: 0;
+}
+
+.chat-pill:hover:not(:disabled) {
+  background-color: #dddc4e;
+  border-color: #dddc4e;
+}
+
+.chat-pill:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 /* Input form */
 .chat-input-form {
   display: flex;
@@ -259,9 +432,14 @@
   flex-shrink: 0;
 }
 
-.chat-send-button:hover {
+.chat-send-button:hover:not(:disabled) {
   background-color: #dddc4e;
   color: #002626;
+}
+
+.chat-send-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* Mobile responsiveness */

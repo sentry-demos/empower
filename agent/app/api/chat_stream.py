@@ -143,7 +143,11 @@ async def stream_turn(session: ChatSession, message: str) -> AsyncIterator[str]:
                 call_id = _call_id(event.item.raw_item)
                 if call_id:
                     pending_tools[call_id] = name
-                session.last_tool = name
+                # Only shopping tools move the flow along. Handoff and plant-care
+                # tools must not, or asking a care question mid-flow would reset
+                # the pills to the opening suggestion and lose the user's place.
+                if name in WIDGET_TYPES:
+                    session.last_tool = name
                 yield sse(
                     "status",
                     {"tool": name, "label": STATUS_LABELS.get(name, "Working…")},
