@@ -121,6 +121,13 @@ def routed_transaction(
 
 @contextmanager
 def tool_span(client: sentry_sdk.Client | None, tool_name: str) -> Iterator[None]:
-    """routed_transaction with the naming the gen_ai tool spans use."""
-    with routed_transaction(client, "gen_ai.execute_tool", f"execute_tool {tool_name}"):
+    """Run a tool's work as its own transaction in that tool's project.
+
+    Deliberately NOT op=gen_ai.execute_tool named "execute_tool <tool>": that is
+    exactly what sentry_sdk's agents integration already emits around the tool
+    call, and reusing it made every tool show up twice in the AI Agent timeline —
+    once for the SDK's span and once for this transaction. This is the routed
+    work underneath that span, so it is named as its own unit.
+    """
+    with routed_transaction(client, "function", f"tool {tool_name}"):
         yield
