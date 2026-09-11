@@ -9,7 +9,7 @@ import ProductCard from './ProductCard';
 import { useState, useEffect, useRef } from 'react';
 import { updateStatsigUserAndEvaluate } from '../utils/statsig';
 
-function Products({ frontendSlowdown, backend, productsApi, productsExtremelySlow, productsBeError, addToCartJsError }) {
+function Products({ frontendSlowdown, backend, productsApi, productsExtremelySlow, productsBeError }) {
   const [products, setProducts] = useState([]);
   const startTime = useRef(performance.now());
   const productsRendered = useRef(false);
@@ -167,7 +167,7 @@ function Products({ frontendSlowdown, backend, productsApi, productsExtremelySlo
           });
 
           return (
-            <ProductCard key={i} product={product} stars={stars} addToCartJsError={addToCartJsError}></ProductCard>
+            <ProductCard key={i} product={product} stars={stars}></ProductCard>
           );
         })}
       </ul>

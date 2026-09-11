@@ -59,7 +59,6 @@ let RAGECLICK;
 let PRODUCTS_API;
 let PRODUCTS_EXTREMELY_SLOW;
 let PRODUCTS_BE_ERROR;
-let ADD_TO_CART_JS_ERROR;
 let CHECKOUT_SUCCESS;
 let ERROR_BOUNDARY;
 const DSN = process.env.REACT_APP_DSN;
@@ -275,8 +274,6 @@ class App extends Component {
         PRODUCTS_EXTREMELY_SLOW = true;
       } else if (cexp === 'products_be_error') {
         PRODUCTS_BE_ERROR = true;
-      } else if (cexp === 'add_to_cart_js_error') {
-        ADD_TO_CART_JS_ERROR = true;
       } else if (cexp === 'checkout_success') {
         CHECKOUT_SUCCESS = true;
       }
@@ -435,7 +432,6 @@ class App extends Component {
                     productsApi={PRODUCTS_API}
                     productsExtremelySlow={PRODUCTS_EXTREMELY_SLOW}
                     productsBeError={PRODUCTS_BE_ERROR}
-                    addToCartJsError={ADD_TO_CART_JS_ERROR}
                   />
                 }
               ></Route>

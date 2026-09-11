@@ -6,9 +6,6 @@ import { setProducts, addProduct, setFlag } from '../actions';
 
 function ProductCard(props) {
   let inventory = [3, 4, 5, 6]
-  if (props.addToCartJsError) {
-    inventory = undefined
-  }
 
   const navigate = useNavigate();
   const product = props.product;
