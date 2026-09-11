@@ -13,6 +13,13 @@ services:
       - API_HOST=0.0.0.0
       - API_RELOAD=true
       - PORT=${PORT}
+    extra_hosts:
+      # Lets the shopping tools reach a locally-running flask on the host; see
+      # flask_url() in app/tools/shop/client.py. FLASK_URL itself is deliberately
+      # NOT overridden here — deploy filters values containing __GCP_SECRET__ out
+      # of the environment it passes to run_local.sh, so an override would
+      # resolve to empty and clobber the correct value from .env.
+      - "host.docker.internal:host-gateway"
     volumes:
       - .:/app
     restart: unless-stopped

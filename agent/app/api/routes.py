@@ -3,10 +3,18 @@
 
 import sentry_sdk.ai
 from fastapi import APIRouter, HTTPException, Request
+from fastapi.responses import StreamingResponse
 
 from ..agents.manager_agent import process_user_request
+from ..session import get_session
 from ..utils import validate_plant_advice, validate_plant_info
-from .models import ChatResponse, HealthResponse, PlantPurchaseRequest
+from .chat_stream import stream_turn
+from .models import (
+    ChatResponse,
+    ChatTurnRequest,
+    HealthResponse,
+    PlantPurchaseRequest,
+)
 
 # Initialize router
 router = APIRouter()
@@ -16,6 +24,41 @@ router = APIRouter()
 async def health_check() -> HealthResponse:
     """Health check endpoint."""
     return HealthResponse(status="healthy", agent_name="", version="1.0.0")
+
+
+@router.post("/chat")  # type: ignore[misc]
+async def chat(request: ChatTurnRequest, raw_request: Request) -> StreamingResponse:
+    """Run one conversational shopping turn, streamed back as SSE.
+
+    Separate from /buy-plants, which keeps serving the original scripted flow.
+
+    Args:
+        request: The customer's message
+        raw_request: Raw FastAPI request for reading headers
+
+    Returns:
+        A text/event-stream of status / token / widget / pills / done events
+
+    Raises:
+        HTTPException: If the conversation id is missing
+    """
+    conversation_id = raw_request.headers.get("x-conversation-id")
+    if not conversation_id:
+        raise HTTPException(status_code=400, detail="x-conversation-id is required")
+
+    sentry_sdk.ai.set_conversation_id(conversation_id)
+    session = get_session(conversation_id)
+
+    return StreamingResponse(
+        stream_turn(session, request.message),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            # Tell any nginx in front of Cloud Run not to buffer the stream,
+            # which would defeat the point of streaming it.
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 @router.post("/buy-plants", response_model=ChatResponse)  # type: ignore[misc]
