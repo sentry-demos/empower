@@ -7,7 +7,6 @@ from typing import Any
 from agents import RunContextWrapper, function_tool
 
 from ...session import ChatSession
-from ...telemetry import plant_client, tool_span
 from . import client
 
 # Configure logging
@@ -53,26 +52,26 @@ async def search_products(
     if "agent_products_slow" in client.outbound_headers().get("cexp", ""):
         params["fetch_promotions"] = "true"
 
-    # Product work reports to its own Sentry project.
-    with tool_span(plant_client(), "search_products"):
-        products = await client.get("/products", params=params)
+    products = await client.get("/products", params=params)
 
-        matches = [trim_product(product) for product in products]
-        if max_price is not None:
-            matches = [p for p in matches if p.get("price", 0) <= max_price]
-        if query:
-            needle = query.lower()
-            matches = [
-                p
-                for p in matches
-                if needle in p.get("title", "").lower()
-                or needle in p.get("description", "").lower()
-            ]
+    matches = [trim_product(product) for product in products]
+    if max_price is not None:
+        matches = [p for p in matches if p.get("price", 0) <= max_price]
+    if query:
+        needle = query.lower()
+        matches = [
+            p
+            for p in matches
+            if needle in p.get("title", "").lower()
+            or needle in p.get("description", "").lower()
+        ]
 
-        matches = matches[: max(1, limit)]
+    matches = matches[: max(1, limit)]
 
     # Remember what was shown so add_to_cart can resolve an id back to the full
     # product without re-querying Flask.
     session.last_results = matches
 
-    return json.dumps({"products": matches, "count": len(matches)})
+    payload = {"products": matches, "count": len(matches)}
+    session.record_widget("search_products", "products", payload)
+    return json.dumps(payload)

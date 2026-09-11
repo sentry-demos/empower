@@ -26,21 +26,22 @@ from ..session import ChatSession
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 
-# Shown while a tool runs. Keyed by tool name. The transfer_to_* entries are the
-# SDK's generated handoff tools, which show up here like any other tool call.
+# Shown while a tool runs, keyed by the tool the orchestrator called. Only the
+# orchestrator's own tools appear on this stream: the shopping tools belong to
+# sub-agents now, and a sub-agent's nested Runner.run emits no events here — so
+# the ticker is per-specialist rather than per-tool. The transfer_to_* entry is
+# the SDK's generated handoff tool, which shows up like any other tool call.
 STATUS_LABELS = {
-    "search_products": "Searching products…",
-    "add_to_cart": "Adding to cart…",
-    "view_cart": "Loading cart…",
-    "start_checkout": "Preparing checkout…",
-    "apply_coupon": "Applying coupon…",
-    "purchase": "Placing order…",
+    "ask_product_agent": "Checking the catalogue…",
+    "ask_checkout_agent": "Working on your order…",
     "transfer_to_plant_expert_agent": "Asking our plant expert…",
     "get_plant_basic_info": "Looking up the plant…",
     "get_plant_recommendations": "Finding a good match…",
 }
 
-# Which card the widget should render for a given tool's output.
+# Shopping tools that move the flow along, and the card each one produces. The
+# tools themselves record these on the session (ChatSession.record_widget); this
+# is here so pills_for() knows which names count as flow steps.
 WIDGET_TYPES = {
     "search_products": "products",
     "add_to_cart": "cart",
@@ -110,28 +111,11 @@ def _tool_name(raw_item: Any) -> str | None:
     return getattr(raw_item, "name", None)
 
 
-def _call_id(raw_item: Any) -> str | None:
-    """Correlation id shared by a tool call and its output."""
-    if isinstance(raw_item, dict):
-        return raw_item.get("call_id")
-    return getattr(raw_item, "call_id", None)
-
-
-def _widget_data(output: Any) -> Any:
-    """Decode a tool's return value for the widget event."""
-    if isinstance(output, str):
-        try:
-            return json.loads(output)
-        except json.JSONDecodeError:
-            return {"text": output}
-    return output
-
-
 async def stream_turn(session: ChatSession, message: str) -> AsyncIterator[str]:
     """Run one conversational turn, yielding SSE frames as it goes."""
     turn_input = session.history + [{"role": "user", "content": message}]
-    # call_id -> tool name, so a tool_output event knows which card to render.
-    pending_tools: dict[str, str] = {}
+    # Anything left over from a turn that failed part-way isn't this turn's.
+    session.drain_widgets()
 
     try:
         result = Runner.run_streamed(shopping_agent, input=turn_input, context=session)
@@ -153,14 +137,6 @@ async def stream_turn(session: ChatSession, message: str) -> AsyncIterator[str]:
                 name = _tool_name(event.item.raw_item)
                 if name is None:
                     continue
-                call_id = _call_id(event.item.raw_item)
-                if call_id:
-                    pending_tools[call_id] = name
-                # Only shopping tools move the flow along. Handoff and plant-care
-                # tools must not, or asking a care question mid-flow would reset
-                # the pills to the opening suggestion and lose the user's place.
-                if name in WIDGET_TYPES:
-                    session.last_tool = name
                 yield sse(
                     "status",
                     {"tool": name, "label": STATUS_LABELS.get(name, "Working…")},
@@ -173,14 +149,12 @@ async def stream_turn(session: ChatSession, message: str) -> AsyncIterator[str]:
                 yield sse("message_end", {})
 
             elif event.name == "tool_output":
-                call_id = _call_id(event.item.raw_item)
-                name = pending_tools.pop(call_id, None) if call_id else None
-                widget_type = WIDGET_TYPES.get(name or "")
-                if widget_type:
-                    yield sse(
-                        "widget",
-                        {"type": widget_type, "data": _widget_data(event.item.output)},
-                    )
+                # Cards come off the session rather than this event's payload:
+                # the tool that produced them ran inside a sub-agent's nested
+                # Runner.run, whose own tool events never reach this stream. A
+                # delegation can produce more than one card, so drain them all.
+                for widget in session.drain_widgets():
+                    yield sse("widget", widget)
 
         # Carry the conversation forward. to_input_list() merges this turn's
         # input with everything the run generated, which is what the next turn

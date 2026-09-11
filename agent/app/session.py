@@ -53,10 +53,28 @@ class ChatSession:
     last_results: list[dict[str, Any]] = field(default_factory=list)
     promo: dict[str, Any] | None = None
     form: dict[str, str] | None = None
-    # Name of the last tool the model invoked. The route layer derives the
+    # Name of the last shopping tool that ran. The route layer derives the
     # suggestion pills from this rather than asking the LLM for them.
     last_tool: str | None = None
+    # Cards produced by tools during the current turn, waiting to be sent.
+    #
+    # The shopping tools belong to sub-agents now, and a sub-agent runs in its
+    # own nested Runner.run whose tool events never reach the outer stream. So
+    # tools record what they want rendered here and the route drains it when the
+    # delegating tool returns, rather than the route reading tool names off
+    # stream events.
+    pending_widgets: list[dict[str, Any]] = field(default_factory=list)
     last_seen: float = field(default_factory=time.monotonic)
+
+    def record_widget(self, tool: str, widget_type: str, data: Any) -> None:
+        """Note that `tool` ran and queue a card for the widget to render."""
+        self.last_tool = tool
+        self.pending_widgets.append({"type": widget_type, "data": data})
+
+    def drain_widgets(self) -> list[dict[str, Any]]:
+        """Take everything queued since the last drain."""
+        widgets, self.pending_widgets = self.pending_widgets, []
+        return widgets
 
     def add_items(self, items: list[dict[str, Any]], quantities: dict[int, int]) -> None:
         """Merge products into the cart, mirroring the ADD_PRODUCT reducer."""
