@@ -4,8 +4,9 @@ The widget needs three things off a turn that a single JSON response can't give
 it: progress while a slow tool runs, prose as it's generated, and structured
 payloads to render as cards. So each turn is a short event stream:
 
-    status  {tool, label}         "Searching products…" ticker
-    token   {text}                streaming assistant prose
+    status       {tool, label}    "Searching products…" ticker
+    token        {text}           streaming assistant prose
+    message_end  {}               closes the current prose bubble
     widget  {type, data}          product list / cart / checkout / error card
     pills   {pills:[{id,label}]}  suggestion chips
     done    {conversation_id}     ends the turn
@@ -63,20 +64,32 @@ _PILLS = {
     }
 }
 
+# $200, not $40: the catalogue is $25/$155/$155/$175/$250, so a $40 ceiling
+# returns a single product and there is nothing to render as a list or to
+# "add one of each" of.
+PILLS_INITIAL = [
+    {"id": _PILLS["id"]["show_products"], "label": "Show me plants under $200"}
+]
+
+# Both checkout actions stay available while the customer is on that step: the
+# coupon is expected to fail, so Purchase has to still be reachable after it.
+PILLS_CHECKOUT = [
+    {"id": _PILLS["id"]["apply_coupon"], "label": "Apply Coupon"},
+    {"id": _PILLS["id"]["purchase"], "label": "Purchase"},
+]
+
 PILLS_BY_LAST_TOOL: dict[str | None, list[dict[str, str]]] = {
-    # $200, not $40: the catalogue is $25/$155/$155/$175/$250, so a $40 ceiling
-    # returns a single product and there is nothing to render as a list or to
-    # "add one of each" of.
-    None: [{"id": _PILLS["id"]["show_products"], "label": "Show me plants under $200"}],
+    None: PILLS_INITIAL,
     "search_products": [
         {"id": _PILLS["id"]["add_all"], "label": "Add one of each to the cart"}
     ],
     "add_to_cart": [{"id": _PILLS["id"]["checkout"], "label": "Checkout"}],
     "view_cart": [{"id": _PILLS["id"]["checkout"], "label": "Checkout"}],
-    "start_checkout": [
-        {"id": _PILLS["id"]["apply_coupon"], "label": "Apply Coupon"},
-        {"id": _PILLS["id"]["purchase"], "label": "Purchase"},
-    ],
+    "start_checkout": PILLS_CHECKOUT,
+    "apply_coupon": PILLS_CHECKOUT,
+    # The order is the last step either way: on success the cart is emptied, on
+    # failure the customer has seen the error. Offer a fresh start.
+    "purchase": PILLS_INITIAL,
 }
 
 
@@ -152,6 +165,12 @@ async def stream_turn(session: ChatSession, message: str) -> AsyncIterator[str]:
                     "status",
                     {"tool": name, "label": STATUS_LABELS.get(name, "Working…")},
                 )
+
+            elif event.name == "message_output_created":
+                # A turn can produce several assistant messages back to back.
+                # Without this the widget appends them all to one bubble and the
+                # sentences run together ("...checkout?Would you like...").
+                yield sse("message_end", {})
 
             elif event.name == "tool_output":
                 call_id = _call_id(event.item.raw_item)

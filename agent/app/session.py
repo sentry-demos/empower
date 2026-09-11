@@ -81,7 +81,11 @@ class ChatSession:
         for product in self.cart["items"]:
             qty = self.cart["quantities"].get(str(product["id"]), 0)
             total += product.get("price", 0) * qty
-        self.cart["total"] = round(total, 2)
+        total = round(total, 2)
+        # Keep whole totals as ints, like the Redux reducer's integer maths. The
+        # cart and checkout cards render `${total}.00`, so a stray float would
+        # show up as "$510.0.00".
+        self.cart["total"] = int(total) if total == int(total) else total
 
 
 _sessions: dict[str, ChatSession] = {}

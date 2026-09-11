@@ -68,3 +68,28 @@ async def get(path: str, params: dict[str, Any] | None = None) -> Any:
         )
         response.raise_for_status()
         return response.json()
+
+
+async def post(
+    path: str, json_body: Any, params: dict[str, Any] | None = None
+) -> tuple[int, Any]:
+    """POST a Flask endpoint, returning (status_code, decoded body).
+
+    Deliberately does not raise on 4xx/5xx. The coupon expiry (410) and the
+    inventory failure (500) are the demo, not accidents, and the customer is
+    meant to see what the backend actually said — so the status and body are
+    handed back for the tool to report rather than turned into an exception.
+    """
+    async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT_SECONDS) as client:
+        response = await client.post(
+            f"{flask_url()}{path}",
+            json=json_body,
+            params=params,
+            headers=outbound_headers(),
+        )
+
+    try:
+        return response.status_code, response.json()
+    except ValueError:
+        # Some failure paths return an empty body with just a status code.
+        return response.status_code, {"text": response.text}

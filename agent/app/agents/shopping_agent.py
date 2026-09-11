@@ -11,7 +11,14 @@ from agents import Agent, ModelSettings
 
 from config import settings
 
-from ..tools.shop import search_products
+from ..tools.shop import (
+    add_to_cart,
+    apply_coupon,
+    purchase,
+    search_products,
+    start_checkout,
+    view_cart,
+)
 from .plant_expert_agent import plant_expert_agent
 
 # Configure logging
@@ -27,14 +34,26 @@ Help the customer find products, add them to their cart, and check out:
 
 1. Use search_products to look up the catalogue whenever the customer asks what
 is available or describes what they want. Never invent products or prices.
-2. Keep replies short — one or two sentences. The chat renders the products,
+2. Use add_to_cart to add things, view_cart to show the cart, and
+start_checkout when the customer is ready to buy. add_to_cart takes product
+ids, so search first if you do not already know them. "One of each" means
+quantity 1 of every product you just showed.
+3. Use apply_coupon when the customer gives or asks you to apply a promo code.
+Call purchase ONLY when the customer explicitly asks to buy, purchase or place
+the order. One customer message means one shopping action: never chain purchase
+onto another tool in the same reply, and never place the order just because a
+coupon failed — ask instead.
+4. If a tool reports a failure, tell the customer what the backend said. Do not
+retry it and do not paper over it — the error message is the useful part.
+5. Keep replies short — one or two sentences. The chat renders the products,
 cart and checkout form as cards, so do not list them out in prose or repeat
 prices and descriptions the cards already show.
-3. If the customer asks about plant care rather than shopping, hand off to the
+6. If the customer asks about plant care rather than shopping, hand off to the
 Plant Expert Agent.
 
-Do not ask for confirmation before searching. Never ask the customer for
-payment details; the checkout form is prefilled.
+Do not ask for confirmation before searching, adding to the cart, or checking
+out; the customer has already asked. Never ask for payment details; the
+checkout form is prefilled.
 """
 
 # Same constraint as the other agents: store=true is rejected here.
@@ -80,7 +99,14 @@ shopping_agent = Agent(
     instructions=SHOPPING_AGENT_INSTRUCTIONS,
     model=settings.agent_model,
     model_settings=_model_settings,
-    tools=[search_products],
+    tools=[
+        search_products,
+        add_to_cart,
+        view_cart,
+        start_checkout,
+        apply_coupon,
+        purchase,
+    ],
 )
 
 shopping_agent.handoffs = [shopping_plant_expert]

@@ -4,6 +4,9 @@ import './chatWidget.css';
 import agentIcon from '../assets/empower-agent.png';
 import ChatPills from './ChatPills';
 import ChatProductList from './ChatProductList';
+import ChatCart from './ChatCart';
+import ChatCheckout from './ChatCheckout';
+import ChatConfirmation from './ChatConfirmation';
 import ChatError from './ChatError';
 import postEventStream from '../utils/sseStream';
 
@@ -224,6 +227,10 @@ const ChatWidget = () => {
           turnSpan?.setAttribute(`chat.tool.${data.tool}`, true);
         } else if (event === 'token') {
           appendToken(data.text);
+        } else if (event === 'message_end') {
+          // Close the current bubble so the next assistant message starts its
+          // own, rather than running on from this one.
+          botMessageId = null;
         } else if (event === 'widget') {
           botMessageId = null;
           setMessages((prev) => [
@@ -386,11 +393,47 @@ const ChatWidget = () => {
         />
       );
     }
+    if (type === 'cart') {
+      return <ChatCart cart={data.cart} promo={data.promo} />;
+    }
+    if (type === 'checkout') {
+      if (data.error) return <ChatError message={data.error} />;
+      return <ChatCheckout form={data.form} cart={data.cart} />;
+    }
+    if (type === 'promo') {
+      // Applying a coupon is expected to fail in the demo (SAVE20 is seeded
+      // expired, so Flask returns 410). Show the backend's own wording.
+      if (data.ok) {
+        return (
+          <div className="chat-widget-card" id="chat-promo-applied">
+            <span className="chat-confirmation-title sentry-unmask">
+              Promo {data.code} applied
+            </span>
+            {data.promo && (
+              <p className="chat-confirmation-body sentry-unmask">
+                {data.promo.percent_discount}% off, up to $
+                {data.promo.max_dollar_savings}
+              </p>
+            )}
+          </div>
+        );
+      }
+      return <ChatError message={data.message} code={data.error_code} />;
+    }
+    if (type === 'confirmation') {
+      if (data.ok) {
+        return (
+          <ChatConfirmation
+            orderTotal={data.order_total}
+            itemCount={data.item_count}
+          />
+        );
+      }
+      return <ChatError message={data.message} code={String(data.status)} />;
+    }
     if (type === 'error') {
       return <ChatError message={data.message} code={data.code} />;
     }
-    // cart / checkout / promo / confirmation cards land in the next slice;
-    // until then show the agent's prose rather than dropping the event.
     return null;
   };
 

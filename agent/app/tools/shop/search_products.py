@@ -20,7 +20,7 @@ _PRODUCT_FIELDS = ("id", "title", "description", "price", "img", "imgcropped")
 DEFAULT_LIMIT = 6
 
 
-def _trim(product: dict[str, Any]) -> dict[str, Any]:
+def trim_product(product: dict[str, Any]) -> dict[str, Any]:
     """Reduce a /products entry to the fields the chat flow actually uses."""
     return {key: product[key] for key in _PRODUCT_FIELDS if key in product}
 
@@ -54,7 +54,7 @@ async def search_products(
 
     products = await client.get("/products", params=params)
 
-    matches = [_trim(product) for product in products]
+    matches = [trim_product(product) for product in products]
     if max_price is not None:
         matches = [p for p in matches if p.get("price", 0) <= max_price]
     if query:

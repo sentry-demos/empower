@@ -321,6 +321,113 @@
   cursor: not-allowed;
 }
 
+/* Cart card */
+.chat-cart-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-cart-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px;
+}
+
+.chat-cart-item + .chat-cart-item {
+  border-top: 1px solid #f0f0f0;
+}
+
+.chat-cart-line-total {
+  font-size: 14px;
+  font-weight: 500;
+  color: #002626;
+  flex-shrink: 0;
+}
+
+.chat-cart-subtotal {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 6px 4px;
+  margin-top: 4px;
+  border-top: 1px solid #e0e0e0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #002626;
+}
+
+.chat-cart-promo {
+  font-size: 13px;
+  color: #2f6b4f;
+  padding: 0 6px 6px;
+}
+
+/* Checkout card */
+.chat-checkout-title,
+.chat-confirmation-title {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+  color: #002626;
+  padding: 4px 6px 8px;
+}
+
+.chat-checkout-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 0 6px;
+}
+
+.chat-checkout-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.chat-checkout-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #777;
+}
+
+.chat-checkout-input {
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 13px !important;
+  font-family: 'Poppins', sans-serif;
+  color: #002626;
+  width: 100%;
+  height: auto;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+.chat-checkout-input:focus {
+  outline: none;
+  border-color: #002626;
+}
+
+/* Confirmation card */
+.chat-confirmation {
+  border-color: #a6c8b4;
+  background-color: #f3faf6;
+}
+
+.chat-confirmation-body {
+  font-size: 14px;
+  color: #2f6b4f;
+  margin: 0;
+  padding: 0 6px 6px;
+}
+
 /* Error bubble */
 .chat-error {
   border-color: #e8a2a2;
