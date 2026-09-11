@@ -12,6 +12,7 @@ import logging
 from agents import RunContextWrapper, function_tool
 
 from ...session import DEFAULT_FORM, ChatSession
+from ...telemetry import shopping_client, tool_span
 from . import client
 
 # Configure logging
@@ -43,7 +44,11 @@ async def apply_coupon(context: RunContextWrapper[ChatSession], code: str) -> st
     session = context.context
     logging.debug(f"apply_coupon code={code}")
 
-    status, body = await client.post("/apply-promo-code", {"value": code.strip()})
+    # Coupon and order work reports to the checkout Sentry project.
+    with tool_span(shopping_client(), "apply_coupon"):
+        status, body = await client.post(
+            "/apply-promo-code", {"value": code.strip()}
+        )
 
     if status == 200:
         session.promo = body.get("promo_code")
@@ -82,17 +87,18 @@ async def purchase(context: RunContextWrapper[ChatSession]) -> str:
     validate_inventory = _validate_inventory_flag()
     logging.debug(f"purchase total={session.cart['total']} vi={validate_inventory}")
 
-    status, body = await client.post(
-        "/checkout",
-        {
-            "cart": session.cart,
-            "form": form,
-            "validate_inventory": validate_inventory,
-        },
-        # Mirrors CheckoutForm.jsx. Flask reads no `v2` param, but keeping it
-        # means the chat and site checkouts are the same request.
-        params={"v2": "true"},
-    )
+    with tool_span(shopping_client(), "purchase"):
+        status, body = await client.post(
+            "/checkout",
+            {
+                "cart": session.cart,
+                "form": form,
+                "validate_inventory": validate_inventory,
+            },
+            # Mirrors CheckoutForm.jsx. Flask reads no `v2` param, but keeping
+            # it means the chat and site checkouts are the same request.
+            params={"v2": "true"},
+        )
 
     if status == 200:
         order_total = session.cart["total"]

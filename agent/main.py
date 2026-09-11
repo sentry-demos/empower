@@ -5,75 +5,18 @@ import sentry_sdk
 import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from sentry_sdk.integrations.fastapi import FastApiIntegration
-from sentry_sdk.integrations.openai import OpenAIIntegration
-from sentry_sdk.integrations.openai_agents import OpenAIAgentsIntegration
 from starlette.middleware.base import RequestResponseEndpoint
 from starlette.responses import Response
 
 from app.api.routes import router
+from app.telemetry import sentry_options
 from app.utils import request_headers
 from config import settings
 
-
-def propagate_context_to_spans(event, hint):
-    """Copy request-context tags onto every span's attributes.
-
-    The sentry_event_context middleware sets `se`/`customerType`/`cexp` as
-    event-level tags (and `email` as the user), which only land on the root
-    http.server span. The auto-instrumented gen_ai.* child spans don't inherit
-    them, so we mirror the values onto each span's `data` here.
-    """
-    tags = event.get("tags") or {}
-    attrs = {
-        key: tags[key]
-        for key in ("se", "customerType", "cexp")
-        if tags.get(key) is not None
-    }
-    email = (event.get("user") or {}).get("email")
-    if email is not None:
-        attrs["user.email"] = email
-
-    if not attrs:
-        return event
-
-    for span in event.get("spans", []):
-        span.setdefault("data", {}).update(attrs)
-
-    trace = (event.get("contexts") or {}).get("trace")
-    if trace is not None:
-        trace.setdefault("data", {}).update(attrs)
-
-    return event
-
-
-def _sentry_options(dsn: str) -> dict:
-    """Client options shared by every Sentry project this service reports to."""
-    return dict(
-        dsn=dsn,
-        environment=os.environ["AGENT_SENTRY_ENVIRONMENT"],
-        traces_sample_rate=1.0,
-        profiles_sample_rate=1.0,
-        integrations=[
-            FastApiIntegration(),
-            OpenAIAgentsIntegration(),
-        ],
-        disabled_integrations=[OpenAIIntegration()],
-        send_default_pii=True,
-        before_send_transaction=propagate_context_to_spans,
-    )
-
-
-# Default client: the conversational shopping flow, and anything not routed below.
-sentry_sdk.init(**_sentry_options(os.environ["AGENT_DSN"]))
-
-# The original /buy-plants flow reports to its own project. A transaction belongs
-# to exactly one project, and handoff spans are children of the same transaction,
-# so routing is necessarily per-endpoint rather than per-agent: manager_agent's
-# handoff to plant_expert_agent stays inside the /buy-plants transaction. Doing it
-# this way leaves manager_agent and plant_expert_agent themselves untouched.
-_manager_dsn = os.environ.get("AGENT_MANAGER_DSN") or ""
-manager_client = sentry_sdk.Client(**_sentry_options(_manager_dsn)) if _manager_dsn else None
+# The conversation itself — this endpoint's transactions and the agent's
+# gen_ai.* spans. Product and checkout tools open their own transactions on
+# their own projects; see app/telemetry.py.
+sentry_sdk.init(**sentry_options(os.environ["AGENT_DSN"]))
 
 
 # Create FastAPI app
@@ -149,35 +92,9 @@ async def root() -> dict[str, str]:
     }
 
 
-# Endpoints whose transactions belong to a Sentry project other than the default.
-_CLIENT_BY_PATH: dict[str, sentry_sdk.Client] = (
-    {"/api/v1/buy-plants": manager_client} if manager_client else {}
-)
-
-
-async def asgi(scope: dict, receive: object, send: object) -> None:
-    """Pick the Sentry project for this request, then hand off to FastAPI.
-
-    This has to sit outside the FastAPI app: the Starlette integration patches
-    Starlette.__call__ itself, so SentryAsgiMiddleware is the outermost layer
-    inside `app` and the transaction already exists by the time any middleware
-    or route code of ours runs. Binding the client on an isolation scope out
-    here means the transaction is created on the right client — Sentry's own
-    isolation scope forks from this one and inherits it.
-    """
-    client = _CLIENT_BY_PATH.get(scope.get("path", "")) if scope.get("type") == "http" else None
-    if client is None:
-        await app(scope, receive, send)  # type: ignore[arg-type]
-        return
-
-    with sentry_sdk.isolation_scope() as isolation_scope:
-        isolation_scope.set_client(client)
-        await app(scope, receive, send)  # type: ignore[arg-type]
-
-
 if __name__ == "__main__":
     uvicorn.run(
-        "main:asgi",
+        "main:app",
         host=settings.api_host,
         port=settings.api_port,
         reload=settings.api_reload,

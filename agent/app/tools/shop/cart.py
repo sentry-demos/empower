@@ -14,6 +14,7 @@ from agents import RunContextWrapper, function_tool
 from pydantic import BaseModel
 
 from ...session import DEFAULT_FORM, ChatSession
+from ...telemetry import shopping_client, tool_span
 from . import client
 from .search_products import trim_product
 
@@ -74,13 +75,15 @@ async def add_to_cart(
             1, item.qty
         )
 
-    resolved = await _resolve_products(session, list(requested))
+    # Cart and checkout work reports to its own Sentry project.
+    with tool_span(shopping_client(), "add_to_cart"):
+        resolved = await _resolve_products(session, list(requested))
 
-    unknown = [pid for pid in requested if pid not in resolved]
-    products = [resolved[pid] for pid in requested if pid in resolved]
-    quantities = {pid: qty for pid, qty in requested.items() if pid in resolved}
+        unknown = [pid for pid in requested if pid not in resolved]
+        products = [resolved[pid] for pid in requested if pid in resolved]
+        quantities = {pid: qty for pid, qty in requested.items() if pid in resolved}
 
-    session.add_items(products, quantities)
+        session.add_items(products, quantities)
 
     return json.dumps(
         {
@@ -102,7 +105,8 @@ async def view_cart(context: RunContextWrapper[ChatSession]) -> str:
     """
     session = context.context
     logging.debug(f"view_cart total={session.cart['total']}")
-    return json.dumps({"cart": session.cart, "promo": session.promo})
+    with tool_span(shopping_client(), "view_cart"):
+        return json.dumps({"cart": session.cart, "promo": session.promo})
 
 
 @function_tool  # type: ignore[misc]
@@ -123,6 +127,7 @@ async def start_checkout(context: RunContextWrapper[ChatSession]) -> str:
         session.form = dict(DEFAULT_FORM)
 
     logging.debug(f"start_checkout total={session.cart['total']}")
-    return json.dumps(
-        {"cart": session.cart, "form": session.form, "promo": session.promo}
-    )
+    with tool_span(shopping_client(), "start_checkout"):
+        return json.dumps(
+            {"cart": session.cart, "form": session.form, "promo": session.promo}
+        )
