@@ -271,6 +271,15 @@ class App extends Component {
       currentScope.setTag('cexp', cexp);
       currentScope.setAttribute('cexp', cexp);
 
+      // The agent_* experiences (see the `agent_cexp` fixture in
+      // _tda/conftest.py) intentionally have no branch here. The tag and
+      // attribute set above are all the browser needs to do: the monkeypatched
+      // fetch below forwards `cexp` as a request header on every call, the
+      // agent's middleware reads it into a contextvar, and the decision is made
+      // server-side — search_products adds ?fetch_promotions=true for
+      // agent_products_slow, and the coupon 410 and checkout 500 need no flag
+      // because they fail unconditionally. Adding a flag here would imply a
+      // frontend behaviour change that does not exist.
       if (cexp === 'products_extremely_slow') {
         PRODUCTS_EXTREMELY_SLOW = true;
       } else if (cexp === 'products_be_error') {

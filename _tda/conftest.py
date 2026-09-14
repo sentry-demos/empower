@@ -328,7 +328,19 @@ class CExp:
     PRODUCTS_EXTREMELY_SLOW = "products_extremely_slow"
     PRODUCTS_BE_ERROR       = "products_be_error"
     ADD_TO_CART_JS_ERROR    = "add_to_cart_js_error"
-    CHECKOUT_SUCCESS        = "checkout_success" 
+    CHECKOUT_SUCCESS        = "checkout_success"
+
+    # Conversational agent flow (the chat widget), driven by the `agent_cexp`
+    # fixture rather than `cexp`. Only AGENT_PRODUCTS_SLOW changes behaviour:
+    # search_products sends ?fetch_promotions=true, selecting flask's
+    # extremely-slow profile. The other two name a failure that this flow
+    # produces unconditionally — the seeded SAVE20 expired in 2025 so
+    # /apply-promo-code returns 410, and /checkout with validate_inventory
+    # returns 500 — so they select which one the iteration drives to, and tag
+    # the run for filtering.
+    AGENT_PRODUCTS_SLOW     = "agent_products_slow"
+    AGENT_COUPON_FAIL       = "agent_coupon_fail"
+    AGENT_CHECKOUT_FAIL     = "agent_checkout_fail"
 
 
 # Simulate critical experiences (cexp) in user journey
@@ -389,6 +401,48 @@ def cexp(random):
             k=1)[0]
 
     return random_cexp
+
+
+# Offsets the agent rotation against the `cexp` schedule above, which runs on
+# 42-hour blocks. Half a block puts the two maximally out of phase, so the agent
+# demo is not showing its slow-products window at the same time as the
+# products -> cart -> checkout demo shows its own.
+AGENT_CEXP_PHASE_OFFSET_HOURS = 21
+
+
+# Simulate critical experiences in the conversational agent flow (chat widget).
+#
+# Deliberately a separate fixture from `cexp` rather than three more rows in its
+# matrix. That matrix allocates all eight of its segments at weight 1.0, so
+# adding rows means re-cutting the schedule the existing products -> cart ->
+# checkout demo runs on. The agent flow is an *additional* demo, not a
+# replacement, so it gets its own rotation and the old one is left untouched.
+@pytest.fixture
+def agent_cexp(random):
+
+    def time_segment():
+        now = datetime.now()
+        h = (now.weekday() * 24 + now.hour + AGENT_CEXP_PHASE_OFFSET_HOURS) % 168
+        # Three equal windows across the week, one per experience. 168 / 56 is
+        # exactly 3, so each gets 56 contiguous hours and the cycle closes on
+        # the week boundary.
+        return h // 56
+
+    # array length must match number of possible time segments
+    probabilities = {       # segments    0    1    2
+        CExp.AGENT_PRODUCTS_SLOW:       [1.0,  0,   0  ],
+        CExp.AGENT_COUPON_FAIL:         [0,   1.0,  0  ],
+        CExp.AGENT_CHECKOUT_FAIL:       [0,    0,  1.0 ],
+    }
+
+    def random_agent_cexp():
+        segment = time_segment()
+        return random.choices(
+            list(probabilities.keys()),
+            weights=list([row[segment] for row in probabilities.values()]),
+            k=1)[0]
+
+    return random_agent_cexp
 
 
 @pytest.fixture
