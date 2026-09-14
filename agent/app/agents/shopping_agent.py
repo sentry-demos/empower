@@ -67,6 +67,16 @@ def _checkout_context(session: ChatSession) -> str:
     return "\n".join(lines)
 
 
+# Returned instead of running a specialist a second time in one turn. Phrased as
+# an instruction because it lands in the model's context as a tool result: the
+# useful next move is to reply, not to try another specialist.
+_ALREADY_DELEGATED = (
+    "You have already called a specialist for this message and the customer can"
+    " see the result. Do not call another specialist. Reply to the customer now,"
+    " in one short sentence, and let them say what they want next."
+)
+
+
 @function_tool  # type: ignore[misc]
 async def ask_product_agent(
     context: RunContextWrapper[ChatSession], request: str
@@ -79,9 +89,14 @@ async def ask_product_agent(
     Returns:
         What the product specialist found.
     """
+    session = context.context
+    if not session.claim_delegation("product_agent"):
+        logging.debug("refusing second delegation this turn (product_agent)")
+        return _ALREADY_DELEGATED
+
     logging.debug(f"delegating to product_agent: {request}")
     with agent_transaction(plant_client(), "product_agent"):
-        result = await Runner.run(product_agent, request, context=context.context)
+        result = await Runner.run(product_agent, request, context=session)
     return str(result.final_output)
 
 
@@ -99,6 +114,10 @@ async def ask_checkout_agent(
         What the checkout specialist did.
     """
     session = context.context
+    if not session.claim_delegation("checkout_agent"):
+        logging.debug("refusing second delegation this turn (checkout_agent)")
+        return _ALREADY_DELEGATED
+
     logging.debug(f"delegating to checkout_agent: {request}")
     briefed = f"{_checkout_context(session)}\n\nRequest: {request}"
     with agent_transaction(shopping_client(), "checkout_agent"):

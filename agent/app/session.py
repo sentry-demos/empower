@@ -64,7 +64,27 @@ class ChatSession:
     # delegating tool returns, rather than the route reading tool names off
     # stream events.
     pending_widgets: list[dict[str, Any]] = field(default_factory=list)
+    # Specialists already delegated to during the current turn.
+    #
+    # One customer message must produce at most one shopping action. The
+    # orchestrator's instructions say so, but instructions are advisory: it has
+    # been observed calling ask_checkout_agent three times for one message,
+    # applying the expired coupon three times over. This makes the rule
+    # structural instead.
+    delegations_this_turn: set[str] = field(default_factory=set)
     last_seen: float = field(default_factory=time.monotonic)
+
+    def begin_turn(self) -> None:
+        """Reset per-turn state. Anything left over isn't this turn's."""
+        self.pending_widgets = []
+        self.delegations_this_turn = set()
+
+    def claim_delegation(self, specialist: str) -> bool:
+        """Claim the turn's single delegation. False if it is already taken."""
+        if self.delegations_this_turn:
+            return False
+        self.delegations_this_turn.add(specialist)
+        return True
 
     def record_widget(self, tool: str, widget_type: str, data: Any) -> None:
         """Note that `tool` ran and queue a card for the widget to render."""

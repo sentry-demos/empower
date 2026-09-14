@@ -114,8 +114,15 @@ def _tool_name(raw_item: Any) -> str | None:
 async def stream_turn(session: ChatSession, message: str) -> AsyncIterator[str]:
     """Run one conversational turn, yielding SSE frames as it goes."""
     turn_input = session.history + [{"role": "user", "content": message}]
-    # Anything left over from a turn that failed part-way isn't this turn's.
-    session.drain_widgets()
+    # Clears leftovers from a turn that failed part-way, and re-arms the
+    # one-delegation-per-turn claim the orchestrator's tools check.
+    session.begin_turn()
+
+    # Tools already announced this turn. The orchestrator sometimes attempts a
+    # second delegation, which ask_*_agent refuses (see session.claim_delegation)
+    # — but the attempt still surfaces as a tool_called event, and showing
+    # "Working on your order…" twice suggests work that never happened.
+    announced: set[str] = set()
 
     try:
         result = Runner.run_streamed(shopping_agent, input=turn_input, context=session)
@@ -135,8 +142,9 @@ async def stream_turn(session: ChatSession, message: str) -> AsyncIterator[str]:
 
             if event.name == "tool_called":
                 name = _tool_name(event.item.raw_item)
-                if name is None:
+                if name is None or name in announced:
                     continue
+                announced.add(name)
                 yield sse(
                     "status",
                     {"tool": name, "label": STATUS_LABELS.get(name, "Working…")},

@@ -27,26 +27,31 @@ CHECKOUT_AGENT_NAME = "checkout_agent"
 CHECKOUT_AGENT_INSTRUCTIONS = """
 You are the Empower Plant checkout specialist.
 
-You handle the cart and the order:
+You handle the cart and the order. Call exactly ONE tool — the single tool that
+does what you were asked, and nothing more:
 
 - add_to_cart takes product ids. "One of each" means quantity 1 of every product
 the customer was just shown.
 - view_cart shows the cart, start_checkout returns the prefilled form.
 - apply_coupon applies a promo code. purchase places the order.
-- Do exactly the one thing you were asked for. Never place the order unless you
-were explicitly asked to buy, and never place it just because a coupon failed.
-- If a tool reports a failure, say what the backend said. Do not retry it and do
-not soften it — the error message is the useful part.
 
-Reply with one short sentence. The chat renders the cart, checkout form and
-errors as cards, so do not repeat their contents in prose.
+Starting checkout is not applying a coupon, and neither one is buying. A promo
+code appearing on the checkout form is not a request to apply it. Only apply a
+coupon when asked for a coupon, and only place the order when asked to buy.
 """
 
 # Same constraint as the other agents: store=true is rejected here. See
 # shopping_agent.py for why reasoning effort is pinned to "minimal" — this agent
 # contributes two of the four LLM calls in a cart or checkout turn, and its
 # tools are pure session mutations with no network call to hide behind.
-_model_settings = ModelSettings(store=False, reasoning=Reasoning(effort="minimal"))
+#
+# tool_choice="required" pairs with tool_use_behavior below: the model must call
+# a tool, and the run stops after the first one.
+_model_settings = ModelSettings(
+    store=False,
+    reasoning=Reasoning(effort="minimal"),
+    tool_choice="required",
+)
 
 checkout_agent = Agent(
     name=CHECKOUT_AGENT_NAME,
@@ -54,4 +59,22 @@ checkout_agent = Agent(
     model=settings.agent_model,
     model_settings=_model_settings,
     tools=[add_to_cart, view_cart, start_checkout, apply_coupon, purchase],
+    # Exactly one tool call per delegation, enforced rather than asked for.
+    #
+    # This agent holds all five shopping tools, and by default the SDK loops
+    # until the model stops calling them — so one "Purchase" message was
+    # observed running a cart op, start_checkout, apply_coupon AND purchase in a
+    # single delegation, four cards deep. Conversely, at minimal reasoning effort
+    # the model sometimes answered in prose without calling anything, leaving the
+    # customer with no card at all (4 of 20 turns).
+    #
+    # tool_choice guarantees something runs; stop_on_first_tool guarantees only
+    # one thing runs and makes its JSON the result the orchestrator sees. The
+    # orchestrator writes the customer-facing sentence, so this also removes this
+    # agent's summarising round-trip.
+    #
+    # Cost: a single message asking for two things ("add these and check out")
+    # now does only the first. That is the intended trade — every action has to
+    # be something the customer explicitly asked for.
+    tool_use_behavior="stop_on_first_tool",
 )

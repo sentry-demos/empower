@@ -26,9 +26,10 @@ Your only job is looking things up in the catalogue with search_products.
 
 - Translate the request into search_products arguments. "under $200" is
 max_price=200; a description like "something for low light" is a query.
-- Never invent products, prices or availability. If nothing matches, say so.
-- Reply with one short sentence naming what you found. The chat renders the
-products as cards, so do not list them out or repeat prices.
+- Never invent products, prices or availability.
+
+Call search_products once and stop. The orchestrator writes the reply to the
+customer, so you do not need to summarise what you found.
 """
 
 # Same constraint as the other agents: store=true is rejected here. See
@@ -38,7 +39,15 @@ products as cards, so do not list them out or repeat prices.
 # reasoning tokens on this one-tool decision and measured 8.1s, which is slower
 # than the larger gpt-5-mini at 4.9s. Nano is cheaper per token, not faster. At
 # "minimal" both land near 1.3s, so the model choice below is about cost again.
-_model_settings = ModelSettings(store=False, reasoning=Reasoning(effort="minimal"))
+#
+# tool_choice="required" pairs with tool_use_behavior below. Without it this
+# agent sometimes answered in prose without searching at all, which showed up as
+# "Show me plants under $200" returning no product card in 3.6s.
+_model_settings = ModelSettings(
+    store=False,
+    reasoning=Reasoning(effort="minimal"),
+    tool_choice="required",
+)
 
 product_agent = Agent(
     name=PRODUCT_AGENT_NAME,
@@ -48,4 +57,7 @@ product_agent = Agent(
     model=settings.light_model,
     model_settings=_model_settings,
     tools=[search_products],
+    # One search per delegation, and the raw result goes back to the
+    # orchestrator. See checkout_agent.py for the full reasoning.
+    tool_use_behavior="stop_on_first_tool",
 )
