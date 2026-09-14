@@ -558,6 +558,365 @@
   }
 }
 
+/* ==========================================================================
+   Full-page conversation view
+   --------------------------------------------------------------------------
+   The second shell (see ChatWidget.jsx). Everything here is scoped under
+   .chat-full so the popup above keeps its compact sizing untouched — the popup
+   is what _tda/test_ai_agent.py drives, so it is deliberately left alone.
+   ========================================================================== */
+
+/* Set on <body> by ChatWidget while the full view is mounted. The footer lives
+   outside the routed content (index.js), so this is the only way to drop it —
+   and its newsletter signup would otherwise sit under the composer as a second
+   call to action. */
+body.agent-full-view #footer {
+  display: none;
+}
+
+.chat-full {
+  display: flex;
+  gap: 16px;
+  align-items: stretch;
+  /* A definite height, not min-height: the transcript below is a flex child
+     that needs a bounded parent to scroll inside. With min-height it grew
+     instead, so every new message scrolled the whole page and dragged the
+     composer down past the site footer.
+     The footer is hidden in this view, so the conversation takes the rest of
+     the viewport below the site header. */
+  height: calc(100vh - var(--chat-full-header-offset, 96px));
+  padding: 24px 16px;
+  box-sizing: border-box;
+  font-family: 'Poppins', sans-serif;
+  text-align: left;
+}
+
+/* Sidebar. Holds the way back to the store, which is the one thing the
+   full view must always offer — it replaces the whole home page. */
+.chat-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+  padding: 12px 8px;
+  background: #ffffff;
+  border: 1px solid #e6e6e6;
+  border-radius: 16px;
+  height: fit-content;
+}
+
+.chat-rail-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 64px;
+  padding: 10px 4px;
+  background: #ffffff;
+  color: #002626;
+  border: none;
+  border-radius: 12px;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  margin: 0;
+  transition: background-color 0.2s;
+}
+
+.chat-rail-button:hover {
+  background-color: #dddc4e;
+  color: #002626;
+}
+
+.chat-rail-label {
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+
+.chat-full-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Empty state, before the customer has said anything. */
+.chat-full-intro {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-align: center;
+  padding: 24px 0;
+}
+
+.chat-full-avatar {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #ffffff;
+  padding: 10px;
+  box-sizing: border-box;
+  border: 1px solid #e6e6e6;
+}
+
+.chat-full-eyebrow {
+  margin: 8px 0 0;
+  font-size: 15px;
+  color: #5a6a6a;
+}
+
+.chat-full-heading {
+  margin: 0 0 12px;
+  font-size: 34px;
+  line-height: 1.2;
+  font-weight: 600;
+  color: #002626;
+}
+
+/* Starter tiles — the same pills, given room to explain themselves. */
+.chat-pill-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 16px;
+  width: 100%;
+  max-width: 780px;
+  margin-top: 8px;
+}
+
+.chat-pill-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+  text-align: left;
+  padding: 18px;
+  background: #ffffff;
+  color: #002626;
+  border: 1px solid #e6e6e6;
+  border-radius: 16px;
+  cursor: pointer;
+  margin: 0;
+  transition: border-color 0.2s, transform 0.2s;
+}
+
+.chat-pill-card:hover:not(:disabled) {
+  border-color: #002626;
+  background: #ffffff;
+  color: #002626;
+  transform: translateY(-2px);
+}
+
+.chat-pill-card:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.chat-pill-card-label {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.chat-pill-card-blurb {
+  font-size: 13px;
+  line-height: 1.45;
+  color: #5a6a6a;
+}
+
+/* Transcript. min-height:0 lets this shrink below its content so overflow-y
+   actually engages — without it a flex child refuses to go under its
+   intrinsic height and the scroll lands on the page instead. */
+.chat-full-messages {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  background: transparent;
+  padding: 8px 0;
+  gap: 16px;
+}
+
+.chat-full-intro {
+  overflow-y: auto;
+}
+
+.chat-full .chat-full-messages .message-bubble {
+  max-width: 68%;
+  font-size: 16px;
+  padding: 14px 18px;
+}
+
+/* Composer, pinned to the bottom of the column in both states. The bottom
+   margin keeps the Send button clear of Sentry's fixed "Report a Bug" widget,
+   which floats in the same bottom-right corner.
+   The wrapper itself is unstyled: only the input row below is framed, so the
+   pills above it are not boxed inside a second panel. */
+.chat-full-composer {
+  margin-bottom: 56px;
+}
+
+.chat-full-composer-box {
+  background: #ffffff;
+  border: 1px solid #e6e6e6;
+  border-radius: 20px;
+  padding: 8px;
+}
+
+.chat-full .chat-pills {
+  background: transparent;
+  padding: 8px 12px 4px;
+}
+
+.chat-full .chat-pill {
+  font-size: 14px;
+  padding: 9px 16px;
+  border-radius: 20px;
+}
+
+.chat-full .chat-input-form {
+  border-top: none;
+  padding: 8px 8px 0;
+  gap: 12px;
+}
+
+.chat-full .chat-input {
+  height: 52px;
+  font-size: 16px !important;
+  border-radius: 26px;
+  padding: 0 20px;
+}
+
+.chat-full .chat-send-button {
+  height: 52px;
+  border-radius: 26px;
+  padding: 0 28px;
+  font-size: 16px;
+}
+
+/* --------------------------------------------------------------------------
+   Cards, given the extra room. Same markup as the popup — only the layout
+   changes, so ChatProductList/ChatCart/ChatCheckout stay shell-agnostic.
+   -------------------------------------------------------------------------- */
+
+.chat-full .chat-widget-card {
+  padding: 16px;
+  border-radius: 16px;
+  border-color: #e6e6e6;
+}
+
+/* The product grid needs no wrapper of its own here — each tile is already a
+   card, so the outer panel only drew a box around boxes. */
+.chat-full .chat-products-card {
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+/* Products become a real grid: image on top, details beneath. */
+.chat-full .chat-product-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 16px;
+}
+
+.chat-full .chat-product {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #ececec;
+  border-radius: 14px;
+}
+
+/* The popup separates rows with a top border; in a grid that draws lines
+   between unrelated columns. */
+.chat-full .chat-product + .chat-product {
+  border-top: 1px solid #ececec;
+}
+
+.chat-full .chat-product-img {
+  width: 100%;
+  height: 132px;
+  border-radius: 10px;
+}
+
+.chat-full .chat-product-title {
+  font-size: 15px;
+  white-space: normal;
+}
+
+.chat-full .chat-product-price {
+  font-size: 14px;
+}
+
+.chat-full .chat-product-add {
+  width: 100%;
+  padding: 9px 14px;
+  font-size: 14px;
+  border-radius: 10px;
+}
+
+/* Cart: bigger thumbnails and breathing room per line. */
+.chat-full .chat-cart-item {
+  gap: 16px;
+  padding: 12px 6px;
+}
+
+.chat-full .chat-cart-item .chat-product-img {
+  width: 64px;
+  height: 64px;
+}
+
+.chat-full .chat-cart-line-total,
+.chat-full .chat-cart-subtotal {
+  font-size: 17px;
+}
+
+/* Checkout: three columns instead of two, and inputs sized for a real form. */
+.chat-full .chat-checkout-fields {
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+}
+
+.chat-full .chat-checkout-input {
+  font-size: 15px !important;
+  padding: 10px 12px;
+  border-radius: 8px;
+}
+
+.chat-full .chat-checkout-label {
+  font-size: 12px;
+}
+
+.chat-full .chat-checkout-title,
+.chat-full .chat-confirmation-title {
+  font-size: 18px;
+}
+
+@media (max-width: 720px) {
+  .chat-full {
+    flex-direction: column;
+    padding: 16px 12px;
+  }
+
+  .chat-rail {
+    flex-direction: row;
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .chat-full-heading {
+    font-size: 26px;
+  }
+
+  .chat-full .chat-full-messages .message-bubble {
+    max-width: 85%;
+  }
+}
+
 /* Scrollbar styling */
 .chat-messages::-webkit-scrollbar {
   width: 6px;

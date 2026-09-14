@@ -18,7 +18,10 @@ function ChatProductList({ products, onAddToCart, disabled }) {
   }
 
   return (
-    <div className="chat-widget-card">
+    // chat-products-card lets the full view drop this outer container: each
+    // product is its own card there, so the wrapper is a box drawn around
+    // boxes. The popup keeps it — at that width the list needs the frame.
+    <div className="chat-widget-card chat-products-card">
       <ul className="chat-product-list">
         {products.map((product) => (
           <li key={product.id} className="chat-product">

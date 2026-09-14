@@ -22,6 +22,16 @@ const INITIAL_PILLS = [
   { id: 'chat-pill-show-products', label: 'Show me plants under $200' },
 ];
 
+// Extra starters for the full view's empty state only, which has room for a row
+// of tiles where the popup has room for one chip. Client-side and free-text on
+// purpose: the agent's own pills drive the reproducible demo path and keep their
+// chat-pill-* ids for TDA, so these use a chat-starter-* prefix and simply
+// exercise the conversational routing (care questions reach the plant expert).
+const FULL_VIEW_STARTERS = [
+  { id: 'chat-starter-low-light', label: 'What does well in low light?' },
+  { id: 'chat-starter-easy-care', label: 'Which plants are hardest to kill?' },
+];
+
 const GREETING =
   "Hi, I can help you find plants and get them into your cart. Ask me anything.";
 
@@ -30,7 +40,17 @@ const generateMessageId = () => `msg-${Date.now()}-${++messageIdCounter}`;
 const generateConversationId = () =>
   `conv-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
-const ChatWidget = () => {
+// Two shells around one conversation.
+//
+// `fullView` renders the page-sized view Home switches to when the customer
+// picks the agent from the hero. Without it this is the original floating
+// button and popup, which is left alone deliberately: _tda/test_ai_agent.py
+// drives it by #chat-widget-button and re-clicks that same element to close, so
+// removing or remounting it would break that test with a stale reference.
+//
+// Both shells share the session, SSE and span logic below; only the layout and
+// the card sizing differ (the roomier styles are scoped under .chat-full).
+const ChatWidget = ({ fullView = false, onExitFull }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [userInput, setUserInput] = useState('');
@@ -38,6 +58,7 @@ const ChatWidget = () => {
   const [isStreaming, setIsStreaming] = useState(false);
 
   const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
   const chatSpanRef = useRef(null);
   const conversationIdRef = useRef(null);
   const typingSpanRef = useRef(null);
@@ -45,9 +66,17 @@ const ChatWidget = () => {
   const inactivityTimeoutRef = useRef(null);
   const conversationStartedRef = useRef(false);
   const abortRef = useRef(null);
+  const inputRef = useRef(null);
 
+  // Scroll the transcript, not the document. scrollIntoView walks up and
+  // scrolls every scrollable ancestor including the window, which in the full
+  // view dragged the whole page down on each new message and left the header
+  // sitting mid-screen. Setting scrollTop only ever moves this one element.
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const container = messagesContainerRef.current;
+    if (container) {
+      container.scrollTop = container.scrollHeight;
+    }
   };
 
   const endChatSession = useCallback((reason = 'unknown') => {
@@ -104,7 +133,32 @@ const ChatWidget = () => {
 
   useEffect(() => {
     scrollToBottom();
+    // The product and cart cards hold images with no intrinsic size, so the
+    // transcript is still short when this effect runs and the scroll lands at
+    // the top. A frame later the layout has settled.
+    const frame = requestAnimationFrame(scrollToBottom);
+    return () => cancelAnimationFrame(frame);
   }, [messages]);
+
+  // Images finish loading well after their message is committed, each one
+  // growing the transcript underneath a scroll that has already happened.
+  // `load` does not bubble, hence the capture-phase listener.
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return undefined;
+    const onLoad = () => scrollToBottom();
+    container.addEventListener('load', onLoad, true);
+    return () => container.removeEventListener('load', onLoad, true);
+  }, [isOpen, fullView]);
+
+  // Focus the composer when either shell opens, but never scroll to do it.
+  // Plain autoFocus scrolled the full view's page down by ~400px on open,
+  // putting the greeting and the starter tiles above the viewport.
+  useEffect(() => {
+    if (!isOpen && !fullView) return;
+    if (fullView) window.scrollTo(0, 0);
+    inputRef.current?.focus({ preventScroll: true });
+  }, [isOpen, fullView]);
 
   const handleInputFocus = () => {
     if (chatSpanRef.current) {
@@ -335,7 +389,8 @@ const ChatWidget = () => {
     sendMessage(pill.label);
   };
 
-  const openChat = () => {
+  // Everything a new conversation needs, independent of which shell shows it.
+  const startSession = useCallback(() => {
     conversationStartedRef.current = false;
     const conversationId = generateConversationId();
     conversationIdRef.current = conversationId;
@@ -352,14 +407,36 @@ const ChatWidget = () => {
     });
     setMessages([{ type: 'bot', text: GREETING, id: generateMessageId() }]);
     setPills(INITIAL_PILLS);
-    setIsOpen(true);
     startInactivityTimeout();
+  }, [startInactivityTimeout]);
+
+  const openChat = () => {
+    startSession();
+    setIsOpen(true);
   };
 
   const closeChat = (reason) => {
     endChatSession(reason);
     setIsOpen(false);
   };
+
+  // The full view's session is tied to the prop rather than a click, so Home
+  // stays the single owner of which view is on screen.
+  useEffect(() => {
+    if (!fullView) return undefined;
+    startSession();
+    return () => endChatSession('exit_full_view');
+  }, [fullView, startSession, endChatSession]);
+
+  // Hide the site footer while the conversation owns the page. The footer is
+  // mounted in index.js outside the routed content, so Home cannot unmount it —
+  // a body class is the only reach this component has. Its newsletter signup is
+  // a second, unrelated call to action competing with the composer.
+  useEffect(() => {
+    if (!fullView) return undefined;
+    document.body.classList.add('agent-full-view');
+    return () => document.body.classList.remove('agent-full-view');
+  }, [fullView]);
 
   const handleAgentButtonClick = () => {
     if (!isOpen) {
@@ -437,6 +514,170 @@ const ChatWidget = () => {
     return null;
   };
 
+  const renderMessages = () => (
+    <>
+      {messages.map((message) => {
+        if (message.type === 'typing') {
+          return (
+            <div key={message.id} className="message bot-message">
+              <div className="typing-indicator">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+            </div>
+          );
+        }
+
+        if (message.type === 'status') {
+          return (
+            <div key={message.id} className="message bot-message">
+              <div className="chat-status">
+                <span className="chat-status-dot"></span>
+                <span className="chat-status-label">{message.text}</span>
+              </div>
+            </div>
+          );
+        }
+
+        if (message.type === 'widget') {
+          return (
+            <div key={message.id} className="message bot-message">
+              {renderWidget(message)}
+            </div>
+          );
+        }
+
+        return (
+          <div
+            key={message.id}
+            className={`message ${
+              message.type === 'bot' ? 'bot-message' : 'user-message'
+            }`}
+          >
+            <div className="message-bubble">
+              {(message.text || '').split('\n').map((line, index, array) => (
+                <React.Fragment key={index}>
+                  {line}
+                  {index < array.length - 1 && <br />}
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+      <div ref={messagesEndRef} />
+    </>
+  );
+
+  // Always mounted, in both shells. The old widget unmounted the input after
+  // the second answer, which is exactly the scripted experience this replaces.
+  const renderComposer = () => (
+    <form className="chat-input-form" onSubmit={handleSubmit}>
+      <input
+        id="chat-message-input"
+        type="text"
+        value={userInput}
+        onChange={handleInputChange}
+        onFocus={handleInputFocus}
+        placeholder={isStreaming ? 'Thinking…' : 'Ask me anything...'}
+        className="chat-input"
+        ref={inputRef}
+      />
+      <button
+        id="chat-send-button"
+        type="submit"
+        className="chat-send-button"
+        disabled={isStreaming || !userInput.trim()}
+      >
+        Send
+      </button>
+    </form>
+  );
+
+  if (fullView) {
+    // The greeting is seeded by startSession, so "has the customer said
+    // anything yet" is what decides between the empty state and the transcript.
+    const started = messages.some((message) => message.type === 'user');
+
+    return (
+      <div className="chat-full">
+        <nav className="chat-rail" aria-label="Conversation">
+          {/* Only controls that do something. The reference design has a row of
+              icons, but dead buttons in a demo invite clicks that go nowhere. */}
+          <button
+            type="button"
+            id="chat-exit-full"
+            className="chat-rail-button sentry-unmask"
+            onClick={() => onExitFull && onExitFull()}
+            title="Back to Empower Plant"
+          >
+            <span aria-hidden="true">←</span>
+            <span className="chat-rail-label">Store</span>
+          </button>
+          <button
+            type="button"
+            id="chat-new-conversation"
+            className="chat-rail-button sentry-unmask"
+            onClick={() => {
+              endChatSession('new_conversation');
+              startSession();
+            }}
+            title="Start a new conversation"
+          >
+            <span aria-hidden="true">+</span>
+            <span className="chat-rail-label">New</span>
+          </button>
+        </nav>
+
+        <div className="chat-full-main">
+          {started ? (
+            <div
+              className="chat-messages chat-full-messages"
+              ref={messagesContainerRef}
+            >
+              {renderMessages()}
+            </div>
+          ) : (
+            <div className="chat-full-intro">
+              <img
+                src={agentIcon}
+                alt=""
+                className="chat-full-avatar sentry-block"
+              />
+              <p className="chat-full-eyebrow sentry-unmask">
+                Empower Plant assistant
+              </p>
+              <h1 className="chat-full-heading sentry-unmask">
+                Let&rsquo;s find your next plant
+              </h1>
+              <ChatPills
+                pills={[...pills, ...FULL_VIEW_STARTERS]}
+                onSelect={handlePillSelect}
+                disabled={isStreaming}
+                variant="cards"
+              />
+            </div>
+          )}
+
+          <div className="chat-full-composer">
+            {started && (
+              <ChatPills
+                pills={pills}
+                onSelect={handlePillSelect}
+                disabled={isStreaming}
+              />
+            )}
+            {/* Only the input gets a frame. The pills sit above it unboxed —
+                they are already self-contained chips, so wrapping them in the
+                same panel drew a container around containers. */}
+            <div className="chat-full-composer-box">{renderComposer()}</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="chat-widget-container">
       {isOpen && (
@@ -451,58 +692,8 @@ const ChatWidget = () => {
             </button>
           </div>
 
-          <div className="chat-messages">
-            {messages.map((message) => {
-              if (message.type === 'typing') {
-                return (
-                  <div key={message.id} className="message bot-message">
-                    <div className="typing-indicator">
-                      <span></span>
-                      <span></span>
-                      <span></span>
-                    </div>
-                  </div>
-                );
-              }
-
-              if (message.type === 'status') {
-                return (
-                  <div key={message.id} className="message bot-message">
-                    <div className="chat-status">
-                      <span className="chat-status-dot"></span>
-                      <span className="chat-status-label">{message.text}</span>
-                    </div>
-                  </div>
-                );
-              }
-
-              if (message.type === 'widget') {
-                return (
-                  <div key={message.id} className="message bot-message">
-                    {renderWidget(message)}
-                  </div>
-                );
-              }
-
-              return (
-                <div
-                  key={message.id}
-                  className={`message ${
-                    message.type === 'bot' ? 'bot-message' : 'user-message'
-                  }`}
-                >
-                  <div className="message-bubble">
-                    {(message.text || '').split('\n').map((line, index, array) => (
-                      <React.Fragment key={index}>
-                        {line}
-                        {index < array.length - 1 && <br />}
-                      </React.Fragment>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-            <div ref={messagesEndRef} />
+          <div className="chat-messages" ref={messagesContainerRef}>
+            {renderMessages()}
           </div>
 
           <ChatPills
@@ -511,28 +702,7 @@ const ChatWidget = () => {
             disabled={isStreaming}
           />
 
-          {/* Always mounted. The old widget unmounted the input after the second
-              answer, which is exactly the scripted experience this replaces. */}
-          <form className="chat-input-form" onSubmit={handleSubmit}>
-            <input
-              id="chat-message-input"
-              type="text"
-              value={userInput}
-              onChange={handleInputChange}
-              onFocus={handleInputFocus}
-              placeholder={isStreaming ? 'Thinking…' : 'Ask me anything...'}
-              className="chat-input"
-              autoFocus
-            />
-            <button
-              id="chat-send-button"
-              type="submit"
-              className="chat-send-button"
-              disabled={isStreaming || !userInput.trim()}
-            >
-              Send
-            </button>
-          </form>
+          {renderComposer()}
         </div>
       )}
 
