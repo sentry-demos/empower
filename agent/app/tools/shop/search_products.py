@@ -46,10 +46,16 @@ async def search_products(
     logging.debug(f"search_products max_price={max_price} query={query} limit={limit}")
 
     # Flask has no ?max_price=; filtering happens here so the backend needs no
-    # change. ?fetch_promotions=true selects flask's extremely-slow profile,
-    # which is what the agent_products_slow critical experience wants.
+    # change. ?fetch_promotions=true selects flask's extremely-slow profile.
+    #
+    # Keyed off the shared cexp schedule rather than an agent-specific value, so
+    # the products API is slow for the chat and the products page in the same
+    # window — one backend, one incident. Products.jsx:20 sends the same
+    # parameter for the same reason. The synthetic driver abandons the
+    # conversation here when this is set, which is what makes agent engagement
+    # fall in step with the latency.
     params: dict[str, Any] = {}
-    if "agent_products_slow" in client.outbound_headers().get("cexp", ""):
+    if "products_extremely_slow" in client.outbound_headers().get("cexp", ""):
         params["fetch_promotions"] = "true"
 
     products = await client.get("/products", params=params)

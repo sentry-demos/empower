@@ -25,6 +25,10 @@ def _validate_inventory_flag() -> str:
     `order["validate_inventory"] == "true"`, so a JSON boolean `true` compares
     False, skips validation and makes the purchase succeed — the opposite of the
     intended demo. CheckoutForm.jsx sends strings for the same reason.
+
+    checkout_success is the healthy segment of the shared cexp schedule, so a
+    nominal synthetic run buys successfully; standard_checkout_fail and a
+    hand-driven demo (no cexp at all) both land on the 500.
     """
     cexp = client.outbound_headers().get("cexp", "")
     return "false" if "checkout_success" in cexp else "true"
