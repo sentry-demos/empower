@@ -8,6 +8,7 @@ their own Sentry project (see app/telemetry.py).
 import logging
 
 from agents import Agent, ModelSettings
+from openai.types.shared import Reasoning
 
 from config import settings
 
@@ -41,8 +42,11 @@ Reply with one short sentence. The chat renders the cart, checkout form and
 errors as cards, so do not repeat their contents in prose.
 """
 
-# Same constraint as the other agents: store=true is rejected here.
-_model_settings = ModelSettings(store=False)
+# Same constraint as the other agents: store=true is rejected here. See
+# shopping_agent.py for why reasoning effort is pinned to "minimal" — this agent
+# contributes two of the four LLM calls in a cart or checkout turn, and its
+# tools are pure session mutations with no network call to hide behind.
+_model_settings = ModelSettings(store=False, reasoning=Reasoning(effort="minimal"))
 
 checkout_agent = Agent(
     name=CHECKOUT_AGENT_NAME,

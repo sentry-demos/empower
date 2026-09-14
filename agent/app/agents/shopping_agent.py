@@ -19,6 +19,7 @@ Separate from manager_agent, which keeps driving the scripted /buy-plants flow.
 import logging
 
 from agents import Agent, ModelSettings, RunContextWrapper, Runner, function_tool
+from openai.types.shared import Reasoning
 
 from config import settings
 
@@ -134,7 +135,16 @@ checkout form and errors as cards, so never list them out or repeat prices.
 """
 
 # Same constraint as the other agents: store=true is rejected here.
-_model_settings = ModelSettings(store=False)
+#
+# reasoning effort "minimal" is load-bearing for the chat's responsiveness. At
+# the gpt-5 default this model spends ~190 reasoning tokens deciding which
+# specialist to call, which measured 5.7s per call against 1.5s at "minimal" —
+# and a turn is four sequential calls (orchestrator routes, sub-agent picks a
+# tool, sub-agent summarises, orchestrator replies), so the default put
+# cart/checkout turns at 11-18s with no backend call in them at all. "low" is
+# not a middle ground: it still spends the full reasoning budget. Routing to one
+# of two tools needs no deliberation, so nothing is lost.
+_model_settings = ModelSettings(store=False, reasoning=Reasoning(effort="minimal"))
 
 _HAND_BACK = (
     "Once you have provided the recommendations, handoff the task\n"

@@ -9,6 +9,7 @@ same line.
 import logging
 
 from agents import Agent, ModelSettings
+from openai.types.shared import Reasoning
 
 from config import settings
 
@@ -30,8 +31,14 @@ max_price=200; a description like "something for low light" is a query.
 products as cards, so do not list them out or repeat prices.
 """
 
-# Same constraint as the other agents: store=true is rejected here.
-_model_settings = ModelSettings(store=False)
+# Same constraint as the other agents: store=true is rejected here. See
+# shopping_agent.py for why reasoning effort is pinned to "minimal".
+#
+# It matters most here: at the default, light_model (gpt-5-nano) spent ~830
+# reasoning tokens on this one-tool decision and measured 8.1s, which is slower
+# than the larger gpt-5-mini at 4.9s. Nano is cheaper per token, not faster. At
+# "minimal" both land near 1.3s, so the model choice below is about cost again.
+_model_settings = ModelSettings(store=False, reasoning=Reasoning(effort="minimal"))
 
 product_agent = Agent(
     name=PRODUCT_AGENT_NAME,
