@@ -19,6 +19,71 @@ from typing import Any
 # abandoned demo conversations don't accumulate.
 SESSION_TTL_SECONDS = 30 * 60
 
+# How many of the conversation's most recent tool results to carry forward in
+# full. One delegation per turn (see delegations_this_turn), so this is "the
+# turn just gone".
+TOOL_RESULTS_KEPT = 1
+
+# Replaces the body of a superseded tool result. Says the work happened and that
+# the customer has seen it, which is all the orchestrator needs to know: it
+# routes and writes one sentence, and the specialist it delegates to is briefed
+# from live session state by _checkout_context rather than from this history.
+OMITTED_TOOL_RESULT = (
+    "[{tool} ran earlier in this conversation and the customer has already seen"
+    " the result. It is omitted here; do not repeat or summarise it.]"
+)
+
+
+def trim_tool_outputs(history: list[Any], keep: int = TOOL_RESULTS_KEPT) -> list[Any]:
+    """Collapse all but the most recent tool results down to a one-line note.
+
+    Every turn appends its delegation's raw JSON to the history — a product
+    search is ~1.3KB, a cart ~1.5KB, a checkout ~1.7KB, against ~600B for all
+    of that turn's prose put together. Left alone it is re-sent to the model on
+    every subsequent turn, so a demo conversation pays for its whole past on
+    each new message, and `test_ai_agent.py`'s already-reduced VOLUME_FACTOR
+    pays it on every synthetic run.
+
+    The items themselves are kept, only their `output` is replaced: a
+    function_call whose function_call_output has gone missing is rejected by the
+    API, so this has to thin the history rather than shorten it.
+    """
+    # call_id -> tool name, so a collapsed result can still say what ran.
+    tool_names = {
+        item["call_id"]: item.get("name")
+        for item in history
+        if isinstance(item, dict)
+        and item.get("type") == "function_call"
+        and item.get("call_id")
+    }
+
+    positions = [
+        index
+        for index, item in enumerate(history)
+        if isinstance(item, dict) and item.get("type") == "function_call_output"
+    ]
+    # Not positions[:-keep] — keep=0 would slice to [] and trim nothing, since
+    # -0 == 0.
+    superseded = set(positions[:-keep] if keep else positions)
+
+    trimmed = []
+    for index, item in enumerate(history):
+        if index in superseded:
+            tool = tool_names.get(item.get("call_id")) or "A specialist"
+            note = OMITTED_TOOL_RESULT.format(tool=tool)
+            # Not every tool result is a big JSON blob — a failed coupon or a
+            # rejected purchase is a sentence, and is shorter than the note
+            # explaining its absence. Collapsing those would grow the history
+            # and lose detail, so leave anything already smaller alone.
+            if len(note) < len(str(item.get("output", ""))):
+                # Copied rather than mutated: these items came out of the SDK's
+                # run result and are not ours to edit in place.
+                item = {**item, "output": note}
+        trimmed.append(item)
+
+    return trimmed
+
+
 # Prefilled checkout defaults, matching the non-TDA branch of
 # react/src/components/CheckoutForm.jsx.
 DEFAULT_FORM: dict[str, str] = {
@@ -79,6 +144,15 @@ class ChatSession:
         self.pending_widgets = []
         self.delegations_this_turn = set()
 
+    def remember(self, history: list[Any]) -> None:
+        """Carry a finished turn's history into the next one.
+
+        Goes through trim_tool_outputs rather than storing the run's input list
+        as-is, so the conversation's prose accumulates but its tool JSON does
+        not.
+        """
+        self.history = trim_tool_outputs(history)
+
     def claim_delegation(self, specialist: str) -> bool:
         """Claim the turn's single delegation. False if it is already taken."""
         if self.delegations_this_turn:
@@ -96,7 +170,9 @@ class ChatSession:
         widgets, self.pending_widgets = self.pending_widgets, []
         return widgets
 
-    def add_items(self, items: list[dict[str, Any]], quantities: dict[int, int]) -> None:
+    def add_items(
+        self, items: list[dict[str, Any]], quantities: dict[int, int]
+    ) -> None:
         """Merge products into the cart, mirroring the ADD_PRODUCT reducer."""
         by_id = {item["id"]: item for item in self.cart["items"]}
         for product in items:

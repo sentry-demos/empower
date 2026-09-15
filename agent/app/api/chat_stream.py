@@ -166,8 +166,8 @@ async def stream_turn(session: ChatSession, message: str) -> AsyncIterator[str]:
 
         # Carry the conversation forward. to_input_list() merges this turn's
         # input with everything the run generated, which is what the next turn
-        # needs to see.
-        session.history = result.to_input_list()
+        # needs to see — minus the superseded tool JSON that remember() drops.
+        session.remember(result.to_input_list())
 
         yield sse("pills", {"pills": pills_for(session.last_tool)})
 
