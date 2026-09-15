@@ -163,7 +163,11 @@ class ChatSession:
     def record_widget(self, tool: str, widget_type: str, data: Any) -> None:
         """Note that `tool` ran and queue a card for the widget to render."""
         self.last_tool = tool
-        self.pending_widgets.append({"type": widget_type, "data": data})
+        # The tool name travels with the card. The route needs it to say which
+        # agent produced this card, and it cannot work that out from the stream:
+        # the only tool call it saw was the orchestrator's delegation, which is
+        # a level above the tool that actually built this.
+        self.pending_widgets.append({"type": widget_type, "tool": tool, "data": data})
 
     def drain_widgets(self) -> list[dict[str, Any]]:
         """Take everything queued since the last drain."""

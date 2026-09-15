@@ -234,6 +234,85 @@
   color: #002626;
 }
 
+/* Which specialist the ticker is waiting on — "Plant Agent · Checking the
+   catalogue…". Set apart from the label so the agent reads as the subject and
+   the label as what it is doing. */
+.chat-status-agent {
+  font-size: 13px;
+  font-weight: 600;
+  color: #002626;
+  flex-shrink: 0;
+}
+
+.chat-status-agent::after {
+  content: '·';
+  margin-left: 6px;
+  font-weight: 400;
+  opacity: 0.45;
+}
+
+/* Persistent attribution on whatever the agent produced. The ticker above is
+   transient — it is cleared the moment the first token or card arrives — so
+   this is what is still in the transcript when the customer scrolls back.
+
+   Its own row in the list rather than a second child of the card's row: see
+   renderAgentBadge for why stacking them inside one row breaks the cart card.
+   The negative margin cancels most of the list's row gap so the badge reads as
+   part of what follows it and not as a message of its own. */
+.chat-agent-row {
+  margin-bottom: -8px;
+}
+
+.chat-full .chat-agent-row {
+  margin-bottom: -12px;
+}
+
+.chat-agent-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px 2px 6px;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  background: #ffffff;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #4a5a5a;
+  /* The badge annotates the message; it should not be the first thing read. */
+  text-transform: uppercase;
+}
+
+.chat-agent-badge-mark {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #6b7f7f;
+  flex-shrink: 0;
+}
+
+/* One colour per agent, matching how the work is split across the three Sentry
+   projects, so "which agent did this" is answerable at a glance. */
+.chat-agent-badge[data-agent='plant'] .chat-agent-badge-mark,
+.chat-status[data-agent='plant'] .chat-status-dot {
+  background-color: #2e7d32;
+}
+
+.chat-agent-badge[data-agent='shopping'] .chat-agent-badge-mark,
+.chat-status[data-agent='shopping'] .chat-status-dot {
+  background-color: #7b5ea7;
+}
+
+.chat-agent-badge[data-agent='plant_expert'] .chat-agent-badge-mark,
+.chat-status[data-agent='plant_expert'] .chat-status-dot {
+  background-color: #b5651d;
+}
+
+.chat-agent-badge[data-agent='manager'] .chat-agent-badge-mark,
+.chat-status[data-agent='manager'] .chat-status-dot {
+  background-color: #002626;
+}
+
 /* Structured cards (products now; cart / checkout next) */
 .chat-widget-card {
   background: #ffffff;

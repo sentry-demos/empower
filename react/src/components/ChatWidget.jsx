@@ -276,15 +276,49 @@ const ChatWidget = ({ fullView = false, onExitFull }) => {
           botMessageId = null;
           setMessages((prev) => [
             ...prev.filter((m) => m.type !== 'typing' && m.type !== 'status'),
-            { type: 'status', text: data.label, id: generateMessageId() },
+            {
+              type: 'status',
+              text: data.label,
+              agent: data.agent,
+              id: generateMessageId(),
+            },
           ]);
           turnSpan?.setAttribute(`chat.tool.${data.tool}`, true);
+          if (data.agent) {
+            turnSpan?.setAttribute(`chat.agent.${data.agent.id}`, true);
+          }
         } else if (event === 'token') {
           appendToken(data.text);
         } else if (event === 'message_end') {
           // Close the current bubble so the next assistant message starts its
-          // own, rather than running on from this one.
+          // own, rather than running on from this one. Badge it on the way out:
+          // the agent that wrote it is only known now, and by design — the
+          // orchestrator writes most replies, but after a handoff the prose is
+          // the plant expert's.
+          const finished = botMessageId;
           botMessageId = null;
+          if (finished && data.agent) {
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === finished ? { ...m, agent: data.agent } : m
+              )
+            );
+          }
+        } else if (event === 'agent_end') {
+          // `ran: false` means the orchestrator asked for a second specialist in
+          // one turn and was refused, so the ticker it put up is claiming work
+          // that never happened. Nothing else retires it — a refusal produces no
+          // card and no prose of its own.
+          if (!data.ran) {
+            setMessages((prev) =>
+              prev.filter(
+                (m) => m.type !== 'status' || m.agent?.id !== data.agent?.id
+              )
+            );
+          }
+          if (data.agent) {
+            turnSpan?.setAttribute(`chat.agent.${data.agent.id}.ran`, !!data.ran);
+          }
         } else if (event === 'widget') {
           botMessageId = null;
           setMessages((prev) => [
@@ -292,6 +326,7 @@ const ChatWidget = ({ fullView = false, onExitFull }) => {
             {
               type: 'widget',
               widget: { type: data.type, data: data.data },
+              agent: data.agent,
               id: generateMessageId(),
             },
           ]);
@@ -514,6 +549,31 @@ const ChatWidget = ({ fullView = false, onExitFull }) => {
     return null;
   };
 
+  // Which agent produced the thing below it. Rendered above cards and prose
+  // rather than inside them, so it reads as a label on the output and survives
+  // in the transcript after the ticker for that turn is gone.
+  //
+  // It gets its own `.message` row instead of becoming a second child of the
+  // card's row. `.chat-widget-card` is content-box with `width: 100%`, so it is
+  // intrinsically wider than its container and depends on flex-shrink along the
+  // row's main axis to fit; adding a sibling and stacking them turns that axis
+  // vertical, shrink stops applying, and the cart card overflows by its padding.
+  //
+  // data-agent carries the id (manager / plant / shopping / plant_expert), which
+  // is also how the three Sentry projects are split — the point of showing this
+  // is being able to follow one agent from the chat into its traces.
+  const renderAgentBadge = (agent) => {
+    if (!agent) return null;
+    return (
+      <div className="message bot-message chat-agent-row">
+        <div className="chat-agent-badge sentry-unmask" data-agent={agent.id}>
+          <span className="chat-agent-badge-mark" aria-hidden="true"></span>
+          {agent.name} ran
+        </div>
+      </div>
+    );
+  };
+
   const renderMessages = () => (
     <>
       {messages.map((message) => {
@@ -532,8 +592,16 @@ const ChatWidget = ({ fullView = false, onExitFull }) => {
         if (message.type === 'status') {
           return (
             <div key={message.id} className="message bot-message">
-              <div className="chat-status">
+              <div
+                className="chat-status"
+                data-agent={message.agent ? message.agent.id : undefined}
+              >
                 <span className="chat-status-dot"></span>
+                {message.agent && (
+                  <span className="chat-status-agent sentry-unmask">
+                    {message.agent.name}
+                  </span>
+                )}
                 <span className="chat-status-label">{message.text}</span>
               </div>
             </div>
@@ -542,28 +610,31 @@ const ChatWidget = ({ fullView = false, onExitFull }) => {
 
         if (message.type === 'widget') {
           return (
-            <div key={message.id} className="message bot-message">
-              {renderWidget(message)}
-            </div>
+            <React.Fragment key={message.id}>
+              {renderAgentBadge(message.agent)}
+              <div className="message bot-message">{renderWidget(message)}</div>
+            </React.Fragment>
           );
         }
 
         return (
-          <div
-            key={message.id}
-            className={`message ${
-              message.type === 'bot' ? 'bot-message' : 'user-message'
-            }`}
-          >
-            <div className="message-bubble">
-              {(message.text || '').split('\n').map((line, index, array) => (
-                <React.Fragment key={index}>
-                  {line}
-                  {index < array.length - 1 && <br />}
-                </React.Fragment>
-              ))}
+          <React.Fragment key={message.id}>
+            {message.type === 'bot' && renderAgentBadge(message.agent)}
+            <div
+              className={`message ${
+                message.type === 'bot' ? 'bot-message' : 'user-message'
+              }`}
+            >
+              <div className="message-bubble">
+                {(message.text || '').split('\n').map((line, index, array) => (
+                  <React.Fragment key={index}>
+                    {line}
+                    {index < array.length - 1 && <br />}
+                  </React.Fragment>
+                ))}
+              </div>
             </div>
-          </div>
+          </React.Fragment>
         );
       })}
       <div ref={messagesEndRef} />
