@@ -15,14 +15,17 @@ trace view whose spans are split across projects, with the parent's
 gen_ai.execute_tool span sitting directly above the routed transaction.
 """
 
+import logging
 import os
 from contextlib import contextmanager
 from typing import Any, Iterator
 
 import sentry_sdk
+from sentry_sdk.consts import OP, SPANSTATUS
 from sentry_sdk.integrations.fastapi import FastApiIntegration
 from sentry_sdk.integrations.openai import OpenAIIntegration
 from sentry_sdk.integrations.openai_agents import OpenAIAgentsIntegration
+from sentry_sdk.traces import SpanStatus, StreamedSpan
 
 
 def propagate_context_to_spans(event: Any, hint: Any) -> Any:
@@ -93,6 +96,54 @@ def plant_client() -> sentry_sdk.Client | None:
 def shopping_client() -> sentry_sdk.Client | None:
     """Project for cart and checkout work."""
     return _client("AGENT_SHOPPING_DSN")
+
+
+def mark_tool_error(error_type: str, message: str) -> None:
+    """Mark the enclosing gen_ai.execute_tool span as failed.
+
+    The agents integration only fails that span when the tool raises: it looks
+    for the SDK's "An error occurred while running the tool" string in the
+    result. The shopping tools deliberately don't raise — the expired coupon
+    (410) and the inventory failure (500) are the demo, and the customer is
+    meant to read the backend's own wording — so the failure arrives as an
+    ordinary JSON result and the span would otherwise finish green.
+
+    Setting the status here is what puts those calls in Sentry's Tool Errors
+    widget. `error.type` is the attribute that view reads; the message rides
+    along as span data for whoever opens the span.
+
+    https://docs.sentry.io/platforms/python/agent-tracing/manual-instrumentation/
+    """
+    span = sentry_sdk.get_current_span()
+    if span is None:
+        logging.debug(f"no span open to mark as a tool error: {message}")
+        return
+
+    # Both span implementations, the way the SDK's own integration handles them:
+    # the streaming one (_experiments trace_lifecycle="stream", off here) keeps
+    # its op in an attribute and takes a plain ok/error status.
+    #
+    # The check itself is that we are where we think we are: this is called from
+    # inside the tool body, where the integration's execute_tool span is the
+    # innermost open span (the httpx child has already finished). If that ever
+    # stops being true, say so rather than failing some unrelated span.
+    if isinstance(span, StreamedSpan):
+        op = span.get_attributes().get("sentry.op")
+        if op != OP.GEN_AI_EXECUTE_TOOL:
+            logging.debug(f"not marking {op!r} as a tool error: {message}")
+            return
+
+        span.status = SpanStatus.ERROR
+        span.set_attribute("error.type", error_type)
+        span.set_attribute("error.message", message)
+    else:
+        if span.op != OP.GEN_AI_EXECUTE_TOOL:
+            logging.debug(f"not marking {span.op!r} as a tool error: {message}")
+            return
+
+        span.set_status(SPANSTATUS.INTERNAL_ERROR)
+        span.set_data("error.type", error_type)
+        span.set_data("error.message", message)
 
 
 @contextmanager

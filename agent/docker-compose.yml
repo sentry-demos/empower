@@ -13,6 +13,11 @@ services:
       - API_HOST=0.0.0.0
       - API_RELOAD=true
       - PORT=${PORT}
+      # uvicorn's reloader watches /app, which is a bind mount from macOS.
+      # Docker Desktop does not deliver filesystem events across it, so
+      # watchfiles saw nothing and the container kept serving whatever code it
+      # started with — an edit looked live but wasn't. Polling instead.
+      - WATCHFILES_FORCE_POLLING=true
     extra_hosts:
       # Lets the shopping tools reach a locally-running flask on the host; see
       # flask_url() in app/tools/shop/client.py. FLASK_URL itself is deliberately

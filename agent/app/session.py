@@ -15,6 +15,8 @@ import time
 from dataclasses import dataclass, field
 from typing import Any
 
+from .telemetry import mark_tool_error
+
 # Long enough for a user to read a product list and decide, short enough that
 # abandoned demo conversations don't accumulate.
 SESSION_TTL_SECONDS = 30 * 60
@@ -137,12 +139,16 @@ class ChatSession:
     # applying the expired coupon three times over. This makes the rule
     # structural instead.
     delegations_this_turn: set[str] = field(default_factory=set)
+    # This turn's tool failure, waiting to be read by the delegating tool. See
+    # record_tool_error.
+    tool_error: tuple[str, str] | None = None
     last_seen: float = field(default_factory=time.monotonic)
 
     def begin_turn(self) -> None:
         """Reset per-turn state. Anything left over isn't this turn's."""
         self.pending_widgets = []
         self.delegations_this_turn = set()
+        self.tool_error = None
 
     def remember(self, history: list[Any]) -> None:
         """Carry a finished turn's history into the next one.
@@ -168,6 +174,23 @@ class ChatSession:
         # the only tool call it saw was the orchestrator's delegation, which is
         # a level above the tool that actually built this.
         self.pending_widgets.append({"type": widget_type, "tool": tool, "data": data})
+
+    def record_tool_error(self, error_type: str, message: str) -> None:
+        """Fail this tool's span, and hand the failure to the delegating tool.
+
+        Two execute_tool spans house a shopping failure: the tool's own, in the
+        specialist's project, and the orchestrator's delegation span one level
+        up, in the manager's. Only the first is reachable from inside the tool —
+        the second belongs to the outer scope ask_checkout_agent runs in — so
+        the failure rides up on the session and is marked there.
+        """
+        mark_tool_error(error_type, message)
+        self.tool_error = (error_type, message)
+
+    def take_tool_error(self) -> tuple[str, str] | None:
+        """Take the failure recorded by this turn's tool, if there was one."""
+        error, self.tool_error = self.tool_error, None
+        return error
 
     def drain_widgets(self) -> list[dict[str, Any]]:
         """Take everything queued since the last drain."""

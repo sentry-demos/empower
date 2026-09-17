@@ -24,7 +24,12 @@ from openai.types.shared import Reasoning
 from config import settings
 
 from ..session import ChatSession
-from ..telemetry import agent_transaction, plant_client, shopping_client
+from ..telemetry import (
+    agent_transaction,
+    mark_tool_error,
+    plant_client,
+    shopping_client,
+)
 from .checkout_agent import checkout_agent
 from .plant_expert_agent import plant_expert_agent
 from .products_agent import products_agent
@@ -122,6 +127,15 @@ async def ask_checkout_agent(
     briefed = f"{_checkout_context(session)}\n\nRequest: {request}"
     with agent_transaction(shopping_client(), "checkout_agent"):
         result = await Runner.run(checkout_agent, briefed, context=session)
+
+    # A tool that failed inside that sub-run has already failed its own span,
+    # over in the checkout project. This is the same failure seen from the
+    # orchestrator: the delegation the customer's message turned into didn't
+    # do what it was asked, so this execute_tool span is an error too.
+    error = session.take_tool_error()
+    if error is not None:
+        mark_tool_error(*error)
+
     return str(result.final_output)
 
 

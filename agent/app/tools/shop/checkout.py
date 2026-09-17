@@ -68,6 +68,10 @@ async def apply_coupon(context: RunContextWrapper[ChatSession], code: str) -> st
             "message", f"Could not apply {code} (HTTP {status})."
         ),
     }
+    session.record_tool_error(
+        f"apply_coupon.{payload['error_code']}",
+        f"{code} was rejected (HTTP {status}): {payload['message']}",
+    )
     session.record_widget("apply_coupon", "promo", payload)
     return json.dumps(payload)
 
@@ -124,5 +128,9 @@ async def purchase(context: RunContextWrapper[ChatSession]) -> str:
         "message": f"Checkout failed (HTTP {status}).",
         "detail": body if isinstance(body, dict) else {"text": str(body)},
     }
+    session.record_tool_error(
+        f"purchase.http_{status}",
+        f"Checkout failed (HTTP {status}): {payload['detail']}",
+    )
     session.record_widget("purchase", "confirmation", payload)
     return json.dumps(payload)
