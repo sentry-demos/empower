@@ -3,7 +3,7 @@
 Three agents, one per area of the flow:
 
     shopping_agent  this file   routes the conversation
-    product_agent               the catalogue
+    products_agent              the catalogue
     checkout_agent              cart, coupon, order
 
 The sub-agents are delegated to as tools rather than handed off to. A handoff
@@ -27,7 +27,7 @@ from ..session import ChatSession
 from ..telemetry import agent_transaction, plant_client, shopping_client
 from .checkout_agent import checkout_agent
 from .plant_expert_agent import plant_expert_agent
-from .product_agent import product_agent
+from .products_agent import products_agent
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -78,7 +78,7 @@ _ALREADY_DELEGATED = (
 
 
 @function_tool  # type: ignore[misc]
-async def ask_product_agent(
+async def ask_products_agent(
     context: RunContextWrapper[ChatSession], request: str
 ) -> str:
     """Ask the product specialist to find products in the catalogue.
@@ -90,13 +90,13 @@ async def ask_product_agent(
         What the product specialist found.
     """
     session = context.context
-    if not session.claim_delegation("product_agent"):
-        logging.debug("refusing second delegation this turn (product_agent)")
+    if not session.claim_delegation("products_agent"):
+        logging.debug("refusing second delegation this turn (products_agent)")
         return _ALREADY_DELEGATED
 
-    logging.debug(f"delegating to product_agent: {request}")
-    with agent_transaction(plant_client(), "product_agent"):
-        result = await Runner.run(product_agent, request, context=session)
+    logging.debug(f"delegating to products_agent: {request}")
+    with agent_transaction(plant_client(), "products_agent"):
+        result = await Runner.run(products_agent, request, context=session)
     return str(result.final_output)
 
 
@@ -131,7 +131,7 @@ You are the Empower Plant shopping assistant, talking to a customer in a chat
 widget on the storefront. You do not do the work yourself — you route it:
 
 1. Anything about what is available, finding or searching products: call
-ask_product_agent with what the customer wants.
+ask_products_agent with what the customer wants.
 2. Anything about the cart, the checkout form, a promo code, or placing the
 order: call ask_checkout_agent, saying which of those to do.
 3. Plant care questions rather than shopping: hand off to the Plant Expert
@@ -205,7 +205,7 @@ shopping_agent = Agent(
     instructions=SHOPPING_AGENT_INSTRUCTIONS,
     model=settings.agent_model,
     model_settings=_model_settings,
-    tools=[ask_product_agent, ask_checkout_agent],
+    tools=[ask_products_agent, ask_checkout_agent],
 )
 
 shopping_agent.handoffs = [shopping_plant_expert]

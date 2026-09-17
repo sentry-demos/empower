@@ -39,7 +39,7 @@ logging.basicConfig(level=logging.DEBUG)
 # the same thing — which is the point of showing them at all.
 #
 # Note the display names follow the projects, not the Python identifiers:
-# product_agent is the "Plant Agent" and checkout_agent is the "Shopping Agent",
+# products_agent is the "Plant Agent" and checkout_agent is the "Shopping Agent",
 # while the agent *called* shopping_agent is the orchestrator and shows as the
 # Manager Agent.
 AGENTS = {
@@ -57,7 +57,7 @@ DEFAULT_AGENT = "manager"
 # nested Runner.run and reach us only as cards recorded on the session.
 TOOL_AGENTS = {
     # The orchestrator's own tools.
-    "ask_product_agent": "plant",
+    "ask_products_agent": "plant",
     "ask_checkout_agent": "shopping",
     "transfer_to_plant_expert_agent": "plant_expert",
     # The plant expert's, which do run on this stream — it is handed off to
@@ -79,7 +79,7 @@ TOOL_AGENTS = {
 SPEAKER_AGENTS = {
     "shopping_agent": "manager",
     "plant_expert_agent": "plant_expert",
-    "product_agent": "plant",
+    "products_agent": "plant",
     "checkout_agent": "shopping",
 }
 
@@ -90,7 +90,7 @@ SPEAKER_AGENTS = {
 # still announced itself. Without this check the transcript would credit a
 # specialist for work it was stopped from doing.
 DELEGATION_CLAIMS = {
-    "ask_product_agent": "product_agent",
+    "ask_products_agent": "products_agent",
     "ask_checkout_agent": "checkout_agent",
 }
 
@@ -101,7 +101,7 @@ DELEGATION_CLAIMS = {
 # the SDK's generated handoff tool, which arrives as handoff_requested rather
 # than tool_called — see stream_turn.
 STATUS_LABELS = {
-    "ask_product_agent": "Checking the catalogue…",
+    "ask_products_agent": "Checking the catalogue…",
     "ask_checkout_agent": "Working on your order…",
     "transfer_to_plant_expert_agent": "Asking our plant expert…",
     "get_plant_basic_info": "Looking up the plant…",

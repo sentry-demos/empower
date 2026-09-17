@@ -1,4 +1,4 @@
-"""Product Agent — the catalogue specialist.
+"""Products Agent — the catalogue specialist.
 
 Owns everything to do with finding products. Invoked by shopping_agent as a
 delegated sub-run, which is also what puts its spans in their own Sentry project
@@ -18,8 +18,8 @@ from ..tools.shop import search_products
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 
-PRODUCT_AGENT_NAME = "product_agent"
-PRODUCT_AGENT_INSTRUCTIONS = """
+PRODUCTS_AGENT_NAME = "products_agent"
+PRODUCTS_AGENT_INSTRUCTIONS = """
 You are the Empower Plant product specialist.
 
 Your only job is looking things up in the catalogue with search_products.
@@ -49,9 +49,9 @@ _model_settings = ModelSettings(
     tool_choice="required",
 )
 
-product_agent = Agent(
-    name=PRODUCT_AGENT_NAME,
-    instructions=PRODUCT_AGENT_INSTRUCTIONS,
+products_agent = Agent(
+    name=PRODUCTS_AGENT_NAME,
+    instructions=PRODUCTS_AGENT_INSTRUCTIONS,
     # A narrow job over one tool — the cheaper model is enough, and this runs on
     # top of the orchestrator's own turn, so it is worth keeping light.
     model=settings.light_model,

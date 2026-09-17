@@ -44,7 +44,7 @@ def test_delegation_claims_cover_the_orchestrators_specialists():
     """The keys ask_*_agent passes to claim_delegation, which is how the stream
     tells "the specialist ran" from "the specialist was refused"."""
     assert DELEGATION_CLAIMS == {
-        "ask_product_agent": "product_agent",
+        "ask_products_agent": "products_agent",
         "ask_checkout_agent": "checkout_agent",
     }
 

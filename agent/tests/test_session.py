@@ -44,7 +44,7 @@ HISTORY = [
     *turn(
         "Show me plants under $200",
         "call_1",
-        "ask_product_agent",
+        "ask_products_agent",
         PRODUCTS_JSON,
         "Here are plants under $200.",
     ),
@@ -67,7 +67,7 @@ def outputs(history: list[Any]) -> list[str]:
 def test_keeps_the_latest_tool_result_and_collapses_the_rest() -> None:
     first, second = outputs(trim_tool_outputs(HISTORY))
 
-    assert first == OMITTED_TOOL_RESULT.format(tool="ask_product_agent")
+    assert first == OMITTED_TOOL_RESULT.format(tool="ask_products_agent")
     assert second == CART_JSON
 
 
@@ -119,7 +119,7 @@ def test_keep_zero_collapses_everything() -> None:
     trimmed = trim_tool_outputs(HISTORY, keep=0)
 
     assert outputs(trimmed) == [
-        OMITTED_TOOL_RESULT.format(tool="ask_product_agent"),
+        OMITTED_TOOL_RESULT.format(tool="ask_products_agent"),
         OMITTED_TOOL_RESULT.format(tool="ask_checkout_agent"),
     ]
 
@@ -159,5 +159,5 @@ def test_remember_trims_before_storing() -> None:
     session.remember(HISTORY)
 
     assert outputs(session.history)[0] == OMITTED_TOOL_RESULT.format(
-        tool="ask_product_agent"
+        tool="ask_products_agent"
     )
