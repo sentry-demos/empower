@@ -1,10 +1,15 @@
 """Sentry wiring: which project each part of the agent reports to.
 
-The service spans three projects:
+The service spans four projects:
 
-    main agent run  -> AGENT_DSN           (the conversation itself)
+    the service     -> AGENT_DSN           (HTTP, /buy-plants, plant expert)
+    chat routing    -> AGENT_MANAGER_DSN   (the orchestrator's own turn)
     product lookups -> AGENT_PLANT_DSN     (catalogue / search)
     checkout        -> AGENT_SHOPPING_DSN  (cart, coupon, order)
+
+AGENT_DSN is the one passed to sentry_sdk.init, so it is also the fallback: an
+unset DSN below means those spans stay with the service rather than going
+missing.
 
 A Sentry transaction belongs to exactly one project, and every span inside a
 single Runner.run() is a child of the same transaction — so a tool cannot simply
@@ -86,6 +91,18 @@ def _client(env_var: str) -> sentry_sdk.Client | None:
         dsn = os.environ.get(env_var) or ""
         _clients[env_var] = sentry_sdk.Client(**sentry_options(dsn)) if dsn else None
     return _clients[env_var]
+
+
+def manager_client() -> sentry_sdk.Client | None:
+    """Project for the chat orchestrator's own routing turn.
+
+    Unlike the two below, this is not a delegated sub-run: it is the agent that
+    owns the conversation, so its transaction is what the specialists' routed
+    transactions hang off. Splitting it out of AGENT_DSN is what stops the
+    orchestrator's gen_ai.* spans from sharing a project with the plain HTTP
+    traffic and the /buy-plants flow.
+    """
+    return _client("AGENT_MANAGER_DSN")
 
 
 def plant_client() -> sentry_sdk.Client | None:

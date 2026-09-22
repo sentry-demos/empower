@@ -27,8 +27,9 @@ from typing import Any, AsyncIterator
 from agents import Runner
 from agents.stream_events import RunItemStreamEvent
 
-from ..agents.shopping_agent import shopping_agent
+from ..agents.shopping_agent import SHOPPING_AGENT_NAME, shopping_agent
 from ..session import ChatSession
+from ..telemetry import agent_transaction, manager_client
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -224,95 +225,106 @@ async def stream_turn(session: ChatSession, message: str) -> AsyncIterator[str]:
     speaker = DEFAULT_AGENT
 
     try:
-        result = Runner.run_streamed(shopping_agent, input=turn_input, context=session)
+        # The orchestrator's own turn, in its own project. Two reasons it has to
+        # wrap the drain and not just the run_streamed call: the run happens in a
+        # task created here, which is what puts its gen_ai.* spans on this
+        # client, and leaving the block ends the transaction — the spans would
+        # have nothing open to attach to. The specialists' routed transactions
+        # read their trace headers off this scope, so they nest under this one
+        # rather than under the http.server transaction.
+        with agent_transaction(manager_client(), SHOPPING_AGENT_NAME):
+            result = Runner.run_streamed(
+                shopping_agent, input=turn_input, context=session
+            )
 
-        async for event in result.stream_events():
-            if event.type == "raw_response_event":
-                if getattr(event.data, "type", None) == "response.output_text.delta":
-                    # In chat_completions mode most chunks carry an empty delta
-                    # (role, tool-call arguments, finish); only ~7% are prose.
-                    # Don't spend an SSE frame on the rest.
-                    if event.data.delta:
-                        yield sse("token", {"text": event.data.delta})
-                continue
-
-            if event.type == "agent_updated_stream_event":
-                speaker = SPEAKER_AGENTS.get(event.new_agent.name, DEFAULT_AGENT)
-                continue
-
-            if not isinstance(event, RunItemStreamEvent):
-                continue
-
-            # A handoff is a tool call to the model but not to the SDK, which
-            # routes HandoffCallItem to handoff_requested and never to
-            # tool_called. Handling only the latter is why the plant expert has
-            # been running without ever announcing itself.
-            if event.name in ("tool_called", "handoff_requested"):
-                name = _tool_name(event.item.raw_item)
-                if name is None:
+            async for event in result.stream_events():
+                if event.type == "raw_response_event":
+                    kind = getattr(event.data, "type", None)
+                    if kind == "response.output_text.delta":
+                        # In chat_completions mode most chunks carry an empty delta
+                        # (role, tool-call arguments, finish); only ~7% are prose.
+                        # Don't spend an SSE frame on the rest.
+                        if event.data.delta:
+                            yield sse("token", {"text": event.data.delta})
                     continue
-                call_id = _call_id(event.item.raw_item)
-                if call_id:
-                    # Recorded before the dedup below: a second call to the same
-                    # tool is not worth announcing again, but its output still
-                    # has to resolve to a name.
-                    calls[call_id] = name
-                if name in announced:
+
+                if event.type == "agent_updated_stream_event":
+                    speaker = SPEAKER_AGENTS.get(event.new_agent.name, DEFAULT_AGENT)
                     continue
-                announced.add(name)
-                yield sse(
-                    "status",
-                    {
-                        "tool": name,
-                        "label": STATUS_LABELS.get(name, "Working…"),
-                        "agent": agent_ref(TOOL_AGENTS.get(name)),
-                    },
-                )
 
-            elif event.name == "message_output_created":
-                # A turn can produce several assistant messages back to back.
-                # Without this the widget appends them all to one bubble and the
-                # sentences run together ("...checkout?Would you like...").
-                #
-                # The speaker rides along because it is not always the
-                # orchestrator: after a handoff the prose is the plant expert's.
-                yield sse("message_end", {"agent": agent_ref(speaker)})
+                if not isinstance(event, RunItemStreamEvent):
+                    continue
 
-            elif event.name == "tool_output":
-                # Cards come off the session rather than this event's payload:
-                # the tool that produced them ran inside a sub-agent's nested
-                # Runner.run, whose own tool events never reach this stream. A
-                # delegation can produce more than one card, so drain them all.
-                #
-                # Each card names the tool that recorded it, which is how a card
-                # gets attributed to the specialist that actually built it rather
-                # than to whoever the last status event happened to mention.
-                for widget in session.drain_widgets():
-                    agent = agent_ref(TOOL_AGENTS.get(widget.get("tool")))
-                    yield sse("widget", {**widget, "agent": agent})
-
-                name = calls.get(_call_id(event.item.raw_item) or "")
-                if name:
-                    # Whether the specialist ran at all, not just whether it was
-                    # asked to — see DELEGATION_CLAIMS. A tool with no claim to
-                    # make (the plant expert's) always counts as having run.
-                    claim = DELEGATION_CLAIMS.get(name)
-                    ran = claim is None or claim in session.delegations_this_turn
+                # A handoff is a tool call to the model but not to the SDK, which
+                # routes HandoffCallItem to handoff_requested and never to
+                # tool_called. Handling only the latter is why the plant expert has
+                # been running without ever announcing itself.
+                if event.name in ("tool_called", "handoff_requested"):
+                    name = _tool_name(event.item.raw_item)
+                    if name is None:
+                        continue
+                    call_id = _call_id(event.item.raw_item)
+                    if call_id:
+                        # Recorded before the dedup below: a second call to the same
+                        # tool is not worth announcing again, but its output still
+                        # has to resolve to a name.
+                        calls[call_id] = name
+                    if name in announced:
+                        continue
+                    announced.add(name)
                     yield sse(
-                        "agent_end",
+                        "status",
                         {
                             "tool": name,
+                            "label": STATUS_LABELS.get(name, "Working…"),
                             "agent": agent_ref(TOOL_AGENTS.get(name)),
-                            "ran": ran,
                         },
                     )
 
-        # Carry the conversation forward. to_input_list() merges this turn's
-        # input with everything the run generated, which is what the next turn
-        # needs to see — minus the superseded tool JSON that remember() drops.
-        session.remember(result.to_input_list())
+                elif event.name == "message_output_created":
+                    # A turn can produce several assistant messages back to back.
+                    # Without this the widget appends them all to one bubble and the
+                    # sentences run together ("...checkout?Would you like...").
+                    #
+                    # The speaker rides along because it is not always the
+                    # orchestrator: after a handoff the prose is the plant expert's.
+                    yield sse("message_end", {"agent": agent_ref(speaker)})
 
-        yield sse("pills", {"pills": pills_for(session.last_tool)})
+                elif event.name == "tool_output":
+                    # Cards come off the session rather than this event's payload:
+                    # the tool that produced them ran inside a sub-agent's nested
+                    # Runner.run, whose own tool events never reach this stream. A
+                    # delegation can produce more than one card, so drain them all.
+                    #
+                    # Each card names the tool that recorded it, which is how a card
+                    # gets attributed to the specialist that actually built it rather
+                    # than to whoever the last status event happened to mention.
+                    for widget in session.drain_widgets():
+                        agent = agent_ref(TOOL_AGENTS.get(widget.get("tool")))
+                        yield sse("widget", {**widget, "agent": agent})
+
+                    name = calls.get(_call_id(event.item.raw_item) or "")
+                    if name:
+                        # Whether the specialist ran at all, not just whether it was
+                        # asked to — see DELEGATION_CLAIMS. A tool with no claim to
+                        # make (the plant expert's) always counts as having run.
+                        claim = DELEGATION_CLAIMS.get(name)
+                        ran = claim is None or claim in session.delegations_this_turn
+                        yield sse(
+                            "agent_end",
+                            {
+                                "tool": name,
+                                "agent": agent_ref(TOOL_AGENTS.get(name)),
+                                "ran": ran,
+                            },
+                        )
+
+            # Carry the conversation forward. to_input_list() merges this turn's
+            # input with everything the run generated, which is what the next turn
+            # needs to see — minus the superseded tool JSON that remember() drops.
+            session.remember(result.to_input_list())
+
+            yield sse("pills", {"pills": pills_for(session.last_tool)})
 
     except Exception as error:
         # Headers are already on the wire by the time anything in here can fail,

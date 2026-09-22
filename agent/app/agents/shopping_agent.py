@@ -65,9 +65,7 @@ def _checkout_context(session: ChatSession) -> str:
         lines.append("The cart is empty.")
 
     if session.form and session.form.get("promoCode"):
-        lines.append(
-            f"Promo code on the checkout form: {session.form['promoCode']}."
-        )
+        lines.append(f"Promo code on the checkout form: {session.form['promoCode']}.")
 
     return "\n".join(lines)
 
@@ -207,9 +205,7 @@ if _HAND_BACK not in plant_expert_agent.instructions:
 # "handing you off to our plant expert" and then nothing. Here the expert is
 # the last agent to speak, so its answer is the reply.
 shopping_plant_expert = plant_expert_agent.clone(
-    instructions=plant_expert_agent.instructions.replace(
-        _HAND_BACK, _ANSWER_DIRECTLY
-    ),
+    instructions=plant_expert_agent.instructions.replace(_HAND_BACK, _ANSWER_DIRECTLY),
     handoffs=[],
 )
 
