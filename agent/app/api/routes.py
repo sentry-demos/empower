@@ -20,6 +20,30 @@ from .models import (
 router = APIRouter()
 
 
+def set_plant_failure_flags(raw_request: Request) -> None:
+    """Arm the plant-lookup failures from the request's query params.
+
+    ?validate_plant_advice=true makes the plant advice lookup fail;
+    ?validate_plant_info=true makes the plant basic info lookup fail.
+    Unset/anything else is false (no failure).
+
+    Both endpoints need this: ChatWidget.jsx maps the operator-facing
+    `agent_advice_error` / `agent_info_error` page params onto these for /chat
+    the same way it used to for /buy-plants, and test_ai_agent.py drives those
+    two error paths through the chat widget.
+
+    Called from the endpoint rather than from inside stream_turn: the handler
+    and the StreamingResponse body it returns run in the same task, so a
+    contextvar set here is visible while the turn streams.
+    """
+    validate_plant_advice.set(
+        raw_request.query_params.get("validate_plant_advice", "").lower() == "true"
+    )
+    validate_plant_info.set(
+        raw_request.query_params.get("validate_plant_info", "").lower() == "true"
+    )
+
+
 @router.get("/health", response_model=HealthResponse)  # type: ignore[misc]
 async def health_check() -> HealthResponse:
     """Health check endpoint."""
@@ -47,6 +71,7 @@ async def chat(request: ChatTurnRequest, raw_request: Request) -> StreamingRespo
         raise HTTPException(status_code=400, detail="x-conversation-id is required")
 
     sentry_sdk.ai.set_conversation_id(conversation_id)
+    set_plant_failure_flags(raw_request)
     session = get_session(conversation_id)
 
     return StreamingResponse(
@@ -81,15 +106,7 @@ async def buy_plants(
     if conversation_id:
         sentry_sdk.ai.set_conversation_id(conversation_id)
 
-    # ?validate_plant_advice=true makes the plant advice lookup fail;
-    # ?validate_plant_info=true makes the plant basic info lookup fail.
-    # Unset/anything else is false (no failure).
-    validate_plant_advice.set(
-        raw_request.query_params.get("validate_plant_advice", "").lower() == "true"
-    )
-    validate_plant_info.set(
-        raw_request.query_params.get("validate_plant_info", "").lower() == "true"
-    )
+    set_plant_failure_flags(raw_request)
 
     try:
         response = await process_user_request(
