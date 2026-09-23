@@ -234,10 +234,20 @@ def scale_batch_size_seasonally(base_size, random):
     return _stochastic_round(exact, random)
 
 
+def scale_batch_size_phase(base_size, random, offset_hours):
+    """Hour curve shifted by offset_hours, no weekday scaling. Mean multiplier is 1.
+
+    Tests that fill in around cexp checkout need to not all pile into the same
+    trough: test_ai_agent.py and test_basic_checkout.py already share the +12
+    phase, so a third one competing for it starves one of them.
+    """
+    exact = base_size * _hourly_volume_weight(offset_hours) * len(HOUR_OF_DAY_VOLUME)
+    return _stochastic_round(exact, random)
+
+
 def scale_batch_size_opposite_hour(base_size, random):
     """Hour+12 vs cexp checkout, no weekday scaling. Mean of the hour multiplier is 1."""
-    exact = base_size * _hourly_volume_weight(12) * len(HOUR_OF_DAY_VOLUME)
-    return _stochastic_round(exact, random)
+    return scale_batch_size_phase(base_size, random, 12)
 
 
 @pytest.fixture
@@ -328,7 +338,7 @@ class CExp:
     PRODUCTS_EXTREMELY_SLOW = "products_extremely_slow"
     PRODUCTS_BE_ERROR       = "products_be_error"
     ADD_TO_CART_JS_ERROR    = "add_to_cart_js_error"
-    CHECKOUT_SUCCESS        = "checkout_success" 
+    CHECKOUT_SUCCESS        = "checkout_success"
 
 
 # Simulate critical experiences (cexp) in user journey

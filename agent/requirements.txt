@@ -3,6 +3,10 @@ fastapi==0.116.1
 uvicorn[standard]==0.35.0
 openai-agents==0.3.0
 mcp>=1.0.0
+# Transitive via openai, but pinned explicitly so sentry-sdk's httpx
+# integration is active and the shopping tools' Flask calls produce
+# http.client spans.
+httpx==0.28.1
 pydantic==2.10.3
 pydantic-settings==2.7.0
 python-dotenv==1.0.1

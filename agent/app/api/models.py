@@ -36,6 +36,15 @@ class HealthResponse(BaseModel):
         }
 
 
+class ChatTurnRequest(BaseModel):
+    """Request model for one conversational turn against the shopping agent."""
+
+    message: str = Field(..., description="What the customer typed", min_length=1)
+
+    class Config:
+        schema_extra = {"example": {"message": "Show me plants under $40"}}
+
+
 class PlantPurchaseRequest(BaseModel):
     """Request model for plant purchase endpoint."""
 

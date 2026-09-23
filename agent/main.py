@@ -5,60 +5,18 @@ import sentry_sdk
 import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from sentry_sdk.integrations.fastapi import FastApiIntegration
-from sentry_sdk.integrations.openai import OpenAIIntegration
-from sentry_sdk.integrations.openai_agents import OpenAIAgentsIntegration
 from starlette.middleware.base import RequestResponseEndpoint
 from starlette.responses import Response
 
 from app.api.routes import router
+from app.telemetry import sentry_options
+from app.utils import request_headers
 from config import settings
 
-
-def propagate_context_to_spans(event, hint):
-    """Copy request-context tags onto every span's attributes.
-
-    The sentry_event_context middleware sets `se`/`customerType`/`cexp` as
-    event-level tags (and `email` as the user), which only land on the root
-    http.server span. The auto-instrumented gen_ai.* child spans don't inherit
-    them, so we mirror the values onto each span's `data` here.
-    """
-    tags = event.get("tags") or {}
-    attrs = {
-        key: tags[key]
-        for key in ("se", "customerType", "cexp")
-        if tags.get(key) is not None
-    }
-    email = (event.get("user") or {}).get("email")
-    if email is not None:
-        attrs["user.email"] = email
-
-    if not attrs:
-        return event
-
-    for span in event.get("spans", []):
-        span.setdefault("data", {}).update(attrs)
-
-    trace = (event.get("contexts") or {}).get("trace")
-    if trace is not None:
-        trace.setdefault("data", {}).update(attrs)
-
-    return event
-
-
-sentry_sdk.init(
-    dsn=os.environ["AGENT_DSN"],
-    environment=os.environ["AGENT_SENTRY_ENVIRONMENT"],
-    traces_sample_rate=1.0,
-    profiles_sample_rate=1.0,
-    integrations=[
-        FastApiIntegration(),
-        OpenAIAgentsIntegration(),
-    ],
-    disabled_integrations=[OpenAIIntegration()],
-    send_default_pii=True,
-    before_send_transaction=propagate_context_to_spans,
-)
+# The conversation itself — this endpoint's transactions and the agent's
+# gen_ai.* spans. Product and checkout tools open their own transactions on
+# their own projects; see app/telemetry.py.
+sentry_sdk.init(**sentry_options(os.environ["AGENT_DSN"]))
 
 
 # Create FastAPI app
@@ -101,6 +59,18 @@ async def sentry_event_context(
 
     if cexp not in (None, "undefined"):
         sentry_sdk.set_tag("cexp", cexp)
+
+    # The tags above only reach the agent's own transaction. Stash the raw
+    # values so tools making outbound Flask calls can forward them, keeping the
+    # downstream flask spans tagged the same way.
+    request_headers.set(
+        {
+            "se": se or "",
+            "customerType": customer_type or "",
+            "email": email or "",
+            "cexp": cexp or "",
+        }
+    )
 
     return await call_next(request)
 
