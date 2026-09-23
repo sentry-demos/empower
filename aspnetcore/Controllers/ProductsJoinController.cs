@@ -21,7 +21,7 @@ public class ProductsJoinController : ControllerBase
 
     private async Task<List<Product>> GetProductsAsync()
     {
-        var span = SentrySdk.GetSpan()?.StartChild("/products.get_products", "function");
+        var span = SentrySdk.GetSpan()?.StartChild("db.query", "products.list_with_reviews_join");
 
         var products = await _dbContext.Products
             .Include(e => e.Reviews)
