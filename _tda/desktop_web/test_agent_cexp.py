@@ -33,7 +33,7 @@ from conftest import CExp, scale_batch_size_phase
 # Below test_ai_agent.py's 0.185, which is already there "to reduce token
 # usage". A completed run here is four turns against that file's two, and each
 # turn is three LLM calls.
-VOLUME_FACTOR = 0.08
+VOLUME_FACTOR = 0.25
 BASE_ITERATIONS = 3
 JITTER_PERCENT = 30
 
