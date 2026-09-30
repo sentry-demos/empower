@@ -3,7 +3,17 @@ import pytest
 import sentry_sdk
 from urllib.parse import urlencode
 from selenium.webdriver.common.by import By
-from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import NoSuchElementException, StaleElementReferenceException
+
+ADD_TO_CART_SELECTOR = '.products-list button'
+
+def click_add_to_cart(driver):
+    # Re-locate the button on every click: the frontend may re-render the product list,
+    # which invalidates previously located element references.
+    try:
+        driver.find_element(By.CSS_SELECTOR, ADD_TO_CART_SELECTOR).click()
+    except StaleElementReferenceException:
+        driver.find_element(By.CSS_SELECTOR, ADD_TO_CART_SELECTOR).click()
 
 
 # Skip before desktop_web_driver so a 0-draw does not open a Sauce session.
@@ -35,12 +45,12 @@ def test_basic_checkout(desktop_web_driver, endpoints, random, sleep_length, cex
                 try:
                     # Wait up to 2 implicit waits (should be 20 seconds)
                     try:
-                        add_to_cart_btn = desktop_web_driver.find_element(By.CSS_SELECTOR, '.products-list button')
+                        desktop_web_driver.find_element(By.CSS_SELECTOR, ADD_TO_CART_SELECTOR)
                     except NoSuchElementException as err:
-                        add_to_cart_btn = desktop_web_driver.find_element(By.CSS_SELECTOR, '.products-list button')
+                        desktop_web_driver.find_element(By.CSS_SELECTOR, ADD_TO_CART_SELECTOR)
 
                     for i in range(random.randrange(4) + 1):
-                        add_to_cart_btn.click()
+                        click_add_to_cart(desktop_web_driver)
                 except NoSuchElementException as err:
                     continue
 

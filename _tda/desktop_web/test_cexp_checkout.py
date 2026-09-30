@@ -3,7 +3,17 @@ import sentry_sdk
 from urllib.parse import urlencode
 from conftest import CExp, BACKENDS, CONFIG
 from selenium.webdriver.common.by import By
-from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import NoSuchElementException, StaleElementReferenceException
+
+ADD_TO_CART_SELECTOR = '.products-list button'
+
+def click_add_to_cart(driver):
+    # Re-locate the button on every click: React may re-render the product list,
+    # which invalidates previously located element references.
+    try:
+        driver.find_element(By.CSS_SELECTOR, ADD_TO_CART_SELECTOR).click()
+    except StaleElementReferenceException:
+        driver.find_element(By.CSS_SELECTOR, ADD_TO_CART_SELECTOR).click()
 
 # These parameters are picked to create different volume of issues of each type so that the flagship errors
 # show up at the top of the Issues feed without being crowded out by less important (from demo POV) issues.
@@ -75,12 +85,12 @@ def test_cexp_checkout(desktop_web_driver, endpoints, seasonal_batch_size, backe
                 try:
                     # Wait up to 2 implicit waits (should be 20 seconds)
                     try:
-                        add_to_cart_btn = desktop_web_driver.find_element(By.CSS_SELECTOR, '.products-list button')
+                        desktop_web_driver.find_element(By.CSS_SELECTOR, ADD_TO_CART_SELECTOR)
                     except NoSuchElementException as err:
-                        add_to_cart_btn = desktop_web_driver.find_element(By.CSS_SELECTOR, '.products-list button')
+                        desktop_web_driver.find_element(By.CSS_SELECTOR, ADD_TO_CART_SELECTOR)
 
                     for i in range(random.randrange(4) + 1):
-                        add_to_cart_btn.click()
+                        click_add_to_cart(desktop_web_driver)
                 except NoSuchElementException as err:
                     sentry_sdk.metrics.incr(key="test_checkout.iteration.abandoned", value=1, tags=dict(query_string, reason="no_add_to_cart_btn"))
                     continue
