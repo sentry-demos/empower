@@ -530,7 +530,8 @@ def _sauce_browser(request, se):
             # Teardown starts here
             # report results
             # use the test result to send the pass/fail status to Sauce Labs
-            sauce_result = "failed" if request.node.rep_call.failed else "passed"
+            rep_call = getattr(request.node, 'rep_call', None)
+            sauce_result = "failed" if (rep_call is None or rep_call.failed) else "passed"
 
             # Handler failure scenario, send to Sentry empower-tda
             if sauce_result == "failed":
@@ -631,7 +632,8 @@ def android_react_native_emu_driver(request, se_prefix):
         sentry_sdk.set_tag("sauceLabsUrl", f"https://app.saucelabs.com/tests/{driver.session_id}")
 
         yield driver
-        sauce_result = "failed" if request.node.rep_call.failed else "passed"
+        rep_call = getattr(request.node, 'rep_call', None)
+        sauce_result = "failed" if (rep_call is None or rep_call.failed) else "passed"
         driver.execute_script("sauce:job-result={}".format(sauce_result))
         driver.quit()
 
@@ -669,7 +671,8 @@ def android_emu_driver(request, se_prefix):
         sentry_sdk.set_tag("sauceLabsUrl", f"https://app.saucelabs.com/tests/{driver.session_id}")
 
         yield driver
-        sauce_result = "failed" if request.node.rep_call.failed else "passed"
+        rep_call = getattr(request.node, 'rep_call', None)
+        sauce_result = "failed" if (rep_call is None or rep_call.failed) else "passed"
         driver.execute_script("sauce:job-result={}".format(sauce_result))
         driver.quit()
 
@@ -708,7 +711,8 @@ def ios_react_native_sim_driver(request, se_prefix):
         sentry_sdk.set_tag("sauceLabsUrl", f"https://app.saucelabs.com/tests/{driver.session_id}")
 
         yield driver
-        sauce_result = "failed" if request.node.rep_call.failed else "passed"
+        rep_call = getattr(request.node, 'rep_call', None)
+        sauce_result = "failed" if (rep_call is None or rep_call.failed) else "passed"
         driver.execute_script("sauce:job-result={}".format(sauce_result))
         driver.quit()
 
@@ -746,7 +750,8 @@ def ios_sim_driver(request, se_prefix):
         sentry_sdk.set_tag("sauceLabsUrl", f"https://app.saucelabs.com/tests/{driver.session_id}")
 
         yield driver
-        sauce_result = "failed" if request.node.rep_call.failed else "passed"
+        rep_call = getattr(request.node, 'rep_call', None)
+        sauce_result = "failed" if (rep_call is None or rep_call.failed) else "passed"
         driver.execute_script("sauce:job-result={}".format(sauce_result))
         driver.quit()
 
@@ -784,7 +789,8 @@ def android_flutter_driver(request, se_prefix):
         sentry_sdk.set_tag("sauceLabsUrl", f"https://app.saucelabs.com/tests/{driver.session_id}")
 
         yield driver
-        sauce_result = "failed" if request.node.rep_call.failed else "passed"
+        rep_call = getattr(request.node, 'rep_call', None)
+        sauce_result = "failed" if (rep_call is None or rep_call.failed) else "passed"
         driver.execute_script("sauce:job-result={}".format(sauce_result))
         driver.quit()
 
