@@ -271,6 +271,12 @@ class App extends Component {
       currentScope.setTag('cexp', cexp);
       currentScope.setAttribute('cexp', cexp);
 
+      // The agent chat reads these same values, but needs no branch here: the
+      // monkeypatched fetch below forwards `cexp` as a request header on every
+      // call, the agent's middleware reads it into a contextvar, and the
+      // decision is made server-side. products_extremely_slow makes
+      // search_products add ?fetch_promotions=true, the same parameter the
+      // flag below sends for the products page, so one window slows both.
       if (cexp === 'products_extremely_slow') {
         PRODUCTS_EXTREMELY_SLOW = true;
       } else if (cexp === 'products_be_error') {
