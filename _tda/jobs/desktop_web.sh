@@ -15,5 +15,5 @@ fi
 
 # timeout is per-test, test_checkout is batch so can potentially take quite long
 # BATCH_SIZE is the mean before seasonality (cexp: weekday+hour; other batched tests: hour+12)
-BATCH_SIZE=random_7_13 pytest --timeout=1200 -s -n 7 --ignore-glob='*_vue.py' desktop_web
+BATCH_SIZE=normal_7_13 pytest --timeout=1200 -s -n 7 --ignore-glob='*_vue.py' desktop_web
 
