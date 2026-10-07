@@ -2,6 +2,7 @@ import time
 
 import sentry_sdk
 from appium.webdriver.common.appiumby import AppiumBy
+from selenium.common.exceptions import NoSuchElementException, StaleElementReferenceException
 
 # Total number of taps used to trigger the ANR dialog.
 # The first tap is a normal Appium click; the remainder are sent via ADB
@@ -17,6 +18,27 @@ _ANR_SEND_WAIT_SECONDS = 8
 
 # Flutter app component to relaunch after the ANR dialog closes the app.
 _FLUTTER_COMPONENT = "com.example.empower_flutter/.MainActivity"
+_FLUTTER_PACKAGE = "com.example.empower_flutter"
+
+# How long to keep retrying the 'Close App' click on the ANR dialog.
+_ANR_DIALOG_TIMEOUT_SECONDS = 10
+
+
+def _dismiss_anr_dialog(driver, timeout=_ANR_DIALOG_TIMEOUT_SECONDS, interval=0.5):
+    """Click 'Close App' on the system ANR dialog, re-locating it on every attempt.
+
+    The dialog is owned by system_server and can be re-rendered or dismissed at
+    any moment, so a found element may go stale before the click lands.
+    Returns True on a successful click, False if it couldn't be clicked in time.
+    """
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        try:
+            driver.find_element(AppiumBy.ID, "android:id/aerr_close").click()
+            return True
+        except (StaleElementReferenceException, NoSuchElementException):
+            time.sleep(interval)
+    return False
 
 
 def test_anr_flutter_android(android_flutter_driver):
@@ -45,9 +67,13 @@ def test_anr_flutter_android(android_flutter_driver):
                 pass  # Expected to fail while the main thread is frozen
 
         # Dismiss the ANR dialog by selecting 'Close App'.
-        android_flutter_driver.find_element(
-            AppiumBy.ID, "android:id/aerr_close"
-        ).click()
+        if not _dismiss_anr_dialog(android_flutter_driver):
+            # Dialog vanished before we could click it; force-stop the frozen
+            # app so the ANR is still reported on relaunch.
+            android_flutter_driver.execute_script("mobile: shell", {
+                "command": "am",
+                "args": ["force-stop", _FLUTTER_PACKAGE],
+            })
 
         # Give the system time to recover before relaunching.
         time.sleep(_ANR_RECOVERY_WAIT_SECONDS)
