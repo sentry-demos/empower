@@ -15,7 +15,10 @@ from selenium import webdriver
 from appium import webdriver as appiumdriver
 from appium.options.android import UiAutomator2Options
 from appium.options.ios import XCUITestOptions
-from selenium.common.exceptions import WebDriverException
+from selenium.common.exceptions import WebDriverException, TimeoutException
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from appium.webdriver.common.appiumby import AppiumBy
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from selenium.webdriver.safari.options import Options as SafariOptions
@@ -664,9 +667,24 @@ def android_emu_driver(request, se_prefix):
         })
 
         driver = appiumdriver.Remote(SELENIUM_ENDPOINT, options=options)
-        driver.implicitly_wait(20)
 
         sentry_sdk.set_tag("sauceLabsUrl", f"https://app.saucelabs.com/tests/{driver.session_id}")
+
+        # The app does heavy work on the main thread at startup and we don't wait for
+        # launch (appWaitForLaunch=False), so the toolbar may take longer than the
+        # implicit wait to render on slow emulators. Wait explicitly for the main
+        # screen ('More' toolbar item) before handing the driver to tests.
+        driver.implicitly_wait(0)
+        try:
+            WebDriverWait(driver, 60).until(
+                EC.presence_of_element_located((AppiumBy.ACCESSIBILITY_ID, 'More'))
+            )
+        except TimeoutException:
+            # Outer handler captures and re-raises; just tag it here.
+            sentry_sdk.set_tag("android_launch_timeout", True)
+            driver.quit()
+            raise
+        driver.implicitly_wait(20)
 
         yield driver
         sauce_result = "failed" if request.node.rep_call.failed else "passed"
