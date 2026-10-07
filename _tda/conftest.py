@@ -659,12 +659,11 @@ def android_emu_driver(request, se_prefix):
                 'name': request.node.name,
                 'username': SAUCE_USERNAME,
                 'accessKey': SAUCE_ACCESS_KEY
-            },
-            'appWaitForLaunch': False
+            }
         })
 
         driver = appiumdriver.Remote(SELENIUM_ENDPOINT, options=options)
-        driver.implicitly_wait(20)
+        driver.implicitly_wait(30)
 
         sentry_sdk.set_tag("sauceLabsUrl", f"https://app.saucelabs.com/tests/{driver.session_id}")
 
