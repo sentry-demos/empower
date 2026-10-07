@@ -15,7 +15,9 @@ from selenium import webdriver
 from appium import webdriver as appiumdriver
 from appium.options.android import UiAutomator2Options
 from appium.options.ios import XCUITestOptions
-from selenium.common.exceptions import WebDriverException
+from selenium.common.exceptions import WebDriverException, TimeoutException
+from selenium.webdriver.support.ui import WebDriverWait
+from appium.webdriver.common.appiumby import AppiumBy
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from selenium.webdriver.safari.options import Options as SafariOptions
@@ -641,6 +643,38 @@ def android_react_native_emu_driver(request, se_prefix):
     except Exception as err:
         sentry_sdk.capture_exception(err)
 
+ANDROID_APP_READY_TIMEOUT = 60
+ANDROID_DEFAULT_IMPLICIT_WAIT = 20
+
+
+def wait_for_empower_android_ready(driver, timeout=ANDROID_APP_READY_TIMEOUT):
+    """Block until the Empower Android app's main screen ('More' toolbar item) is visible.
+
+    EmpowerPlantActivity does heavy work on the main thread during cold start, which can
+    exceed the 20s implicit wait on Sauce Labs emulators. Also dismisses any
+    'App isn't responding' system dialog by choosing 'Wait'.
+    """
+    # Disable implicit wait while polling so each find_elements call returns immediately
+    driver.implicitly_wait(0)
+
+    def _app_ready(d):
+        anr_wait = d.find_elements(AppiumBy.ID, 'android:id/aerr_wait')
+        if anr_wait:
+            anr_wait[0].click()
+            return False
+        more = d.find_elements(AppiumBy.ACCESSIBILITY_ID, 'More')
+        return bool(more) and more[0].is_displayed()
+
+    try:
+        WebDriverWait(driver, timeout, poll_frequency=1,
+                      ignored_exceptions=[WebDriverException]).until(_app_ready)
+    except TimeoutException:
+        sentry_sdk.set_tag('app_not_ready', 'true')
+        raise
+    finally:
+        driver.implicitly_wait(ANDROID_DEFAULT_IMPLICIT_WAIT)
+
+
 @pytest.fixture
 def android_emu_driver(request, se_prefix):
 
@@ -664,9 +698,17 @@ def android_emu_driver(request, se_prefix):
         })
 
         driver = appiumdriver.Remote(SELENIUM_ENDPOINT, options=options)
-        driver.implicitly_wait(20)
+        driver.implicitly_wait(ANDROID_DEFAULT_IMPLICIT_WAIT)
 
         sentry_sdk.set_tag("sauceLabsUrl", f"https://app.saucelabs.com/tests/{driver.session_id}")
+
+        # Wait for the app's main screen before handing the driver to the test
+        try:
+            wait_for_empower_android_ready(driver)
+        except TimeoutException:
+            driver.execute_script("sauce:job-result=failed")
+            driver.quit()
+            raise
 
         yield driver
         sauce_result = "failed" if request.node.rep_call.failed else "passed"
