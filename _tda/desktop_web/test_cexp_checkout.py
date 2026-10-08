@@ -4,6 +4,8 @@ from urllib.parse import urlencode
 from conftest import CExp, BACKENDS, CONFIG
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 # These parameters are picked to create different volume of issues of each type so that the flagship errors
 # show up at the top of the Issues feed without being crowded out by less important (from demo POV) issues.
@@ -110,9 +112,10 @@ def test_cexp_checkout(desktop_web_driver, endpoints, seasonal_batch_size, backe
                         if apply_promo_code and c == 0:
                             desktop_web_driver.find_element(By.NAME, 'promoCode').send_keys("SAVE20")
                             desktop_web_driver.find_element(By.NAME, 'applyPromoCode').click()
-                            time.sleep(10)
 
-                        desktop_web_driver.find_element(By.CSS_SELECTOR, '.complete-checkout-btn').click()
+                        WebDriverWait(desktop_web_driver, 30).until(
+                            EC.element_to_be_clickable((By.CSS_SELECTOR, '.complete-checkout-btn'))
+                        ).click()
                         time.sleep(sleep_length())
 
                         sentry_sdk.metrics.incr(key="test_checkout.iteration.completed", value=1, tags=query_string)
