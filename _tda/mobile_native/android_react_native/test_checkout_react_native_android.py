@@ -16,18 +16,19 @@ def test_checkout_react_native_android(android_react_native_emu_driver):
         # checkout button
         android_react_native_emu_driver.find_element(AppiumBy.ACCESSIBILITY_ID, 'CHECKOUT').click()
 
-        # We need to find the elements before the placeholder text is replaced by the demo data
-        top_of_screen_element = android_react_native_emu_driver.find_element(AppiumBy.XPATH, '//android.widget.EditText[@text="email"]')
-        bottom_of_screen_element = android_react_native_emu_driver.find_element(AppiumBy.XPATH, '//android.widget.EditText[@text="country/region"]')
-
         # Click to fill in the demo data
         android_react_native_emu_driver.find_element(AppiumBy.XPATH, '//android.widget.EditText[@text="email"]').click()
         if android_react_native_emu_driver.is_keyboard_shown():
             android_react_native_emu_driver.hide_keyboard()
 
-        # Appium on android can't find the 'place your order' button
-        # unless we scroll down to it
-        android_react_native_emu_driver.scroll(bottom_of_screen_element, top_of_screen_element)
+        # Appium on android can't find the 'Apply' / 'place your order' buttons
+        # unless we scroll down to them. Use UiScrollable so the lookup is done
+        # against the current screen, instead of holding element references
+        # located by placeholder text that the demo data fill replaces
+        # (which made them stale and unrecoverable).
+        android_react_native_emu_driver.find_element(AppiumBy.ANDROID_UIAUTOMATOR,
+            'new UiScrollable(new UiSelector().scrollable(true).instance(0)).scrollIntoView(new UiSelector().description(\"Apply\"))'
+        )
 
         # click 'Apply' promo code button
         android_react_native_emu_driver.find_element(AppiumBy.XPATH, '//android.view.ViewGroup[@content-desc="Apply"]').click()
