@@ -2,33 +2,16 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { CartService, CartState, CartItem } from '../../services/cart.service';
-import { Product } from '../../services/products.service';
+import { CartService, CartState } from '../../services/cart.service';
 import { ConfigService, CheckoutForm } from '../../services/config.service';
 import { ThreeDotsComponent } from '../three-dots/three-dots.component';
 import { FeatureFlagsService } from '../../services/feature-flags.service';
+import { measureRequestDuration } from '../../utils/measure-request-duration';
+import { getTag } from '../../utils/sentry-utils';
+import { environment } from '../../../environments/environment';
 import * as Sentry from '@sentry/angular';
+import { metrics } from '@sentry/browser';
 
-/**
- * Checkout Component - Handles the final purchase process
- * 
- * This component manages the checkout form and submission process:
- * - Displays a pre-filled checkout form with user information
- * - Handles form validation and submission
- * - Integrates with Sentry for error monitoring
- * - Manages the checkout flow and error handling
- * 
- * Key Features:
- * - Pre-filled form data for demo purposes
- * - Form validation and error handling
- * - Sentry integration for monitoring
- * - Cart state management
- * 
- * TDA Test Compatibility:
- * - Form structure matches React app for automated testing
- * - Button classes and IDs are consistent across frameworks
- * - Form submission flow mirrors React implementation
- */
 @Component({
   selector: 'app-checkout-form',
   standalone: true,
@@ -38,10 +21,8 @@ import * as Sentry from '@sentry/angular';
 })
 @Sentry.TraceClass({ name: "CheckoutFormComponent" })
 export class CheckoutFormComponent implements OnInit {
-  // Current cart state (items, quantities, total)
   cart: CartState = { items: [], quantities: {}, total: 0 };
-  
-  // Form data object for checkout information
+
   form: CheckoutForm = {
     email: '',
     subscribe: '',
@@ -51,11 +32,13 @@ export class CheckoutFormComponent implements OnInit {
     city: '',
     country: '',
     state: '',
-    zipCode: ''
+    zipCode: '',
+    promoCode: '',
   };
 
-  // Loading state for smooth checkout experience (like React)
   loading = false;
+  promoMessage = '';
+  promoLoading = false;
 
   constructor(
     private cartService: CartService,
@@ -65,82 +48,84 @@ export class CheckoutFormComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    // Subscribe to cart updates and load form data when component initializes
     this.cartService.cart$.subscribe(cart => {
       this.cart = cart;
     });
-    
-    // Load pre-filled form data for demo purposes
     this.loadFormData();
   }
 
-  /**
-   * Loads pre-filled form data from the configuration service
-   * This provides demo data so users don't have to type everything
-   */
   loadFormData(): void {
-    // Get pre-filled form values from the config service
     this.form = this.configService.getInitialFormValues();
   }
 
-  /**
-   * Handles form submission when user clicks "Complete order"
-   * Processes the checkout and handles any errors
-   * Mirrors React's checkout behavior for TDA compatibility
-   * The checkout will intentionally fail to showcase Sentry error monitoring
-   * 
-   * @param event - The form submission event
-   */
+  async handleApplyPromoCode(event: Event): Promise<void> {
+    Sentry.startSpan({
+      op: 'function',
+      name: 'handleApplyPromoCode',
+    }, async () => {
+      event.preventDefault();
+
+      console.info(`applying promo code '${this.form.promoCode}'...`);
+
+      if (!this.form.promoCode.trim()) {
+        this.promoMessage = 'Please enter a promo code';
+        return;
+      }
+
+      this.promoLoading = true;
+      this.promoMessage = '';
+
+      try {
+        const flaskBackend = environment.BACKEND_URL_FLASK;
+        const response = await fetch(flaskBackend + '/apply-promo-code', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ value: this.form.promoCode.trim() }),
+        });
+
+        if (response.ok) {
+          this.promoMessage = 'Promo successfully applied!';
+        } else {
+          const responseBody = await response.json();
+          console.error(`failed to apply promo code: HTTP ${response.status} | body: `, responseBody);
+          this.promoMessage = 'Unknown error applying promo code';
+        }
+      } catch (error) {
+        console.error('Error applying promo code:', error);
+        this.promoMessage = 'Unknown error when applying promo';
+      } finally {
+        this.promoLoading = false;
+      }
+    });
+  }
+
   async onSubmit(event: Event): Promise<void> {
-    // Prevent the default form submission behavior
     event.preventDefault();
 
-    // Check if rage click mode is enabled (like React)
     if (this.configService.getRageclick()) {
-      // Do nothing - after enough clicks, this will be detected as unusual behavior
       return;
     }
 
-    // Wrap in a Sentry span for proper tracing (like React does with 'Submit Checkout Form')
     await Sentry.startSpan(
       {
         name: 'checkout_submit',
-        op: 'ui.action.click',
-        forceTransaction: true, // Create a new transaction like React does
+        forceTransaction: true,
       },
-      async () => {
-        // Scroll to top (like React)
-        window.scrollTo({
-          top: 0,
-          behavior: 'auto'
-        });
-
-        // Set loading state for smooth experience (like React)
+      async (span) => {
+        window.scrollTo({ top: 0, behavior: 'auto' });
         this.loading = true;
-
         let hadError = false;
 
         try {
-          // Evaluate feature flags exactly as per Sentry documentation
           this.featureFlagsService.evaluateFeatureFlags();
-          
-          // Process the checkout (this will intentionally fail to showcase Sentry)
-          await this.processCheckout();
-          
+          await this.checkout(this.cart, span);
         } catch (error) {
-          // This is the expected behavior - checkout fails to showcase Sentry
-          console.error('Checkout error (expected for demo):', error);
-          
-          // Capture the error in Sentry for monitoring (matches React exactly)
           Sentry.captureException(error);
-          
           hadError = true;
-        } finally {
-          // Always reset loading state
-          this.loading = false;
         }
 
-        // Navigate based on result (like React)
+        this.loading = false;
+
         if (hadError) {
           this.router.navigate(['/error']);
         } else {
@@ -150,93 +135,83 @@ export class CheckoutFormComponent implements OnInit {
     );
   }
 
-  /**
-   * Makes actual API call to backend like React does
-   * The backend will intentionally fail to showcase Sentry error monitoring
-   * Uses Sentry.startSpan() to ensure proper trace propagation (like React)
-   * 
-   * @returns Promise<Response> - The checkout API response
-   */
-  private async processCheckout(): Promise<Response> {
-    // Wrap the entire checkout process in a Sentry span (like React does)
+  private async checkout(cart: CartState, checkout_span: Sentry.Span): Promise<Response | { ok: boolean; error?: any; status?: number; statusText?: string }> {
+    const itemsInCart = this.cartService.getCartItemCount();
+
+    checkout_span.setAttribute('checkout_submit.click', 1);
+    checkout_span.setAttribute('checkout_submit.num_items', itemsInCart);
+    checkout_span.setAttribute('checkout_submit.order_total', cart.total);
+
+    const tags: Record<string, any> = {
+      'backendType': getTag('backendType'),
+      'cexp': getTag('cexp'),
+      'checkout_submit.num_items': itemsInCart,
+      'checkout_submit.click': 1,
+    };
+    checkout_span.setAttributes(tags);
+
+    metrics.count('checkout_submit.click', 1);
+    metrics.distribution('checkout_submit.num_items', itemsInCart);
+    metrics.distribution('checkout_submit.order_total', cart.total);
+
     return await Sentry.startSpan(
       {
         name: 'processCheckout',
         op: 'function',
       },
       async (span) => {
-        const itemsInCart = this.cartService.getCartItemCount();
+        const stopMeasurement = measureRequestDuration('/checkout');
 
-        // Get backend URL from config service (supports Laravel/Flask switching)
         const backendUrl = this.configService.getBackendUrl();
-        const backendType = this.configService.getCurrentBackendType();
-        const checkoutUrl = `${backendUrl}/checkout?v2=true`;
-        
-        // Set span attributes (like React does)
-        span?.setAttribute('checkout_submit.click', 1);
-        span?.setAttribute('checkout_submit.num_items', itemsInCart);
-        span?.setAttribute('checkout_submit.order_total', this.cart.total);
-        span?.setAttribute('backendType', backendType);
 
-        const requestBody = {
-          cart: this.cart,
-          form: this.form,
-          validate_inventory: this.configService.getCheckoutSuccess() ? "false" : "true"
-        };
+        const response = await fetch(backendUrl + '/checkout?v2=true', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            cart: cart,
+            form: this.form,
+            validate_inventory: this.configService.getCheckoutSuccess() ? 'false' : 'true',
+          }),
+        })
+        .catch((error) => {
+          return { ok: false, error: error } as any;
+        })
+        .then((res: any) => {
+          stopMeasurement();
+          return res;
+        });
 
-        try {
-          const response = await fetch(checkoutUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(requestBody)
-          })
-          .catch((error) => {
-            // Handle fetch errors like React does - convert to response object
-            return { ok: false, error: error, status: undefined, statusText: undefined };
-          });
+        if (!response.ok) {
+          span?.setAttribute('checkout_submit.error', 1);
+          metrics.count('checkout_submit.error', 1);
 
-          if (!response.ok) {
-            console.error("Checkout failed with status:", (response as any).status);
-            
-            // Set error attribute on span (like React)
-            span?.setAttribute('checkout_submit.error', 1);
-            
-            if (!(response as any).error || (response as any).status === undefined) {
-              span?.setAttribute('status', (response as any).status);
-              const error = new Error(`${(response as any).status} - ${(response as any).statusText || 'Internal Server Error'}`);
-              throw error;
-            } else {
-              // Handle network errors like React does
-              span?.setAttribute('status', 'unknown_error');
-              if ((response as any).error instanceof TypeError && (response as any).error.message === "Failed to fetch") {
-                throw new Error("Fetch promise rejected in Checkout due to either an actual network issue, malformed URL, etc or CORS headers not set on HTTP 500: " + (response as any).error);
-              } else {
-                throw new Error("Checkout request failed: " + (response as any).error);
-              }
-            }
+          if (!response.error || response.status === undefined) {
+            span?.setAttribute('status', response.status);
+            metrics.distribution('checkout_submit.status', response.status);
+            throw new Error([response.status, response.statusText || ' Internal Server Error'].join(' -'));
           } else {
-            // Set success attribute on span (like React)
-            span?.setAttribute('checkout_submit.success', 1);
+            span?.setAttribute('status', 'unknown_error');
+            if (response.error instanceof TypeError && response.error.message === 'Failed to fetch') {
+              Sentry.captureException(new Error('Fetch promise rejected in Checkout due to either an actual network issue, malformed URL, etc or CORS headers not set on HTTP 500: ' + response.error));
+            } else {
+              Sentry.captureException(new Error('Checkout request failed: ' + response.error));
+            }
           }
-
-          return response as Response;
-        } catch (error) {
-          console.error("Checkout request failed:", error);
-          throw error;
+        } else {
+          span?.setAttribute('checkout_submit.success', 1);
+          metrics.count('checkout_submit.success', 1);
         }
+
+        return response;
       }
     );
   }
 
-  /**
-   * Gets the current quantity of a specific product in the cart
-   * Returns 0 if the product is not in the cart
-   * 
-   * @param itemId - The ID of the product to get quantity for
-   * @returns The current quantity (0 if not in cart)
-   */
   getQuantity(itemId: number): number {
     return this.cart.quantities[itemId] || 0;
   }
 
+  isPromoSuccess(): boolean {
+    return this.promoMessage.includes('successfully');
+  }
 }
