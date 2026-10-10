@@ -8,7 +8,8 @@ export function countItemsInCart(cart) {
 
     totalItems = Object.values(cart.quantities)
         .reduce((sum, quantity) => {
-            console.log("Adding quantity:", quantity);
+            console.log("Adding quantity: ", quantity);
+            console.log("Total cart size: ", (sum + quantity));
             return sum + quantity;
         }, 0);
 
