@@ -21,7 +21,7 @@ execnet==2.1.1
     # via pytest-xdist
 h11==0.16.0
     # via wsproto
-idna==3.10
+idna==3.15
     # via
     #   requests
     #   trio
@@ -41,7 +41,7 @@ pygments==2.19.2
     # via pytest
 pysocks==1.7.1
     # via urllib3
-pytest==8.4.1
+pytest==9.0.3
     # via
     #   -r requirements.in
     #   pytest-forked
@@ -54,13 +54,13 @@ pytest-xdist==3.8.0
     # via -r requirements.in
 pyyaml==6.0.2
     # via -r requirements.in
-requests==2.32.4
+requests==2.33.0
     # via -r requirements.in
 selenium==4.34.2
     # via
     #   -r requirements.in
     #   appium-python-client
-sentry-sdk==2.32.0
+sentry-sdk==2.66.1
     # via -r requirements.in
 sniffio==1.3.1
     # via trio
@@ -74,7 +74,7 @@ trio-websocket==0.12.2
     # via selenium
 typing-extensions==4.14.1
     # via selenium
-urllib3[socks]==2.5.0
+urllib3[socks]==2.7.0
     # via
     #   -r requirements.in
     #   requests
