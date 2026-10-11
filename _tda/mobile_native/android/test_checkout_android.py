@@ -7,11 +7,10 @@ def test_checkout_android(android_emu_driver):
 
     try:
         # Add items to cart
-        add_to_cart_btn = android_emu_driver.find_element(AppiumBy.ID, 'com.example.vu.android:id/add_to_cart_btn')
-        add_to_cart_btn.click()
-        add_to_cart_btn.click()
-        add_to_cart_btn.click()
-        add_to_cart_btn.click()
+        # Re-query the element before each click to avoid StaleElementReferenceException
+        # after the UI re-renders following each interaction.
+        for _ in range(4):
+            android_emu_driver.find_element(AppiumBy.ID, 'com.example.vu.android:id/add_to_cart_btn').click()
 
         # Checkout button
         android_emu_driver.find_element(AppiumBy.ID, 'com.example.vu.android:id/checkout_btn').click()
