@@ -15,6 +15,7 @@ from selenium import webdriver
 from appium import webdriver as appiumdriver
 from appium.options.android import UiAutomator2Options
 from appium.options.ios import XCUITestOptions
+from appium.webdriver.common.appiumby import AppiumBy
 from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
@@ -628,6 +629,9 @@ def android_react_native_emu_driver(request, se_prefix):
         driver = appiumdriver.Remote(SELENIUM_ENDPOINT, options=options)
         driver.implicitly_wait(20)
 
+        # Dismiss the landing screen that is now the RN app's initial route
+        driver.find_element(AppiumBy.XPATH, '//android.view.ViewGroup[@content-desc="Shop Now"]').click()
+
         sentry_sdk.set_tag("sauceLabsUrl", f"https://app.saucelabs.com/tests/{driver.session_id}")
 
         yield driver
@@ -704,6 +708,9 @@ def ios_react_native_sim_driver(request, se_prefix):
 
         driver = appiumdriver.Remote(SELENIUM_ENDPOINT, options=options)
         driver.implicitly_wait(20)
+
+        # Dismiss the landing screen that is now the RN app's initial route
+        driver.find_element(AppiumBy.ACCESSIBILITY_ID, 'landing-enter-button').click()
 
         sentry_sdk.set_tag("sauceLabsUrl", f"https://app.saucelabs.com/tests/{driver.session_id}")
 
