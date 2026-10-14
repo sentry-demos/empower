@@ -5,6 +5,8 @@ import time
 def test_checkout_react_native_ios(ios_react_native_sim_driver):
 
     try:
+        ios_react_native_sim_driver.find_element(AppiumBy.ACCESSIBILITY_ID, 'landing-enter-button').click()
+
         cart_btn = ios_react_native_sim_driver.find_element(AppiumBy.XPATH, '(//XCUIElementTypeOther[@name="add-to-cart-button-3"])')
         cart_btn.click()
         cart_btn.click()

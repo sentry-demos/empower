@@ -5,6 +5,8 @@ from appium.webdriver.common.appiumby import AppiumBy
 def test_checkout_react_native_android(android_react_native_emu_driver):
 
     try:
+        android_react_native_emu_driver.find_element(AppiumBy.XPATH, '//android.view.ViewGroup[@content-desc="Shop Now"]').click()
+
         add_to_cart_btn = android_react_native_emu_driver.find_element(AppiumBy.XPATH, '(//android.view.ViewGroup[@content-desc="Add to cart"])[1]')
         add_to_cart_btn.click()
         add_to_cart_btn.click()
