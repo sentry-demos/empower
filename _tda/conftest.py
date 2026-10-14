@@ -105,10 +105,13 @@ RUN_ID = os.getenv("RUN_ID")
 # to same batch size sequence, but no one would notice. Saucelabs introduces some randomness anyway.
 REPEATABLE_RANDOM = False
 
-# BATCH_SIZE can be either <NUMBER> or random_<NUMBER>
-# The later means each time a test is run the inner steps will be repeated a random
-# number of times between 0 and <NUMBER> - 1
-# e.g. BATCH_SIZE=5, or BATCH_SIZE=random_100
+# BATCH_SIZE can be:
+#   <NUMBER>          fixed
+#   random_<N>        uniform in {0 .. N-1}
+#   random_<LO>_<HI>  uniform in {LO .. HI} inclusive
+#   normal_<LO>_<HI>  normal centered on (LO+HI)/2, 90% of draws in [LO, HI],
+#                     then rounded and clipped to [LO-4, HI+4]
+#                     e.g. normal_7_13 → mean 10, 90% in 7–13, clipped to [3, 17]
 # IS_CANARY always overrides BATCH_SIZE
 # This is the mean before seasonality: cexp checkout then scales by weekday+hour;
 # other batched desktop_web tests scale by the opposite hour (hour+12).
@@ -199,7 +202,21 @@ def sleep_length(random):
     return random_sleep_length
 
 
+# P(|Z| < z) = 0.90 → z = Φ^{-1}(0.95). Clip pad: normal_7_13 → [3, 17].
+_NORMAL_90PCT_Z = 1.6448536269514722
+_NORMAL_CLIP_PAD = 4
+
+
 def _base_batch_size(random):
+    if BATCH_SIZE.startswith("normal_"):
+        parts = BATCH_SIZE.split('_')
+        if len(parts) != 3:
+            raise ValueError(f"Invalid BATCH_SIZE format: {BATCH_SIZE}. Expected 'normal_LO_HI'")
+        lo, hi = int(parts[1]), int(parts[2])
+        mu = (lo + hi) / 2
+        sigma = (hi - lo) / 2 / _NORMAL_90PCT_Z
+        drawn = round(random.gauss(mu, sigma))
+        return max(lo - _NORMAL_CLIP_PAD, min(hi + _NORMAL_CLIP_PAD, drawn))
     if BATCH_SIZE.startswith("random_"):
         parts = BATCH_SIZE.split('_')
         if len(parts) == 2:
