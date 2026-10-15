@@ -1087,19 +1087,37 @@ func (s *server) proxyRuby(r *http.Request) error {
 	}
 	hub := sentry.GetHubFromContext(r.Context())
 
-	req, _ := http.NewRequest(http.MethodGet, s.rubyBackend+"/api", nil)
+	url := s.rubyBackend + "/api"
+
+	// Child span around the outbound call. sentry-go does NOT auto-instrument
+	// http.DefaultClient, so we manually propagate sentry-trace + baggage so the
+	// downstream Rails service joins this trace.
+	span := sentry.StartSpan(r.Context(), "http.client", sentry.WithDescription("GET "+url))
+	span.SetData("http.method", "GET")
+	span.SetData("http.url", url)
+	defer span.Finish()
+
+	req, _ := http.NewRequestWithContext(span.Context(), http.MethodGet, url, nil)
 	for _, k := range []string{"se", "customerType", "email"} {
 		if v := r.Header.Get(k); v != "" && v != "undefined" {
 			req.Header.Set(k, v)
 		}
 	}
+	req.Header.Set("sentry-trace", span.ToSentryTrace())
+	if baggage := span.ToBaggage(); baggage != "" {
+		req.Header.Set("baggage", baggage)
+	}
+
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
+		span.Status = sentry.SpanStatusInternalError
 		hub.CaptureException(err)
 		return err
 	}
-	_ = resp.Body.Close()
+	defer resp.Body.Close()
+	span.SetData("http.status_code", resp.StatusCode)
 	if resp.StatusCode >= 400 {
+		span.Status = sentry.SpanStatusUnknown
 		hub.CaptureMessage(fmt.Sprintf("ruby backend error: status %d", resp.StatusCode))
 	}
 	return nil
