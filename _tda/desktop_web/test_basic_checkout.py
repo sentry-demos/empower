@@ -4,6 +4,8 @@ import sentry_sdk
 from urllib.parse import urlencode
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 
 # Skip before desktop_web_driver so a 0-draw does not open a Sauce session.
@@ -63,7 +65,9 @@ def test_basic_checkout(desktop_web_driver, endpoints, random, sleep_length, cex
                     
                     desktop_web_driver.find_element(By.CSS_SELECTOR, '#email').send_keys("sampleEmail@email.com")
 
-                    desktop_web_driver.find_element(By.CSS_SELECTOR, '.complete-checkout-btn').click()
+                    WebDriverWait(desktop_web_driver, 10).until(
+                        EC.element_to_be_clickable((By.CSS_SELECTOR, '.complete-checkout-btn'))
+                    ).click()
                     time.sleep(sleep_length())
 
             except Exception as err:
