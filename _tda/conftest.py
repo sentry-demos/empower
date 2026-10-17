@@ -15,7 +15,10 @@ from selenium import webdriver
 from appium import webdriver as appiumdriver
 from appium.options.android import UiAutomator2Options
 from appium.options.ios import XCUITestOptions
-from selenium.common.exceptions import WebDriverException
+from appium.webdriver.common.appiumby import AppiumBy
+from selenium.common.exceptions import TimeoutException, WebDriverException
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from selenium.webdriver.safari.options import Options as SafariOptions
@@ -23,6 +26,9 @@ from datetime import datetime, timedelta, timezone
 from urllib.parse import urlencode
 
 import sentry_sdk
+
+# Max seconds to wait for the native Android app to finish launching on Sauce Labs
+ANDROID_APP_LAUNCH_TIMEOUT = 90
 
 def get_system_user():
     return subprocess.check_output(['id', '-un']).strip().decode()
@@ -684,6 +690,21 @@ def android_emu_driver(request, se_prefix):
         driver.implicitly_wait(20)
 
         sentry_sdk.set_tag("sauceLabsUrl", f"https://app.saucelabs.com/tests/{driver.session_id}")
+
+        # 'appWaitForLaunch' is False and the app's cold start is intentionally slow,
+        # so wait for EmpowerPlantActivity's toolbar ('More' menu) to be rendered
+        # before handing the driver to tests.
+        try:
+            WebDriverWait(driver, ANDROID_APP_LAUNCH_TIMEOUT).until(
+                EC.visibility_of_element_located((AppiumBy.ACCESSIBILITY_ID, 'More'))
+            )
+        except TimeoutException:
+            sentry_sdk.set_tag('app_launch_timeout', True)
+            driver.execute_script("sauce:job-result=failed")
+            driver.quit()
+            raise TimeoutException(
+                f"EmpowerPlant app did not launch in {ANDROID_APP_LAUNCH_TIMEOUT}s"
+            )
 
         yield driver
         sauce_result = "failed" if request.node.rep_call.failed else "passed"
