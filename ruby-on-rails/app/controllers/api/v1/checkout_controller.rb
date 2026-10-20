@@ -58,6 +58,8 @@ class Api::V1::CheckoutController < ApplicationController
 
     total = ""
     cart_contents = Hash.new
+    # the frontend opts out of the inventory check when it wants a guaranteed successful checkout
+    validate_inventory = params[:validate_inventory].nil? || params[:validate_inventory].to_s == "true"
     params.each do |key, value|
       if key.to_s == "cart"
         Sentry.logger.debug("Processing cart data for checkout")
@@ -88,28 +90,34 @@ class Api::V1::CheckoutController < ApplicationController
 
     span_logic = transaction.start_child(op: "custom.inventory_vs_cart_logic")
 
-    products_in_inventory.each_with_index { |inv_objs, i|
-      if !enough_inventory?(cart_contents)
-        begin
-          Sentry.logger.error("Failed to process payment. Insufficient inventory for product: %{product_id}", product_id: inv_objs["productid"])
-          raise Exception.new "Not enough inventory for product: #{inv_objs["productid"]}"
-          STDERR.puts "Not enough inventory for productid " + inv_objs["productid"].to_s
-          logged = "Error: Not enough inventory"
-          render json: {"message": logged}, status: 500
-          break # breaks on first error. might be more inventory errors.
-        end
-      end
-    }
+    out_of_stock = validate_inventory ? out_of_stock_products(cart_contents, products_in_inventory) : []
 
     span_logic.finish
+
+    unless out_of_stock.empty?
+      logged = "Error: Not enough inventory for product: " + out_of_stock.join(", ")
+      Sentry.logger.error("Failed to process payment. Insufficient inventory for products: %{product_ids}", product_ids: out_of_stock.join(", "))
+      render json: {"message": logged}, status: 400
+      return
+    end
 
     Sentry.logger.info("Checkout completed successfully for total %{total}", total: total)
     render json: {"message": logged}, status: 200
 
   end
 
-  def enough_inventory?(cart_contents)
-    Sentry.logger.warn("Inventory check bypassed - always returning false (mock implementation)")
-    return false
+  # the cart maps product ids to the quantity ordered, inventory holds the stock
+  # available per product id. returns the product ids the cart can't fulfill.
+  def out_of_stock_products(cart_contents, products_in_inventory)
+    stock = Hash.new(0)
+    products_in_inventory.each do |inv_obj|
+      stock[inv_obj["productid"].to_s] += inv_obj["count"].to_i
+    end
+
+    cart_contents.select { |product_id, quantity|
+      available = stock[product_id.to_s]
+      Sentry.logger.debug("Inventory check for product %{product_id}: %{available} available, %{requested} requested", product_id: product_id, available: available, requested: quantity)
+      available < quantity.to_i
+    }.keys
   end
 end
