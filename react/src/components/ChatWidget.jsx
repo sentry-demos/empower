@@ -22,9 +22,8 @@ const INITIAL_PILLS = [
   { id: 'chat-pill-show-products', label: 'Show me plants under $200' },
 ];
 
-// Extra starters for the full view's empty state only, which has room for a row
-// of tiles where the popup has room for one chip. Client-side and free-text on
-// purpose: the agent's own pills drive the reproducible demo path and keep their
+// Extra starters for the empty state, which has room for a row of tiles.
+// Client-side and free-text on purpose: the agent's own pills drive the reproducible demo path and keep their
 // chat-pill-* ids for TDA, so these use a chat-starter-* prefix and simply
 // exercise the conversational routing. Cancelling an order is deliberately not
 // a starter: the orders list offers it as a follow-up pill.
@@ -40,18 +39,10 @@ const generateMessageId = () => `msg-${Date.now()}-${++messageIdCounter}`;
 const generateConversationId = () =>
   `conv-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
-// Two shells around one conversation.
-//
-// `fullView` renders the page-sized view Home switches to when the customer
-// picks the agent from the hero. Without it this is the original floating
-// button and popup, which is left alone deliberately: _tda/test_ai_agent.py
-// drives it by #chat-widget-button and re-clicks that same element to close, so
-// removing or remounting it would break that test with a stale reference.
-//
-// Both shells share the session, SSE and span logic below; only the layout and
-// the card sizing differ (the roomier styles are scoped under .chat-full).
-const ChatWidget = ({ fullView = false, onExitFull }) => {
-  const [isOpen, setIsOpen] = useState(false);
+// The page-sized agent conversation Home switches to when the customer picks
+// the agent from the hero. The session starts on mount and ends on unmount, so
+// Home stays the single owner of whether the conversation is on screen.
+const ChatWidget = ({ onExitFull }) => {
   const [messages, setMessages] = useState([]);
   const [userInput, setUserInput] = useState('');
   const [pills, setPills] = useState(INITIAL_PILLS);
@@ -68,9 +59,13 @@ const ChatWidget = ({ fullView = false, onExitFull }) => {
   const abortRef = useRef(null);
   const inputRef = useRef(null);
 
+  // The greeting is seeded by startSession, so "has the customer said anything
+  // yet" is what decides between the empty state and the transcript.
+  const started = messages.some((message) => message.type === 'user');
+
   // Scroll the transcript, not the document. scrollIntoView walks up and
-  // scrolls every scrollable ancestor including the window, which in the full
-  // view dragged the whole page down on each new message and left the header
+  // scrolls every scrollable ancestor including the window, which dragged the
+  // whole page down on each new message and left the header
   // sitting mid-screen. Setting scrollTop only ever moves this one element.
   const scrollToBottom = () => {
     const container = messagesContainerRef.current;
@@ -149,16 +144,15 @@ const ChatWidget = ({ fullView = false, onExitFull }) => {
     const onLoad = () => scrollToBottom();
     container.addEventListener('load', onLoad, true);
     return () => container.removeEventListener('load', onLoad, true);
-  }, [isOpen, fullView]);
+  }, [started]);
 
-  // Focus the composer when either shell opens, but never scroll to do it.
-  // Plain autoFocus scrolled the full view's page down by ~400px on open,
-  // putting the greeting and the starter tiles above the viewport.
+  // Focus the composer on open, but never scroll to do it. Plain autoFocus
+  // scrolled the page down by ~400px, putting the greeting and the starter
+  // tiles above the viewport.
   useEffect(() => {
-    if (!isOpen && !fullView) return;
-    if (fullView) window.scrollTo(0, 0);
+    window.scrollTo(0, 0);
     inputRef.current?.focus({ preventScroll: true });
-  }, [isOpen, fullView]);
+  }, []);
 
   const handleInputFocus = () => {
     if (chatSpanRef.current) {
@@ -445,45 +439,19 @@ const ChatWidget = ({ fullView = false, onExitFull }) => {
     startInactivityTimeout();
   }, [startInactivityTimeout]);
 
-  const openChat = () => {
-    startSession();
-    setIsOpen(true);
-  };
-
-  const closeChat = (reason) => {
-    endChatSession(reason);
-    setIsOpen(false);
-  };
-
-  // The full view's session is tied to the prop rather than a click, so Home
-  // stays the single owner of which view is on screen.
   useEffect(() => {
-    if (!fullView) return undefined;
     startSession();
     return () => endChatSession('exit_full_view');
-  }, [fullView, startSession, endChatSession]);
+  }, [startSession, endChatSession]);
 
   // Hide the site footer while the conversation owns the page. The footer is
   // mounted in index.js outside the routed content, so Home cannot unmount it —
   // a body class is the only reach this component has. Its newsletter signup is
   // a second, unrelated call to action competing with the composer.
   useEffect(() => {
-    if (!fullView) return undefined;
     document.body.classList.add('agent-full-view');
     return () => document.body.classList.remove('agent-full-view');
-  }, [fullView]);
-
-  const handleAgentButtonClick = () => {
-    if (!isOpen) {
-      openChat();
-    } else {
-      closeChat('click_agent_button');
-    }
-  };
-
-  const handleCloseButtonClick = () => {
-    closeChat('click_close_button');
-  };
+  }, []);
 
   // Clean up spans on unmount or navigation
   useEffect(() => {
@@ -708,124 +676,80 @@ const ChatWidget = ({ fullView = false, onExitFull }) => {
     </form>
   );
 
-  if (fullView) {
-    // The greeting is seeded by startSession, so "has the customer said
-    // anything yet" is what decides between the empty state and the transcript.
-    const started = messages.some((message) => message.type === 'user');
-
-    return (
-      <div className="chat-full">
-        <nav className="chat-rail" aria-label="Conversation">
-          {/* Only controls that do something. The reference design has a row of
-              icons, but dead buttons in a demo invite clicks that go nowhere. */}
-          <button
-            type="button"
-            id="chat-exit-full"
-            className="chat-rail-button sentry-unmask"
-            onClick={() => onExitFull && onExitFull()}
-            title="Back to Empower Plant"
-          >
-            <span aria-hidden="true">←</span>
-            <span className="chat-rail-label">Store</span>
-          </button>
-          <button
-            type="button"
-            id="chat-new-conversation"
-            className="chat-rail-button sentry-unmask"
-            onClick={() => {
-              endChatSession('new_conversation');
-              startSession();
-            }}
-            title="Start a new conversation"
-          >
-            <span aria-hidden="true">+</span>
-            <span className="chat-rail-label">New</span>
-          </button>
-        </nav>
-
-        <div className="chat-full-main">
-          {started ? (
-            <div
-              className="chat-messages chat-full-messages"
-              ref={messagesContainerRef}
-            >
-              {renderMessages()}
-            </div>
-          ) : (
-            <div className="chat-full-intro">
-              <img
-                src={agentIcon}
-                alt=""
-                className="chat-full-avatar sentry-block"
-              />
-              <p className="chat-full-eyebrow sentry-unmask">
-                Empower Plant assistant
-              </p>
-              <h1 className="chat-full-heading sentry-unmask">
-                Let&rsquo;s find your next plant
-              </h1>
-              <ChatPills
-                pills={[...pills, ...FULL_VIEW_STARTERS]}
-                onSelect={handlePillSelect}
-                disabled={isStreaming}
-                variant="cards"
-              />
-            </div>
-          )}
-
-          <div className="chat-full-composer">
-            {started && (
-              <ChatPills
-                pills={pills}
-                onSelect={handlePillSelect}
-                disabled={isStreaming}
-              />
-            )}
-            {/* Only the input gets a frame. The pills sit above it unboxed —
-                they are already self-contained chips, so wrapping them in the
-                same panel drew a container around containers. */}
-            <div className="chat-full-composer-box">{renderComposer()}</div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="chat-widget-container">
-      {isOpen && (
-        <div className="chat-window">
-          <div className="chat-header">
-            <div className="chat-header-content">
-              <img src={agentIcon} alt="AI Agent" className="chat-header-icon" />
-              <span className="chat-header-title">AI Agent</span>
-            </div>
-            <button className="chat-close-button" onClick={handleCloseButtonClick}>
-              ×
-            </button>
-          </div>
+    <div className="chat-full">
+      <nav className="chat-rail" aria-label="Conversation">
+        {/* Only controls that do something. The reference design has a row of
+            icons, but dead buttons in a demo invite clicks that go nowhere. */}
+        <button
+          type="button"
+          id="chat-exit-full"
+          className="chat-rail-button sentry-unmask"
+          onClick={() => onExitFull && onExitFull()}
+          title="Back to Empower Plant"
+        >
+          <span aria-hidden="true">←</span>
+          <span className="chat-rail-label">Store</span>
+        </button>
+        <button
+          type="button"
+          id="chat-new-conversation"
+          className="chat-rail-button sentry-unmask"
+          onClick={() => {
+            endChatSession('new_conversation');
+            startSession();
+          }}
+          title="Start a new conversation"
+        >
+          <span aria-hidden="true">+</span>
+          <span className="chat-rail-label">New</span>
+        </button>
+      </nav>
 
-          <div className="chat-messages" ref={messagesContainerRef}>
+      <div className="chat-full-main">
+        {started ? (
+          <div
+            className="chat-messages chat-full-messages"
+            ref={messagesContainerRef}
+          >
             {renderMessages()}
           </div>
+        ) : (
+          <div className="chat-full-intro">
+            <img
+              src={agentIcon}
+              alt=""
+              className="chat-full-avatar sentry-block"
+            />
+            <p className="chat-full-eyebrow sentry-unmask">
+              Empower Plant assistant
+            </p>
+            <h1 className="chat-full-heading sentry-unmask">
+              Let&rsquo;s find your next plant
+            </h1>
+            <ChatPills
+              pills={[...pills, ...FULL_VIEW_STARTERS]}
+              onSelect={handlePillSelect}
+              disabled={isStreaming}
+              variant="cards"
+            />
+          </div>
+        )}
 
-          <ChatPills
-            pills={pills}
-            onSelect={handlePillSelect}
-            disabled={isStreaming}
-          />
-
-          {renderComposer()}
+        <div className="chat-full-composer">
+          {started && (
+            <ChatPills
+              pills={pills}
+              onSelect={handlePillSelect}
+              disabled={isStreaming}
+            />
+          )}
+          {/* Only the input gets a frame. The pills sit above it unboxed —
+              they are already self-contained chips, so wrapping them in the
+              same panel drew a container around containers. */}
+          <div className="chat-full-composer-box">{renderComposer()}</div>
         </div>
-      )}
-
-      <button
-        id="chat-widget-button"
-        className="chat-toggle-button"
-        onClick={handleAgentButtonClick}
-      >
-        <img src={agentIcon} alt="Chat with AI Agent" />
-      </button>
+      </div>
     </div>
   );
 };

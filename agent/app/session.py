@@ -43,8 +43,7 @@ def trim_tool_outputs(history: list[Any], keep: int = TOOL_RESULTS_KEPT) -> list
     search is ~1.3KB, a cart ~1.5KB, a checkout ~1.7KB, against ~600B for all
     of that turn's prose put together. Left alone it is re-sent to the model on
     every subsequent turn, so a demo conversation pays for its whole past on
-    each new message, and `test_ai_agent.py`'s already-reduced VOLUME_FACTOR
-    pays it on every synthetic run.
+    each new message, and every synthetic TDA run pays it too.
 
     The items themselves are kept, only their `output` is replaced: a
     function_call whose function_call_output has gone missing is rejected by the

@@ -7,8 +7,8 @@ import React from 'react';
 //
 // Two shapes, same ids and same click path:
 //
-//   chips  the row above the input, used in the popup and mid-conversation
-//   cards  the large tiles on the full view's empty state
+//   chips  the row above the input, used mid-conversation
+//   cards  the large tiles on the empty state
 //
 // Only one shape renders at a time, so a pill id never appears twice in the DOM.
 
