@@ -166,3 +166,78 @@ def get_promo_code(code):
         return result
     except Exception as err:
         raise DatabaseConnectionError('get_promo_code') from err
+
+
+@sentry_sdk.trace
+def get_stock(title):
+    """Stock levels for every product whose title matches `title`.
+
+    Two queries rather than one join: the product lookup is fast, and keeping
+    it separate leaves the slow warehouse_stock scan as its own db.query span,
+    so the trace shows exactly which query the time went to.
+    """
+    try:
+        with sentry_sdk.start_span(name="get_stock", op="db.connect"):
+            connection = db.connect()
+
+        query = text("SELECT id, title FROM products WHERE title ILIKE :pattern")
+        products = connection.execute(query, pattern=f"%{title}%").fetchall()
+        if not products:
+            return []
+
+        # warehouse_stock is a "sleepy view" standing in for the legacy
+        # warehouse lookup, run the following query to get current sleep duration:
+        # SELECT pg_get_viewdef('warehouse_stock', true)
+        query = text(
+            "SELECT productid, SUM(count) AS count FROM warehouse_stock"
+            " WHERE productid = ANY(:product_ids) GROUP BY productid"
+        )
+        counts = {
+            row.productid: int(row.count)
+            for row in connection.execute(
+                query, product_ids=[product.id for product in products]
+            ).fetchall()
+        }
+    except Exception as err:
+        raise DatabaseConnectionError('get_stock') from err
+
+    return [
+        {
+            "id": product.id,
+            "title": product.title,
+            "count": counts.get(product.id, 0),
+            "in_stock": counts.get(product.id, 0) > 0,
+        }
+        for product in products
+    ]
+
+
+@sentry_sdk.trace
+def get_order(order_id):
+    try:
+        with sentry_sdk.start_span(name="get_order", op="db.connect"):
+            connection = db.connect()
+
+        with sentry_sdk.start_span(name="get_order", op="db.query"):
+            query = text("SELECT * FROM orders WHERE id = :order_id")
+            order = connection.execute(query, order_id=order_id).fetchone()
+    except Exception as err:
+        raise DatabaseConnectionError('get_order') from err
+
+    return dict(order) if order else None
+
+
+@sentry_sdk.trace
+def set_order_status(order_id, status):
+    try:
+        with sentry_sdk.start_span(name="set_order_status", op="db.connect"):
+            connection = db.connect()
+
+        with sentry_sdk.start_span(name="set_order_status", op="db.query"):
+            query = text("UPDATE orders SET status = :status WHERE id = :order_id RETURNING *")
+            with connection.begin():
+                order = connection.execute(query, status=status, order_id=order_id).fetchone()
+    except Exception as err:
+        raise DatabaseConnectionError('set_order_status') from err
+
+    return dict(order) if order else None

@@ -13,7 +13,7 @@ from openai.types.shared import Reasoning
 
 from config import settings
 
-from ..tools.shop import search_products
+from ..tools.shop import check_inventory, search_products
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -22,13 +22,16 @@ PRODUCTS_AGENT_NAME = "products_agent"
 PRODUCTS_AGENT_INSTRUCTIONS = """
 You are the Empower Plant product specialist.
 
-Your only job is looking things up in the catalogue with search_products.
+Your only job is looking things up in the catalogue:
 
-- Translate the request into search_products arguments. "under $200" is
-max_price=200; a description like "something for low light" is a query.
+- search_products finds products. Translate the request into its arguments.
+"under $200" is max_price=200; a description like "something for low light" is
+a query.
+- check_inventory answers whether a product is in stock, or how many are left.
+Pass the product name the customer used.
 - Never invent products, prices or availability.
 
-Call search_products once and stop. The orchestrator writes the reply to the
+Call exactly one of them once and stop. The orchestrator writes the reply to the
 customer, so you do not need to summarise what you found.
 """
 
@@ -56,8 +59,8 @@ products_agent = Agent(
     # top of the orchestrator's own turn, so it is worth keeping light.
     model=settings.light_model,
     model_settings=_model_settings,
-    tools=[search_products],
-    # One search per delegation, and the raw result goes back to the
+    tools=[search_products, check_inventory],
+    # One lookup per delegation, and the raw result goes back to the
     # orchestrator. See checkout_agent.py for the full reasoning.
     tool_use_behavior="stop_on_first_tool",
 )

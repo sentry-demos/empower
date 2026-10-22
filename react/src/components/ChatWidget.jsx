@@ -30,6 +30,8 @@ const INITIAL_PILLS = [
 const FULL_VIEW_STARTERS = [
   { id: 'chat-starter-low-light', label: 'What does well in low light?' },
   { id: 'chat-starter-easy-care', label: 'Which plants are hardest to kill?' },
+  { id: 'chat-starter-stock', label: 'Is Plant Mood in stock?' },
+  { id: 'chat-starter-cancel-order', label: 'Cancel order #445' },
 ];
 
 const GREETING =
@@ -542,6 +544,47 @@ const ChatWidget = ({ fullView = false, onExitFull }) => {
         );
       }
       return <ChatError message={data.message} code={String(data.status)} />;
+    }
+    if (type === 'inventory') {
+      if (data.products.length === 0) {
+        return <ChatError message={`No products match "${data.product}".`} />;
+      }
+      return (
+        <div className="chat-widget-card" id="chat-inventory">
+          <span className="chat-confirmation-title sentry-unmask">Stock</span>
+          {data.products.map((product) => (
+            <p
+              className="chat-confirmation-body sentry-unmask"
+              key={product.id}
+            >
+              {product.title} ·{' '}
+              {product.in_stock ? `${product.count} in stock` : 'Out of stock'}
+            </p>
+          ))}
+        </div>
+      );
+    }
+    if (type === 'order') {
+      // Rendered from whatever the order tool handed the model, so a
+      // cancellation whose refund timed out shows here exactly as the model saw
+      // it — see agent/app/tools/shop/orders.py.
+      if (!data.ok && !data.order) return <ChatError message={data.message} />;
+      const { order } = data;
+      return (
+        <div className="chat-widget-card" id="chat-order">
+          <span className="chat-confirmation-title sentry-unmask">
+            Order #{order.id} · {order.status.replace('_', ' ')}
+          </span>
+          <p className="chat-confirmation-body sentry-unmask">
+            {order.items} · ${order.total}.00
+          </p>
+          {!data.ok && (
+            <p className="chat-confirmation-body sentry-unmask">
+              {data.message}
+            </p>
+          )}
+        </div>
+      );
     }
     if (type === 'error') {
       return <ChatError message={data.message} code={data.code} />;

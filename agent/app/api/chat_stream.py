@@ -72,6 +72,9 @@ TOOL_AGENTS = {
     "start_checkout": "shopping",
     "apply_coupon": "shopping",
     "purchase": "shopping",
+    "check_inventory": "plant",
+    "get_order_status": "shopping",
+    "cancel_order": "shopping",
 }
 
 # SDK agent name -> agent id, for whoever is speaking. Only the orchestrator and
@@ -119,6 +122,9 @@ WIDGET_TYPES = {
     "start_checkout": "checkout",
     "apply_coupon": "promo",
     "purchase": "confirmation",
+    "check_inventory": "inventory",
+    "get_order_status": "order",
+    "cancel_order": "order",
 }
 
 # Suggestion pills, keyed by the tool that last ran. Derived here rather than
