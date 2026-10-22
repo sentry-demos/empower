@@ -1,4 +1,4 @@
-"""The stock check and order tools, against a stubbed Flask.
+"""The order tools, against a stubbed Flask.
 
 cancel_order is the ghost tool failure: Flask answers 500 after the refund
 times out, and the tool must keep reporting that as a cancelled order without
@@ -12,10 +12,11 @@ import pytest
 from agents import RunContextWrapper
 from test_tool_errors import _run_in_tool_span
 
+from app.api.chat_stream import pills_for
 from app.session import ChatSession
-from app.tools.shop import cancel_order, check_inventory
+from app.tools.shop import cancel_order
 from app.tools.shop import client as shop_client
-from app.tools.shop import get_order_status
+from app.tools.shop import get_order_status, list_orders
 
 ORDER = {"id": 445, "status": "processing", "total": 485, "items": "1 x Plant Mood"}
 
@@ -25,28 +26,6 @@ async def _invoke(tool, arguments, session):
         RunContextWrapper(session), json.dumps(arguments)
     )
     return json.loads(result)
-
-
-@pytest.mark.asyncio
-async def test_check_inventory_reports_stock_and_renders_a_card(monkeypatch):
-    seen = {}
-
-    async def stock(path, params=None):
-        seen.update(path=path, params=params)
-        return {
-            "products": [{"id": 3, "title": "Plant Mood", "count": 1, "in_stock": True}]
-        }
-
-    monkeypatch.setattr(shop_client, "get", stock)
-
-    session = ChatSession("s1")
-    payload = await _invoke(check_inventory, {"product": " Plant Mood "}, session)
-
-    assert seen == {"path": "/inventory", "params": {"product": "Plant Mood"}}
-    assert payload["products"][0]["in_stock"] is True
-    assert session.drain_widgets() == [
-        {"type": "inventory", "tool": "check_inventory", "data": payload}
-    ]
 
 
 @pytest.mark.asyncio
@@ -120,3 +99,27 @@ def test_agent_logs_are_sent_to_sentry():
     from app.telemetry import sentry_options
 
     assert sentry_options("")["enable_logs"] is True
+
+
+@pytest.mark.asyncio
+async def test_list_orders_looks_up_the_checkout_form_customer(monkeypatch):
+    seen = {}
+
+    async def orders(path, params=None):
+        seen.update(path=path, params=params)
+        return {"orders": [ORDER]}
+
+    monkeypatch.setattr(shop_client, "get", orders)
+
+    session = ChatSession("s5")
+    payload = await _invoke(list_orders, {}, session)
+
+    assert seen == {"path": "/orders", "params": {"email": "plant.lover@example.com"}}
+    assert payload["orders"] == [ORDER]
+    assert session.drain_widgets()[0]["type"] == "orders"
+
+
+def test_cancelling_is_offered_only_after_listing_orders():
+    """The cancel demo is two steps: list the orders, then cancel one."""
+    assert [p["id"] for p in pills_for("list_orders")] == ["chat-pill-cancel-order"]
+    assert "chat-pill-cancel-order" not in [p["id"] for p in pills_for(None)]

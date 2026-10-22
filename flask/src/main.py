@@ -11,7 +11,7 @@ from flask_caching import Cache
 from statsig.statsig_user import StatsigUser
 from statsig import statsig, StatsigOptions, StatsigEnvironmentTier
 import dotenv
-from .db import decrement_inventory, get_products, get_products_join, get_inventory, get_promo_code, get_stock, get_order, set_order_status
+from .db import decrement_inventory, get_products, get_products_join, get_inventory, get_promo_code, get_orders, get_order, set_order_status
 from .utils import parseHeaders, get_iterator, evaluate_statsig_flags
 from .queues.tasks import sendEmail
 import sentry_sdk
@@ -38,8 +38,10 @@ EXTREMELY_SLOW_PROFILE = 24
 
 # Cancelling an order refunds it through the mock payment provider below, which
 # answers slower than we are willing to wait — so every cancellation times out.
+# Kept just over the timeout: each cancel holds one of gunicorn's two sync
+# workers for the whole delay.
 PAYMENT_PROVIDER_TIMEOUT = 5 # seconds
-MOCK_PAYMENT_PROVIDER_DELAY = 8
+MOCK_PAYMENT_PROVIDER_DELAY = 6
 CANCELLABLE_ORDER_STATUSES = ["processing", "cancel_requested"]
 
 
@@ -486,24 +488,18 @@ def apply_promo_code():
         return '', 500
 
 
-@app.route('/inventory', methods=['GET'])
-def inventory():
-    logger.info('[/inventory] request received')
+@app.route('/orders', methods=['GET'])
+def orders():
+    logger.info('[/orders] list request received')
 
-    product = request.args.get('product', '').strip()
-    if not product:
-        logger.warning('[/inventory] bad request - missing product parameter')
+    email = request.args.get('email', '').strip()
+    if not email:
+        logger.warning('[/orders] bad request - missing email parameter')
         return '', 400
 
-    try:
-        stock = get_stock(product)
-    except Exception as err:
-        logger.error('[/inventory] error getting stock for: %s', product)
-        sentry_sdk.capture_exception(err)
-        raise (err)
-
-    logger.info('[/inventory] found %d matching products for: %s', len(stock), product)
-    return jsonify({"products": stock})
+    customer_orders = get_orders(email)
+    logger.info('[/orders] found %d orders', len(customer_orders))
+    return jsonify({"orders": customer_orders})
 
 
 @app.route('/orders/<int:order_id>', methods=['GET'])
@@ -561,8 +557,9 @@ def cancel_order(order_id):
 def refund_payment(order):
     # Calls back into this same service (see mock_payment_provider_refunds), over
     # real HTTP so the call is an http.client span that the trace continues
-    # through. PORT is set on Cloud Run, FLASK_LOCAL_PORT when run locally.
-    port = os.environ.get("PORT") or os.environ.get("FLASK_LOCAL_PORT")
+    # through. PORT is set on Cloud Run, FLASK_LOCAL_PORT when run locally;
+    # stripped because local.env's inline comments leave trailing spaces on it.
+    port = (os.environ.get("PORT") or os.environ.get("FLASK_LOCAL_PORT")).strip()
     r = requests.post(
         "http://127.0.0.1:%s/mock/stripe/v1/refunds" % port,
         json={"payment_intent": order['payment_intent'], "amount": order['total'] * 100},

@@ -26,12 +26,10 @@ const INITIAL_PILLS = [
 // of tiles where the popup has room for one chip. Client-side and free-text on
 // purpose: the agent's own pills drive the reproducible demo path and keep their
 // chat-pill-* ids for TDA, so these use a chat-starter-* prefix and simply
-// exercise the conversational routing (care questions reach the plant expert).
+// exercise the conversational routing. Cancelling an order is deliberately not
+// a starter: the orders list offers it as a follow-up pill.
 const FULL_VIEW_STARTERS = [
-  { id: 'chat-starter-low-light', label: 'What does well in low light?' },
-  { id: 'chat-starter-easy-care', label: 'Which plants are hardest to kill?' },
-  { id: 'chat-starter-stock', label: 'Is Plant Mood in stock?' },
-  { id: 'chat-starter-cancel-order', label: 'Cancel order #445' },
+  { id: 'chat-starter-orders', label: 'Show my recent orders' },
 ];
 
 const GREETING =
@@ -545,20 +543,19 @@ const ChatWidget = ({ fullView = false, onExitFull }) => {
       }
       return <ChatError message={data.message} code={String(data.status)} />;
     }
-    if (type === 'inventory') {
-      if (data.products.length === 0) {
-        return <ChatError message={`No products match "${data.product}".`} />;
+    if (type === 'orders') {
+      if (data.orders.length === 0) {
+        return <ChatError message="No orders found." />;
       }
       return (
-        <div className="chat-widget-card" id="chat-inventory">
-          <span className="chat-confirmation-title sentry-unmask">Stock</span>
-          {data.products.map((product) => (
-            <p
-              className="chat-confirmation-body sentry-unmask"
-              key={product.id}
-            >
-              {product.title} ·{' '}
-              {product.in_stock ? `${product.count} in stock` : 'Out of stock'}
+        <div className="chat-widget-card" id="chat-orders">
+          <span className="chat-confirmation-title sentry-unmask">
+            Your orders
+          </span>
+          {data.orders.map((order) => (
+            <p className="chat-confirmation-body sentry-unmask" key={order.id}>
+              #{order.id} · {order.status.replace('_', ' ')} · {order.items}
+              {' · '}${order.total}.00
             </p>
           ))}
         </div>
@@ -568,7 +565,9 @@ const ChatWidget = ({ fullView = false, onExitFull }) => {
       // Rendered from whatever the order tool handed the model, so a
       // cancellation whose refund timed out shows here exactly as the model saw
       // it — see agent/app/tools/shop/orders.py.
-      if (!data.ok && !data.order) return <ChatError message={data.message} />;
+      if (!data.order) {
+        return <ChatError message={data.message || 'Order unavailable.'} />;
+      }
       const { order } = data;
       return (
         <div className="chat-widget-card" id="chat-order">

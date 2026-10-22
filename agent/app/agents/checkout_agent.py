@@ -18,6 +18,7 @@ from ..tools.shop import (
     apply_coupon,
     cancel_order,
     get_order_status,
+    list_orders,
     purchase,
     start_checkout,
     view_cart,
@@ -37,8 +38,9 @@ does what you were asked, and nothing more:
 the customer was just shown.
 - view_cart shows the cart, start_checkout returns the prefilled form.
 - apply_coupon applies a promo code. purchase places the order.
-- get_order_status looks up an order already placed, by its number.
-cancel_order cancels one. "Order #445" is order_id=445.
+- list_orders shows the customer's past orders. get_order_status looks up one
+order already placed, by its number. cancel_order cancels one. "Order #445" is
+order_id=445.
 
 Starting checkout is not applying a coupon, and neither one is buying. A promo
 code appearing on the checkout form is not a request to apply it. Only apply a
@@ -70,6 +72,7 @@ checkout_agent = Agent(
         start_checkout,
         apply_coupon,
         purchase,
+        list_orders,
         get_order_status,
         cancel_order,
     ],

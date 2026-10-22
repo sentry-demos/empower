@@ -21,10 +21,8 @@ const CARD_BLURBS = {
   'chat-pill-checkout': 'Review the order and the prefilled details.',
   'chat-pill-apply-coupon': 'Try a promo code against the order.',
   'chat-pill-purchase': 'Place the order and get a confirmation.',
-  'chat-starter-low-light': 'Ask about placement and light levels.',
-  'chat-starter-easy-care': 'Get a recommendation for a forgiving plant.',
-  'chat-starter-stock': 'Check what is left in the warehouse.',
-  'chat-starter-cancel-order': 'Cancel an order and get a refund.',
+  'chat-pill-cancel-order': 'Cancel an order and get a refund.',
+  'chat-starter-orders': 'See what you have ordered and where it is.',
 };
 
 function ChatPills({ pills, onSelect, disabled, variant = 'chips' }) {

@@ -1,9 +1,9 @@
 --
--- Orders and the legacy warehouse stock view, for the agent's order and stock
--- tools. Kept out of empowerplant.sql so that file stays a pg_dump.
+-- Orders, for the agent's order tools. Kept out of empowerplant.sql so that
+-- file stays a pg_dump.
 --
 -- deploy_project.sh runs every .sql file here in sorted order, so this runs
--- after empowerplant.sql and can rely on public.inventory existing.
+-- after empowerplant.sql.
 --
 
 SET search_path = public;
@@ -11,7 +11,8 @@ SET search_path = public;
 --
 -- Name: orders; Type: TABLE; Schema: public; Owner: postgres
 --
--- Read by GET /orders/<id> and written by POST /orders/<id>/cancel in flask.
+-- Read by GET /orders and GET /orders/<id>, and written by
+-- POST /orders/<id>/cancel in flask.
 -- Order 445 is the one the demo cancels. Its cancellation never completes (the
 -- payment provider times out), so it is left at cancel_requested and stays
 -- cancellable: the demo can be run against it again without a reseed.
@@ -38,18 +39,3 @@ INSERT INTO public.orders (id, email, status, total, items, shipping_address, pa
 (444, 'plant.lover@example.com', 'shipped', 330, '1 x Plant Mood, 1 x Plant Nodes', '123 Main Street, San Francisco, CA 94122', 'pi_3PmockEmpower444', '2026-10-12 16:41:00'),
 (445, 'plant.lover@example.com', 'processing', 485, '1 x Plant Mood, 1 x Plant Stroller, 1 x Plant Nodes', '123 Main Street, San Francisco, CA 94122', 'pi_3PmockEmpower445', '2026-10-19 09:03:00'),
 (446, 'plant.lover@example.com', 'processing', 25, '1 x Plant Mood5', '123 Main Street, San Francisco, CA 94122', 'pi_3PmockEmpower446', '2026-10-20 18:27:00');
-
---
--- Name: warehouse_stock; Type: VIEW; Schema: public; Owner: postgres
---
--- Another "sleepy view", like product_bundles: stands in for the legacy,
--- unindexed warehouse lookup behind GET /inventory. Run the following query to
--- get the current sleep duration:
--- SELECT pg_get_viewdef('warehouse_stock', true)
---
-
-CREATE VIEW public.warehouse_stock AS
- SELECT inventory.sku, inventory.count, inventory.productid
-   FROM public.inventory, pg_sleep(20);
-
-ALTER TABLE public.warehouse_stock OWNER TO postgres;

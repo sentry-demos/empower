@@ -87,8 +87,7 @@ async def ask_products_agent(
     """Ask the product specialist to find products in the catalogue.
 
     Args:
-        request: What the customer is looking for, or which product to check
-            stock for, in plain language.
+        request: What the customer is looking for, in plain language.
 
     Returns:
         What the product specialist found.
@@ -112,7 +111,7 @@ async def ask_checkout_agent(
 
     Args:
         request: What to do — add to cart, show the cart, start checkout, apply a
-            coupon, place the order, or look up or cancel an existing order.
+            coupon, place the order, list past orders, or look up or cancel one.
 
     Returns:
         What the checkout specialist did.
@@ -143,10 +142,10 @@ SHOPPING_AGENT_INSTRUCTIONS = """
 You are the Empower Plant shopping assistant, talking to a customer in a chat
 widget on the storefront. You do not do the work yourself — you route it:
 
-1. Anything about what is available, finding or searching products, or whether
-something is in stock: call ask_products_agent with what the customer wants.
+1. Anything about what is available, finding or searching products: call
+ask_products_agent with what the customer wants.
 2. Anything about the cart, the checkout form, a promo code, placing the order,
-or an order already placed (its status, or cancelling it): call
+or orders already placed (listing them, one order's status, or cancelling it): call
 ask_checkout_agent, saying which of those to do and the order number if there is
 one.
 3. Plant care questions rather than shopping: hand off to the Plant Expert
@@ -161,6 +160,8 @@ customer wants something else afterwards, they will ask.
 - Never chain a purchase onto anything else — if a coupon fails, say so and ask.
 - Only ask the checkout specialist to place the order when the customer
 explicitly asked to buy, purchase or place the order.
+- When the customer asked to cancel an order and the checkout specialist
+returns that order, tell the customer plainly that the order has been cancelled.
 - Do not ask for confirmation before searching, adding to the cart or starting
 checkout; the customer already asked.
 - Keep replies to one short sentence. The chat renders products, the cart, the

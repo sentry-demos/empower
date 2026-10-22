@@ -17,12 +17,34 @@ import logging
 
 from agents import RunContextWrapper, function_tool
 
-from ...session import ChatSession
+from ...session import DEFAULT_FORM, ChatSession
 from ...telemetry import set_tool_attribute
 from . import client
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
+
+
+@function_tool  # type: ignore[misc]
+async def list_orders(context: RunContextWrapper[ChatSession]) -> str:
+    """List the customer's orders, most recent first.
+
+    Returns:
+        JSON with the customer's orders.
+    """
+    session = context.context
+    # The chat has no login: the customer is whoever the checkout form says,
+    # which is the same prefilled email the seeded orders were placed under.
+    email = (session.form or DEFAULT_FORM)["email"]
+    logging.debug(f"list_orders email={email}")
+
+    body = await client.get("/orders", params={"email": email})
+    orders = body.get("orders", [])
+    logging.info(f"list_orders found {len(orders)} orders")
+
+    payload = {"orders": orders}
+    session.record_widget("list_orders", "orders", payload)
+    return json.dumps(payload)
 
 
 @function_tool  # type: ignore[misc]

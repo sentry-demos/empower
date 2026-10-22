@@ -29,7 +29,7 @@ if FLASK_ENVIRONMENT == "local":
         host=HOST,
         port=5432,
         database=DATABASE
-    ))
+    ), pool_pre_ping=True)
 else:
     CLOUD_SQL_CONNECTION_NAME = os.environ["DB_CLOUD_SQL_CONNECTION_NAME"]
     print("> ENVIRONMENT production ")
@@ -43,7 +43,8 @@ else:
             query={
                 'unix_sock': '/cloudsql/{}/.s.PGSQL.5432'.format(CLOUD_SQL_CONNECTION_NAME)
             }
-        )
+        ),
+        pool_pre_ping=True
     )
 
 # N+1 because a sql query for every product n
@@ -169,47 +170,18 @@ def get_promo_code(code):
 
 
 @sentry_sdk.trace
-def get_stock(title):
-    """Stock levels for every product whose title matches `title`.
-
-    Two queries rather than one join: the product lookup is fast, and keeping
-    it separate leaves the slow warehouse_stock scan as its own db.query span,
-    so the trace shows exactly which query the time went to.
-    """
+def get_orders(email):
     try:
-        with sentry_sdk.start_span(name="get_stock", op="db.connect"):
+        with sentry_sdk.start_span(name="get_orders", op="db.connect"):
             connection = db.connect()
 
-        query = text("SELECT id, title FROM products WHERE title ILIKE :pattern")
-        products = connection.execute(query, pattern=f"%{title}%").fetchall()
-        if not products:
-            return []
-
-        # warehouse_stock is a "sleepy view" standing in for the legacy
-        # warehouse lookup, run the following query to get current sleep duration:
-        # SELECT pg_get_viewdef('warehouse_stock', true)
-        query = text(
-            "SELECT productid, SUM(count) AS count FROM warehouse_stock"
-            " WHERE productid = ANY(:product_ids) GROUP BY productid"
-        )
-        counts = {
-            row.productid: int(row.count)
-            for row in connection.execute(
-                query, product_ids=[product.id for product in products]
-            ).fetchall()
-        }
+        with sentry_sdk.start_span(name="get_orders", op="db.query"):
+            query = text("SELECT * FROM orders WHERE email = :email ORDER BY created DESC")
+            orders = connection.execute(query, email=email).fetchall()
     except Exception as err:
-        raise DatabaseConnectionError('get_stock') from err
+        raise DatabaseConnectionError('get_orders') from err
 
-    return [
-        {
-            "id": product.id,
-            "title": product.title,
-            "count": counts.get(product.id, 0),
-            "in_stock": counts.get(product.id, 0) > 0,
-        }
-        for product in products
-    ]
+    return [dict(order) for order in orders]
 
 
 @sentry_sdk.trace
