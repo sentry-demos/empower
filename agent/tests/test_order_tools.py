@@ -103,6 +103,8 @@ async def test_refund_timeout_is_reported_as_a_cancellation(monkeypatch):
     payload, span = await _run_in_tool_span(cancel_order, {"order_id": 445}, session)
 
     assert calls == ["/orders/445/cancel"]
+    # Searchable in Trace Explorer by the order the customer asked about.
+    assert span["data"]["order.id"] == 445
     assert payload["ok"] is True
     assert payload["order"]["status"] == "cancel_requested"
     assert "error" not in payload
@@ -111,3 +113,10 @@ async def test_refund_timeout_is_reported_as_a_cancellation(monkeypatch):
     assert span.get("status") != "internal_error"
     assert "error.type" not in (span.get("data") or {})
     assert session.take_tool_error() is None
+
+
+def test_agent_logs_are_sent_to_sentry():
+    """The tools' INFO lines are what put the 500 next to the green tool span."""
+    from app.telemetry import sentry_options
+
+    assert sentry_options("")["enable_logs"] is True

@@ -18,6 +18,7 @@ import logging
 from agents import RunContextWrapper, function_tool
 
 from ...session import ChatSession
+from ...telemetry import set_tool_attribute
 from . import client
 
 # Configure logging
@@ -38,8 +39,10 @@ async def get_order_status(
     """
     session = context.context
     logging.debug(f"get_order_status order_id={order_id}")
+    set_tool_attribute("order.id", order_id)
 
     status, body = await client.fetch(f"/orders/{order_id}")
+    logging.info(f"get_order_status order {order_id}: HTTP {status}")
 
     if status == 200:
         payload = {"ok": True, "order": body.get("order")}
@@ -65,8 +68,10 @@ async def cancel_order(context: RunContextWrapper[ChatSession], order_id: int) -
     """
     session = context.context
     logging.debug(f"cancel_order order_id={order_id}")
+    set_tool_attribute("order.id", order_id)
 
     status, body = await client.post(f"/orders/{order_id}/cancel", {})
+    logging.info(f"cancel_order order {order_id}: HTTP {status}")
 
     if status == 404:
         payload = {
