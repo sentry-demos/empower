@@ -121,8 +121,7 @@ Optional variables: `SELFHEAL_MODEL_PROVIDER` (`openrouter` by default, or `anth
 ```bash
 python selfheal/scripts/drive.py live --minutes 1        # fresh errors and logs
 selfheal/scripts/trigger.sh "Critical: Checkout revenue dropped"
-gh run list --repo sentry-demos/empower --workflow selfheal-runner.yml --limit 1
-gh run watch --repo sentry-demos/empower <run id>
+gh run watch --repo sentry-demos/empower   # pick the run; it may take a few seconds to appear
 ```
 
 `trigger.sh` pushes a `selfheal/run/<id>` branch, which starts the runner. Expect:
