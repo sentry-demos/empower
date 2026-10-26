@@ -158,6 +158,14 @@ An incoming webhook (`SELFHEAL_SLACK_WEBHOOK_URL`) also works if you have one; t
 takes priority. If posting fails, the job log shows Slack's error, e.g. `not_in_channel`
 (invite the bot) or `missing_scope` (add `chat:write`). Agent PRs stay open; they don't block
 later runs.
+
+**Replies in the Sentry alert's thread.** If the alert that starts runs also has a Slack action
+posting to the same channel, the bot replies in the thread of Sentry's alert message instead of
+posting to the channel. It finds the message by looking back 6 hours (`SELFHEAL_SLACK_THREAD_HOURS`)
+for the newest message from the Sentry app mentioning "revenue" (`SELFHEAL_SLACK_ALERT_MATCH`), or
+the alert's title or link. This needs the bot scope `channels:history` (`groups:history` for a
+private channel), and Sentry's app invited to the channel. Runs started by `trigger.sh` have no
+alert message, so they post to the channel; the job log says why.
 - In `selfheal-harness` → Agents: an `invoke_agent` trace per agent.
 
 **Likely first-run failures:**

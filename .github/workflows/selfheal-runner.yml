@@ -190,6 +190,7 @@ jobs:
           PR_URL: ${{ steps.pr.outputs.url }}
           SELFHEAL_SLACK_BOT_TOKEN: ${{ secrets.SELFHEAL_SLACK_BOT_TOKEN }}
           SELFHEAL_SLACK_CHANNEL: ${{ vars.SELFHEAL_SLACK_CHANNEL }}
+          SELFHEAL_SLACK_ALERT_MATCH: ${{ vars.SELFHEAL_SLACK_ALERT_MATCH }}  # text identifying Sentry's alert message
           SELFHEAL_SLACK_WEBHOOK_URL: ${{ secrets.SELFHEAL_SLACK_WEBHOOK_URL }}
         run: |
           OUT="$RUNNER_TEMP/review"
@@ -246,6 +247,7 @@ jobs:
         env:
           SELFHEAL_SLACK_BOT_TOKEN: ${{ secrets.SELFHEAL_SLACK_BOT_TOKEN }}
           SELFHEAL_SLACK_CHANNEL: ${{ vars.SELFHEAL_SLACK_CHANNEL }}
+          SELFHEAL_SLACK_ALERT_MATCH: ${{ vars.SELFHEAL_SLACK_ALERT_MATCH }}  # text identifying Sentry's alert message
           SELFHEAL_SLACK_WEBHOOK_URL: ${{ secrets.SELFHEAL_SLACK_WEBHOOK_URL }}
         run: |
           pip install requests

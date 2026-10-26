@@ -12,14 +12,22 @@
 Slack: SELFHEAL_SLACK_BOT_TOKEN (an existing bot's xoxb- token with chat:write) plus
 SELFHEAL_SLACK_CHANNEL (channel ID), or SELFHEAL_SLACK_WEBHOOK_URL (an incoming webhook).
 With neither, prints the message.
+
+Threading: with the bot token, messages are posted as replies to Sentry's own alert message in
+the channel, when one is found: the most recent message from the Sentry app within
+SELFHEAL_SLACK_THREAD_HOURS (default 6) that mentions SELFHEAL_SLACK_ALERT_MATCH (default
+"revenue") or the alert's title or link. Needs channels:history (groups:history for a private
+channel). With no match, e.g. runs started by trigger.sh, messages go to the channel itself.
 """
 import argparse
 import json
 import os
+import time
 
 import requests
 
 VARIANTS = ("without-seer", "with-seer")
+SLACK_API = "https://slack.com/api"
 
 
 def load(path, default=None):
@@ -30,17 +38,57 @@ def load(path, default=None):
         return default if default is not None else {}
 
 
-def post(text, blocks):
-    """Post with an existing Slack bot's token if configured, else an incoming webhook,
-    else print (the message still shows in the job log)."""
+def is_from_sentry(message):
+    profile = message.get("bot_profile") or {}
+    return "sentry" in (profile.get("name") or message.get("username") or "").lower()
+
+
+def find_alert_thread(token, channel, alert):
+    """ts of Sentry's alert message to reply under, or None. Never raises: threading is a
+    nicety, so any problem (missing scope, no match) falls back to a channel post."""
+    hours = float(os.environ.get("SELFHEAL_SLACK_THREAD_HOURS") or 6)
+    needles = [os.environ.get("SELFHEAL_SLACK_ALERT_MATCH") or "revenue",
+               alert.get("title"), alert.get("url")]
+    needles = [n.lower() for n in needles if n]
+    try:
+        response = requests.get(
+            f"{SLACK_API}/conversations.history",
+            headers={"Authorization": f"Bearer {token}"},
+            params={"channel": channel, "oldest": f"{time.time() - hours * 3600:.0f}", "limit": 100},
+            timeout=15,
+        )
+        body = response.json()
+    except (requests.RequestException, ValueError) as err:
+        print(f"Slack thread lookup failed ({err}); posting to the channel")
+        return None
+    if not body.get("ok"):
+        print(f"Slack thread lookup failed: {body.get('error')} (needs channels:history, or"
+              f" groups:history for a private channel); posting to the channel")
+        return None
+    # Newest first; the whole message (text, blocks, attachments) is searched, since Sentry
+    # puts the alert name and link in blocks and attachments
+    for message in body.get("messages", []):
+        if is_from_sentry(message) and any(n in json.dumps(message).lower() for n in needles):
+            return message["ts"]
+    print("No Sentry alert message found to reply under; posting to the channel")
+    return None
+
+
+def post(text, blocks, alert=None):
+    """Post with an existing Slack bot's token if configured (in the thread of Sentry's alert
+    message when there is one), else an incoming webhook, else print (the job log)."""
     token = os.environ.get("SELFHEAL_SLACK_BOT_TOKEN")
     channel = os.environ.get("SELFHEAL_SLACK_CHANNEL")
     url = os.environ.get("SELFHEAL_SLACK_WEBHOOK_URL")
     if token and channel:
+        message = {"channel": channel, "text": text, "blocks": blocks, "unfurl_links": False}
+        thread_ts = find_alert_thread(token, channel, alert or {})
+        if thread_ts:
+            message["thread_ts"] = thread_ts
         response = requests.post(
-            "https://slack.com/api/chat.postMessage",
+            f"{SLACK_API}/chat.postMessage",
             headers={"Authorization": f"Bearer {token}"},
-            json={"channel": channel, "text": text, "blocks": blocks, "unfurl_links": False},
+            json=message,
             timeout=15,
         )
         response.raise_for_status()
@@ -103,7 +151,7 @@ def report_run(args):
     ]
     for text in sections:
         blocks += [{"type": "divider"}, {"type": "section", "text": {"type": "mrkdwn", "text": text}}]
-    post(headline, blocks)
+    post(headline, blocks, alert)
 
 
 def problem_line(alert, agent):
@@ -166,7 +214,7 @@ def report_review(args):
     post(headline, [
         {"type": "header", "text": {"type": "plain_text", "text": headline[:150]}},
         {"type": "section", "text": {"type": "mrkdwn", "text": "\n".join(lines)}},
-    ])
+    ], alert)
 
 
 if __name__ == "__main__":
