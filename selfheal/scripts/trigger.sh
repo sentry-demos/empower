@@ -31,5 +31,17 @@ git -C "$tmp" add .selfheal/alert.json
 git -C "$tmp" commit -q -m "Self-heal run: $TITLE"
 git -C "$tmp" push -q "$REMOTE" "HEAD:refs/heads/$branch"
 
-echo "Pushed $branch. Watch it with:"
-echo "  gh run list --workflow selfheal-runner.yml --branch $branch"
+echo "Pushed $branch. Waiting for the run to start..."
+# Look the run up by branch through the API: plain `gh run list` 404s in this repo
+repo=$(gh repo view "$(git remote get-url "$REMOTE")" --json nameWithOwner --jq .nameWithOwner)
+for _ in $(seq 20); do
+  run=$(gh api "repos/$repo/actions/runs?branch=$branch" --jq '.workflow_runs[0].id // empty')
+  if [ -n "$run" ]; then
+    echo "Run $run started:"
+    echo "  gh run watch $run --repo $repo              # step status"
+    echo "  gh run view $run --repo $repo --web         # live agent output: fix job -> \"Agent diagnoses and fixes\""
+    exit 0
+  fi
+  sleep 3
+done
+echo "No run yet for $branch. Check Actions: https://github.com/$repo/actions/workflows/selfheal-runner.yml"

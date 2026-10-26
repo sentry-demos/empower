@@ -125,12 +125,12 @@ a token. The server's search tools use the same model key as Claude Code.
 ```bash
 python selfheal/scripts/drive.py live --minutes 1        # fresh errors and logs
 selfheal/scripts/trigger.sh "Critical: Checkout revenue dropped"
-# Use the branch trigger.sh printed. (Plain `gh run list` / `gh run watch` fail in this repo with a
-# 404: a "Secret Scan" run on another branch points at a workflow GitHub can't find.)
-RUN=$(gh api "repos/sentry-demos/empower/actions/runs?branch=selfheal/run/<id>" --jq '.workflow_runs[0].id')
-gh run watch "$RUN" --repo sentry-demos/empower          # step status; may take a few seconds to appear
-gh run view "$RUN" --repo sentry-demos/empower --web     # live agent output: fix job → "Agent diagnoses and fixes"
 ```
+
+`trigger.sh` waits for the run to start, then prints ready-to-paste `gh run watch <id>` (step
+status) and `gh run view <id> --web` (live agent output: fix job → "Agent diagnoses and fixes")
+commands. Always pass the run ID: plain `gh run list` / `gh run watch` fail in this repo with a
+404, because a "Secret Scan" run on another branch points at a workflow GitHub can't find.
 
 `trigger.sh` pushes a `selfheal/run/<id>` branch, which starts the runner. Expect:
 - `fix (without-seer)` and `fix (with-seer)` streaming each agent step, then a draft PR each,
