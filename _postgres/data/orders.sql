@@ -14,7 +14,7 @@ SET search_path = public;
 -- Read by GET /orders and GET /orders/<id>, and written by
 -- POST /orders/<id>/cancel in flask.
 -- Order 445 is the one the demo cancels. Its cancellation never completes (the
--- payment provider times out), so it is left at cancel_requested and stays
+-- payment provider times out), so flask puts it back to processing and it stays
 -- cancellable: the demo can be run against it again without a reseed.
 --
 

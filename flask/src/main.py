@@ -533,8 +533,8 @@ def cancel_order(order_id):
             "order": order
         }), 409
 
-    # Marked before the refund is attempted, so a refund that never comes back
-    # leaves the order at cancel_requested rather than cancelled.
+    # Marked before the refund is attempted, so the response for a refund that
+    # never comes back still carries the order at cancel_requested.
     order = set_order_status(order_id, 'cancel_requested')
 
     try:
@@ -542,6 +542,12 @@ def cancel_order(order_id):
     except requests.exceptions.Timeout as err:
         logger.error('[/orders/cancel] payment provider timed out refunding order %s', order_id)
         sentry_sdk.capture_exception(err)
+        # The refund didn't happen, so neither did the cancellation: the order
+        # goes back to processing. The response below still reports it as
+        # cancel_requested, which is what the agent sees, and listing orders
+        # afterwards shows it was never cancelled. Also keeps the demo order
+        # cancellable on every run without a reseed.
+        set_order_status(order_id, 'processing')
         return jsonify({
             "order": order,
             "refund": None,
