@@ -58,9 +58,14 @@ Keep this venv active in each terminal you open for later steps.
    OpenRouter documents Claude Code support (its "Claude Code integration" guide) with the
    same settings the `selfheal-claude` action uses. Claude Code's quick background calls go to
    `anthropic/claude-haiku-5.5`; override with the `SELFHEAL_HAIKU_MODEL` variable.
-3. **A Sentry user auth token** for the MCP: Sentry → User settings → Personal Tokens, with
-   read access to projects, issues and events, and org read. This is the one value nobody
-   else has.
+3. **An org-owned Sentry token** for the MCP, from an internal integration: Org Settings →
+   Developer Settings → Custom Integrations → Create New Integration → Internal Integration,
+   named `selfheal`. Permissions: Project Read, Organization Read, Team Read, Issue & Event
+   Read & Write (Write lets the with-Seer agent start Seer). Copy its token. The same integration
+   can later carry the alert webhook (Alert Rule Action), so one org-owned credential covers both.
+   Not verified yet: some endpoints only accept a real user, possibly Seer's. If the with-Seer job
+   logs a 401/403 on `analyze_issue_with_seer`, use a personal token from a dedicated Sentry
+   service user instead.
 
 ## 2. Sentry (`demo` org)
 
