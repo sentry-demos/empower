@@ -8,6 +8,7 @@ Usage (from the repo root):
     python selfheal/harness/replay.py path/to/cart.json
 Prints the status and body, exits 0 on HTTP 200 and 1 otherwise.
 """
+import ast
 import json
 import os
 import sys
@@ -18,8 +19,13 @@ FLASK_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "flask")
 
 
 def load_cart(path):
+    """JSON, or the Python dict repr that master's checkout error log puts in its message."""
     with open(path) as f:
-        data = json.load(f)
+        text = f.read()
+    try:
+        data = json.loads(text)
+    except json.JSONDecodeError:
+        data = ast.literal_eval(text.strip())
     # Accept the bare cart, or a whole order body with a "cart" key
     return data["cart"] if "cart" in data else data
 

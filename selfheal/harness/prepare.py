@@ -64,8 +64,11 @@ def main():
         with open(args.alert) as f:
             alert = json.dumps(json.load(f), indent=2)
         diagnosis = read_prompt(f"diagnosis_{args.variant.replace('-', '_')}.md")
+        # DIAGNOSIS goes in before the Sentry placeholders, which it also uses, are filled
         prompt = render(read_prompt("diagnose_fix.md"), ALERT=alert, DIAGNOSIS=diagnosis.strip(),
-                        OUT=out, SENTRY_ORG=os.environ.get("SENTRY_ORG", "demo"))
+                        OUT=out, SENTRY_ORG=os.environ.get("SENTRY_ORG") or "demo",
+                        SENTRY_PROJECT=os.environ.get("SENTRY_PROJECT") or "selfheal-flask",
+                        SENTRY_ENVIRONMENT=os.environ.get("SENTRY_ENVIRONMENT") or "selfheal")
         os.makedirs(os.path.dirname(os.path.abspath(args.mcp_out)), exist_ok=True)
         with open(args.mcp_out, "w") as f:
             json.dump(mcp_config(args.variant), f)

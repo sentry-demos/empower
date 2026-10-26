@@ -24,8 +24,9 @@ fixtures and `make_order()` helper. Every fix needs a regression test in
 
 ## Replaying a production request
 
-The checkout error log line carries the failing cart as the `cart_json` attribute.
-Save it to a file and replay it against your working tree (from the repo root):
+The checkout error log line carries the failing cart: as the `cart_json` attribute on this
+branch, or as a Python dict in the message on production (master). Save it to a file, in either
+form, and replay it against your working tree (from the repo root):
 
 ```
 python selfheal/harness/replay.py path/to/cart.json
@@ -35,6 +36,7 @@ Exit code 0 means HTTP 200.
 
 ## Conventions
 
-- Sentry project: `selfheal-flask`, environment `selfheal`, release `selfheal-flask@<sha>`.
+- Sentry project and environment: as given in your prompt. The test app is `selfheal-flask` /
+  `selfheal`; production is `backend-flask` / `production`.
 - Reference the Sentry issue short ID as `Fixes <SHORT-ID>` in the PR body so the issue resolves
   when the release deploys.

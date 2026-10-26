@@ -88,6 +88,12 @@ optional `cleanup_projects` keep-list change in point 4. Step-by-step test instr
      `SELFHEAL_MODEL_KEY_SECRET` (`AGENT_OPENROUTER_API_KEY`), `SELFHEAL_GCP_PROJECT`
      (`sales-engineering-sf`), `SELFHEAL_MAX_TURNS` (40), `SELFHEAL_SENTRY_ORG` (`demo`), and
      `SELFHEAL_HAIKU_MODEL` (`anthropic/claude-haiku-5.5`).
+   - Where the agents look in Sentry: `SELFHEAL_SENTRY_PROJECT` / `SELFHEAL_SENTRY_ENVIRONMENT`.
+     The default is the test app (`selfheal-flask` / `selfheal`). Set `backend-flask` /
+     `production` to run on production's scheduled checkout drops. Production logs the cart as a
+     Python dict in the message; the agents and `replay.py` handle both forms.
+   - Agent PRs stay open for demos, but only the latest run's: once a run opens a PR, its
+     `report` job closes agent PRs from earlier runs.
    - The Sentry MCP runs inside the job as `@sentry/mcp-server` (pinned in
      `harness/prepare.py`), because the hosted MCP only takes OAuth sign-ins.
 4. **Keep-list (master, optional):** add `selfheal-flask selfheal-harness` to `--exclude` in

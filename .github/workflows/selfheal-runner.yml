@@ -20,6 +20,10 @@ concurrency:
 env:
   BASE_BRANCH: selfheal/base
   SENTRY_ORG: ${{ vars.SELFHEAL_SENTRY_ORG || 'demo' }}
+  # Where the agents look in Sentry: the test app by default, or backend-flask / production
+  # to run on the existing scheduled checkout drops
+  SENTRY_PROJECT: ${{ vars.SELFHEAL_SENTRY_PROJECT || 'selfheal-flask' }}
+  SENTRY_ENVIRONMENT: ${{ vars.SELFHEAL_SENTRY_ENVIRONMENT || 'selfheal' }}
   SELFHEAL_MODEL: ${{ vars.SELFHEAL_MODEL }}
   SELFHEAL_MAX_TURNS: ${{ vars.SELFHEAL_MAX_TURNS }}
   SELFHEAL_HAIKU_MODEL: ${{ vars.SELFHEAL_HAIKU_MODEL }}
@@ -207,13 +211,32 @@ jobs:
     if: always() && vars.SELFHEAL_ENABLED == 'true'
     runs-on: ubuntu-latest
     permissions:
-      contents: write  # delete the run branch
+      contents: write       # delete the run branch and superseded PR branches
+      pull-requests: write  # close superseded agent PRs
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/download-artifact@v4
         with:
           path: results
+
+      - name: Close the previous run's agent PRs
+        # PRs stay open for demos, but only the latest pair: once this run has opened at least
+        # one PR, close agent PRs from earlier runs. A failed run leaves them alone.
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          new_prs=$(jq -r '.pr_url // empty' results/*/verify.json 2>/dev/null | tr '\n' ' ')
+          if [ -z "$new_prs" ]; then
+            echo "This run opened no PRs; keeping the existing ones."
+            exit 0
+          fi
+          gh pr list --repo "$GITHUB_REPOSITORY" --base selfheal/base --label selfheal-agent --state open \
+              --json number,headRefName --jq ".[] | select(.headRefName | endswith(\"-$GITHUB_RUN_ID\") | not) | .number" |
+            while read -r pr; do
+              gh pr close "$pr" --repo "$GITHUB_REPOSITORY" --delete-branch \
+                --comment "Superseded by a newer self-heal run: $new_prs"
+            done
 
       - name: Post the scorecard
         env:

@@ -8,7 +8,7 @@ ready-to-review change to a human. Work unattended: don't ask questions.
 {{ALERT}}
 ```
 
-Sentry org: `{{SENTRY_ORG}}`. Project: `selfheal-flask` (the Flask backend). Environment: `selfheal`.
+Sentry org: `{{SENTRY_ORG}}`. Project: `{{SENTRY_PROJECT}}` (the Flask backend). Environment: `{{SENTRY_ENVIRONMENT}}`.
 
 Read `AGENTS.md` at the repo root first. It covers scope, tests and the replay tool.
 
@@ -34,8 +34,16 @@ Before moving on, state the root cause in one or two sentences: the line that's 
 
 ## 2. Get the failing request
 
-Search Sentry Logs in `selfheal-flask` for the most recent "Failed to validate inventory" log
-line and read its `cart_json` attribute. Write that JSON, unchanged, to `{{OUT}}/cart.json`.
+Search Sentry Logs in `{{SENTRY_PROJECT}}` (environment `{{SENTRY_ENVIRONMENT}}`) for the most
+recent "Failed to validate inventory" log line, and save its cart to `{{OUT}}/cart.json`:
+
+- If the log has a `cart_json` attribute, write that JSON unchanged.
+- Otherwise the cart is in the message itself, as a Python dict:
+  `Failed to validate inventory with cart: {'items': [...], 'quantities': {'4': 1}, 'total': 175}`.
+  (It may also be in a `sentry.message.parameter.0` attribute.) Write just the `{...}` part,
+  unchanged. `replay.py` accepts both JSON and that Python form.
+
+If no such log line exists in the last 24 hours, skip the replay and say so in your report.
 
 ## 3. Fix
 
@@ -52,7 +60,7 @@ Write `{{OUT}}/result.json`:
 
 ```json
 {
-  "issue_short_id": "SELFHEAL-FLASK-1",
+  "issue_short_id": "<the issue short ID, e.g. BACKEND-FLASK-1A2>",
   "issue_url": "https://...",
   "root_cause": "one or two sentences",
   "fix_summary": "one sentence",
@@ -72,8 +80,8 @@ Fill `impact` from Sentry data, not guesses:
 - `failed_checkouts`, `users_affected` and `first_seen` come from the issue (event count, user
   count, first seen).
 - `lost_revenue_usd` is the sum of `total` across the carts in recent "Failed to validate
-  inventory" log lines (`cart_json`). Each one is an order that didn't go through. Say in
-  `summary` which time window you summed over.
+  inventory" log lines (from `cart_json`, or from the cart in the message). Each one is an order
+  that didn't go through. Say in `summary` which time window you summed over.
 
 Use `null` for any number you couldn't get.
 
