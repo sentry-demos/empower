@@ -391,6 +391,118 @@
   padding: 0 6px 6px;
 }
 
+/* Orders card, and the status badge the single-order card shares */
+.chat-orders-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-right: 6px;
+}
+
+.chat-orders-count {
+  font-size: 13px;
+  color: #777;
+}
+
+.chat-orders-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-orders-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 6px;
+}
+
+.chat-orders-item + .chat-orders-item {
+  border-top: 1px solid #f0f0f0;
+}
+
+.chat-orders-top,
+.chat-orders-bottom {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.chat-orders-top {
+  align-items: center;
+}
+
+.chat-orders-bottom {
+  align-items: flex-end;
+}
+
+.chat-orders-id {
+  font-size: 14px;
+  font-weight: 600;
+  color: #002626;
+}
+
+.chat-orders-date {
+  font-size: 12px;
+  color: #777;
+}
+
+.chat-orders-items {
+  list-style: none;
+  margin: 2px 0 0;
+  padding: 0;
+  font-size: 13px;
+  color: #555;
+  min-width: 0;
+}
+
+.chat-orders-total {
+  font-size: 14px;
+  font-weight: 500;
+  color: #002626;
+  flex-shrink: 0;
+}
+
+.chat-order-status {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+  background-color: #f0f0f0;
+  color: #555;
+}
+
+.chat-order-status[data-status='processing'] {
+  background-color: #fdf6d8;
+  color: #7a5d00;
+}
+
+.chat-order-status[data-status='shipped'] {
+  background-color: #e5eefb;
+  color: #24508f;
+}
+
+.chat-order-status[data-status='delivered'] {
+  background-color: #e3f3ea;
+  color: #2f6b4f;
+}
+
+.chat-order-status[data-status='cancel_requested'] {
+  background-color: #fdeedd;
+  color: #8a4b0f;
+}
+
+.chat-order-status[data-status='cancelled'] {
+  background-color: #f0f0f0;
+  color: #666;
+}
+
 /* Error bubble */
 .chat-error {
   border-color: #e8a2a2;
@@ -847,6 +959,33 @@ body.agent-full-view #footer {
 .chat-full .chat-checkout-title,
 .chat-full .chat-confirmation-title {
   font-size: 18px;
+}
+
+/* Orders: each order its own tile, two to a row where there is room. */
+.chat-full .chat-orders-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+  padding: 4px 0 0;
+}
+
+.chat-full .chat-orders-item {
+  padding: 14px;
+  border: 1px solid #ececec;
+  border-radius: 12px;
+}
+
+.chat-full .chat-orders-item + .chat-orders-item {
+  border-top: 1px solid #ececec;
+}
+
+.chat-full .chat-orders-id,
+.chat-full .chat-orders-total {
+  font-size: 15px;
+}
+
+.chat-full .chat-orders-items {
+  font-size: 14px;
 }
 
 @media (max-width: 720px) {

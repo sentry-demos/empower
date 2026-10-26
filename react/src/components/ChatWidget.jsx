@@ -8,6 +8,7 @@ import ChatCart from './ChatCart';
 import ChatCheckout from './ChatCheckout';
 import ChatConfirmation from './ChatConfirmation';
 import ChatError from './ChatError';
+import ChatOrders, { ChatOrderStatus } from './ChatOrders';
 import postEventStream from '../utils/sseStream';
 
 // Was 15s, which is fine for a two-question form but not for a conversation —
@@ -515,19 +516,7 @@ const ChatWidget = ({ onExitFull }) => {
       if (data.orders.length === 0) {
         return <ChatError message="No orders found." />;
       }
-      return (
-        <div className="chat-widget-card" id="chat-orders">
-          <span className="chat-confirmation-title sentry-unmask">
-            Your orders
-          </span>
-          {data.orders.map((order) => (
-            <p className="chat-confirmation-body sentry-unmask" key={order.id}>
-              #{order.id} · {order.status.replace('_', ' ')} · {order.items}
-              {' · '}${order.total}.00
-            </p>
-          ))}
-        </div>
-      );
+      return <ChatOrders orders={data.orders} />;
     }
     if (type === 'order') {
       // Rendered from whatever the order tool handed the model, so a
@@ -539,9 +528,12 @@ const ChatWidget = ({ onExitFull }) => {
       const { order } = data;
       return (
         <div className="chat-widget-card" id="chat-order">
-          <span className="chat-confirmation-title sentry-unmask">
-            Order #{order.id} · {order.status.replace('_', ' ')}
-          </span>
+          <div className="chat-orders-header">
+            <span className="chat-confirmation-title sentry-unmask">
+              Order #{order.id}
+            </span>
+            <ChatOrderStatus status={order.status} />
+          </div>
           <p className="chat-confirmation-body sentry-unmask">
             {order.items} · ${order.total}.00
           </p>
