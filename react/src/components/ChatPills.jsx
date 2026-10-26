@@ -23,6 +23,7 @@ const CARD_BLURBS = {
   'chat-pill-purchase': 'Place the order and get a confirmation.',
   'chat-pill-cancel-order': 'Cancel an order and get a refund.',
   'chat-starter-orders': 'See what you have ordered and where it is.',
+  'chat-starter-returns': 'How returns and refunds work.',
 };
 
 function ChatPills({ pills, onSelect, disabled, variant = 'chips' }) {

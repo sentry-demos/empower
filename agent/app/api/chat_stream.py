@@ -75,6 +75,7 @@ TOOL_AGENTS = {
     "list_orders": "shopping",
     "get_order_status": "shopping",
     "cancel_order": "shopping",
+    "search_policies": "shopping",
 }
 
 # SDK agent name -> agent id, for whoever is speaking. Only the orchestrator and
@@ -125,6 +126,7 @@ WIDGET_TYPES = {
     "list_orders": "orders",
     "get_order_status": "order",
     "cancel_order": "order",
+    "search_policies": "policy",
 }
 
 # Suggestion pills, keyed by the tool that last ran. Derived here rather than

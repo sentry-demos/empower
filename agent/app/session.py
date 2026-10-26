@@ -26,6 +26,13 @@ SESSION_TTL_SECONDS = 30 * 60
 # turn just gone".
 TOOL_RESULTS_KEPT = 1
 
+# Above this, even a kept tool result is collapsed. Ordinary results are 1-2KB;
+# search_policies returns ~160KB of raw HTML (the context snowball, see
+# tools/shop/policies.py), and carrying that into the next turn would re-send it
+# on both of the orchestrator's LLM calls there. Collapsing it here keeps the
+# spike to the one turn that asked the question.
+KEPT_TOOL_RESULT_MAX_CHARS = 16_000
+
 # Replaces the body of a superseded tool result. Says the work happened and that
 # the customer has seen it, which is all the orchestrator needs to know: it
 # routes and writes one sentence, and the specialist it delegates to is briefed
@@ -48,6 +55,8 @@ def trim_tool_outputs(history: list[Any], keep: int = TOOL_RESULTS_KEPT) -> list
     The items themselves are kept, only their `output` is replaced: a
     function_call whose function_call_output has gone missing is rejected by the
     API, so this has to thin the history rather than shorten it.
+
+    A kept result is collapsed too if it is over KEPT_TOOL_RESULT_MAX_CHARS.
     """
     # call_id -> tool name, so a collapsed result can still say what ran.
     tool_names = {
@@ -66,6 +75,11 @@ def trim_tool_outputs(history: list[Any], keep: int = TOOL_RESULTS_KEPT) -> list
     # Not positions[:-keep] — keep=0 would slice to [] and trim nothing, since
     # -0 == 0.
     superseded = set(positions[:-keep] if keep else positions)
+    superseded.update(
+        index
+        for index in positions
+        if len(str(history[index].get("output", ""))) > KEPT_TOOL_RESULT_MAX_CHARS
+    )
 
     trimmed = []
     for index, item in enumerate(history):

@@ -30,6 +30,7 @@ const INITIAL_PILLS = [
 // a starter: the orders list offers it as a follow-up pill.
 const FULL_VIEW_STARTERS = [
   { id: 'chat-starter-orders', label: 'Show my recent orders' },
+  { id: 'chat-starter-returns', label: 'What is your return policy?' },
 ];
 
 const GREETING =
@@ -542,6 +543,21 @@ const ChatWidget = ({ onExitFull }) => {
               {data.message}
             </p>
           )}
+        </div>
+      );
+    }
+    if (type === 'policy') {
+      // A title and an excerpt only. The tool hands the model the whole
+      // help-centre export, but that never comes to the browser — see
+      // agent/app/tools/shop/policies.py.
+      return (
+        <div className="chat-widget-card" id="chat-policy">
+          <span className="chat-confirmation-title sentry-unmask">
+            {data.title}
+          </span>
+          <p className="chat-confirmation-body sentry-unmask">
+            {data.excerpt}
+          </p>
         </div>
       );
     }

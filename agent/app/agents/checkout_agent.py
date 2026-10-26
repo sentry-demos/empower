@@ -1,7 +1,7 @@
 """Checkout Agent — the cart and order specialist.
 
-Owns the cart, the checkout form, coupons and placing the order, and looking
-up or cancelling orders already placed. Invoked by
+Owns the cart, the checkout form, coupons and placing the order, looking up
+or cancelling orders already placed, and the store's policies. Invoked by
 shopping_agent as a delegated sub-run, which is also what puts its spans in
 their own Sentry project (see app/telemetry.py).
 """
@@ -20,6 +20,7 @@ from ..tools.shop import (
     get_order_status,
     list_orders,
     purchase,
+    search_policies,
     start_checkout,
     view_cart,
 )
@@ -41,6 +42,8 @@ the customer was just shown.
 - list_orders shows the customer's past orders. get_order_status looks up one
 order already placed, by its number. cancel_order cancels one. "Order #445" is
 order_id=445.
+- search_policies answers questions about store policies: returns, shipping,
+refunds.
 
 Starting checkout is not applying a coupon, and neither one is buying. A promo
 code appearing on the checkout form is not a request to apply it. Only apply a
@@ -75,6 +78,7 @@ checkout_agent = Agent(
         list_orders,
         get_order_status,
         cancel_order,
+        search_policies,
     ],
     # Exactly one tool call per delegation, enforced rather than asked for.
     #
