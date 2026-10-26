@@ -72,9 +72,16 @@ Keep this venv active in each terminal you open for later steps.
 
 ## 3. Generate real telemetry from your laptop
 
+Use two terminals, both in the same worktree folder. There's no second checkout; a new tab
+just `cd`s to the same place.
+
 ```bash
+# terminal 1
+cd ~/empower/.claude/worktrees/selfheal && source venv/bin/activate
 FLASK_DSN=<selfheal-flask DSN> python selfheal/scripts/local_server.py --port 8080
-# second terminal
+
+# terminal 2
+cd ~/empower/.claude/worktrees/selfheal && source venv/bin/activate
 export SELFHEAL_FLASK_URL=http://localhost:8080
 python selfheal/scripts/drive.py baseline --minutes 2   # 200s
 python selfheal/scripts/drive.py live --minutes 2       # 500s: issue + "Failed to validate inventory" logs with cart_json
