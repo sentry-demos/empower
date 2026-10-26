@@ -59,6 +59,7 @@ jobs:
           mkdir -p "$OUT"
           echo "OUT=$OUT" >> "$GITHUB_ENV"
           cp .selfheal/alert.json "$RUNNER_TEMP/selfheal/alert.json"
+          cp .selfheal/alert.json "$OUT/alert.json"  # travels with the scorecard to the review job
           cat "$RUNNER_TEMP/selfheal/alert.json"
           # The run commit only adds the alert file; drop it so it never reaches the agent's PR
           git reset -q --hard HEAD~1
@@ -117,6 +118,7 @@ jobs:
             ${{ env.OUT }}/verify.json
             ${{ env.OUT }}/result.json
             ${{ env.OUT }}/cart.json
+            ${{ env.OUT }}/alert.json
           if-no-files-found: warn
 
   review:
@@ -194,7 +196,9 @@ jobs:
           fi
           printf '\n\n_Reviewer agent. A human makes the merge decision._\n' >> "$OUT/review.md"
           gh pr comment "$PR_URL" --body-file "$OUT/review.md"
-          python selfheal/harness/report.py review --pr-url "$PR_URL" --review "$OUT/review.md"
+          # Notify the human in the loop: a verified fix is waiting for review
+          python selfheal/harness/report.py review --pr-url "$PR_URL" --review "$OUT/review.md" \
+            --variant "${{ matrix.variant }}" --results "$RUNNER_TEMP/scorecard"
 
   report:
     needs: [fix, review]

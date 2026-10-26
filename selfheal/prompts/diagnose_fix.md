@@ -56,9 +56,26 @@ Write `{{OUT}}/result.json`:
   "issue_url": "https://...",
   "root_cause": "one or two sentences",
   "fix_summary": "one sentence",
-  "files_changed": ["flask/src/main.py", "flask/src/test/test_checkout.py"]
+  "files_changed": ["flask/src/main.py", "flask/src/test/test_checkout.py"],
+  "problem": "one sentence a non-engineer understands: what customers experience",
+  "impact": {
+    "failed_checkouts": 42,
+    "users_affected": 17,
+    "first_seen": "2026-10-26T19:20:00Z",
+    "lost_revenue_usd": 8125,
+    "summary": "one sentence on business impact, with the numbers above"
+  }
 }
 ```
+
+Fill `impact` from Sentry data, not guesses:
+- `failed_checkouts`, `users_affected` and `first_seen` come from the issue (event count, user
+  count, first seen).
+- `lost_revenue_usd` is the sum of `total` across the carts in recent "Failed to validate
+  inventory" log lines (`cart_json`). Each one is an order that didn't go through. Say in
+  `summary` which time window you summed over.
+
+Use `null` for any number you couldn't get.
 
 Write `{{OUT}}/pr_body.md` by filling in `selfheal/prompts/pr_template.md`.
 

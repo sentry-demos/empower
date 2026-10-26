@@ -1,11 +1,13 @@
 """Post self-heal results to Slack.
 
-    python selfheal/harness/report.py run --alert alert.json --results DIR
-        DIR holds one sub-directory per variant with stats.json, verify.json, result.json.
-        Posts "checkout failing -> root cause -> PR ready" with the side-by-side scorecard.
+    python selfheal/harness/report.py review --pr-url URL --review FILE --variant V --results DIR
+        Posted once per agent PR, after the reviewer agent has commented: the notification
+        that tells a human a verified fix is waiting for them. DIR holds that variant's
+        stats.json, verify.json and result.json.
 
-    python selfheal/harness/report.py review --pr-url URL --review FILE
-        Posts the reviewer agent's verdict for one PR.
+    python selfheal/harness/report.py run --alert alert.json --results DIR
+        Posted when the run ends: the side-by-side scorecard. DIR holds one sub-directory
+        per variant with the files above.
 
 Needs SELFHEAL_SLACK_WEBHOOK_URL (an incoming webhook). Without it, prints the message.
 """
@@ -40,7 +42,7 @@ def variant_section(variant, results):
     check = load(os.path.join(results, variant, "verify.json"))
     agent = load(os.path.join(results, variant, "result.json"))
     if not stats:
-        return f"*{variant}*: no result (job failed before the agent finished)", None
+        return f"*{variant}*: no result (job failed before the agent finished)", {}
 
     status = "✅ PR ready" if check.get("pr_url") else "❌ no PR"
     pr = f"<{check['pr_url']}|draft PR>" if check.get("pr_url") else "—"
@@ -53,19 +55,20 @@ def variant_section(variant, results):
     ]
     if agent.get("root_cause"):
         lines.append(f"> {agent['root_cause']}")
-    return "\n".join(lines), agent.get("issue_short_id")
+    return "\n".join(lines), agent
 
 
 def report_run(args):
     alert = load(args.alert)
-    sections, issue = [], None
+    sections, first_agent = [], {}
     for variant in VARIANTS:
-        text, short_id = variant_section(variant, args.results)
+        text, agent = variant_section(variant, args.results)
         sections.append(text)
-        issue = issue or short_id
+        first_agent = first_agent or agent
+    issue = first_agent.get("issue_short_id")
 
     run_url = f"{os.environ.get('GITHUB_SERVER_URL', '')}/{os.environ.get('GITHUB_REPOSITORY', '')}/actions/runs/{os.environ.get('GITHUB_RUN_ID', '')}"
-    headline = f"🚨 {alert.get('title', 'Checkout failing')} → root cause → PR ready"
+    headline = f"📊 Self-heal scorecard: {alert.get('title', 'Checkout failing')}"
     context = f"<{alert.get('url', '')}|Alert>" if alert.get("url") else "Alert"
     if issue:
         context += f" · Issue {issue}"
@@ -74,18 +77,74 @@ def report_run(args):
     blocks = [
         {"type": "header", "text": {"type": "plain_text", "text": headline[:150]}},
         {"type": "context", "elements": [{"type": "mrkdwn", "text": context}]},
+        {"type": "section", "text": {"type": "mrkdwn", "text": problem_line(alert, first_agent)
+                                     + "\n" + impact_line(first_agent.get("impact") or {})}},
     ]
     for text in sections:
         blocks += [{"type": "divider"}, {"type": "section", "text": {"type": "mrkdwn", "text": text}}]
     post(headline, blocks)
 
 
+def problem_line(alert, agent):
+    """What's happening, in customer terms, plus the alert that caught it."""
+    problem = agent.get("problem") or "Checkout is failing for customers."
+    title = alert.get("title")
+    if title and alert.get("url"):
+        problem += f" Alert: <{alert['url']}|{title}>"
+    elif title:
+        problem += f" Alert: {title}"
+    return f"🚨 *Problem:* {problem}"
+
+
+def impact_line(impact):
+    """Business impact from the Sentry numbers the agent collected. Missing numbers are left out."""
+    parts = []
+    if impact.get("lost_revenue_usd") is not None:
+        parts.append(f"~${impact['lost_revenue_usd']:,.0f} in failed orders")
+    if impact.get("failed_checkouts") is not None:
+        parts.append(f"{impact['failed_checkouts']:,} failed checkouts")
+    if impact.get("users_affected") is not None:
+        parts.append(f"{impact['users_affected']:,} customers affected")
+    if impact.get("first_seen"):
+        parts.append(f"since {impact['first_seen']}")
+    line = "💸 *Business impact:* " + (" · ".join(parts) if parts else "revenue from checkout is dropping")
+    if impact.get("summary"):
+        line += f"\n> {impact['summary']}"
+    return line
+
+
 def report_review(args):
+    """The human-in-the-loop ping: a verified fix and the reviewer's verdict, with the PR link."""
     with open(args.review) as f:
-        review = f.read().strip()
-    verdict = review.splitlines()[0] if review else "**Verdict: ?**"
-    text = f"🧐 Reviewer agent on <{args.pr_url}|PR>: {verdict.replace('**', '*')}"
-    post(text, [{"type": "section", "text": {"type": "mrkdwn", "text": text}}])
+        review = [line.strip() for line in f.read().strip().splitlines() if line.strip()]
+    verdict = review[0].replace("**", "") if review else "Verdict: ?"
+    # The first line of explanation after the verdict, without the footer we append
+    reason = next((line for line in review[1:] if not line.startswith("_Reviewer agent")), "")
+
+    stats = load(os.path.join(args.results, "stats.json"))
+    check = load(os.path.join(args.results, "verify.json"))
+    agent = load(os.path.join(args.results, "result.json"))
+    alert = load(os.path.join(args.results, "alert.json"))
+    pr_number = args.pr_url.rstrip("/").rsplit("/", 1)[-1]
+    issue = agent.get("issue_short_id", "the checkout failure")
+
+    headline = f"👀 Fix ready for your review: {issue} ({args.variant})"
+    lines = [
+        f"*<{args.pr_url}|PR #{pr_number}>* · {args.variant} · draft, waiting for a human to review and merge",
+        problem_line(alert, agent),
+        impact_line(agent.get("impact") or {}),
+        f"*Root cause:* {agent.get('root_cause', 'see the PR')}",
+        f"*Verified:* tests {'pass' if check.get('tests_passed') else 'fail'}"
+        f" · replay of the failing production cart: HTTP {check.get('replay_status')}",
+        f"*Reviewer agent:* {verdict}" + (f" — {reason[:300]}" if reason else ""),
+    ]
+    if stats:
+        lines.append(f"⏱ {stats['duration_s']}s · 🔁 {stats['turns']} turns · 💵 ${stats['cost_usd']:.2f}"
+                     f" · Seer calls: {stats['seer_calls']}")
+    post(headline, [
+        {"type": "header", "text": {"type": "plain_text", "text": headline[:150]}},
+        {"type": "section", "text": {"type": "mrkdwn", "text": "\n".join(lines)}},
+    ])
 
 
 if __name__ == "__main__":
@@ -97,5 +156,7 @@ if __name__ == "__main__":
     review = sub.add_parser("review")
     review.add_argument("--pr-url", required=True)
     review.add_argument("--review", required=True)
+    review.add_argument("--variant", required=True)
+    review.add_argument("--results", required=True, help="Dir with this variant's stats/verify/result.json")
     args = parser.parse_args()
     report_run(args) if args.mode == "run" else report_review(args)

@@ -135,8 +135,14 @@ commands. Always pass the run ID: plain `gh run list` / `gh run watch` fail in t
 `trigger.sh` pushes a `selfheal/run/<id>` branch, which starts the runner. Expect:
 - `fix (without-seer)` and `fix (with-seer)` streaming each agent step, then a draft PR each,
   with a `pytest` status.
-- `review (...)`: a MERGE / ADJUST / CLOSE comment on each PR.
-- `report`: the scorecard in the job log, then the run branch is deleted.
+- `review (...)`: a MERGE / ADJUST / CLOSE comment on each PR, then the human-in-the-loop
+  notification: "👀 Fix ready for your review" with the problem, business impact (failed
+  orders in $, failed checkouts, customers affected), root cause, verification, verdict and PR link.
+- `report`: the side-by-side scorecard, then the run branch is deleted.
+
+Both messages go to Slack when `SELFHEAL_SLACK_WEBHOOK_URL` is set (an incoming webhook for your
+channel: `gh secret set SELFHEAL_SLACK_WEBHOOK_URL --repo sentry-demos/empower`). Otherwise
+they print in the job log. Agent PRs stay open; they don't block later runs.
 - In `selfheal-harness` → Agents: an `invoke_agent` trace per agent.
 
 **Likely first-run failures:**

@@ -131,7 +131,10 @@ def test_already_handling_finds_open_agent_pr():
         return R()
 
     with patch.object(main, "github", side_effect=fake_github):
-        assert main.already_handling() == "agent PR #7 is still open"
+        # Open agent PRs are kept for demos, so by default they don't block a new run
+        assert main.already_handling() == ""
+        with patch.object(main, "SKIP_WHILE_AGENT_PR_OPEN", True):
+            assert main.already_handling() == "agent PR #7 is still open"
 
 
 def test_already_handling_finds_pending_run_branch():

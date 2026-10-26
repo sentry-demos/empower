@@ -31,7 +31,9 @@ drive.py live ──► selfheal-flask /checkout ──► 500, checkout.capture
             review job per PR: comments MERGE/ADJUST/CLOSE (never approves)
             report job: scorecard, then deletes the run branch
                                                         │
-          Slack: "<alert> → root cause → PR ready" + scorecard (time, turns, tokens, cost)
+          Slack, per PR after review: "👀 Fix ready for your review" (problem, business impact
+          in failed orders, root cause, verification, verdict, PR link); then the scorecard
+          (time, turns, tokens, cost). Agent PRs stay open for demos.
           Sentry selfheal-harness project: one gen_ai.invoke_agent span per run (Agent Tracing)
                                                         │
           Presenter approves and merges one PR (branch protection requires a human)

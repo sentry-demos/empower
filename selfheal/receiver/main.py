@@ -7,8 +7,9 @@ commit on top of selfheal/base adding .selfheal/alert.json. The push starts the 
 workflow from that branch (no repository_dispatch, so nothing has to live on master),
 and the runner runs both versions (with / without Seer) on the same alert.
 
-Repeats are detected statelessly from GitHub itself: if a run branch exists, a runner is
-queued or running, or an agent PR is still open, the alert is acknowledged and dropped.
+Repeats are detected statelessly from GitHub itself: if a run branch exists or a runner is
+queued or running, the alert is acknowledged and dropped. Open agent PRs don't count (they're
+left open for demos) unless SKIP_WHILE_AGENT_PR_OPEN=true.
 """
 import hashlib
 import hmac
@@ -29,6 +30,7 @@ RUNNER_WORKFLOW = os.environ.get("RUNNER_WORKFLOW", "selfheal-runner.yml")
 BASE_BRANCH = os.environ.get("BASE_BRANCH", "selfheal/base")
 AGENT_PR_LABEL = os.environ.get("AGENT_PR_LABEL", "selfheal-agent")
 RUN_BRANCH_PREFIX = "selfheal/run/"
+SKIP_WHILE_AGENT_PR_OPEN = os.environ.get("SKIP_WHILE_AGENT_PR_OPEN", "false").lower() == "true"
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("selfheal-receiver")
@@ -99,11 +101,13 @@ def already_handling() -> str:
         if runs.get("total_count"):
             return f"runner already {status}"
 
-    pulls = github("GET", f"/repos/{GITHUB_REPO}/pulls",
-                   params={"state": "open", "base": BASE_BRANCH, "per_page": 100}).json()
-    for pr in pulls:
-        if any(label["name"] == AGENT_PR_LABEL for label in pr.get("labels", [])):
-            return f"agent PR #{pr['number']} is still open"
+    # Agent PRs are left open for demos, so they don't block new runs unless asked to
+    if SKIP_WHILE_AGENT_PR_OPEN:
+        pulls = github("GET", f"/repos/{GITHUB_REPO}/pulls",
+                       params={"state": "open", "base": BASE_BRANCH, "per_page": 100}).json()
+        for pr in pulls:
+            if any(label["name"] == AGENT_PR_LABEL for label in pr.get("labels", [])):
+                return f"agent PR #{pr['number']} is still open"
     return ""
 
 
