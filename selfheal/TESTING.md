@@ -121,7 +121,11 @@ Optional variables: `SELFHEAL_MODEL_PROVIDER` (`openrouter` by default, or `anth
 ```bash
 python selfheal/scripts/drive.py live --minutes 1        # fresh errors and logs
 selfheal/scripts/trigger.sh "Critical: Checkout revenue dropped"
-gh run watch --repo sentry-demos/empower   # pick the run; it may take a few seconds to appear
+# Use the branch trigger.sh printed. (Plain `gh run list` / `gh run watch` fail in this repo with a
+# 404: a "Secret Scan" run on another branch points at a workflow GitHub can't find.)
+RUN=$(gh api "repos/sentry-demos/empower/actions/runs?branch=selfheal/run/<id>" --jq '.workflow_runs[0].id')
+gh run watch "$RUN" --repo sentry-demos/empower          # step status; may take a few seconds to appear
+gh run view "$RUN" --repo sentry-demos/empower --web     # live agent output: fix job → "Agent diagnoses and fixes"
 ```
 
 `trigger.sh` pushes a `selfheal/run/<id>` branch, which starts the runner. Expect:
