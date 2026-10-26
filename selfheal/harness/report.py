@@ -80,7 +80,9 @@ def variant_section(variant, results):
 def report_run(args):
     alert = load(args.alert)
     sections, first_agent = [], {}
-    for variant in VARIANTS:
+    # Only variants that ran upload a scorecard (with-seer can be switched off)
+    ran = [v for v in VARIANTS if os.path.isdir(os.path.join(args.results, v))] or list(VARIANTS)
+    for variant in ran:
         text, agent = variant_section(variant, args.results)
         sections.append(text)
         first_agent = first_agent or agent

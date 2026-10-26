@@ -50,7 +50,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        variant: [without-seer, with-seer]
+        # with-seer is off until Seer is set up for the project; turn it on with the repo variable
+        # SELFHEAL_VARIANTS='["without-seer", "with-seer"]'
+        variant: ${{ fromJSON(vars.SELFHEAL_VARIANTS || '["without-seer"]') }}
 
     steps:
       - uses: actions/checkout@v4
@@ -140,7 +142,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        variant: [without-seer, with-seer]
+        # with-seer is off until Seer is set up for the project; turn it on with the repo variable
+        # SELFHEAL_VARIANTS='["without-seer", "with-seer"]'
+        variant: ${{ fromJSON(vars.SELFHEAL_VARIANTS || '["without-seer"]') }}
 
     steps:
       - uses: actions/download-artifact@v4

@@ -92,6 +92,8 @@ optional `cleanup_projects` keep-list change in point 4. Step-by-step test instr
      The default is the test app (`selfheal-flask` / `selfheal`). Set `backend-flask` /
      `production` to run on production's scheduled checkout drops. Production logs the cart as a
      Python dict in the message; the agents and `replay.py` handle both forms.
+   - Which agents run: `SELFHEAL_VARIANTS`, default `["without-seer"]`. Once Seer works for the
+     project (repository connected), set it to `["without-seer", "with-seer"]`.
    - Agent PRs stay open for demos, but only the latest run's: once a run opens a PR, its
      `report` job closes agent PRs from earlier runs.
    - The Sentry MCP runs inside the job as `@sentry/mcp-server` (pinned in
