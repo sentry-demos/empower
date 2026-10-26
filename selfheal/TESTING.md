@@ -52,9 +52,12 @@ Keep this venv active in each terminal you open for later steps.
 1. **EPD's OK** to put this test's spend on `AGENT_OPENROUTER_API_KEY`. (Or point
    `SELFHEAL_MODEL_KEY_SECRET` at a different Secret Manager secret, with
    `SELFHEAL_MODEL_PROVIDER=anthropic` if it's an Anthropic key.)
-2. **The OpenRouter model id** for the Claude model to use, in OpenRouter's `provider/model` form,
-   from openrouter.ai/models. I haven't confirmed that Claude Code works through OpenRouter's
-   Anthropic-compatible endpoint; the first run will show it.
+2. **The OpenRouter model id.** Use `anthropic/claude-sonnet-5.5` while testing ($2 / $10 per
+   million input / output tokens) and `anthropic/claude-opus-5.5` for the real demo ($4 / $20).
+   Skip the `:batch` variants: they're for asynchronous batch jobs, not interactive agents.
+   OpenRouter documents Claude Code support (its "Claude Code integration" guide) with the
+   same settings the `selfheal-claude` action uses. Claude Code's quick background calls go to
+   `anthropic/claude-haiku-5.5`; override with the `SELFHEAL_HAIKU_MODEL` variable.
 3. **A Sentry user auth token** for the MCP: Sentry → User settings → Personal Tokens, with
    read access to projects, issues and events, and org read. This is the one value nobody
    else has.
@@ -98,7 +101,7 @@ These are the first steps that change anything on GitHub. All of them are additi
 git push origin selfheal/base refs/tags/selfheal-armed
 R=sentry-demos/empower
 gh variable set SELFHEAL_ENABLED --repo $R --body true
-gh variable set SELFHEAL_MODEL --repo $R --body <openrouter-model-id>        # from step 1
+gh variable set SELFHEAL_MODEL --repo $R --body anthropic/claude-sonnet-5.5  # opus-5.5 for the demo
 gh variable set SELFHEAL_MAX_TURNS --repo $R --body 25                      # keep test runs short
 gh variable set SELFHEAL_HARNESS_DSN --repo $R --body <selfheal-harness DSN>
 gh secret set SELFHEAL_SENTRY_MCP_TOKEN --repo $R                            # prompts for the token from step 1

@@ -30,10 +30,13 @@ runs:
               echo "::error::Set the SELFHEAL_MODEL repo variable to an OpenRouter model id for Claude (provider/model)."
               exit 1
             fi
+            # Per OpenRouter's Claude Code guide. The Haiku override covers Claude Code's
+            # quick background calls, which otherwise ask for a model id OpenRouter may not map.
             {
               echo "ANTHROPIC_BASE_URL=https://openrouter.ai/api"
               echo "ANTHROPIC_AUTH_TOKEN=$key"
               echo "ANTHROPIC_API_KEY="
+              echo "ANTHROPIC_DEFAULT_HAIKU_MODEL=${SELFHEAL_HAIKU_MODEL:-anthropic/claude-haiku-5.5}"
             } >> "$GITHUB_ENV"
             ;;
           anthropic)
