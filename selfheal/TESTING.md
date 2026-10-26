@@ -140,9 +140,24 @@ commands. Always pass the run ID: plain `gh run list` / `gh run watch` fail in t
   orders in $, failed checkouts, customers affected), root cause, verification, verdict and PR link.
 - `report`: the side-by-side scorecard, then the run branch is deleted.
 
-Both messages go to Slack when `SELFHEAL_SLACK_WEBHOOK_URL` is set (an incoming webhook for your
-channel: `gh secret set SELFHEAL_SLACK_WEBHOOK_URL --repo sentry-demos/empower`). Otherwise
-they print in the job log. Agent PRs stay open; they don't block later runs.
+Both messages go to Slack through an existing, already-approved Slack bot. They print in the job
+log until it's set up:
+
+1. In the bot's app settings (api.slack.com/apps → the app → **OAuth & Permissions**), copy the
+   **Bot User OAuth Token** (`xoxb-…`) and check that **Bot Token Scopes** include `chat:write`.
+2. Invite the bot to your channel (`/invite @botname`), unless it has `chat:write.public` and
+   the channel is public.
+3. Get the channel ID: open the channel, click its name, and find the ID (`C…`) at the bottom.
+4. Set them:
+   ```bash
+   gh secret set SELFHEAL_SLACK_BOT_TOKEN --repo sentry-demos/empower      # paste the xoxb- token
+   gh variable set SELFHEAL_SLACK_CHANNEL --repo sentry-demos/empower --body C0123ABCD
+   ```
+
+An incoming webhook (`SELFHEAL_SLACK_WEBHOOK_URL`) also works if you have one; the bot token
+takes priority. If posting fails, the job log shows Slack's error, e.g. `not_in_channel`
+(invite the bot) or `missing_scope` (add `chat:write`). Agent PRs stay open; they don't block
+later runs.
 - In `selfheal-harness` → Agents: an `invoke_agent` trace per agent.
 
 **Likely first-run failures:**

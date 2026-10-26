@@ -76,7 +76,9 @@ optional `cleanup_projects` keep-list change in point 4. Step-by-step test instr
    provider only allows certain refs, `selfheal/*` refs need to be allowed.
 2. **New secret:** only `SELFHEAL_SENTRY_MCP_TOKEN`, the token of a `selfheal` internal
    integration (org-owned, no browser sign-in; see TESTING.md step 1). The same integration
-   carries the alert webhook. Optional: `SELFHEAL_SLACK_WEBHOOK_URL` for a demo channel.
+   carries the alert webhook. For Slack: `SELFHEAL_SLACK_BOT_TOKEN` (an existing approved bot's
+   `xoxb-` token with `chat:write`) plus the `SELFHEAL_SLACK_CHANNEL` variable (channel ID), or
+   an incoming webhook in `SELFHEAL_SLACK_WEBHOOK_URL`.
 3. **Repository variables:**
    - `SELFHEAL_ENABLED=true` turns the selfheal workflows on. They do nothing without it.
    - `SELFHEAL_MODEL` is the model id (an OpenRouter `provider/model` id when using OpenRouter).

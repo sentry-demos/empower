@@ -9,7 +9,9 @@
         Posted when the run ends: the side-by-side scorecard. DIR holds one sub-directory
         per variant with the files above.
 
-Needs SELFHEAL_SLACK_WEBHOOK_URL (an incoming webhook). Without it, prints the message.
+Slack: SELFHEAL_SLACK_BOT_TOKEN (an existing bot's xoxb- token with chat:write) plus
+SELFHEAL_SLACK_CHANNEL (channel ID), or SELFHEAL_SLACK_WEBHOOK_URL (an incoming webhook).
+With neither, prints the message.
 """
 import argparse
 import json
@@ -29,12 +31,29 @@ def load(path, default=None):
 
 
 def post(text, blocks):
+    """Post with an existing Slack bot's token if configured, else an incoming webhook,
+    else print (the message still shows in the job log)."""
+    token = os.environ.get("SELFHEAL_SLACK_BOT_TOKEN")
+    channel = os.environ.get("SELFHEAL_SLACK_CHANNEL")
     url = os.environ.get("SELFHEAL_SLACK_WEBHOOK_URL")
-    if not url:
+    if token and channel:
+        response = requests.post(
+            "https://slack.com/api/chat.postMessage",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"channel": channel, "text": text, "blocks": blocks, "unfurl_links": False},
+            timeout=15,
+        )
+        response.raise_for_status()
+        body = response.json()
+        # Slack answers 200 with ok: false on errors (bad channel, not in channel, missing scope)
+        if not body.get("ok"):
+            raise RuntimeError(f"Slack chat.postMessage failed: {body.get('error')}"
+                               f" (needs chat:write, and the bot invited to {channel} unless it has chat:write.public)")
+    elif url:
+        requests.post(url, json={"text": text, "blocks": blocks}, timeout=15).raise_for_status()
+    else:
         print(text)
         print(json.dumps(blocks, indent=2))
-        return
-    requests.post(url, json={"text": text, "blocks": blocks}, timeout=15).raise_for_status()
 
 
 def variant_section(variant, results):
