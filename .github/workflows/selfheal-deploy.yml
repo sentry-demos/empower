@@ -1,7 +1,7 @@
 name: selfheal-deploy
-# Deploys flask to the flask-selfheal App Engine service on every merge to selfheal/base,
+# Deploys flask to the selfheal-flask App Engine service on every merge to selfheal/base,
 # creating a Sentry release named after the commit SHA with commits attached, so
-# "Fixes FLASK-SELFHEAL-N" resolves the issue when the fix ships.
+# "Fixes SELFHEAL-FLASK-N" resolves the issue when the fix ships.
 
 on:
   push:
@@ -42,7 +42,7 @@ jobs:
       id-token: write
     env:
       SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-      # GITHUB_SHA (set by Actions) becomes the release: flask-selfheal@<sha>, see selfheal.env
+      # GITHUB_SHA (set by Actions) becomes the release: selfheal-flask@<sha>, see selfheal.env
     steps:
       - uses: actions/checkout@v4
         with:
@@ -63,5 +63,5 @@ jobs:
 
       - uses: google-github-actions/setup-gcloud@v3
 
-      - name: Deploy flask-selfheal
+      - name: Deploy selfheal-flask
         run: ./deploy flask --env=selfheal

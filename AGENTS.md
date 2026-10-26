@@ -35,6 +35,6 @@ Exit code 0 means HTTP 200.
 
 ## Conventions
 
-- Sentry project: `flask-selfheal`, environment `selfheal`, release `flask-selfheal@<sha>`.
+- Sentry project: `selfheal-flask`, environment `selfheal`, release `selfheal-flask@<sha>`.
 - Reference the Sentry issue short ID as `Fixes <SHORT-ID>` in the PR body so the issue resolves
   when the release deploys.

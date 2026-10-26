@@ -16,7 +16,7 @@ apps other people demo. It does add these:
 | Short-lived `selfheal/run/<id>` branches | One per run. The runner deletes it when it finishes. |
 | Draft PRs into `selfheal/base`, labeled `selfheal-agent` | Opened by `github-actions[bot]`, which the hourly bot-PR closer doesn't target. |
 | Repo variables `SELFHEAL_*` and one secret `SELFHEAL_SENTRY_MCP_TOKEN` | Inert for every other workflow. |
-| Sentry projects `flask-selfheal` and `selfheal-harness` in `demo` | `cleanup_projects` deletes projects not on its keep list every 2 hours (see step 2). |
+| Sentry projects `selfheal-flask` and `selfheal-harness` in `demo` | `cleanup_projects` deletes projects not on its keep list every 2 hours (see step 2). |
 | Model spend on the key you point it at | Defaults to `AGENT_OPENROUTER_API_KEY`, the agent demo's key, owned by EPD. Ask EPD first. |
 
 Two things stay off: the App Engine deploy (`SELFHEAL_DEPLOY` unset) and Slack (no
@@ -61,26 +61,26 @@ Keep this venv active in each terminal you open for later steps.
 
 ## 2. Sentry (`demo` org)
 
-1. Create `flask-selfheal` (Python/Flask) and `selfheal-harness` (Python). Turn on Logs for `flask-selfheal`.
+1. Create `selfheal-flask` (Python/Flask) and `selfheal-harness` (Python). Turn on Logs for `selfheal-flask`.
 2. `cleanup_projects` runs every 2 hours and deletes projects that aren't on its keep list.
    For a short test, create them right before testing and expect to recreate them. To keep them,
    add both names to `--exclude` in `.github/workflows/cleanup_projects.yml` on master. That's a
    separate PR, and a deliberate change to an existing workflow.
-3. Code mapping for `flask-selfheal` (GitHub integration): repo `sentry-demos/empower`, branch
+3. Code mapping for `selfheal-flask` (GitHub integration): repo `sentry-demos/empower`, branch
    `selfheal/base`, stack trace root `src/`, source code root `flask/src/`.
-4. Seer automatic runs **off** for `flask-selfheal`, so Seer doesn't open its own PR.
+4. Seer automatic runs **off** for `selfheal-flask`, so Seer doesn't open its own PR.
 
 ## 3. Generate real telemetry from your laptop
 
 ```bash
-FLASK_DSN=<flask-selfheal DSN> python selfheal/scripts/local_server.py --port 8080
+FLASK_DSN=<selfheal-flask DSN> python selfheal/scripts/local_server.py --port 8080
 # second terminal
 export SELFHEAL_FLASK_URL=http://localhost:8080
 python selfheal/scripts/drive.py baseline --minutes 2   # 200s
 python selfheal/scripts/drive.py live --minutes 2       # 500s: issue + "Failed to validate inventory" logs with cart_json
 ```
 
-Check in Sentry that `flask-selfheal` has the issue (environment `selfheal`) and that Logs shows
+Check in Sentry that `selfheal-flask` has the issue (environment `selfheal`) and that Logs shows
 the error line with a `cart_json` attribute.
 
 ## 4. Push the branch and set variables (when you're ready)
@@ -142,7 +142,7 @@ SENTRY_AUTH_TOKEN=<your Sentry token> selfheal/scripts/reset.sh
 git pull origin selfheal/base     # then restart local_server.py
 ```
 
-This closes open agent PRs, resolves `flask-selfheal` issues, and restores the bug through a
+This closes open agent PRs, resolves `selfheal-flask` issues, and restores the bug through a
 PR merged with your admin rights.
 
 ## Later: the real alert path

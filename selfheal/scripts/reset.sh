@@ -1,14 +1,14 @@
 #!/bin/bash
 # Reset the self-heal demo after a run (or an aborted one):
 #   1. close open agent PRs and delete their branches
-#   2. resolve open flask-selfheal issues, so the next break is a fresh alert
+#   2. resolve open selfheal-flask issues, so the next break is a fresh alert
 #   3. put the bug back and redeploy (arm.sh)
 # Needs: gh (signed in with merge rights), SENTRY_AUTH_TOKEN (project:write).
 set -euo pipefail
 
 REPO=${SELFHEAL_REPO:-sentry-demos/empower}
 SENTRY_ORG=${SENTRY_ORG:-demo}
-SENTRY_PROJECT=flask-selfheal
+SENTRY_PROJECT=selfheal-flask
 SENTRY_URL=${SENTRY_URL:-https://sentry.io}
 
 echo "Closing open agent PRs..."

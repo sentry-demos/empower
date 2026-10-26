@@ -12,7 +12,7 @@ wraps or rewords the exception, and the reviewer agent is told to flag that.
 ## Flow
 
 ```
-drive.py live ──► flask-selfheal /checkout ──► 500, checkout.captured.revenue drops
+drive.py live ──► selfheal-flask /checkout ──► 500, checkout.captured.revenue drops
                                                         │
           Sentry metric alert (revenue drop) goes critical; backup issue alert on new issue
                                                         │ internal integration webhook
@@ -36,8 +36,8 @@ drive.py live ──► flask-selfheal /checkout ──► 500, checkout.capture
                                                         │
           Presenter approves and merges one PR (branch protection requires a human)
                                                         │
-          selfheal-deploy.yml: deploy flask-selfheal, release flask-selfheal@<sha> with commits,
-          "Fixes FLASK-SELFHEAL-N" resolves the issue, sibling agent PR is closed
+          selfheal-deploy.yml: deploy selfheal-flask, release selfheal-flask@<sha> with commits,
+          "Fixes SELFHEAL-FLASK-N" resolves the issue, sibling agent PR is closed
           → live traffic succeeds → revenue recovers → alert resolves
 ```
 
@@ -55,7 +55,7 @@ drive.py live ──► flask-selfheal /checkout ──► 500, checkout.capture
 | `scripts/drive.py` | Purchase traffic: `baseline` (healthy revenue) or `live` (real checkouts). |
 | `scripts/arm.sh` | Makes sure the bug is on `selfheal/base` and deployed. |
 | `scripts/reset.sh` | Closes agent PRs, resolves issues, re-arms. |
-| `../selfheal.env` | `./deploy flask --env=selfheal` config: App Engine service `flask-selfheal`, environment `selfheal`, release = commit SHA. |
+| `../selfheal.env` | `./deploy flask --env=selfheal` config: App Engine service `selfheal-flask`, environment `selfheal`, release = commit SHA. |
 | `../AGENTS.md` | Rules for agents on this branch. |
 
 ## One-time setup
@@ -84,7 +84,7 @@ optional `cleanup_projects` keep-list change in point 4. Step-by-step test instr
      (`sales-engineering-sf`), `SELFHEAL_MAX_TURNS` (40), `SELFHEAL_SENTRY_ORG` (`demo`),
      `SELFHEAL_SENTRY_MCP_URL` (`https://mcp.sentry.dev/mcp`), and
      `SELFHEAL_SENTRY_MCP_AUTH_HEADER` / `_AUTH_PREFIX` (`Authorization` / `Bearer `).
-4. **Keep-list (master, optional):** add `flask-selfheal selfheal-harness` to `--exclude` in
+4. **Keep-list (master, optional):** add `selfheal-flask selfheal-harness` to `--exclude` in
    `cleanup_projects.yml`, or those projects get deleted every 2 hours.
 5. **Branch protection on `selfheal/base`** (repo admin): require a pull request with 1 approval
    and the `pytest` status check. The repo lets `GITHUB_TOKEN` approve PRs, and nothing in the
@@ -97,22 +97,22 @@ optional `cleanup_projects` keep-list change in point 4. Step-by-step test instr
 
 ### Sentry (`demo` org)
 
-1. Projects: `flask-selfheal` (Python/Flask) and `selfheal-harness`. Logs on for `flask-selfheal`.
-2. Add the `flask-selfheal` DSN to GCP Secret Manager as `FLASK_SELFHEAL_DSN`.
-3. Seer on for the org. GitHub integration code mapping: `flask-selfheal` → `sentry-demos/empower`
+1. Projects: `selfheal-flask` (Python/Flask) and `selfheal-harness`. Logs on for `selfheal-flask`.
+2. Add the `selfheal-flask` DSN to GCP Secret Manager as `SELFHEAL_FLASK_DSN`.
+3. Seer on for the org. GitHub integration code mapping: `selfheal-flask` → `sentry-demos/empower`
    branch `selfheal/base`, stack root `src/`, source root `flask/src/`.
-4. Seer automatic runs **off** for `flask-selfheal`, so Seer doesn't open its own PR and race
+4. Seer automatic runs **off** for `selfheal-flask`, so Seer doesn't open its own PR and race
    the agents.
 5. Internal integration with **Alert Rule Action** on and webhook URL `<receiver URL>/sentry`.
    Put its client secret in GCP Secret Manager as `SELFHEAL_SENTRY_CLIENT_SECRET`.
-6. **Metric alert (primary)**: `sum(checkout.captured.revenue)` in `flask-selfheal`,
+6. **Metric alert (primary)**: `sum(checkout.captured.revenue)` in `selfheal-flask`,
    `environment:selfheal`, 5-minute window. Critical when it drops below what `drive.py baseline`
    produces (about $1,000 per 5 minutes at the default rate), or use a percent-change threshold.
    Action: the internal integration.
-7. **Issue alert (backup)**: new issue in `flask-selfheal`, `environment:selfheal`, action:
+7. **Issue alert (backup)**: new issue in `selfheal-flask`, `environment:selfheal`, action:
    the internal integration.
 8. Resolve through commits works because the deploy sets commits on the release and the PR body
-   says `Fixes FLASK-SELFHEAL-N`.
+   says `Fixes SELFHEAL-FLASK-N`.
 
 ### GCP (`sales-engineering-sf`)
 
@@ -122,17 +122,17 @@ gcloud secrets create SELFHEAL_SENTRY_CLIENT_SECRET --data-file=-
 gcloud secrets create SELFHEAL_GITHUB_TOKEN --data-file=-   # bot token
 # Receiver (prints the webhook URL for step 5 above)
 selfheal/receiver/deploy.sh
-# First deploy of flask-selfheal (later ones run from selfheal-deploy.yml)
+# First deploy of selfheal-flask (later ones run from selfheal-deploy.yml)
 GITHUB_SHA=$(git rev-parse HEAD) SENTRY_AUTH_TOKEN=... ./deploy flask --env=selfheal
 ```
 
 `SELFHEAL_FLASK_URL` for the scripts is the service URL, for example
-`https://flask-selfheal-dot-sales-engineering-sf.uc.r.appspot.com`.
+`https://selfheal-flask-dot-sales-engineering-sf.uc.r.appspot.com`.
 
 ## Running the demo
 
 ```bash
-export SELFHEAL_FLASK_URL=https://flask-selfheal-dot-sales-engineering-sf.uc.r.appspot.com
+export SELFHEAL_FLASK_URL=https://selfheal-flask-dot-sales-engineering-sf.uc.r.appspot.com
 selfheal/scripts/arm.sh                    # bug on selfheal/base and deployed
 python selfheal/scripts/drive.py baseline  # ~15 min before: healthy revenue baseline
 # On stage, when it's time for production to break:

@@ -8,7 +8,7 @@ ready-to-review change to a human. Work unattended: don't ask questions.
 {{ALERT}}
 ```
 
-Sentry org: `{{SENTRY_ORG}}`. Project: `flask-selfheal` (the Flask backend). Environment: `selfheal`.
+Sentry org: `{{SENTRY_ORG}}`. Project: `selfheal-flask` (the Flask backend). Environment: `selfheal`.
 
 Read `AGENTS.md` at the repo root first. It covers scope, tests and the replay tool.
 
@@ -20,7 +20,7 @@ Before moving on, state the root cause in one or two sentences: the line that's 
 
 ## 2. Get the failing request
 
-Search Sentry Logs in `flask-selfheal` for the most recent "Failed to validate inventory" log
+Search Sentry Logs in `selfheal-flask` for the most recent "Failed to validate inventory" log
 line and read its `cart_json` attribute. Write that JSON, unchanged, to `{{OUT}}/cart.json`.
 
 ## 3. Fix
@@ -38,7 +38,7 @@ Write `{{OUT}}/result.json`:
 
 ```json
 {
-  "issue_short_id": "FLASK-SELFHEAL-1",
+  "issue_short_id": "SELFHEAL-FLASK-1",
   "issue_url": "https://...",
   "root_cause": "one or two sentences",
   "fix_summary": "one sentence",

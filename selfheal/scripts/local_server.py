@@ -1,10 +1,10 @@
-"""Run flask-selfheal on your machine, reporting to a real Sentry project, with no shared infra.
+"""Run selfheal-flask on your machine, reporting to a real Sentry project, with no shared infra.
 
 The database, Redis and Statsig are stubbed (inventory always has stock), so nothing touches
 the shared GCP project. Errors, logs (with cart_json), traces and the revenue metric go to the
-DSN you pass, tagged environment=selfheal and release=flask-selfheal@<current commit>.
+DSN you pass, tagged environment=selfheal and release=selfheal-flask@<current commit>.
 
-    FLASK_DSN=<flask-selfheal DSN> python selfheal/scripts/local_server.py [--port 8080]
+    FLASK_DSN=<selfheal-flask DSN> python selfheal/scripts/local_server.py [--port 8080]
     SELFHEAL_FLASK_URL=http://localhost:8080 python selfheal/scripts/drive.py live
 
 Restart it after pulling a merged fix: that's the local stand-in for selfheal-deploy.
@@ -25,11 +25,11 @@ def main():
     parser.add_argument("--port", type=int, default=8080)
     args = parser.parse_args()
     if not os.environ.get("FLASK_DSN"):
-        sys.exit("Set FLASK_DSN to your flask-selfheal project's DSN")
+        sys.exit("Set FLASK_DSN to your selfheal-flask project's DSN")
 
     sha = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True,
                          cwd=FLASK_DIR).stdout.strip()
-    os.environ["FLASK_RELEASE"] = f"flask-selfheal@{sha}"
+    os.environ["FLASK_RELEASE"] = f"selfheal-flask@{sha}"
     os.environ["FLASK_ENVIRONMENT"] = "selfheal"
     # db.py builds a Cloud SQL engine outside "local"; it's lazy and never connects here
     os.environ.setdefault("DB_CLOUD_SQL_CONNECTION_NAME", "local:stub:stub")

@@ -1,4 +1,4 @@
-"""Send a steady stream of purchases to flask-selfheal so revenue has a baseline to drop from.
+"""Send a steady stream of purchases to selfheal-flask so revenue has a baseline to drop from.
 
     python selfheal/scripts/drive.py baseline   # healthy revenue (start ~15 min before the demo)
     python selfheal/scripts/drive.py live       # real checkouts: 500 while the bug is deployed
@@ -9,7 +9,7 @@ revenue flows; `live` sends "true", like real shoppers. Switching baseline -> li
 "breaks production" on cue. Keep `live` running after the fix merges: once the release
 deploys, the same traffic succeeds, revenue recovers and the alert resolves.
 
-Env: SELFHEAL_FLASK_URL (e.g. https://flask-selfheal-dot-<project>.appspot.com).
+Env: SELFHEAL_FLASK_URL (e.g. https://selfheal-flask-dot-<project>.appspot.com).
 """
 import argparse
 import json
