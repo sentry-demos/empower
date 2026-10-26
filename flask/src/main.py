@@ -237,7 +237,11 @@ def checkout():
                         out_of_stock.append(title)
     except Exception as err:
 
-        logger.error('Failed to validate inventory with cart: %s', cart)
+        # cart_json is a structured log attribute so the exact failing request can be
+        # pulled from Sentry Logs and replayed against a patch (see selfheal/README.md)
+        cart_json = json.dumps(cart)
+        sentry_sdk.logger.error('Failed to validate inventory with cart: {cart_json}',
+                                cart_json=cart_json, attributes={'cart_json': cart_json})
         raise Exception("Error validating enough inventory for product") from err
 
     if len(out_of_stock) == 0:

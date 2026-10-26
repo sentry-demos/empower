@@ -1,0 +1,162 @@
+name: selfheal-runner
+# Self-healing demo: started by the Cloud Run receiver when a Sentry alert goes critical.
+# Runs two agents on the same alert, with and without Seer, each opening a draft PR,
+# then posts the side-by-side scorecard to Slack. See selfheal/README.md.
+run-name: "Self-heal: ${{ github.event.client_payload.title || inputs.title }}"
+
+on:
+  repository_dispatch:
+    types: [selfheal-alert]
+  workflow_dispatch:
+    inputs:
+      title:
+        description: Alert title to hand the agents (manual dry run)
+        default: "Critical: Checkout revenue dropped"
+        type: string
+
+concurrency:
+  group: selfheal-runner
+  cancel-in-progress: false
+
+env:
+  BASE_BRANCH: selfheal/base
+  SENTRY_ORG: ${{ vars.SELFHEAL_SENTRY_ORG || 'demo' }}
+  SELFHEAL_MODEL: ${{ vars.SELFHEAL_MODEL || 'claude-opus-5-5' }}
+  SELFHEAL_MAX_TURNS: ${{ vars.SELFHEAL_MAX_TURNS || '40' }}
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  fix:
+    if: github.repository == 'sentry-demos/empower'
+    name: fix (${{ matrix.variant }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [without-seer, with-seer]
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.BASE_BRANCH }}
+          # The bot's token, not GITHUB_TOKEN: PRs opened with GITHUB_TOKEN don't trigger
+          # other workflows, so the pytest check would never run and the PR could never merge.
+          token: ${{ secrets.SELFHEAL_BOT_TOKEN }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: flask/requirements.txt
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install dependencies
+        run: |
+          pip install -r flask/requirements.txt pytest requests
+          npm install -g @anthropic-ai/claude-code
+
+      - name: Write the alert
+        env:
+          PAYLOAD: ${{ toJSON(github.event.client_payload) }}
+          MANUAL_TITLE: ${{ inputs.title }}
+        run: |
+          # Outside the checkout so nothing here ends up in the agent's diff
+          OUT="$RUNNER_TEMP/selfheal/${{ matrix.variant }}"
+          mkdir -p "$OUT"
+          echo "OUT=$OUT" >> "$GITHUB_ENV"
+          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            printf '%s' "$PAYLOAD" > "$RUNNER_TEMP/selfheal/alert.json"
+          else
+            jq -n --arg title "$MANUAL_TITLE" '{kind: "manual", title: $title, description: "", url: "", issue_id: ""}' \
+              > "$RUNNER_TEMP/selfheal/alert.json"
+          fi
+          cat "$RUNNER_TEMP/selfheal/alert.json"
+
+      - name: Prepare prompt and Sentry MCP
+        env:
+          SENTRY_MCP_TOKEN: ${{ secrets.SELFHEAL_SENTRY_MCP_TOKEN }}
+          SENTRY_MCP_URL: ${{ vars.SELFHEAL_SENTRY_MCP_URL }}
+          SENTRY_MCP_AUTH_HEADER: ${{ vars.SELFHEAL_SENTRY_MCP_AUTH_HEADER }}
+          SENTRY_MCP_AUTH_PREFIX: ${{ vars.SELFHEAL_SENTRY_MCP_AUTH_PREFIX }}
+        run: |
+          [ -n "$SENTRY_MCP_URL" ] || unset SENTRY_MCP_URL
+          [ -n "$SENTRY_MCP_AUTH_HEADER" ] || unset SENTRY_MCP_AUTH_HEADER
+          [ -n "$SENTRY_MCP_AUTH_PREFIX" ] || unset SENTRY_MCP_AUTH_PREFIX
+          python selfheal/harness/prepare.py fix --variant ${{ matrix.variant }} \
+            --alert "$RUNNER_TEMP/selfheal/alert.json" --out "$OUT"
+
+      - name: Agent diagnoses and fixes (${{ matrix.variant }})
+        id: agent
+        continue-on-error: true  # still verify and score whatever it produced
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.SELFHEAL_ANTHROPIC_API_KEY }}
+          SELFHEAL_HARNESS_DSN: ${{ secrets.SELFHEAL_HARNESS_DSN }}
+        run: |
+          DISALLOWED=""
+          if [ "${{ matrix.variant }}" = "without-seer" ]; then
+            DISALLOWED="mcp__sentry__analyze_issue_with_seer"
+          fi
+          python selfheal/harness/run_agent.py \
+            --name "fix-${{ matrix.variant }}" --variant "${{ matrix.variant }}" \
+            --prompt-file "$OUT/prompt.md" --out "$OUT" --mcp-config "$OUT/mcp.json" \
+            --allowed-tools "Read Edit Write Glob Grep Bash(python -m pytest:*) Bash(python selfheal/harness/replay.py:*) mcp__sentry" \
+            --disallowed-tools "$DISALLOWED"
+
+      - name: Verify independently and open draft PR
+        env:
+          GH_TOKEN: ${{ secrets.SELFHEAL_BOT_TOKEN }}
+        run: |
+          rm -f "$OUT/mcp.json"
+          git config user.name "${{ vars.SELFHEAL_BOT_NAME || 'empower-selfheal-bot' }}"
+          git config user.email "${{ vars.SELFHEAL_BOT_EMAIL || 'empower-selfheal-bot@users.noreply.github.com' }}"
+          python selfheal/harness/open_pr.py --variant ${{ matrix.variant }} --out "$OUT"
+
+      - name: Upload scorecard
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.variant }}
+          path: |
+            ${{ env.OUT }}/stats.json
+            ${{ env.OUT }}/verify.json
+            ${{ env.OUT }}/result.json
+            ${{ env.OUT }}/cart.json
+          if-no-files-found: warn
+
+  report:
+    needs: fix
+    if: always() && github.repository == 'sentry-demos/empower'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.BASE_BRANCH }}
+          sparse-checkout: selfheal
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: results
+
+      - name: Write the alert
+        env:
+          PAYLOAD: ${{ toJSON(github.event.client_payload) }}
+          MANUAL_TITLE: ${{ inputs.title }}
+        run: |
+          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            printf '%s' "$PAYLOAD" > alert.json
+          else
+            jq -n --arg title "$MANUAL_TITLE" '{title: $title}' > alert.json
+          fi
+
+      - name: Post to Slack
+        env:
+          SELFHEAL_SLACK_WEBHOOK_URL: ${{ secrets.SELFHEAL_SLACK_WEBHOOK_URL }}
+        run: |
+          pip install requests
+          python selfheal/harness/report.py run --alert alert.json --results results
