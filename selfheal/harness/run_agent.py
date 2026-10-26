@@ -63,8 +63,17 @@ def run(args):
         kind = event.get("type")
 
         if kind == "system" and event.get("subtype") == "init":
-            servers = ", ".join(f"{s['name']}={s['status']}" for s in event.get("mcp_servers", []))
-            print(f"▶ [{args.name}] model={event.get('model')} mcp: {servers or 'none'}", flush=True)
+            servers = event.get("mcp_servers", [])
+            listing = ", ".join(f"{s['name']}={s['status']}" for s in servers)
+            print(f"▶ [{args.name}] model={event.get('model')} mcp: {listing or 'none'}", flush=True)
+            # "pending" is normal for a stdio server that's still starting; only stop on a real failure
+            failed = [s["name"] for s in servers if s.get("status") in ("failed", "needs-auth")]
+            if args.mcp_config and failed:
+                # Without Sentry the agent can only guess; stop before it spends tokens
+                print(f"❌ MCP server(s) not connected: {', '.join(failed)}. Stopping.", flush=True)
+                proc.kill()
+                result = {"subtype": "mcp_failed", "is_error": True}
+                break
 
         elif kind == "assistant":
             for block in event["message"].get("content", []):

@@ -9,7 +9,8 @@ Check:
 1. **Root cause.** Does the change fix the actual cause, or does it hide the symptom
    (catching, wrapping or rewording the exception, skipping validation, returning early)?
 2. **Regression test.** Is there a test that would fail without the fix? Run
-   `python -m pytest flask/src/test` to confirm the suite passes.
+   `python -m pytest flask/src/test` to confirm the suite passes. That's the only Bash
+   command you're allowed; use Read, Glob and Grep for everything else.
 3. **Scope.** Is the change limited to what the fix needs, and only under `flask/`?
 4. **Risk.** Anything else that could break checkout?
 

@@ -49,10 +49,27 @@ runs:
         esac
         echo "Model key: $SECRET via $PROVIDER"
 
+    - name: Drop GCP credentials
+      # The key is all the job needs from GCP. google-github-actions/auth writes its credentials
+      # file into the checkout, where the agent could read it and the harness would see it as a
+      # change, so remove it and sign gcloud out before any agent runs.
+      shell: bash
+      run: |
+        gcloud auth revoke --all --quiet 2>/dev/null || true
+        rm -f "$GOOGLE_GHA_CREDS_PATH" "$GITHUB_WORKSPACE"/gha-creds-*.json
+        {
+          echo "GOOGLE_APPLICATION_CREDENTIALS="
+          echo "CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE="
+          echo "GOOGLE_GHA_CREDS_PATH="
+        } >> "$GITHUB_ENV"
+
     - uses: actions/setup-node@v4
       with:
         node-version: "22"
 
-    - name: Install Claude Code
+    - name: Install Claude Code and cache the Sentry MCP
       shell: bash
-      run: npm install -g @anthropic-ai/claude-code
+      run: |
+        npm install -g @anthropic-ai/claude-code
+        # Pre-fetch so the agent's `npx -y @sentry/mcp-server@...` starts without a download
+        npm cache add "${SENTRY_MCP_PACKAGE:-@sentry/mcp-server@0.42.0}"

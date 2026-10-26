@@ -82,9 +82,10 @@ optional `cleanup_projects` keep-list change in point 4. Step-by-step test instr
    - `SELFHEAL_DEPLOY=true` lets merges deploy to App Engine.
    - Optional: `SELFHEAL_MODEL_PROVIDER` (`openrouter` or `anthropic`),
      `SELFHEAL_MODEL_KEY_SECRET` (`AGENT_OPENROUTER_API_KEY`), `SELFHEAL_GCP_PROJECT`
-     (`sales-engineering-sf`), `SELFHEAL_MAX_TURNS` (40), `SELFHEAL_SENTRY_ORG` (`demo`),
-     `SELFHEAL_SENTRY_MCP_URL` (`https://mcp.sentry.dev/mcp`), and
-     `SELFHEAL_SENTRY_MCP_AUTH_HEADER` / `_AUTH_PREFIX` (`Authorization` / `Bearer `).
+     (`sales-engineering-sf`), `SELFHEAL_MAX_TURNS` (40), `SELFHEAL_SENTRY_ORG` (`demo`), and
+     `SELFHEAL_HAIKU_MODEL` (`anthropic/claude-haiku-5.5`).
+   - The Sentry MCP runs inside the job as `@sentry/mcp-server` (pinned in
+     `harness/prepare.py`), because the hosted MCP only takes OAuth sign-ins.
 4. **Keep-list (master, optional):** add `selfheal-flask selfheal-harness` to `--exclude` in
    `cleanup_projects.yml`, or those projects get deleted every 2 hours.
 5. **Branch protection on `selfheal/base`** (repo admin): require a pull request with 1 approval

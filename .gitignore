@@ -110,3 +110,6 @@ aspnetcore/*.suo
 .sentryclirc
 
 agent/agent_sessions.db
+
+# google-github-actions/auth credentials (selfheal workflows)
+gha-creds-*.json

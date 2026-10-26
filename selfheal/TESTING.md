@@ -114,7 +114,11 @@ gh secret set SELFHEAL_SENTRY_MCP_TOKEN --repo $R                            # p
 
 Optional variables: `SELFHEAL_MODEL_PROVIDER` (`openrouter` by default, or `anthropic`),
 `SELFHEAL_MODEL_KEY_SECRET` (default `AGENT_OPENROUTER_API_KEY`), `SELFHEAL_SENTRY_ORG`
-(`demo`), and `SELFHEAL_SENTRY_MCP_URL` / `_AUTH_HEADER` / `_AUTH_PREFIX`.
+(`demo`), and `SELFHEAL_HAIKU_MODEL`.
+
+The agents talk to Sentry through Sentry's MCP server (`@sentry/mcp-server`), run inside the job
+with your token. The hosted MCP at mcp.sentry.dev only accepts an interactive OAuth sign-in, not
+a token. The server's search tools use the same model key as Claude Code.
 
 ## 5. Run it
 
@@ -139,8 +143,13 @@ gh run view "$RUN" --repo sentry-demos/empower --web     # live agent output: fi
 - **GCP login fails** in "selfheal-claude": the workload identity provider probably only allows
   certain refs. A GCP admin needs to allow `selfheal/*` refs for `sentry-demos/empower`.
 - **Claude Code can't reach the model:** check `SELFHEAL_MODEL` against OpenRouter's model list.
-- **MCP not connected** (the `▶` line shows `sentry=failed`): check the token, and try
-  `SELFHEAL_SENTRY_MCP_AUTH_HEADER`.
+- **MCP not connected** (the `▶` line shows `sentry=failed`, and the harness stops right
+  away): check `SELFHEAL_SENTRY_MCP_TOKEN`. `pending` at startup is normal.
+- **Sentry tools return 401/403 mid-run:** the token is missing a permission (Organization,
+  Project, Team: Read; Issue & Event: Read & Write). If only `analyze_issue_with_seer` fails,
+  Seer may need a user token rather than an integration token (see step 1).
+- **"Not opening a PR: …"** names each check that failed: changes outside `flask/`, failing
+  tests, no `result.json`, or a secret value found in a changed file.
 
 ## 6. Close the loop locally
 

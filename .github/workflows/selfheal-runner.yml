@@ -76,34 +76,33 @@ jobs:
       - name: Prepare prompt and Sentry MCP
         env:
           SENTRY_MCP_TOKEN: ${{ secrets.SELFHEAL_SENTRY_MCP_TOKEN }}
-          SENTRY_MCP_URL: ${{ vars.SELFHEAL_SENTRY_MCP_URL }}
-          SENTRY_MCP_AUTH_HEADER: ${{ vars.SELFHEAL_SENTRY_MCP_AUTH_HEADER }}
-          SENTRY_MCP_AUTH_PREFIX: ${{ vars.SELFHEAL_SENTRY_MCP_AUTH_PREFIX }}
         run: |
-          [ -n "$SENTRY_MCP_URL" ] || unset SENTRY_MCP_URL
-          [ -n "$SENTRY_MCP_AUTH_HEADER" ] || unset SENTRY_MCP_AUTH_HEADER
-          [ -n "$SENTRY_MCP_AUTH_PREFIX" ] || unset SENTRY_MCP_AUTH_PREFIX
+          # The MCP config holds the Sentry token and model key: keep it in its own folder,
+          # which the agent is denied from reading (next step)
+          SECRETS="$RUNNER_TEMP/selfheal-secrets"
+          echo "SECRETS=$SECRETS" >> "$GITHUB_ENV"
           python selfheal/harness/prepare.py fix --variant ${{ matrix.variant }} \
-            --alert "$RUNNER_TEMP/selfheal/alert.json" --out "$OUT"
+            --alert "$RUNNER_TEMP/selfheal/alert.json" --out "$OUT" --mcp-out "$SECRETS/mcp.json"
 
       - name: Agent diagnoses and fixes (${{ matrix.variant }})
         continue-on-error: true  # still verify and score whatever it produced
         run: |
-          DISALLOWED=""
+          DISALLOWED="Read(/$SECRETS/**) Grep(/$SECRETS/**) Glob(/$SECRETS/**)"
           if [ "${{ matrix.variant }}" = "without-seer" ]; then
-            DISALLOWED="mcp__sentry__analyze_issue_with_seer"
+            DISALLOWED="$DISALLOWED mcp__sentry__analyze_issue_with_seer"
           fi
           python selfheal/harness/run_agent.py \
             --name "fix-${{ matrix.variant }}" --variant "${{ matrix.variant }}" \
-            --prompt-file "$OUT/prompt.md" --out "$OUT" --mcp-config "$OUT/mcp.json" \
-            --allowed-tools "Read Edit Write Glob Grep Bash(python -m pytest:*) Bash(python selfheal/harness/replay.py:*) mcp__sentry" \
+            --prompt-file "$OUT/prompt.md" --out "$OUT" --mcp-config "$SECRETS/mcp.json" \
+            --allowed-tools "Read Edit Write Glob Grep ToolSearch Bash(python -m pytest:*) Bash(python selfheal/harness/replay.py:*) mcp__sentry" \
             --disallowed-tools "$DISALLOWED"
 
       - name: Verify independently and open draft PR
         env:
           GH_TOKEN: ${{ github.token }}
+          SENTRY_MCP_TOKEN: ${{ secrets.SELFHEAL_SENTRY_MCP_TOKEN }}  # for the leak check only
         run: |
-          rm -f "$OUT/mcp.json"
+          rm -rf "$SECRETS"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           python selfheal/harness/open_pr.py --variant ${{ matrix.variant }} --out "$OUT"

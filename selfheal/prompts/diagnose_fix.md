@@ -12,6 +12,20 @@ Sentry org: `{{SENTRY_ORG}}`. Project: `selfheal-flask` (the Flask backend). Env
 
 Read `AGENTS.md` at the repo root first. It covers scope, tests and the replay tool.
 
+## Your tools
+
+- Sentry MCP tools (`mcp__sentry__*`) for issues, events, traces and logs.
+- Read, Glob, Grep, Edit and Write for files. Use these instead of shell commands like `ls` or `cat`.
+- Bash, but **only** for these two commands, run from the repo root:
+  - `python -m pytest flask/src/test` (you may add `-q`, `-x` or a test path)
+  - `python selfheal/harness/replay.py <path to cart.json>`
+
+  Any other Bash command is denied. A denial means use a different tool. It doesn't mean
+  Bash is off, so keep using the two commands above.
+
+If the Sentry tools are missing or fail, say so in your final message and stop. Don't fix code
+you haven't diagnosed from Sentry.
+
 ## 1. Diagnose
 
 {{DIAGNOSIS}}

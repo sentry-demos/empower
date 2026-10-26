@@ -47,8 +47,25 @@ def verify(out):
     else:
         result["replay_status"] = None  # agent never pulled the cart from Sentry Logs
 
-    result["ok"] = result["in_scope"] and result["tests_passed"] and result["replay_status"] == 200
+    result["secrets_found"] = leaked_secrets(files)
+    result["ok"] = (result["in_scope"] and result["tests_passed"] and result["replay_status"] == 200
+                    and not result["secrets_found"])
     return result
+
+
+def leaked_secrets(files):
+    """Names of known secrets whose values appear in a changed file. The repo is public,
+    so a PR must never carry the Sentry token or the model key, whatever the agent wrote."""
+    secrets = {name: os.environ.get(name, "") for name in
+               ("SENTRY_MCP_TOKEN", "ANTHROPIC_AUTH_TOKEN", "ANTHROPIC_API_KEY")}
+    found = []
+    for path in files:
+        if not os.path.isfile(path):
+            continue
+        with open(path, errors="ignore") as f:
+            text = f.read()
+        found += [name for name, value in secrets.items() if len(value) >= 8 and value in text]
+    return sorted(set(found))
 
 
 def open_pr(variant, out, check):
@@ -99,12 +116,22 @@ def main():
     check = verify(args.out)
     print(f"verify: {json.dumps(check)}", flush=True)
 
-    if check["in_scope"] and check["tests_passed"] and os.path.exists(os.path.join(args.out, "result.json")):
+    blockers = []
+    if check["secrets_found"]:
+        blockers.append(f"changed files contain secret values ({', '.join(check['secrets_found'])})")
+    if not check["in_scope"]:
+        blockers.append("changes are empty or outside flask/")
+    if not check["tests_passed"]:
+        blockers.append("tests fail")
+    if not os.path.exists(os.path.join(args.out, "result.json")):
+        blockers.append("the agent wrote no result.json")
+
+    if blockers:
+        check["pr_url"] = None
+        print(f"Not opening a PR: {'; '.join(blockers)}", flush=True)
+    else:
         check["pr_url"] = open_pr(args.variant, args.out, check)
         print(f"Draft PR: {check['pr_url']}", flush=True)
-    else:
-        check["pr_url"] = None
-        print("Not opening a PR: change is out of scope, tests fail, or the agent wrote no result.json", flush=True)
 
     with open(os.path.join(args.out, "verify.json"), "w") as f:
         json.dump(check, f, indent=2)
