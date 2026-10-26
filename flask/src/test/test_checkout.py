@@ -18,3 +18,23 @@ def test_checkout_without_inventory_validation_succeeds(client, inventory):
     assert response.status_code == 200
     assert json.loads(response.data) == {"status": "success"}
     assert inventory.decrements == []
+
+
+def test_checkout_with_inventory_validation_decrements_stock(client, inventory):
+    inventory.stock.update({3: 10, 5: 10})
+
+    response = post_checkout(client, make_order({3: 2, 5: 1}))
+
+    assert response.status_code == 200
+    assert json.loads(response.data) == {"status": "success"}
+    assert sorted(inventory.decrements) == [(3, 2), (5, 1)]
+
+
+def test_checkout_with_inventory_validation_reports_out_of_stock(client, inventory):
+    inventory.stock.update({3: 1, 5: 10})
+
+    response = post_checkout(client, make_order({3: 2, 5: 1}))
+
+    assert response.status_code == 200
+    assert json.loads(response.data) == {"status": "partial", "out_of_stock": ["Plant 3"]}
+    assert inventory.decrements == [(5, 1)]
