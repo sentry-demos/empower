@@ -27,7 +27,7 @@ env:
 
 jobs:
   fix:
-    if: github.repository == 'sentry-demos/empower'
+    if: vars.SELFHEAL_ENABLED == 'true'  # opt-in per repo, so forks and other repos never run it
     name: fix (${{ matrix.variant }})
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -131,7 +131,7 @@ jobs:
 
   report:
     needs: fix
-    if: always() && github.repository == 'sentry-demos/empower'
+    if: always() && vars.SELFHEAL_ENABLED == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

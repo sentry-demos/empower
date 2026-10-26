@@ -82,7 +82,9 @@ drive.py live ──► flask-selfheal /checkout ──► 500, checkout.capture
    The deploy reuses the existing `GCP_WORKLOAD_IDENTITY_PROVIDER` and `GCP_SERVICE_ACCOUNT`.
    If that provider has an attribute condition limited to `refs/heads/master`, add `selfheal/base`.
 
-5. **Optional repository variables**: `SELFHEAL_MODEL` (default `claude-opus-5-5`),
+5. **Repository variables**: `SELFHEAL_ENABLED=true` turns the selfheal workflows on (they do
+   nothing without it), and `SELFHEAL_DEPLOY=true` lets merges deploy to App Engine. To test
+   privately first, see [TESTING.md](TESTING.md). Optional: `SELFHEAL_MODEL` (default `claude-opus-5-5`),
    `SELFHEAL_MAX_TURNS` (40), `SELFHEAL_SENTRY_ORG` (`demo`), `SELFHEAL_SENTRY_MCP_URL`
    (`https://mcp.sentry.dev/mcp`), `SELFHEAL_SENTRY_MCP_AUTH_HEADER` / `_AUTH_PREFIX`
    (`Authorization` / `Bearer `), `SELFHEAL_BOT_NAME`, `SELFHEAL_BOT_EMAIL`.

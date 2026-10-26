@@ -14,14 +14,32 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  close-siblings:
+    # Both versions open a PR for the same alert. Once one merges, close the other so
+    # the receiver (which skips alerts while an agent PR is open) can fire again.
+    if: vars.SELFHEAL_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh pr list --base selfheal/base --label selfheal-agent --state open --json number --jq '.[].number' |
+            while read -r pr; do
+              gh pr close "$pr" --delete-branch --comment "Superseded: another fix for this alert merged in ${GITHUB_SHA::7}."
+            done
+
   deploy:
-    if: github.repository == 'sentry-demos/empower'
+    # Off unless SELFHEAL_DEPLOY is "true": it deploys to the shared GCP project.
+    # For a private test, run flask locally instead (selfheal/TESTING.md).
+    if: vars.SELFHEAL_ENABLED == 'true' && vars.SELFHEAL_DEPLOY == 'true'
     runs-on: ubuntu-22.04
     timeout-minutes: 20
     permissions:
       contents: read
       id-token: write
-      pull-requests: write
     env:
       SENTRY_AUTH_TOKEN: ${{ secrets.SELFHEAL_SENTRY_ORG_TOKEN }}
       # GITHUB_SHA (set by Actions) becomes the release: flask-selfheal@<sha>, see selfheal.env
@@ -47,14 +65,3 @@ jobs:
 
       - name: Deploy flask-selfheal
         run: ./deploy flask --env=selfheal
-
-      - name: Close sibling agent PRs
-        # Both versions open a PR for the same alert. Once one merges, close the other so
-        # the receiver (which skips alerts while an agent PR is open) can fire again.
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh pr list --base selfheal/base --label selfheal-agent --state open --json number --jq '.[].number' |
-            while read -r pr; do
-              gh pr close "$pr" --delete-branch --comment "Superseded: another fix for this alert merged in ${GITHUB_SHA::7}."
-            done

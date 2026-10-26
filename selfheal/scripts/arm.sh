@@ -8,17 +8,18 @@
 set -euo pipefail
 
 REPO=${SELFHEAL_REPO:-sentry-demos/empower}
+REMOTE=${SELFHEAL_REMOTE:-origin}  # git remote that points at $REPO
 BASE=selfheal/base
 TAG=selfheal-armed
 BUGGY_FILES="flask/src/main.py flask/src/test/test_checkout.py"
 
 top=$(git rev-parse --show-toplevel)
 cd "$top"
-git fetch -q origin "$BASE" "refs/tags/$TAG:refs/tags/$TAG"
+git fetch -q "$REMOTE" "$BASE" "refs/tags/$TAG:refs/tags/$TAG"
 
 bug_present() {
   # The bug: `quantities` is read (len check) before it's assigned
-  git show "origin/$BASE:flask/src/main.py" | awk '
+  git show "$REMOTE/$BASE:flask/src/main.py" | awk '
     /if len\(quantities\) == 0/ && !assigned { found = 1 }
     /quantities = \{int\(k\)/ { assigned = 1 }
     END { exit found ? 0 : 1 }'
@@ -29,11 +30,11 @@ if bug_present; then
 else
   branch="selfheal/rearm-$(date +%Y%m%d-%H%M%S)"
   tmp=$(mktemp -d)
-  git worktree add -q -b "$branch" "$tmp" "origin/$BASE"
+  git worktree add -q -b "$branch" "$tmp" "$REMOTE/$BASE"
   # shellcheck disable=SC2086
   git -C "$tmp" checkout "$TAG" -- $BUGGY_FILES
   git -C "$tmp" commit -q -m "Re-arm self-heal demo: restore the /checkout bug"
-  git -C "$tmp" push -q origin "$branch"
+  git -C "$tmp" push -q "$REMOTE" "$branch"
   git worktree remove --force "$tmp"
 
   url=$(gh pr create --repo "$REPO" --base "$BASE" --head "$branch" \

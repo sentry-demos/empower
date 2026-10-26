@@ -7,17 +7,18 @@ set -euo pipefail
 
 GCP_PROJECT=${GCP_PROJECT:-sales-engineering-sf}
 GCP_REGION=${GCP_REGION:-us-central1}
+SERVICE=${SERVICE:-selfheal-receiver}
 
 cd "$(dirname "$0")"
-gcloud run deploy selfheal-receiver \
+gcloud run deploy "$SERVICE" \
   --project "$GCP_PROJECT" \
   --region "$GCP_REGION" \
   --source . \
   --allow-unauthenticated \
   --min-instances 1 \
   --max-instances 2 \
-  --set-env-vars "GITHUB_REPO=sentry-demos/empower,BASE_BRANCH=selfheal/base" \
+  --set-env-vars "GITHUB_REPO=${GITHUB_REPO:-sentry-demos/empower},BASE_BRANCH=selfheal/base" \
   --set-secrets "SENTRY_CLIENT_SECRET=SELFHEAL_SENTRY_CLIENT_SECRET:latest,GITHUB_TOKEN=SELFHEAL_GITHUB_TOKEN:latest"
 
 echo "Webhook URL for the Sentry internal integration:"
-echo "  $(gcloud run services describe selfheal-receiver --project "$GCP_PROJECT" --region "$GCP_REGION" --format 'value(status.url)')/sentry"
+echo "  $(gcloud run services describe "$SERVICE" --project "$GCP_PROJECT" --region "$GCP_REGION" --format 'value(status.url)')/sentry"

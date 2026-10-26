@@ -9,7 +9,7 @@ on:
 
 jobs:
   review:
-    if: startsWith(github.head_ref, 'selfheal/fix-')
+    if: vars.SELFHEAL_ENABLED == 'true' && startsWith(github.head_ref, 'selfheal/fix-')
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:

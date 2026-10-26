@@ -20,7 +20,7 @@ import time
 
 import requests
 
-# Fallback catalogue if /products is unavailable. ids match the products table.
+# Default catalogue (and fallback for --fetch-catalogue). ids match the products table.
 CATALOGUE = [
     {"id": 3, "title": "Plant Mood", "price": 155},
     {"id": 4, "title": "Botana Voice", "price": 175},
@@ -62,12 +62,14 @@ def main():
     parser.add_argument("--per-minute", type=float, default=6)
     parser.add_argument("--minutes", type=float, default=0, help="0 = run until Ctrl+C")
     parser.add_argument("--url", default=os.environ.get("SELFHEAL_FLASK_URL"))
+    parser.add_argument("--fetch-catalogue", action="store_true",
+                        help="Read products from GET /products (deployed service only; local_server has no DB)")
     args = parser.parse_args()
     if not args.url:
         sys.exit("Set SELFHEAL_FLASK_URL or pass --url")
 
     base_url = args.url.rstrip("/")
-    catalogue = load_catalogue(base_url)
+    catalogue = load_catalogue(base_url) if args.fetch_catalogue else CATALOGUE
     deadline = time.time() + args.minutes * 60 if args.minutes else None
     counts = {}
 
