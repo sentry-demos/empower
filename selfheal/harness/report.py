@@ -122,7 +122,8 @@ def impact_line(impact):
         parts.append(f"~${impact['lost_revenue_usd']:,.0f} in failed orders")
     if impact.get("failed_checkouts") is not None:
         parts.append(f"{impact['failed_checkouts']:,} failed checkouts")
-    if impact.get("users_affected") is not None:
+    # 0 usually means events carry no user identity, not that nobody was affected
+    if impact.get("users_affected"):
         parts.append(f"{impact['users_affected']:,} customers affected")
     if impact.get("first_seen"):
         parts.append(f"since {impact['first_seen']}")
