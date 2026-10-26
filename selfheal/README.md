@@ -97,9 +97,25 @@ optional `cleanup_projects` keep-list change in point 4. Step-by-step test instr
    harness ever approves. To make that a hard rule, also require approval of the most recent push
    by someone other than its author.
 6. Push the `selfheal-armed` tag. `arm.sh` restores the buggy files from it.
-7. **Receiver token:** the receiver runs outside Actions, so it needs its own GitHub token
-   (Secret Manager `SELFHEAL_GITHUB_TOKEN`) that can create branches. Until then, start runs with
-   `scripts/trigger.sh`.
+7. **Receiver's GitHub access: a GitHub App** (org-owned, no personal token). The receiver runs
+   outside Actions, so it creates run branches with installation tokens it mints from the app's
+   private key. To set it up:
+   1. github.com → `sentry-demos` org → Settings → Developer settings → GitHub Apps → **New
+      GitHub App**. Creating an org-owned app needs an org owner or GitHub App manager.
+      - Name: `empower-selfheal`. Homepage URL: the repo URL.
+      - Webhook: uncheck **Active** (the app doesn't receive events).
+      - Repository permissions: **Contents** Read and write, **Actions** Read-only,
+        **Pull requests** Read-only. Metadata: Read-only (automatic).
+      - Where can it be installed: **Only on this account**.
+   2. Create it, then note the **App ID** at the top of its settings page.
+   3. **Generate a private key**, which downloads a `.pem` file.
+   4. **Install App** → `sentry-demos` → Only select repositories → `empower`.
+   5. Store the key, then delete the local copy:
+      `gcloud secrets create SELFHEAL_GITHUB_APP_PRIVATE_KEY --project sales-engineering-sf --data-file=path/to/key.pem`
+   6. Deploy with `GITHUB_APP_ID=<App ID> selfheal/receiver/deploy.sh`.
+
+   Fallback: a token in Secret Manager `SELFHEAL_GITHUB_TOKEN` with `GITHUB_AUTH=token`. Until the
+   receiver is deployed, start runs with `scripts/trigger.sh`.
 
 ### Sentry (`demo` org)
 
@@ -123,11 +139,11 @@ optional `cleanup_projects` keep-list change in point 4. Step-by-step test instr
 ### GCP (`sales-engineering-sf`)
 
 ```bash
-# Secrets the receiver reads
+# Secrets the receiver reads (--data-file=- reads stdin: paste, then Ctrl-D twice)
 gcloud secrets create SELFHEAL_SENTRY_CLIENT_SECRET --data-file=-
-gcloud secrets create SELFHEAL_GITHUB_TOKEN --data-file=-   # bot token
+gcloud secrets create SELFHEAL_GITHUB_APP_PRIVATE_KEY --data-file=path/to/key.pem   # GitHub step 7
 # Receiver (prints the webhook URL for step 5 above)
-selfheal/receiver/deploy.sh
+GITHUB_APP_ID=<App ID> selfheal/receiver/deploy.sh
 # First deploy of selfheal-flask (later ones run from selfheal-deploy.yml)
 GITHUB_SHA=$(git rev-parse HEAD) SENTRY_AUTH_TOKEN=... ./deploy flask --env=selfheal
 ```

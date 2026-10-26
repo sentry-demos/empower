@@ -25,6 +25,9 @@ GITHUB_API = "https://api.github.com"
 
 # strip(): secrets pasted into `gcloud secrets create --data-file=-` often keep a trailing newline
 SENTRY_CLIENT_SECRET = os.environ.get("SENTRY_CLIENT_SECRET", "").strip()
+# GitHub auth: a GitHub App (org-owned; preferred) or, as a fallback, a token
+GITHUB_APP_ID = os.environ.get("GITHUB_APP_ID", "").strip()
+GITHUB_APP_PRIVATE_KEY = os.environ.get("GITHUB_APP_PRIVATE_KEY", "").strip()
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "").strip()
 GITHUB_REPO = os.environ.get("GITHUB_REPO", "sentry-demos/empower")
 RUNNER_WORKFLOW = os.environ.get("RUNNER_WORKFLOW", "selfheal-runner.yml")
@@ -78,12 +81,41 @@ def parse_alert(resource: str, payload: dict):
     return None
 
 
+GITHUB_HEADERS = {"Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28"}
+_app_token = {"value": "", "expires_at": 0.0}
+
+
+def app_jwt() -> str:
+    """Short-lived JWT that authenticates as the GitHub App itself."""
+    import jwt  # PyJWT; only needed for app auth
+
+    now = int(time.time())
+    # iat in the past allows for clock drift; GitHub caps exp at 10 minutes
+    return jwt.encode({"iat": now - 60, "exp": now + 540, "iss": GITHUB_APP_ID},
+                      GITHUB_APP_PRIVATE_KEY, algorithm="RS256")
+
+
+def github_token() -> str:
+    """An installation token for the app on GITHUB_REPO, cached until shortly before it expires
+    (they last an hour). Falls back to GITHUB_TOKEN when no app is configured."""
+    if not (GITHUB_APP_ID and GITHUB_APP_PRIVATE_KEY):
+        return GITHUB_TOKEN
+    if _app_token["value"] and time.time() < _app_token["expires_at"] - 300:
+        return _app_token["value"]
+
+    headers = {**GITHUB_HEADERS, "Authorization": f"Bearer {app_jwt()}"}
+    installation = requests.get(f"{GITHUB_API}/repos/{GITHUB_REPO}/installation", headers=headers, timeout=15)
+    installation.raise_for_status()
+    created = requests.post(f"{GITHUB_API}/app/installations/{installation.json()['id']}/access_tokens",
+                            headers=headers, timeout=15)
+    created.raise_for_status()
+    _app_token["value"] = created.json()["token"]
+    _app_token["expires_at"] = time.time() + 3600
+    return _app_token["value"]
+
+
 def github(method, path, **kwargs):
-    headers = {
-        "Authorization": f"Bearer {GITHUB_TOKEN}",
-        "Accept": "application/vnd.github+json",
-        "X-GitHub-Api-Version": "2022-11-28",
-    }
+    headers = {**GITHUB_HEADERS, "Authorization": f"Bearer {github_token()}"}
     response = requests.request(method, f"{GITHUB_API}{path}", headers=headers, timeout=15, **kwargs)
     response.raise_for_status()
     return response
@@ -139,9 +171,12 @@ def sentry_webhook():
         return jsonify(error="invalid signature"), 401
 
     resource = request.headers.get("Sentry-Hook-Resource", "")
-    alert = parse_alert(resource, json.loads(body or b"{}"))
+    payload = json.loads(body or b"{}")
+    alert = parse_alert(resource, payload)
     if alert is None:
-        log.info("ignored %s delivery", resource or "unknown")
+        # Shape only (no values), so an unexpected payload format can be recognized from the logs
+        log.info("ignored %s delivery: action=%s data keys=%s", resource or "unknown",
+                 payload.get("action"), sorted((payload.get("data") or {}).keys()))
         return jsonify(status="ignored"), 200
 
     reason = already_handling()

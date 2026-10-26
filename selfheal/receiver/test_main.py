@@ -1,7 +1,7 @@
 import hashlib
 import hmac
 import json
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -135,6 +135,46 @@ def test_already_handling_finds_open_agent_pr():
         assert main.already_handling() == ""
         with patch.object(main, "SKIP_WHILE_AGENT_PR_OPEN", True):
             assert main.already_handling() == "agent PR #7 is still open"
+
+
+def test_github_app_token_is_minted_and_cached(monkeypatch):
+    import jwt
+    from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.asymmetric import rsa
+
+    key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    pem = key.private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8,
+                            serialization.NoEncryption()).decode()
+    monkeypatch.setattr(main, "GITHUB_APP_ID", "12345")
+    monkeypatch.setattr(main, "GITHUB_APP_PRIVATE_KEY", pem)
+    monkeypatch.setattr(main, "_app_token", {"value": "", "expires_at": 0.0})
+
+    def fake_get(url, headers, timeout):
+        assert url.endswith("/repos/sentry-demos/empower/installation")
+        claims = jwt.decode(headers["Authorization"].removeprefix("Bearer "), key.public_key(),
+                            algorithms=["RS256"])
+        assert claims["iss"] == "12345"
+        r = MagicMock()
+        r.json.return_value = {"id": 99}
+        return r
+
+    def fake_post(url, headers, timeout):
+        assert url.endswith("/app/installations/99/access_tokens")
+        r = MagicMock()
+        r.json.return_value = {"token": "ghs_installation"}
+        return r
+
+    with patch.object(main.requests, "get", side_effect=fake_get) as get, \
+         patch.object(main.requests, "post", side_effect=fake_post):
+        assert main.github_token() == "ghs_installation"
+        assert main.github_token() == "ghs_installation"  # cached: no second exchange
+    assert get.call_count == 1
+
+
+def test_github_token_falls_back_without_app(monkeypatch):
+    monkeypatch.setattr(main, "GITHUB_APP_ID", "")
+    monkeypatch.setattr(main, "GITHUB_TOKEN", "github_pat_x")
+    assert main.github_token() == "github_pat_x"
 
 
 def test_already_handling_finds_pending_run_branch():

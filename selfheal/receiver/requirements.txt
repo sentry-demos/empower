@@ -1,3 +1,4 @@
 flask>=3.0,<4
 gunicorn==22.0.0
 requests>=2.27,<3
+PyJWT[crypto]==2.9.0
