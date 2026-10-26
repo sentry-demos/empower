@@ -1,99 +1,74 @@
-# Testing the self-heal loop in isolation
+# Testing the self-heal loop
 
-This runs the whole loop in **your own fork, your own Sentry org, and on your laptop**. Nothing
-touches `sentry-demos/empower`, the `demo` Sentry org, or the shared GCP project.
+The loop runs in `sentry-demos/empower` on credentials the repo already has: the Actions
+`GITHUB_TOKEN`, the existing GCP login (`GCP_WORKLOAD_IDENTITY_PROVIDER` / `GCP_SERVICE_ACCOUNT`),
+and a model key read from GCP Secret Manager at runtime. Flask runs on your laptop, so nothing
+deploys to GCP.
 
-| Shared thing | Why this setup doesn't touch it |
+## What this touches, and what it doesn't
+
+Nothing here changes existing behavior: no edits to master, to existing workflows, or to the
+apps other people demo. It does add these:
+
+| Added | Notes |
 |---|---|
-| `sentry-demos/empower` (master, workflows, other people's PRs) | You push only to your fork. The existing workflows (auto-deploy, both cleanups, the bot PR closer) all have `if: github.repository_owner == 'sentry-demos'`, so they're skipped in a fork. |
-| Selfheal workflows | Each is opt-in with the repo variable `SELFHEAL_ENABLED=true`. Set it only on your fork. |
-| GCP `sales-engineering-sf` (App Engine, shared DB, Redis) | `selfheal-deploy` only deploys when `SELFHEAL_DEPLOY=true`. Leave it unset and run Flask locally with `local_server.py`, which stubs the DB, Redis and Statsig. |
-| `demo` Sentry org and its cleanup job | Use a personal or test org. |
-| Team Slack | Leave `SELFHEAL_SLACK_WEBHOOK_URL` unset (the message prints to the Actions log), or point it at a private channel. |
+| Branch `selfheal/base` | Only the selfheal workflows react to it. |
+| Short-lived `selfheal/run/<id>` branches | One per run. The runner deletes it when it finishes. |
+| Draft PRs into `selfheal/base`, labeled `selfheal-agent` | Opened by `github-actions[bot]`, which the hourly bot-PR closer doesn't target. |
+| Repo variables `SELFHEAL_*` and one secret `SELFHEAL_SENTRY_MCP_TOKEN` | Inert for every other workflow. |
+| Sentry projects `flask-selfheal` and `selfheal-harness` in `demo` | `cleanup_projects` deletes projects not on its keep list every 2 hours (see step 2). |
+| Model spend on the key you point it at | Defaults to `AGENT_OPENROUTER_API_KEY`, the agent demo's key, owned by EPD. Ask EPD first. |
 
-## API key and cost
+Two things stay off: the App Engine deploy (`SELFHEAL_DEPLOY` unset) and Slack (no
+`SELFHEAL_SLACK_WEBHOOK_URL`, so results print in the job log).
 
-There's no Anthropic key in this repo or its GCP secrets today. The existing agent demo
-(`agent/`) uses OpenRouter (`AGENT_OPENROUTER_API_KEY` in GCP Secret Manager, owned by EPD), and
-the `go` and `flask-otlp` apps use `OPENAI_API_KEY`. Claude Code can't run on either of those
-keys, so get an Anthropic API key for this test. Use a personal or team key with a spend limit,
-not one of the shared secrets above. (Later option: Claude Code can also run on Vertex AI in
-the GCP project with `CLAUDE_CODE_USE_VERTEX=1`, reusing GCP auth instead of a separate key.
-Not wired up yet.)
+## Cost
 
-For scale: the agent demo costs about **$0.0024 per conversation**, measured from its own
-`gen_ai.chat` spans in the `demo` org: $24.58 across 10,327 runs in the last 30 days, on
-gpt-5-mini and gpt-5-nano. The self-heal loop is far heavier: each alert runs 4 Claude Code
-sessions (2 fixers, 2 reviewers), each one up to `SELFHEAL_MAX_TURNS` turns reading code and Sentry
-data. Expect a single alert to cost more than days of agent-demo traffic. The real number for each
-run shows up in the scorecard (`cost_usd`) and on the `selfheal-harness` spans. To keep test runs
-cheap, start with a smaller model and a lower turn cap (step 1).
+The agent demo costs about **$0.0024 per conversation**, measured from its `gen_ai.chat` spans
+in `demo`: $24.58 across 10,327 runs in 30 days, on gpt-5-mini and gpt-5-nano. The self-heal
+loop is much heavier. Each run is 4 Claude Code sessions (2 fixers, 2 reviewers), each reading
+code and Sentry data for up to `SELFHEAL_MAX_TURNS` turns. Each run's real cost is in the job log
+(`cost_usd` on the `■` line) and on the `selfheal-harness` spans. Through OpenRouter, Claude
+Code's cost figure is its own estimate, so check OpenRouter's activity page for the billed amount.
 
-## 0. Offline checks (no accounts needed)
+## 0. Local checks (no accounts needed)
 
-Run every command in this guide from a checkout of `selfheal/base`. On your machine that's the
-worktree at `~/empower/.claude/worktrees/selfheal`. Your main `~/empower` checkout is on another
-branch. Use Python 3.11, which is what the Flask Dockerfile uses; some pinned dependencies don't
-install on newer Pythons.
+Run everything from the worktree at `~/empower/.claude/worktrees/selfheal`, which is on
+`selfheal/base`. Use Python 3.11, which is what the Flask Dockerfile uses; some pinned
+dependencies don't install on newer Pythons.
 
 ```bash
 cd ~/empower/.claude/worktrees/selfheal
 uv venv -p 3.11 venv && source venv/bin/activate        # or: python3.11 -m venv venv (gitignored)
 uv pip install -r flask/requirements.txt -r selfheal/receiver/requirements.txt pytest
 python -m pytest flask/src/test                          # 9 passed
-(cd selfheal/receiver && python -m pytest)               # 7 passed
+(cd selfheal/receiver && python -m pytest)               # 9 passed
 ```
 
-Keep this venv active in each terminal you open for steps 3 to 7.
+Keep this venv active in each terminal you open for later steps.
 
-## 1. Fork
+## 1. Before the first run
 
-**Already done for `cstavitsky/empower`:** forked, `selfheal/base` and the `selfheal-armed` tag
-pushed, `selfheal/base` set as the default branch, Actions enabled, `SELFHEAL_ENABLED=true`,
-and a git remote named `fork` in your local clone. To repeat this for someone else:
+1. **EPD's OK** to put this test's spend on `AGENT_OPENROUTER_API_KEY`. (Or point
+   `SELFHEAL_MODEL_KEY_SECRET` at a different Secret Manager secret, with
+   `SELFHEAL_MODEL_PROVIDER=anthropic` if it's an Anthropic key.)
+2. **The OpenRouter model id** for the Claude model to use, in OpenRouter's `provider/model` form,
+   from openrouter.ai/models. I haven't confirmed that Claude Code works through OpenRouter's
+   Anthropic-compatible endpoint; the first run will show it.
+3. **A Sentry user auth token** for the MCP: Sentry → User settings → Personal Tokens, with
+   read access to projects, issues and events, and org read. This is the one value nobody
+   else has.
 
-```bash
-gh repo fork sentry-demos/empower --clone=false          # -> <you>/empower
-git remote add fork https://github.com/<you>/empower.git
-git push fork selfheal/base refs/tags/selfheal-armed
-gh repo edit <you>/empower --default-branch selfheal/base
-gh variable set SELFHEAL_ENABLED --repo <you>/empower --body true
-```
+## 2. Sentry (`demo` org)
 
-Making `selfheal/base` the fork's default branch matters. GitHub only starts
-`repository_dispatch` and manual `workflow_dispatch` runs from workflow files on the default
-branch, and this way you don't have to touch master.
-
-**Still to do:** secrets and variables. `gh secret set` prompts for each value, so nothing ends
-up in your shell history.
-
-```bash
-R=cstavitsky/empower
-gh variable set SELFHEAL_SENTRY_ORG --repo $R --body <your-test-org-slug>   # otherwise defaults to demo
-gh variable set SELFHEAL_MODEL --repo $R --body claude-sonnet-5-5          # cheaper while testing
-gh variable set SELFHEAL_MAX_TURNS --repo $R --body 25
-gh secret set SELFHEAL_BOT_TOKEN --repo $R           # fine-grained PAT, only this fork: Contents + Pull requests read/write
-gh secret set SELFHEAL_ANTHROPIC_API_KEY --repo $R   # see "API key and cost"
-gh secret set SELFHEAL_SENTRY_MCP_TOKEN --repo $R    # user auth token in your test org
-gh secret set SELFHEAL_HARNESS_DSN --repo $R         # DSN of selfheal-harness (step 2)
-# Optional: gh secret set SELFHEAL_SLACK_WEBHOOK_URL --repo $R   (a private channel)
-gh secret list --repo $R && gh variable list --repo $R  # check
-```
-
-Leave `SELFHEAL_DEPLOY` unset so nothing deploys to GCP. For testing, the "bot" can be your own
-account. Branch protection on the fork's `selfheal/base` is optional. Add it if you want to
-rehearse the "agent can't merge" guardrail. Once the loop works, set `SELFHEAL_MODEL` back to
-`claude-opus-5-5` (or delete the variable) to rehearse with the model you'll demo.
-
-## 2. Sentry (your test org)
-
-1. Create projects `flask-selfheal` (Flask) and `selfheal-harness` (Python). Turn on Logs for `flask-selfheal`.
-2. Connect the GitHub integration to your fork. Add a code mapping for `flask-selfheal`: branch
+1. Create `flask-selfheal` (Python/Flask) and `selfheal-harness` (Python). Turn on Logs for `flask-selfheal`.
+2. `cleanup_projects` runs every 2 hours and deletes projects that aren't on its keep list.
+   For a short test, create them right before testing and expect to recreate them. To keep them,
+   add both names to `--exclude` in `.github/workflows/cleanup_projects.yml` on master. That's a
+   separate PR, and a deliberate change to an existing workflow.
+3. Code mapping for `flask-selfheal` (GitHub integration): repo `sentry-demos/empower`, branch
    `selfheal/base`, stack trace root `src/`, source code root `flask/src/`.
-3. Seer: available in the org, automatic runs **off** for `flask-selfheal`.
-
-If your org doesn't have Seer, the without-Seer job still works end to end. The with-Seer job
-shows what happens when the Seer tool fails.
+4. Seer automatic runs **off** for `flask-selfheal`, so Seer doesn't open its own PR.
 
 ## 3. Generate real telemetry from your laptop
 
@@ -101,66 +76,82 @@ shows what happens when the Seer tool fails.
 FLASK_DSN=<flask-selfheal DSN> python selfheal/scripts/local_server.py --port 8080
 # second terminal
 export SELFHEAL_FLASK_URL=http://localhost:8080
-python selfheal/scripts/drive.py baseline --minutes 5   # 200s, revenue metric flows
-python selfheal/scripts/drive.py live                    # 500s: issue + "Failed to validate inventory" logs with cart_json
+python selfheal/scripts/drive.py baseline --minutes 2   # 200s
+python selfheal/scripts/drive.py live --minutes 2       # 500s: issue + "Failed to validate inventory" logs with cart_json
 ```
 
-Check in Sentry that `flask-selfheal` has the issue (environment `selfheal`, release
-`flask-selfheal@<sha>`), and that Logs shows the line with a `cart_json` attribute.
+Check in Sentry that `flask-selfheal` has the issue (environment `selfheal`) and that Logs shows
+the error line with a `cart_json` attribute.
 
-## 4. Trigger the agents by hand
+## 4. Push the branch and set variables (when you're ready)
+
+These are the first steps that change anything on GitHub. All of them are additive.
 
 ```bash
-gh workflow run selfheal-runner.yml --repo cstavitsky/empower -f title="Critical: Checkout revenue dropped"
-gh run watch --repo cstavitsky/empower
+git push origin selfheal/base refs/tags/selfheal-armed
+R=sentry-demos/empower
+gh variable set SELFHEAL_ENABLED --repo $R --body true
+gh variable set SELFHEAL_MODEL --repo $R --body <openrouter-model-id>        # from step 1
+gh variable set SELFHEAL_MAX_TURNS --repo $R --body 25                      # keep test runs short
+gh variable set SELFHEAL_HARNESS_DSN --repo $R --body <selfheal-harness DSN>
+gh secret set SELFHEAL_SENTRY_MCP_TOKEN --repo $R                            # prompts for the token from step 1
 ```
 
-You should see two `fix` jobs streaming their steps, then two draft PRs in the fork labeled
-`selfheal-agent`, a `pytest` check and a reviewer comment on each, and the scorecard (in Slack,
-or at the end of the `report` job log). Sentry `selfheal-harness` → Agents shows one
-`invoke_agent` trace per run.
+Optional variables: `SELFHEAL_MODEL_PROVIDER` (`openrouter` by default, or `anthropic`),
+`SELFHEAL_MODEL_KEY_SECRET` (default `AGENT_OPENROUTER_API_KEY`), `SELFHEAL_SENTRY_ORG`
+(`demo`), and `SELFHEAL_SENTRY_MCP_URL` / `_AUTH_HEADER` / `_AUTH_PREFIX`.
 
-## 5. Close the loop locally
+## 5. Run it
 
-1. Merge one PR in the fork. `selfheal-deploy` closes the other one. The deploy job is skipped
-   because `SELFHEAL_DEPLOY` isn't set.
-2. Pull and restart the local server. The new commit becomes the new release:
+```bash
+python selfheal/scripts/drive.py live --minutes 1        # fresh errors and logs
+selfheal/scripts/trigger.sh "Critical: Checkout revenue dropped"
+gh run list --repo sentry-demos/empower --workflow selfheal-runner.yml --limit 1
+gh run watch --repo sentry-demos/empower <run id>
+```
+
+`trigger.sh` pushes a `selfheal/run/<id>` branch, which starts the runner. Expect:
+- `fix (without-seer)` and `fix (with-seer)` streaming each agent step, then a draft PR each,
+  with a `pytest` status.
+- `review (...)`: a MERGE / ADJUST / CLOSE comment on each PR.
+- `report`: the scorecard in the job log, then the run branch is deleted.
+- In `selfheal-harness` → Agents: an `invoke_agent` trace per agent.
+
+**Likely first-run failures:**
+- **GCP login fails** in "selfheal-claude": the workload identity provider probably only allows
+  certain refs. A GCP admin needs to allow `selfheal/*` refs for `sentry-demos/empower`.
+- **Claude Code can't reach the model:** check `SELFHEAL_MODEL` against OpenRouter's model list.
+- **MCP not connected** (the `▶` line shows `sentry=failed`): check the token, and try
+  `SELFHEAL_SENTRY_MCP_AUTH_HEADER`.
+
+## 6. Close the loop locally
+
+1. Mark one PR ready for review, approve and merge it. `selfheal-deploy` closes the other PR.
+   The deploy job is skipped.
+2. Restart the server on the merged code. The new commit becomes the new release:
    ```bash
-   git pull fork selfheal/base
+   git pull origin selfheal/base
    FLASK_DSN=... python selfheal/scripts/local_server.py --port 8080
    ```
-3. Optional: so `Fixes FLASK-SELFHEAL-N` resolves the issue, create the release with commits:
-   ```bash
-   V=flask-selfheal@$(git rev-parse HEAD)
-   sentry-cli releases -o <org> -p flask-selfheal new $V
-   sentry-cli releases -o <org> -p flask-selfheal set-commits --auto $V
-   sentry-cli releases -o <org> -p flask-selfheal finalize $V
-   ```
-4. `drive.py live` now returns 200s.
-
-## 6. Optional: the real alert → webhook path
-
-```bash
-cd selfheal/receiver
-SENTRY_CLIENT_SECRET=<internal integration secret> GITHUB_TOKEN=<your PAT> GITHUB_REPO=cstavitsky/empower \
-  gunicorn -b :8081 main:app
-cloudflared tunnel --url http://localhost:8081      # or ngrok http 8081
-```
-
-In your test org, create an internal integration with Alert Rule Action on and webhook
-`<tunnel URL>/sentry`. Then add the metric alert (revenue drop) and/or the issue alert from
-`README.md`, with the integration as the action. Run `drive.py baseline`, then `drive.py live`,
-and wait for the alert to dispatch the runner. The receiver ignores repeats while a run is
-active or an agent PR is open.
+3. `drive.py live` now returns 200s.
 
 ## 7. Reset between tries
 
 ```bash
-SELFHEAL_REPO=cstavitsky/empower SELFHEAL_REMOTE=fork SENTRY_ORG=<org> SENTRY_AUTH_TOKEN=... selfheal/scripts/reset.sh
-git pull fork selfheal/base     # then restart local_server.py
+SENTRY_AUTH_TOKEN=<your Sentry token> selfheal/scripts/reset.sh
+git pull origin selfheal/base     # then restart local_server.py
 ```
 
-## Cleaning up
+This closes open agent PRs, resolves `flask-selfheal` issues, and restores the bug through a
+PR merged with your admin rights.
 
-Delete the fork (`gh repo delete cstavitsky/empower`), the two Sentry projects, and the internal integration.
-Nothing else was created.
+## Later: the real alert path
+
+The receiver (`selfheal/receiver/`) creates the run branch itself when a Sentry alert fires. It
+runs outside Actions, so it needs a GitHub token that can create branches in empower, and the repo
+doesn't have one today. Until there is one, use `trigger.sh`.
+
+## Your fork
+
+`cstavitsky/empower` isn't needed anymore. Delete it with `gh repo delete cstavitsky/empower`
+(it's public) and `git remote remove fork`.

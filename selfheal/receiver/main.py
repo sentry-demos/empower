@@ -2,17 +2,20 @@
 
 Sentry's internal integration ("Alert Rule Action" on) POSTs here when an alert
 fires. We verify the signature, act only on the move to critical (metric alert) or
-a triggered issue alert, skip repeats, then fire a repository_dispatch so the
-runner workflow starts both versions (with / without Seer) on the same alert.
+a triggered issue alert, skip repeats, then create a selfheal/run/<id> branch: one
+commit on top of selfheal/base adding .selfheal/alert.json. The push starts the runner
+workflow from that branch (no repository_dispatch, so nothing has to live on master),
+and the runner runs both versions (with / without Seer) on the same alert.
 
-Repeats are detected statelessly from GitHub itself: if a runner is already queued
-or running, or an agent PR is still open, the alert is acknowledged and dropped.
+Repeats are detected statelessly from GitHub itself: if a run branch exists, a runner is
+queued or running, or an agent PR is still open, the alert is acknowledged and dropped.
 """
 import hashlib
 import hmac
 import json
 import logging
 import os
+import time
 
 import requests
 from flask import Flask, jsonify, request
@@ -25,6 +28,7 @@ GITHUB_REPO = os.environ.get("GITHUB_REPO", "sentry-demos/empower")
 RUNNER_WORKFLOW = os.environ.get("RUNNER_WORKFLOW", "selfheal-runner.yml")
 BASE_BRANCH = os.environ.get("BASE_BRANCH", "selfheal/base")
 AGENT_PR_LABEL = os.environ.get("AGENT_PR_LABEL", "selfheal-agent")
+RUN_BRANCH_PREFIX = "selfheal/run/"
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("selfheal-receiver")
@@ -84,6 +88,11 @@ def github(method, path, **kwargs):
 
 def already_handling() -> str:
     """Why a new run would be a repeat, or "" if none is in flight."""
+    # The runner deletes its run branch when it finishes, so one existing means a run is pending
+    refs = github("GET", f"/repos/{GITHUB_REPO}/git/matching-refs/heads/{RUN_BRANCH_PREFIX}").json()
+    if refs:
+        return f"run branch {refs[0]['ref'].removeprefix('refs/heads/')} exists"
+
     for status in ("queued", "in_progress"):
         runs = github("GET", f"/repos/{GITHUB_REPO}/actions/workflows/{RUNNER_WORKFLOW}/runs",
                       params={"status": status, "per_page": 1}).json()
@@ -96,6 +105,25 @@ def already_handling() -> str:
         if any(label["name"] == AGENT_PR_LABEL for label in pr.get("labels", [])):
             return f"agent PR #{pr['number']} is still open"
     return ""
+
+
+def create_run_branch(alert: dict) -> str:
+    """Commit .selfheal/alert.json on top of the base branch as a new run branch.
+    Building the commit before the ref means the branch appears with one push event."""
+    repo = f"/repos/{GITHUB_REPO}/git"
+    base_sha = github("GET", f"{repo}/ref/heads/{BASE_BRANCH}").json()["object"]["sha"]
+    base_tree = github("GET", f"{repo}/commits/{base_sha}").json()["tree"]["sha"]
+    tree = github("POST", f"{repo}/trees", json={
+        "base_tree": base_tree,
+        "tree": [{"path": ".selfheal/alert.json", "mode": "100644", "type": "blob",
+                  "content": json.dumps(alert, indent=2) + "\n"}],
+    }).json()["sha"]
+    commit = github("POST", f"{repo}/commits", json={
+        "message": f"Self-heal run: {alert['title']}", "tree": tree, "parents": [base_sha],
+    }).json()["sha"]
+    branch = f"{RUN_BRANCH_PREFIX}{time.strftime('%Y%m%d-%H%M%S', time.gmtime())}"
+    github("POST", f"{repo}/refs", json={"ref": f"refs/heads/{branch}", "sha": commit})
+    return branch
 
 
 @app.post("/sentry")
@@ -116,10 +144,9 @@ def sentry_webhook():
         log.info("skipped repeat alert '%s': %s", alert["title"], reason)
         return jsonify(status="skipped", reason=reason), 200
 
-    github("POST", f"/repos/{GITHUB_REPO}/dispatches",
-           json={"event_type": "selfheal-alert", "client_payload": alert})
-    log.info("dispatched runner for '%s'", alert["title"])
-    return jsonify(status="dispatched", alert=alert), 202
+    branch = create_run_branch(alert)
+    log.info("created %s for '%s'", branch, alert["title"])
+    return jsonify(status="dispatched", branch=branch, alert=alert), 202
 
 
 @app.get("/healthz")

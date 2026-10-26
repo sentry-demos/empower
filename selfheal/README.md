@@ -17,15 +17,20 @@ drive.py live ──► flask-selfheal /checkout ──► 500, checkout.capture
           Sentry metric alert (revenue drop) goes critical; backup issue alert on new issue
                                                         │ internal integration webhook
           receiver/ (Cloud Run): verify signature · only "critical"/"triggered" · skip if a run
-          is in flight or an agent PR is open → repository_dispatch "selfheal-alert"
+          is in flight or an agent PR is open → push branch selfheal/run/<id> (+ .selfheal/alert.json)
+          (scripts/trigger.sh does the same by hand)
                                                         │
-          .github/workflows/selfheal-runner.yml, one job per version:
-            without-seer: MCP ?disable-skills=seer, analyze_issue_with_seer denied
-            with-seer:    MCP + analyze_issue_with_seer
-            → fix + regression test → pull cart_json from Sentry Logs → replay → 200
-            → harness re-runs pytest + replay itself → draft PR (bot token)
+          .github/workflows/selfheal-runner.yml (push trigger, so nothing lives on master):
+            model key read from GCP Secret Manager via the existing GCP login
+            fix job per version:
+              without-seer: MCP ?disable-skills=seer, analyze_issue_with_seer denied
+              with-seer:    MCP + analyze_issue_with_seer
+              → fix + regression test → pull cart_json from Sentry Logs → replay → 200
+              → harness re-runs pytest + replay itself → draft PR (GITHUB_TOKEN)
+                + `pytest` commit status on the PR head
+            review job per PR: comments MERGE/ADJUST/CLOSE (never approves)
+            report job: scorecard, then deletes the run branch
                                                         │
-          selfheal-tests.yml (required check) · selfheal-reviewer.yml comments MERGE/ADJUST/CLOSE
           Slack: "<alert> → root cause → PR ready" + scorecard (time, turns, tokens, cost)
           Sentry selfheal-harness project: one gen_ai.invoke_agent span per run (Agent Tracing)
                                                         │
@@ -57,39 +62,38 @@ drive.py live ──► flask-selfheal /checkout ──► 500, checkout.capture
 
 ### GitHub (`sentry-demos/empower`)
 
-1. **Runner on master.** GitHub only starts `repository_dispatch` workflows whose file is on the
-   default branch, so `.github/workflows/selfheal-runner.yml` must also be committed to `master`.
-   It checks out `selfheal/base` for everything else. In the same PR to master:
-   - add `flask-selfheal selfheal-harness` to the `--exclude` list in `cleanup_projects.yml`,
-     or those projects get deleted every 2 hours.
-2. **Branch protection on `selfheal/base`** (repo admin): require a pull request with 1 approval,
-   require the `pytest` status check, no bypass for the bot.
-3. **Bot account**: a separate GitHub user, not `sentry[bot]` or `cursor[bot]`, so
-   `close_bot_prs_except_label_example.yml` leaves its PRs alone. Give it write access, and
-   create a fine-grained token with Contents (read/write) and Pull requests (read/write).
-   It can open PRs but can't merge: branch protection requires a human approval.
-4. **Repository secrets**:
+Everything runs on credentials the repo already has. Nothing goes on master, except the
+optional `cleanup_projects` keep-list change in point 4. Step-by-step test instructions are in
+[TESTING.md](TESTING.md).
 
-   | Secret | Value |
-   |---|---|
-   | `SELFHEAL_BOT_TOKEN` | Bot token (checkout, push, PRs). Not `GITHUB_TOKEN`: PRs opened with `GITHUB_TOKEN` don't trigger other workflows, so the pytest check would never run. |
-   | `SELFHEAL_ANTHROPIC_API_KEY` | Anthropic API key for `claude -p`. |
-   | `SELFHEAL_SENTRY_MCP_TOKEN` | Sentry user auth token for the MCP (no browser sign-in). |
-   | `SELFHEAL_SENTRY_ORG_TOKEN` | Sentry org token for `sentry-cli` releases in the deploy. |
-   | `SELFHEAL_HARNESS_DSN` | DSN of the `selfheal-harness` project (scorecard spans). |
-   | `SELFHEAL_SLACK_WEBHOOK_URL` | Slack incoming webhook for the demo channel. |
-
-   The deploy reuses the existing `GCP_WORKLOAD_IDENTITY_PROVIDER` and `GCP_SERVICE_ACCOUNT`.
-   If that provider has an attribute condition limited to `refs/heads/master`, add `selfheal/base`.
-
-5. **Repository variables**: `SELFHEAL_ENABLED=true` turns the selfheal workflows on (they do
-   nothing without it), and `SELFHEAL_DEPLOY=true` lets merges deploy to App Engine. To test
-   privately first, see [TESTING.md](TESTING.md). Optional: `SELFHEAL_MODEL` (default `claude-opus-5-5`),
-   `SELFHEAL_MAX_TURNS` (40), `SELFHEAL_SENTRY_ORG` (`demo`), `SELFHEAL_SENTRY_MCP_URL`
-   (`https://mcp.sentry.dev/mcp`), `SELFHEAL_SENTRY_MCP_AUTH_HEADER` / `_AUTH_PREFIX`
-   (`Authorization` / `Bearer `), `SELFHEAL_BOT_NAME`, `SELFHEAL_BOT_EMAIL`.
-
+1. **Credentials.** Agents push and open PRs with the Actions `GITHUB_TOKEN` (the repo allows
+   Actions to create PRs). The model key is read at runtime from GCP Secret Manager through the
+   existing `GCP_WORKLOAD_IDENTITY_PROVIDER` / `GCP_SERVICE_ACCOUNT`. The default is
+   `AGENT_OPENROUTER_API_KEY` (owned by EPD), sent through OpenRouter's Anthropic-compatible
+   endpoint. The deploy uses the existing `SENTRY_AUTH_TOKEN`. If the workload identity
+   provider only allows certain refs, `selfheal/*` refs need to be allowed.
+2. **New secret:** only `SELFHEAL_SENTRY_MCP_TOKEN`, a Sentry user auth token for the MCP (no
+   browser sign-in). Optional: `SELFHEAL_SLACK_WEBHOOK_URL` for a demo channel.
+3. **Repository variables:**
+   - `SELFHEAL_ENABLED=true` turns the selfheal workflows on. They do nothing without it.
+   - `SELFHEAL_MODEL` is the model id (an OpenRouter `provider/model` id when using OpenRouter).
+   - `SELFHEAL_HARNESS_DSN` is the DSN of `selfheal-harness`, for the scorecard spans.
+   - `SELFHEAL_DEPLOY=true` lets merges deploy to App Engine.
+   - Optional: `SELFHEAL_MODEL_PROVIDER` (`openrouter` or `anthropic`),
+     `SELFHEAL_MODEL_KEY_SECRET` (`AGENT_OPENROUTER_API_KEY`), `SELFHEAL_GCP_PROJECT`
+     (`sales-engineering-sf`), `SELFHEAL_MAX_TURNS` (40), `SELFHEAL_SENTRY_ORG` (`demo`),
+     `SELFHEAL_SENTRY_MCP_URL` (`https://mcp.sentry.dev/mcp`), and
+     `SELFHEAL_SENTRY_MCP_AUTH_HEADER` / `_AUTH_PREFIX` (`Authorization` / `Bearer `).
+4. **Keep-list (master, optional):** add `flask-selfheal selfheal-harness` to `--exclude` in
+   `cleanup_projects.yml`, or those projects get deleted every 2 hours.
+5. **Branch protection on `selfheal/base`** (repo admin): require a pull request with 1 approval
+   and the `pytest` status check. The repo lets `GITHUB_TOKEN` approve PRs, and nothing in the
+   harness ever approves. To make that a hard rule, also require approval of the most recent push
+   by someone other than its author.
 6. Push the `selfheal-armed` tag. `arm.sh` restores the buggy files from it.
+7. **Receiver token:** the receiver runs outside Actions, so it needs its own GitHub token
+   (Secret Manager `SELFHEAL_GITHUB_TOKEN`) that can create branches. Until then, start runs with
+   `scripts/trigger.sh`.
 
 ### Sentry (`demo` org)
 
@@ -140,7 +144,7 @@ Actions and watch both agents work, then Slack for the scorecard and the reviewe
 Approve and merge one PR. Keep `drive.py live` running: after `selfheal-deploy` finishes,
 checkouts succeed, revenue recovers, the alert resolves and the issue shows resolved in the release.
 
-To dry-run without an alert: Actions → selfheal-runner → Run workflow.
+To run without an alert: `selfheal/scripts/trigger.sh "Alert title"`.
 
 After the demo:
 
@@ -150,8 +154,8 @@ SENTRY_AUTH_TOKEN=... selfheal/scripts/reset.sh
 
 ## Guardrails
 
-- The bot token can open PRs but not merge. `selfheal/base` requires a human approval and the
-  `pytest` check.
+- Agents never hold the GitHub token: the harness pushes and opens the PR after the agent
+  finishes. `selfheal/base` requires a human approval and the `pytest` check to merge.
 - Agent PRs are drafts. The reviewer agent only comments.
 - Agent PRs target `selfheal/base`, never `master`, where the bug stays in place for everyone's demos.
 - Agents get a fixed tool list: read/edit files, `python -m pytest`, `replay.py`, and the Sentry

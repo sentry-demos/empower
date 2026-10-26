@@ -1,18 +1,17 @@
 name: selfheal-runner
-# Self-healing demo: started by the Cloud Run receiver when a Sentry alert goes critical.
-# Runs two agents on the same alert, with and without Seer, each opening a draft PR,
-# then posts the side-by-side scorecard to Slack. See selfheal/README.md.
-run-name: "Self-heal: ${{ github.event.client_payload.title || inputs.title }}"
+# Self-healing demo. Started by a push to a selfheal/run/<id> branch: a single commit on top
+# of selfheal/base that adds .selfheal/alert.json. The Cloud Run receiver creates these on a
+# Sentry alert, and selfheal/scripts/trigger.sh creates them by hand. Push triggers use the
+# workflow file on the pushed branch, so nothing here needs to live on master.
+#
+# Two agents run on the same alert, with and without Seer, each opening a draft PR. The
+# reviewer agent comments on each PR, then the scorecard goes to Slack (or the job log).
+# Uses only the Actions GITHUB_TOKEN and the repo's existing GCP login. See selfheal/README.md.
+run-name: "Self-heal: ${{ github.ref_name }}"
 
 on:
-  repository_dispatch:
-    types: [selfheal-alert]
-  workflow_dispatch:
-    inputs:
-      title:
-        description: Alert title to hand the agents (manual dry run)
-        default: "Critical: Checkout revenue dropped"
-        type: string
+  push:
+    branches: ["selfheal/run/**"]
 
 concurrency:
   group: selfheal-runner
@@ -21,8 +20,14 @@ concurrency:
 env:
   BASE_BRANCH: selfheal/base
   SENTRY_ORG: ${{ vars.SELFHEAL_SENTRY_ORG || 'demo' }}
-  SELFHEAL_MODEL: ${{ vars.SELFHEAL_MODEL || 'claude-opus-5-5' }}
-  SELFHEAL_MAX_TURNS: ${{ vars.SELFHEAL_MAX_TURNS || '40' }}
+  SELFHEAL_MODEL: ${{ vars.SELFHEAL_MODEL }}
+  SELFHEAL_MAX_TURNS: ${{ vars.SELFHEAL_MAX_TURNS }}
+  SELFHEAL_MODEL_PROVIDER: ${{ vars.SELFHEAL_MODEL_PROVIDER || 'openrouter' }}
+  SELFHEAL_MODEL_KEY_SECRET: ${{ vars.SELFHEAL_MODEL_KEY_SECRET || 'AGENT_OPENROUTER_API_KEY' }}
+  SELFHEAL_GCP_PROJECT: ${{ vars.SELFHEAL_GCP_PROJECT || 'sales-engineering-sf' }}
+  SELFHEAL_HARNESS_DSN: ${{ vars.SELFHEAL_HARNESS_DSN }}
+  GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+  GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
   PYTHONDONTWRITEBYTECODE: "1"
 
 jobs:
@@ -32,7 +37,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
-      contents: read
+      contents: write       # push the fix branch
+      pull-requests: write  # open the draft PR
+      issues: write         # create the PR labels
+      statuses: write       # post the required `pytest` status on the PR head
+      id-token: write       # GCP login for the model key
     strategy:
       fail-fast: false
       matrix:
@@ -41,10 +50,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ env.BASE_BRANCH }}
-          # The bot's token, not GITHUB_TOKEN: PRs opened with GITHUB_TOKEN don't trigger
-          # other workflows, so the pytest check would never run and the PR could never merge.
-          token: ${{ secrets.SELFHEAL_BOT_TOKEN }}
+          fetch-depth: 2
+
+      - name: Take the alert, then work from selfheal/base
+        run: |
+          OUT="$RUNNER_TEMP/selfheal/${{ matrix.variant }}"
+          mkdir -p "$OUT"
+          echo "OUT=$OUT" >> "$GITHUB_ENV"
+          cp .selfheal/alert.json "$RUNNER_TEMP/selfheal/alert.json"
+          cat "$RUNNER_TEMP/selfheal/alert.json"
+          # The run commit only adds the alert file; drop it so it never reaches the agent's PR
+          git reset -q --hard HEAD~1
 
       - uses: actions/setup-python@v5
         with:
@@ -52,31 +68,9 @@ jobs:
           cache: pip
           cache-dependency-path: flask/requirements.txt
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
+      - run: pip install -r flask/requirements.txt pytest requests
 
-      - name: Install dependencies
-        run: |
-          pip install -r flask/requirements.txt pytest requests
-          npm install -g @anthropic-ai/claude-code
-
-      - name: Write the alert
-        env:
-          PAYLOAD: ${{ toJSON(github.event.client_payload) }}
-          MANUAL_TITLE: ${{ inputs.title }}
-        run: |
-          # Outside the checkout so nothing here ends up in the agent's diff
-          OUT="$RUNNER_TEMP/selfheal/${{ matrix.variant }}"
-          mkdir -p "$OUT"
-          echo "OUT=$OUT" >> "$GITHUB_ENV"
-          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
-            printf '%s' "$PAYLOAD" > "$RUNNER_TEMP/selfheal/alert.json"
-          else
-            jq -n --arg title "$MANUAL_TITLE" '{kind: "manual", title: $title, description: "", url: "", issue_id: ""}' \
-              > "$RUNNER_TEMP/selfheal/alert.json"
-          fi
-          cat "$RUNNER_TEMP/selfheal/alert.json"
+      - uses: ./.github/actions/selfheal-claude
 
       - name: Prepare prompt and Sentry MCP
         env:
@@ -92,11 +86,7 @@ jobs:
             --alert "$RUNNER_TEMP/selfheal/alert.json" --out "$OUT"
 
       - name: Agent diagnoses and fixes (${{ matrix.variant }})
-        id: agent
         continue-on-error: true  # still verify and score whatever it produced
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.SELFHEAL_ANTHROPIC_API_KEY }}
-          SELFHEAL_HARNESS_DSN: ${{ secrets.SELFHEAL_HARNESS_DSN }}
         run: |
           DISALLOWED=""
           if [ "${{ matrix.variant }}" = "without-seer" ]; then
@@ -110,11 +100,11 @@ jobs:
 
       - name: Verify independently and open draft PR
         env:
-          GH_TOKEN: ${{ secrets.SELFHEAL_BOT_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           rm -f "$OUT/mcp.json"
-          git config user.name "${{ vars.SELFHEAL_BOT_NAME || 'empower-selfheal-bot' }}"
-          git config user.email "${{ vars.SELFHEAL_BOT_EMAIL || 'empower-selfheal-bot@users.noreply.github.com' }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           python selfheal/harness/open_pr.py --variant ${{ matrix.variant }} --out "$OUT"
 
       - name: Upload scorecard
@@ -129,34 +119,105 @@ jobs:
             ${{ env.OUT }}/cart.json
           if-no-files-found: warn
 
-  report:
+  review:
+    # PRs opened with GITHUB_TOKEN don't trigger pull_request workflows, so the reviewer
+    # agent runs here, once per agent PR. It only comments; a human approves and merges.
     needs: fix
     if: always() && vars.SELFHEAL_ENABLED == 'true'
+    name: review (${{ matrix.variant }})
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [without-seer, with-seer]
+
+    steps:
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: ${{ matrix.variant }}
+          path: ${{ runner.temp }}/scorecard
+
+      - name: Find the agent PR
+        id: pr
+        run: |
+          f="$RUNNER_TEMP/scorecard/verify.json"
+          url=$( [ -f "$f" ] && jq -r '.pr_url // empty' "$f" )
+          if [ -z "$url" ]; then
+            echo "No PR from ${{ matrix.variant }}; nothing to review."
+            exit 0
+          fi
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "branch=$(jq -r .branch "$f")" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v4
+        if: steps.pr.outputs.url
+        with:
+          ref: ${{ steps.pr.outputs.branch }}
+
+      - uses: actions/setup-python@v5
+        if: steps.pr.outputs.url
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: flask/requirements.txt
+
+      - if: steps.pr.outputs.url
+        run: pip install -r flask/requirements.txt pytest requests
+
+      - if: steps.pr.outputs.url
+        uses: ./.github/actions/selfheal-claude
+
+      - name: Reviewer agent
+        if: steps.pr.outputs.url
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_URL: ${{ steps.pr.outputs.url }}
+          SELFHEAL_SLACK_WEBHOOK_URL: ${{ secrets.SELFHEAL_SLACK_WEBHOOK_URL }}
+        run: |
+          OUT="$RUNNER_TEMP/review"
+          mkdir -p "$OUT"
+          gh pr view "$PR_URL" --json title,body --jq '"# " + .title + "\n\n" + .body' > "$OUT/pr.md"
+          gh pr diff "$PR_URL" > "$OUT/pr.diff"
+          python selfheal/harness/prepare.py review --out "$OUT"
+          python selfheal/harness/run_agent.py --name "review-${{ matrix.variant }}" --variant "${{ matrix.variant }}" \
+            --max-turns 15 --prompt-file "$OUT/prompt.md" --out "$OUT" \
+            --allowed-tools "Read Write Glob Grep Bash(python -m pytest:*)" || true
+
+          if [ ! -s "$OUT/review.md" ]; then
+            echo "**Verdict: ?** The reviewer agent didn't produce a review; see the workflow log." > "$OUT/review.md"
+          fi
+          printf '\n\n_Reviewer agent. A human makes the merge decision._\n' >> "$OUT/review.md"
+          gh pr comment "$PR_URL" --body-file "$OUT/review.md"
+          python selfheal/harness/report.py review --pr-url "$PR_URL" --review "$OUT/review.md"
+
+  report:
+    needs: [fix, review]
+    if: always() && vars.SELFHEAL_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # delete the run branch
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ env.BASE_BRANCH }}
-          sparse-checkout: selfheal
 
       - uses: actions/download-artifact@v4
         with:
           path: results
 
-      - name: Write the alert
-        env:
-          PAYLOAD: ${{ toJSON(github.event.client_payload) }}
-          MANUAL_TITLE: ${{ inputs.title }}
-        run: |
-          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
-            printf '%s' "$PAYLOAD" > alert.json
-          else
-            jq -n --arg title "$MANUAL_TITLE" '{title: $title}' > alert.json
-          fi
-
-      - name: Post to Slack
+      - name: Post the scorecard
         env:
           SELFHEAL_SLACK_WEBHOOK_URL: ${{ secrets.SELFHEAL_SLACK_WEBHOOK_URL }}
         run: |
           pip install requests
-          python selfheal/harness/report.py run --alert alert.json --results results
+          python selfheal/harness/report.py run --alert .selfheal/alert.json --results results
+
+      - name: Delete the run branch
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X DELETE "repos/$GITHUB_REPOSITORY/git/refs/heads/$GITHUB_REF_NAME"

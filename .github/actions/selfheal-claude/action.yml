@@ -1,0 +1,55 @@
+name: selfheal-claude
+description: >
+  Install Claude Code and point it at a model key read from GCP Secret Manager at runtime,
+  through the repo's existing workload identity login. No model key is stored in GitHub.
+  The job needs `permissions: id-token: write`.
+
+runs:
+  using: composite
+  steps:
+    - uses: google-github-actions/auth@v3
+      with:
+        workload_identity_provider: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+        service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+
+    - uses: google-github-actions/setup-gcloud@v3
+
+    - name: Read the model key from Secret Manager
+      shell: bash
+      env:
+        PROVIDER: ${{ env.SELFHEAL_MODEL_PROVIDER }}
+        SECRET: ${{ env.SELFHEAL_MODEL_KEY_SECRET }}
+        GCP_PROJECT: ${{ env.SELFHEAL_GCP_PROJECT }}
+      run: |
+        key=$(gcloud secrets versions access latest --secret="$SECRET" --project="$GCP_PROJECT")
+        echo "::add-mask::$key"
+        case "$PROVIDER" in
+          openrouter)
+            # Claude Code talks to OpenRouter's Anthropic-compatible endpoint with this key
+            if [ -z "$SELFHEAL_MODEL" ]; then
+              echo "::error::Set the SELFHEAL_MODEL repo variable to an OpenRouter model id for Claude (provider/model)."
+              exit 1
+            fi
+            {
+              echo "ANTHROPIC_BASE_URL=https://openrouter.ai/api"
+              echo "ANTHROPIC_AUTH_TOKEN=$key"
+              echo "ANTHROPIC_API_KEY="
+            } >> "$GITHUB_ENV"
+            ;;
+          anthropic)
+            echo "ANTHROPIC_API_KEY=$key" >> "$GITHUB_ENV"
+            ;;
+          *)
+            echo "::error::Unknown SELFHEAL_MODEL_PROVIDER '$PROVIDER' (expected openrouter or anthropic)"
+            exit 1
+            ;;
+        esac
+        echo "Model key: $SECRET via $PROVIDER"
+
+    - uses: actions/setup-node@v4
+      with:
+        node-version: "22"
+
+    - name: Install Claude Code
+      shell: bash
+      run: npm install -g @anthropic-ai/claude-code

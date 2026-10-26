@@ -1,7 +1,7 @@
 #!/bin/bash
 # Deploy the webhook receiver to Cloud Run. Secrets come from Secret Manager:
 #   SELFHEAL_SENTRY_CLIENT_SECRET - the internal integration's client secret
-#   SELFHEAL_GITHUB_TOKEN         - bot token that can trigger repository_dispatch
+#   SELFHEAL_GITHUB_TOKEN         - GitHub token that can create selfheal/run/* branches
 # min-instances=1 keeps it always on, so the first alert of a demo isn't a cold start.
 set -euo pipefail
 

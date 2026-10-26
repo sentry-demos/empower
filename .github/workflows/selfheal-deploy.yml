@@ -41,7 +41,7 @@ jobs:
       contents: read
       id-token: write
     env:
-      SENTRY_AUTH_TOKEN: ${{ secrets.SELFHEAL_SENTRY_ORG_TOKEN }}
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
       # GITHUB_SHA (set by Actions) becomes the release: flask-selfheal@<sha>, see selfheal.env
     steps:
       - uses: actions/checkout@v4
@@ -52,7 +52,7 @@ jobs:
         uses: mathieu-bour/setup-sentry-cli@v1.3.0
         with:
           version: 2.17.4
-          token: ${{ secrets.SELFHEAL_SENTRY_ORG_TOKEN }}
+          token: ${{ secrets.SENTRY_AUTH_TOKEN }}
 
       - id: auth
         name: Authenticate Google Cloud

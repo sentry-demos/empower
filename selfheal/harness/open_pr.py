@@ -7,7 +7,8 @@ the reviewer and the human see the verification results either way in the PR bod
 
 Usage (repo root, after run_agent.py):
     python selfheal/harness/open_pr.py --variant with-seer --out DIR
-Needs GH_TOKEN (the bot's token, not GITHUB_TOKEN, so PR workflows trigger).
+Needs GH_TOKEN. With the Actions GITHUB_TOKEN, opening the PR triggers no other workflows,
+so this also posts the `pytest` commit status on the PR head (the required check) itself.
 """
 import argparse
 import json
@@ -79,6 +80,13 @@ def open_pr(variant, out, check):
         sh("gh", "label", "create", label, "--force", "--color", "6C5FC7")
     pr = sh("gh", "pr", "create", "--draft", "--base", BASE, "--head", branch, "--title", title,
             "--body-file", body_path, "--label", "selfheal-agent", "--label", f"selfheal:{variant}")
+
+    head = sh("git", "rev-parse", "HEAD").stdout.strip()
+    sh("gh", "api", f"repos/{os.environ['GITHUB_REPOSITORY']}/statuses/{head}",
+       "-f", "state=" + ("success" if check["tests_passed"] else "failure"),
+       "-f", "context=pytest", "-f", f"description={check['tests_summary'][:140]}",
+       "-f", f"target_url={os.environ.get('GITHUB_SERVER_URL', '')}/{os.environ['GITHUB_REPOSITORY']}/actions/runs/{run_id}")
+    check["branch"] = branch
     return pr.stdout.strip().splitlines()[-1]
 
 
