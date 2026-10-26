@@ -23,8 +23,9 @@ from flask import Flask, jsonify, request
 
 GITHUB_API = "https://api.github.com"
 
-SENTRY_CLIENT_SECRET = os.environ.get("SENTRY_CLIENT_SECRET", "")
-GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
+# strip(): secrets pasted into `gcloud secrets create --data-file=-` often keep a trailing newline
+SENTRY_CLIENT_SECRET = os.environ.get("SENTRY_CLIENT_SECRET", "").strip()
+GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "").strip()
 GITHUB_REPO = os.environ.get("GITHUB_REPO", "sentry-demos/empower")
 RUNNER_WORKFLOW = os.environ.get("RUNNER_WORKFLOW", "selfheal-runner.yml")
 BASE_BRANCH = os.environ.get("BASE_BRANCH", "selfheal/base")
