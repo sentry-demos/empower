@@ -133,12 +133,15 @@ commands. Always pass the run ID: plain `gh run list` / `gh run watch` fail in t
 404, because a "Secret Scan" run on another branch points at a workflow GitHub can't find.
 
 `trigger.sh` pushes a `selfheal/run/<id>` branch, which starts the runner. Expect:
-- `fix (without-seer)` and `fix (with-seer)` streaming each agent step, then a draft PR each,
-  with a `pytest` status.
-- `review (...)`: a MERGE / ADJUST / CLOSE comment on each PR, then the human-in-the-loop
-  notification: "👀 Fix ready for your review" with the problem, business impact (failed
-  orders in $, failed checkouts, customers affected), root cause, verification, verdict and PR link.
-- `report`: the side-by-side scorecard, then the run branch is deleted.
+- `fix (...)` jobs (without-Seer only, unless `SELFHEAL_VARIANTS` adds with-Seer) streaming each
+  agent step, then a draft PR each, with a `pytest` status. The PR has a **How this fix was
+  found** section: each Sentry MCP call (what it asked for, what came back), any Seer call, and
+  each agent step (reads, edits, tests, replay), so you can see where Sentry's telemetry ends and
+  the agent's work begins. Tool results there are scrubbed of emails, IPs and tokens.
+- `review (...)`: a MERGE / ADJUST / CLOSE comment on each PR, then a four-line Slack
+  notification: "Fix ready for review" with the PR link, business impact, a one-line root cause,
+  and verification + verdict.
+- `report`: a one-line-per-agent summary, then the run branch is deleted.
 
 Both messages go to Slack through an existing, already-approved Slack bot. They print in the job
 log until it's set up:

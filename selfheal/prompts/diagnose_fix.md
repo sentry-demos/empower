@@ -63,6 +63,7 @@ Write `{{OUT}}/result.json`:
   "issue_short_id": "<the issue short ID, e.g. BACKEND-FLASK-1A2>",
   "issue_url": "https://...",
   "root_cause": "one or two sentences",
+  "root_cause_short": "under 90 characters, for a Slack line, e.g. `quantities` is read before it's assigned in checkout()",
   "fix_summary": "one sentence",
   "files_changed": ["flask/src/main.py", "flask/src/test/test_checkout.py"],
   "problem": "one sentence a non-engineer understands: what customers experience",

@@ -16,7 +16,9 @@ import os
 import subprocess
 import sys
 
-BASE = os.environ.get("BASE_BRANCH", "selfheal/base")
+import work  # same directory: python puts the script's folder on sys.path
+
+BASE =os.environ.get("BASE_BRANCH", "selfheal/base")
 HARNESS = os.path.dirname(os.path.abspath(__file__))
 
 
@@ -77,6 +79,12 @@ def open_pr(variant, out, check):
 
     body_path = os.path.join(out, "pr_body.md")
     body = open(body_path).read() if os.path.exists(body_path) else agent.get("root_cause", "")
+    # Show the work: which Sentry telemetry, Seer and agent steps led to this fix
+    work_section = work.render_from(out, variant)
+    if work_section:
+        body = body.rstrip() + "\n\n" + work_section
+    # Public repo: scrub emails, IPs and tokens from everything the agent wrote, too
+    body = work.scrub(body)[:60000]  # GitHub caps PR bodies at 65,536 characters
     body += (
         "\n\n---\n"
         f"_Opened by the self-heal agent ({variant}) from "

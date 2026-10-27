@@ -104,117 +104,87 @@ def post(text, blocks, alert=None):
         print(json.dumps(blocks, indent=2))
 
 
-def variant_section(variant, results):
-    stats = load(os.path.join(results, variant, "stats.json"))
-    check = load(os.path.join(results, variant, "verify.json"))
-    agent = load(os.path.join(results, variant, "result.json"))
-    if not stats:
-        return f"*{variant}*: no result (job failed before the agent finished)", {}
-
-    status = "✅ PR ready" if check.get("pr_url") else "❌ no PR"
-    pr = f"<{check['pr_url']}|draft PR>" if check.get("pr_url") else "—"
-    lines = [
-        f"*{variant}* · {status} · {pr}",
-        f"⏱ {stats['duration_s']}s · 🔁 {stats['turns']} turns · 🔧 {stats['tool_calls']} tool calls"
-        f" · 🪙 {stats['input_tokens'] + stats['output_tokens']:,} tokens · 💵 ${stats['cost_usd']:.2f}"
-        f" · Seer calls: {stats['seer_calls']}",
-        f"Tests: {'pass' if check.get('tests_passed') else 'fail'} · Replay: HTTP {check.get('replay_status')}",
-    ]
-    if agent.get("root_cause"):
-        lines.append(f"> {agent['root_cause']}")
-    return "\n".join(lines), agent
+LABELS = {"without-seer": "without Seer", "with-seer": "with Seer"}
 
 
-def report_run(args):
-    alert = load(args.alert)
-    sections, first_agent = [], {}
-    # Only variants that ran upload a scorecard (with-seer can be switched off)
-    ran = [v for v in VARIANTS if os.path.isdir(os.path.join(args.results, v))] or list(VARIANTS)
-    for variant in ran:
-        text, agent = variant_section(variant, args.results)
-        sections.append(text)
-        first_agent = first_agent or agent
-    issue = first_agent.get("issue_short_id")
-
-    run_url = f"{os.environ.get('GITHUB_SERVER_URL', '')}/{os.environ.get('GITHUB_REPOSITORY', '')}/actions/runs/{os.environ.get('GITHUB_RUN_ID', '')}"
-    headline = f"📊 Self-heal scorecard: {alert.get('title', 'Checkout failing')}"
-    context = f"<{alert.get('url', '')}|Alert>" if alert.get("url") else "Alert"
-    if issue:
-        context += f" · Issue {issue}"
-    context += f" · <{run_url}|Actions run> · A human must review and merge."
-
-    blocks = [
-        {"type": "header", "text": {"type": "plain_text", "text": headline[:150]}},
-        {"type": "context", "elements": [{"type": "mrkdwn", "text": context}]},
-        {"type": "section", "text": {"type": "mrkdwn", "text": problem_line(alert, first_agent)
-                                     + "\n" + impact_line(first_agent.get("impact") or {})}},
-    ]
-    for text in sections:
-        blocks += [{"type": "divider"}, {"type": "section", "text": {"type": "mrkdwn", "text": text}}]
-    post(headline, blocks, alert)
-
-
-def problem_line(alert, agent):
-    """What's happening, in customer terms, plus the alert that caught it."""
-    problem = agent.get("problem") or "Checkout is failing for customers."
-    title = alert.get("title")
-    if title and alert.get("url"):
-        problem += f" Alert: <{alert['url']}|{title}>"
-    elif title:
-        problem += f" Alert: {title}"
-    return f"🚨 *Problem:* {problem}"
+def first_sentence(text, limit=160):
+    """Shortest useful form of an agent's explanation, for a scannable Slack line."""
+    text = " ".join(str(text or "").split())
+    end = text.find(". ")
+    text = text[: end + 1] if 0 < end < limit else text
+    return text if len(text) <= limit else text[: limit - 1] + "…"
 
 
 def impact_line(impact):
-    """Business impact from the Sentry numbers the agent collected. Missing numbers are left out."""
+    """Business impact in one line, from the Sentry numbers the agent collected."""
     parts = []
-    if impact.get("lost_revenue_usd") is not None:
+    if impact.get("lost_revenue_usd"):
         parts.append(f"~${impact['lost_revenue_usd']:,.0f} in failed orders")
-    if impact.get("failed_checkouts") is not None:
+    if impact.get("failed_checkouts"):
         parts.append(f"{impact['failed_checkouts']:,} failed checkouts")
     # 0 usually means events carry no user identity, not that nobody was affected
     if impact.get("users_affected"):
-        parts.append(f"{impact['users_affected']:,} customers affected")
+        parts.append(f"{impact['users_affected']:,} customers")
     if impact.get("first_seen"):
-        parts.append(f"since {impact['first_seen']}")
-    line = "💸 *Business impact:* " + (" · ".join(parts) if parts else "revenue from checkout is dropping")
-    if impact.get("summary"):
-        line += f"\n> {impact['summary']}"
-    return line
+        # 2026-10-26T19:17:56Z -> since 19:17 UTC
+        parts.append(f"since {str(impact['first_seen'])[11:16]} UTC")
+    return " · ".join(parts) or "Checkout revenue is dropping"
+
+
+def run_url():
+    return (f"{os.environ.get('GITHUB_SERVER_URL', '')}/{os.environ.get('GITHUB_REPOSITORY', '')}"
+            f"/actions/runs/{os.environ.get('GITHUB_RUN_ID', '')}")
+
+
+def report_run(args):
+    """End-of-run summary: one line per agent. The details are in each PR."""
+    alert = load(args.alert)
+    # Only variants that ran upload a scorecard (with-seer can be switched off)
+    ran = [v for v in VARIANTS if os.path.isdir(os.path.join(args.results, v))] or list(VARIANTS)
+    lines = [f"*Self-heal run finished* · <{run_url()}|run log>"]
+    for variant in ran:
+        stats = load(os.path.join(args.results, variant, "stats.json"))
+        check = load(os.path.join(args.results, variant, "verify.json"))
+        label = LABELS.get(variant, variant)
+        if check.get("pr_url"):
+            pr_number = check["pr_url"].rstrip("/").rsplit("/", 1)[-1]
+            outcome = f"🔧 <{check['pr_url']}|PR #{pr_number}>"
+        else:
+            outcome = "no fix proposed"
+        numbers = (f" · {stats['duration_s']:.0f}s · {stats['turns']} turns · ${stats['cost_usd']:.2f}"
+                   if stats else "")
+        lines.append(f"• {label}: {outcome}{numbers}")
+    text = "\n".join(lines)
+    post(text, [{"type": "section", "text": {"type": "mrkdwn", "text": text}}], alert)
 
 
 def report_review(args):
-    """The human-in-the-loop ping: a verified fix and the reviewer's verdict, with the PR link."""
+    """The human-in-the-loop ping, kept scannable: impact, root cause, verification, PR link.
+    Everything else (how the fix was found, the review) is in the PR."""
     with open(args.review) as f:
         review = [line.strip() for line in f.read().strip().splitlines() if line.strip()]
-    verdict = review[0].replace("**", "") if review else "Verdict: ?"
-    # The first line of explanation after the verdict, without the footer we append
-    reason = next((line for line in review[1:] if not line.startswith("_Reviewer agent")), "")
+    verdict = review[0].replace("**", "").replace("Verdict:", "").strip() if review else "?"
 
     stats = load(os.path.join(args.results, "stats.json"))
     check = load(os.path.join(args.results, "verify.json"))
     agent = load(os.path.join(args.results, "result.json"))
     alert = load(os.path.join(args.results, "alert.json"))
     pr_number = args.pr_url.rstrip("/").rsplit("/", 1)[-1]
-    issue = agent.get("issue_short_id", "the checkout failure")
 
-    headline = f"👀 Fix ready for your review: {issue} ({args.variant})"
-    lines = [
-        f"*<{args.pr_url}|PR #{pr_number}>* · {args.variant} · draft, waiting for a human to review and merge",
-        problem_line(alert, agent),
-        impact_line(agent.get("impact") or {}),
-        f"*Root cause:* {agent.get('root_cause', 'see the PR')}",
-        f"*Verified:* tests {'pass' if check.get('tests_passed') else 'fail'}"
-        f" · replay of the failing production cart: HTTP {check.get('replay_status')}",
-        f"*Reviewer agent:* {verdict}" + (f" — {reason[:300]}" if reason else ""),
-    ]
+    verified = ("tests pass" if check.get("tests_passed") else "tests FAIL")
+    if check.get("replay_status") == 200:
+        verified += ", failing order now succeeds"
+    footer = f"{verified} · reviewer: {verdict} · {LABELS.get(args.variant, args.variant)}"
     if stats:
-        lines.append(f"⏱ {stats['duration_s']}s · 🔁 {stats['turns']} turns · 💵 ${stats['cost_usd']:.2f}"
-                     f" · Seer calls: {stats['seer_calls']}")
-    post(headline, [
-        {"type": "header", "text": {"type": "plain_text", "text": headline[:150]}},
-        {"type": "section", "text": {"type": "mrkdwn", "text": "\n".join(lines)}},
-    ], alert)
+        footer += f", {stats['duration_s']:.0f}s, ${stats['cost_usd']:.2f}"
+
+    text = "\n".join([
+        f"*Fix ready for review* · 🔧 <{args.pr_url}|PR #{pr_number}>",
+        impact_line(agent.get("impact") or {}),
+        f"Root cause: {agent.get('root_cause_short') or first_sentence(agent.get('root_cause') or 'see the PR', 120)}",
+        footer,
+    ])
+    post(text, [{"type": "section", "text": {"type": "mrkdwn", "text": text}}], alert)
 
 
 if __name__ == "__main__":

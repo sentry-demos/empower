@@ -51,7 +51,8 @@ def run(args):
         cmd += ["--disallowedTools", args.disallowed_tools]
 
     started = now()
-    tools = {}  # tool_use id -> {name, input, start, end, error}
+    tools = {}  # tool_use id -> {name, input, start, end, error, result}
+    timeline = []  # tool calls and the agent's notes, in order (for the PR's "how it was found")
     result = {}
 
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, text=True, bufsize=1)
@@ -79,9 +80,11 @@ def run(args):
             for block in event["message"].get("content", []):
                 if block.get("type") == "text" and block["text"].strip():
                     print(f"💬 {block['text'].strip()}", flush=True)
+                    timeline.append({"type": "note", "text": block["text"].strip()})
                 elif block.get("type") == "tool_use":
                     tools[block["id"]] = {"name": block["name"], "input": block.get("input", {}),
-                                          "start": now(), "end": None, "error": False}
+                                          "start": now(), "end": None, "error": False, "result": ""}
+                    timeline.append({"type": "tool", "call": tools[block["id"]]})
                     print(f"🔧 {block['name']} {preview(block.get('input', {}))}", flush=True)
 
         elif kind == "user":
@@ -91,6 +94,7 @@ def run(args):
                     if call:
                         call["end"] = now()
                         call["error"] = bool(block.get("is_error"))
+                        call["result"] = tool_result_text(block.get("content", ""))[:2000]
                     mark = "❌" if block.get("is_error") else "  ↳"
                     print(f"{mark} {preview(tool_result_text(block.get('content', '')))}", flush=True)
 
@@ -122,7 +126,24 @@ def run(args):
     os.makedirs(args.out, exist_ok=True)
     with open(os.path.join(args.out, "stats.json"), "w") as f:
         json.dump(stats, f, indent=2)
+    with open(os.path.join(args.out, "timeline.json"), "w") as f:
+        json.dump([timeline_entry(entry, started) for entry in timeline], f, indent=2)
     return stats
+
+
+def timeline_entry(entry, started):
+    if entry["type"] == "note":
+        return entry
+    call = entry["call"]
+    return {
+        "type": "tool",
+        "name": call["name"],
+        "input": call["input"],
+        "at_s": round((call["start"] - started).total_seconds(), 1),
+        "seconds": round(((call["end"] or call["start"]) - call["start"]).total_seconds(), 1),
+        "error": call["error"],
+        "result": call["result"],
+    }
 
 
 def send_agent_span(args, stats, tools, started, ended):
