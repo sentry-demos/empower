@@ -36,6 +36,33 @@ env:
   PYTHONDONTWRITEBYTECODE: "1"
 
 jobs:
+  announce:
+    # Replies in the Sentry alert's Slack thread as soon as the run starts. Runs alongside the
+    # fix jobs (nothing waits on it), and a Slack problem never fails the run.
+    if: vars.SELFHEAL_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            selfheal
+            .selfheal
+
+      - name: Post "self-heal started"
+        continue-on-error: true
+        env:
+          SELFHEAL_SLACK_BOT_TOKEN: ${{ secrets.SELFHEAL_SLACK_BOT_TOKEN }}
+          SELFHEAL_SLACK_CHANNEL: ${{ vars.SELFHEAL_SLACK_CHANNEL }}
+          SELFHEAL_SLACK_ALERT_MATCH: ${{ vars.SELFHEAL_SLACK_ALERT_MATCH }}
+          SELFHEAL_SLACK_WEBHOOK_URL: ${{ secrets.SELFHEAL_SLACK_WEBHOOK_URL }}
+          VARIANTS: ${{ vars.SELFHEAL_VARIANTS || '["without-seer"]' }}
+        run: |
+          pip install requests
+          python selfheal/harness/report.py started --alert .selfheal/alert.json --variants "$VARIANTS"
+
   fix:
     if: vars.SELFHEAL_ENABLED == 'true'  # opt-in per repo, so forks and other repos never run it
     name: fix (${{ matrix.variant }})

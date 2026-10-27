@@ -5,6 +5,9 @@
         that tells a human a verified fix is waiting for them. DIR holds that variant's
         stats.json, verify.json and result.json.
 
+    python selfheal/harness/report.py started --alert alert.json --variants '["without-seer"]'
+        Posted when the run starts: the agents are on it, with a link to the run.
+
     python selfheal/harness/report.py run --alert alert.json --results DIR
         Posted when the run ends: the side-by-side scorecard. DIR holds one sub-directory
         per variant with the files above.
@@ -43,9 +46,26 @@ def is_from_sentry(message):
     return "sentry" in (profile.get("name") or message.get("username") or "").lower()
 
 
-def find_alert_thread(token, channel, alert):
+def find_alert_thread(token, channel, alert, attempts=1, wait_s=15):
     """ts of Sentry's alert message to reply under, or None. Never raises: threading is a
-    nicety, so any problem (missing scope, no match) falls back to a channel post."""
+    nicety, so any problem (missing scope, no match) falls back to a channel post.
+
+    attempts > 1 retries a missing match: the run can start a few seconds before Sentry's
+    Slack message lands, so the first message of a run waits a little for it."""
+    for attempt in range(attempts):
+        ts, retry = lookup_alert_message(token, channel, alert)
+        if ts or not retry:
+            return ts
+        if attempt < attempts - 1:
+            print(f"No Sentry alert message yet; retrying in {wait_s}s")
+            time.sleep(wait_s)
+    print("No Sentry alert message found to reply under; posting to the channel")
+    return None
+
+
+def lookup_alert_message(token, channel, alert):
+    """(ts, retryable): ts of the newest matching Sentry message, or None and whether a
+    retry could help (no match yet) or not (Slack refused the lookup)."""
     hours = float(os.environ.get("SELFHEAL_SLACK_THREAD_HOURS") or 6)
     needles = [os.environ.get("SELFHEAL_SLACK_ALERT_MATCH") or "revenue",
                alert.get("title"), alert.get("url")]
@@ -60,21 +80,20 @@ def find_alert_thread(token, channel, alert):
         body = response.json()
     except (requests.RequestException, ValueError) as err:
         print(f"Slack thread lookup failed ({err}); posting to the channel")
-        return None
+        return None, False
     if not body.get("ok"):
         print(f"Slack thread lookup failed: {body.get('error')} (needs channels:history, or"
               f" groups:history for a private channel); posting to the channel")
-        return None
+        return None, False
     # Newest first; the whole message (text, blocks, attachments) is searched, since Sentry
     # puts the alert name and link in blocks and attachments
     for message in body.get("messages", []):
         if is_from_sentry(message) and any(n in json.dumps(message).lower() for n in needles):
-            return message["ts"]
-    print("No Sentry alert message found to reply under; posting to the channel")
-    return None
+            return message["ts"], False
+    return None, True
 
 
-def post(text, blocks, alert=None):
+def post(text, blocks, alert=None, thread_attempts=1):
     """Post with an existing Slack bot's token if configured (in the thread of Sentry's alert
     message when there is one), else an incoming webhook, else print (the job log)."""
     token = os.environ.get("SELFHEAL_SLACK_BOT_TOKEN")
@@ -82,7 +101,7 @@ def post(text, blocks, alert=None):
     url = os.environ.get("SELFHEAL_SLACK_WEBHOOK_URL")
     if token and channel:
         message = {"channel": channel, "text": text, "blocks": blocks, "unfurl_links": False}
-        thread_ts = find_alert_thread(token, channel, alert or {})
+        thread_ts = find_alert_thread(token, channel, alert or {}, attempts=thread_attempts)
         if thread_ts:
             message["thread_ts"] = thread_ts
         response = requests.post(
@@ -134,6 +153,18 @@ def impact_line(impact):
 def run_url():
     return (f"{os.environ.get('GITHUB_SERVER_URL', '')}/{os.environ.get('GITHUB_REPOSITORY', '')}"
             f"/actions/runs/{os.environ.get('GITHUB_RUN_ID', '')}")
+
+
+def report_started(args):
+    """First reply on the alert: the agents are on it, with a link to watch them work."""
+    alert = load(args.alert)
+    agents = " and ".join(LABELS.get(v, v) for v in args.variants)
+    text = (f"*Self-heal started* · agents ({agents}) are investigating with Sentry telemetry"
+            f" · <{run_url()}|watch the run>")
+    # Alert-driven runs can start before Sentry's Slack message lands: wait up to ~1 min for it
+    attempts = 1 if alert.get("kind") == "manual" else 5
+    post(text, [{"type": "section", "text": {"type": "mrkdwn", "text": text}}], alert,
+         thread_attempts=attempts)
 
 
 def report_run(args):
@@ -198,5 +229,9 @@ if __name__ == "__main__":
     review.add_argument("--review", required=True)
     review.add_argument("--variant", required=True)
     review.add_argument("--results", required=True, help="Dir with this variant's stats/verify/result.json")
+    started = sub.add_parser("started")
+    started.add_argument("--alert", required=True)
+    started.add_argument("--variants", default='["without-seer"]', type=json.loads,
+                         help='JSON list of the variants this run starts, e.g. ["without-seer"]')
     args = parser.parse_args()
-    report_run(args) if args.mode == "run" else report_review(args)
+    {"run": report_run, "review": report_review, "started": report_started}[args.mode](args)
