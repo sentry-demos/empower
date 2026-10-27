@@ -38,7 +38,7 @@ export default function About() {
           </p>
           <p>
             Today, the company employs 170 people (and 852 plants) in San
-            Francisco, New York City, Denver, and Kiev.
+            Francisco, New York City, Denver, and Kyiv.
           </p>
         </div>
       </div>
