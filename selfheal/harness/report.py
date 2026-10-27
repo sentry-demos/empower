@@ -168,24 +168,17 @@ def report_started(args):
 
 
 def report_run(args):
-    """End-of-run summary: one line per agent. The details are in each PR."""
+    """End of run. Each opened PR already got its own "Fix ready for review" message, so this
+    posts only for agents that didn't open one; otherwise the thread would just stop."""
     alert = load(args.alert)
     # Only variants that ran upload a scorecard (with-seer can be switched off)
     ran = [v for v in VARIANTS if os.path.isdir(os.path.join(args.results, v))] or list(VARIANTS)
-    lines = [f"*Self-heal run finished* · <{run_url()}|run log>"]
-    for variant in ran:
-        stats = load(os.path.join(args.results, variant, "stats.json"))
-        check = load(os.path.join(args.results, variant, "verify.json"))
-        label = LABELS.get(variant, variant)
-        if check.get("pr_url"):
-            pr_number = check["pr_url"].rstrip("/").rsplit("/", 1)[-1]
-            outcome = f"🔧 <{check['pr_url']}|PR #{pr_number}>"
-        else:
-            outcome = "no fix proposed"
-        numbers = (f" · {stats['duration_s']:.0f}s · {stats['turns']} turns · ${stats['cost_usd']:.2f}"
-                   if stats else "")
-        lines.append(f"• {label}: {outcome}{numbers}")
-    text = "\n".join(lines)
+    failed = [v for v in ran if not load(os.path.join(args.results, v, "verify.json")).get("pr_url")]
+    if not failed:
+        print("Every agent opened a PR and posted its own message; nothing to add.")
+        return
+    agents = " and ".join(LABELS.get(v, v) for v in failed)
+    text = f"*No fix proposed* ({agents}) · see the <{run_url()}|run log> for why"
     post(text, [{"type": "section", "text": {"type": "mrkdwn", "text": text}}], alert)
 
 

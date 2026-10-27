@@ -144,7 +144,8 @@ commands. Always pass the run ID: plain `gh run list` / `gh run watch` fail in t
 - `review (...)`: a MERGE / ADJUST / CLOSE comment on each PR, then a four-line Slack
   notification: "Fix ready for review" with the PR link, business impact, a one-line root cause,
   and verification + verdict.
-- `report`: a one-line-per-agent summary, then the run branch is deleted.
+- `report`: posts to Slack only if an agent didn't open a PR ("No fix proposed … see the run
+  log for why"), then deletes the run branch.
 
 Both messages go to Slack through an existing, already-approved Slack bot. They print in the job
 log until it's set up:

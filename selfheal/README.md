@@ -32,8 +32,8 @@ drive.py live ──► selfheal-flask /checkout ──► 500, checkout.capture
             report job: scorecard, then deletes the run branch
                                                         │
           Slack, in the thread of Sentry's alert: per PR a four-line "Fix ready for review"
-          (PR link, impact, root cause, verification + verdict), then a one-line-per-agent run
-          summary. The PR carries the detail, including "How this fix was found": every
+          (PR link, impact, root cause, verification + verdict). If an agent opens no PR, a
+          one-line "No fix proposed" with the run log instead. The PR carries the detail, including "How this fix was found": every
           Sentry MCP call, Seer call and agent step. Agent PRs stay open for demos.
           Sentry selfheal-harness project: one gen_ai.invoke_agent span per run (Agent Tracing)
                                                         │
