@@ -107,6 +107,14 @@ jobs:
 
       - uses: ./.github/actions/selfheal-claude
 
+      - name: Seer finds the root cause (with-seer)
+        # The with-Seer agent doesn't explore Sentry: the harness gets the issue, Seer's root cause,
+        # the failing cart and the impact first, and hands them to the agent in its prompt
+        if: matrix.variant == 'with-seer'
+        env:
+          SENTRY_MCP_TOKEN: ${{ secrets.SELFHEAL_SENTRY_MCP_TOKEN }}
+        run: python selfheal/harness/seer_handoff.py --alert "$RUNNER_TEMP/selfheal/alert.json" --out "$OUT"
+
       - name: Prepare prompt and Sentry MCP
         env:
           SENTRY_MCP_TOKEN: ${{ secrets.SELFHEAL_SENTRY_MCP_TOKEN }}
@@ -122,14 +130,19 @@ jobs:
         continue-on-error: true  # still verify and score whatever it produced
         run: |
           DISALLOWED="Read(/$SECRETS/**) Grep(/$SECRETS/**) Glob(/$SECRETS/**)"
-          if [ "${{ matrix.variant }}" = "without-seer" ]; then
+          TOOLS="Read Edit Write Glob Grep Bash(python -m pytest:*) Bash(python selfheal/harness/replay.py:*)"
+          if [ "${{ matrix.variant }}" = "with-seer" ]; then
+            # Seer's root cause is in the prompt: no Sentry MCP for this agent
+            MCP=()
+          else
+            MCP=(--mcp-config "$SECRETS/mcp.json")
+            TOOLS="$TOOLS ToolSearch mcp__sentry"
             DISALLOWED="$DISALLOWED mcp__sentry__analyze_issue_with_seer"
           fi
           python selfheal/harness/run_agent.py \
             --name "fix-${{ matrix.variant }}" --variant "${{ matrix.variant }}" \
-            --prompt-file "$OUT/prompt.md" --out "$OUT" --mcp-config "$SECRETS/mcp.json" \
-            --allowed-tools "Read Edit Write Glob Grep ToolSearch Bash(python -m pytest:*) Bash(python selfheal/harness/replay.py:*) mcp__sentry" \
-            --disallowed-tools "$DISALLOWED"
+            --prompt-file "$OUT/prompt.md" --out "$OUT" "${MCP[@]}" \
+            --allowed-tools "$TOOLS" --disallowed-tools "$DISALLOWED"
 
       - name: Verify independently and open draft PR
         env:
@@ -152,6 +165,7 @@ jobs:
             ${{ env.OUT }}/result.json
             ${{ env.OUT }}/cart.json
             ${{ env.OUT }}/alert.json
+            ${{ env.OUT }}/handoff.json
           if-no-files-found: warn
 
   review:
@@ -263,7 +277,7 @@ jobs:
             echo "This run opened no PRs; keeping the existing ones."
             exit 0
           fi
-          gh pr list --repo "$GITHUB_REPOSITORY" --base selfheal/base --label selfheal-agent --state open \
+          gh pr list --repo "$GITHUB_REPOSITORY" --base "$BASE_BRANCH" --label selfheal-agent --state open \
               --json number,headRefName --jq ".[] | select(.headRefName | endswith(\"-$GITHUB_RUN_ID\") | not) | .number" |
             while read -r pr; do
               gh pr close "$pr" --repo "$GITHUB_REPOSITORY" --delete-branch \

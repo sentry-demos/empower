@@ -24,8 +24,10 @@ drive.py live ──► selfheal-flask /checkout ──► 500, checkout.capture
             model key read from GCP Secret Manager via the existing GCP login
             fix job per version:
               without-seer: MCP ?disable-skills=seer, analyze_issue_with_seer denied
-              with-seer:    MCP + analyze_issue_with_seer
-              → fix + regression test → pull cart_json from Sentry Logs → replay → 200
+              with-seer:    no MCP. The harness (seer_handoff.py) gets the issue, Seer's root
+                            cause (reusing Seer's automatic analysis if there is one), the failing
+                            cart and the impact, and hands them to the agent in its prompt
+              → fix + regression test → replay the cart from Sentry Logs → 200
               → harness re-runs pytest + replay itself → draft PR (GITHUB_TOKEN)
                 + `pytest` commit status on the PR head
             review job per PR: comments MERGE/ADJUST/CLOSE (never approves)
@@ -49,12 +51,13 @@ drive.py live ──► selfheal-flask /checkout ──► 500, checkout.capture
 | Path | What it does |
 |---|---|
 | `receiver/` | Webhook receiver for Cloud Run. `deploy.sh` deploys it. |
-| `harness/prepare.py` | Renders the prompt and the Sentry MCP config for each version. |
+| `harness/seer_handoff.py` | With-Seer runs: gets Seer's root cause, the failing cart and the impact before the agent starts. |
+| `harness/prepare.py` | Renders the prompt for each version, and the Sentry MCP config for without-Seer. |
 | `harness/run_agent.py` | Runs headless `claude -p`, streams each step to the Actions log, writes `stats.json`, sends the scorecard span. |
 | `harness/replay.py` | Replays a captured cart against the working tree. Exits 0 on HTTP 200. |
 | `harness/open_pr.py` | Re-checks scope, tests and replay, then opens the draft PR. |
 | `harness/report.py` | Slack messages for the run scorecard and for reviewer verdicts. |
-| `prompts/` | Diagnose + fix (with one diagnosis section per version), reviewer, PR template. |
+| `prompts/` | Without-Seer diagnose + fix, with-Seer fix from Seer's handoff (`fix_from_seer.md`), reviewer, PR template. |
 | `scripts/drive.py` | Purchase traffic: `baseline` (healthy revenue) or `live` (real checkouts). |
 | `scripts/arm.sh` | Makes sure the bug is on `selfheal/base` and deployed. |
 | `scripts/reset.sh` | Closes agent PRs, resolves issues, re-arms. |

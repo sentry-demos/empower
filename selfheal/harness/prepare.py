@@ -5,7 +5,10 @@ Usage:
         --out DIR --mcp-out SECRETS_DIR/mcp.json
     python selfheal/harness/prepare.py review --out DIR
 
-Writes DIR/prompt.md and, for fix runs, the MCP config. That config holds the Sentry token
+with-seer fix runs read DIR/handoff.md (from seer_handoff.py, run first) into the prompt and get
+no Sentry MCP: Seer's root cause is handed straight to the coding agent.
+
+Writes DIR/prompt.md and, for without-seer fix runs, the MCP config. That config holds the Sentry token
 and the model key, so it goes to its own directory (which run_agent.py stops the agent from
 reading), outside git and out of uploaded artifacts.
 """
@@ -60,7 +63,17 @@ def main():
     os.makedirs(args.out, exist_ok=True)
     out = os.path.abspath(args.out)
 
-    if args.mode == "fix":
+    if args.mode == "fix" and args.variant == "with-seer":
+        # Seer's root cause was fetched by seer_handoff.py; the agent gets it in the prompt and
+        # has no Sentry MCP, so no MCP config is written
+        with open(args.alert) as f:
+            alert = json.dumps(json.load(f), indent=2)
+        with open(os.path.join(out, "handoff.md")) as f:
+            handoff = f.read().strip()
+        # HANDOFF goes in last: it holds Seer's text, which must not be scanned for placeholders
+        prompt = render(read_prompt("fix_from_seer.md"), ALERT=alert, OUT=out)
+        prompt = prompt.replace("{{HANDOFF}}", handoff)
+    elif args.mode == "fix":
         with open(args.alert) as f:
             alert = json.dumps(json.load(f), indent=2)
         diagnosis = read_prompt(f"diagnosis_{args.variant.replace('-', '_')}.md")
