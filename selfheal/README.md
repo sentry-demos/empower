@@ -163,6 +163,29 @@ GITHUB_SHA=$(git rev-parse HEAD) SENTRY_AUTH_TOKEN=... ./deploy flask --env=self
 `SELFHEAL_FLASK_URL` for the scripts is the service URL, for example
 `https://selfheal-flask-dot-sales-engineering-sf.uc.r.appspot.com`.
 
+## Choosing with or without Seer
+
+Each alert picks its version (`harness/plan.py`), so you can show one, the other, or both:
+
+- **Issue alerts**: the event's `se` tag. Browse the site with `?se=selfheal-with-seer` or
+  `?se=selfheal-without-seer`; the tag reaches the Flask backend and gives each version its own
+  issue. Make one issue alert per tag: project `backend-flask`, environment `production`, when
+  "a new issue is created" or "the issue changes from resolved to unresolved", if tag `se`
+  equals the value, then the selfheal internal integration (and Slack).
+- **Metric alerts**: the alert's name. Put `with-seer` or `without-seer` in it, e.g.
+  "Revenue Metric Alert [with-seer]". Both fire on the same drop, each starts its own version,
+  and each version replies in its own alert's Slack thread.
+- **Either kind**: an alert with `with-seer` / `without-seer` in its name always gets that
+  version. An alert that names neither runs `SELFHEAL_VARIANTS`.
+
+The receiver reads the `se` tag. Until it's redeployed with this version, issue alerts need the
+version in their name too. Runs for the two versions are independent: one in flight doesn't
+hold back an alert for the other.
+
+The with-Seer agent doesn't use the Sentry MCP. `harness/seer_handoff.py` gets the issue, Seer's
+root cause (reusing Seer's automatic analysis if there is one, else starting a run and waiting
+for it), the failing cart and the impact, and hands them to the agent in its prompt.
+
 ## Running the demo
 
 ```bash
@@ -178,7 +201,7 @@ Actions and watch both agents work, then Slack for the scorecard and the reviewe
 Approve and merge one PR. Keep `drive.py live` running: after `selfheal-deploy` finishes,
 checkouts succeed, revenue recovers, the alert resolves and the issue shows resolved in the release.
 
-To run without an alert: `selfheal/scripts/trigger.sh "Alert title"`.
+To run without an alert: `selfheal/scripts/trigger.sh "Alert title" [issue-id] [with-seer|without-seer]`.
 
 After the demo:
 

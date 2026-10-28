@@ -5,7 +5,11 @@ fires. We verify the signature, act only on the move to critical (metric alert) 
 a triggered issue alert, skip repeats, then create a selfheal/run/<id> branch: one
 commit on top of selfheal/base adding .selfheal/alert.json. The push starts the runner
 workflow from that branch (no repository_dispatch, so nothing has to live on master),
-and the runner runs both versions (with / without Seer) on the same alert.
+and the runner runs the version the alert names (see variant_for), or both side by side.
+
+Picking a version: an issue alert's event tag se=selfheal-with-seer / se=selfheal-without-seer,
+or "with-seer" / "without-seer" in the alert rule's name. The two versions are independent: a
+with-Seer run in flight doesn't hold back a without-Seer alert, and the other way round.
 
 Repeats are detected statelessly from GitHub itself: if a run branch exists or a runner is
 queued or running, the alert is acknowledged and dropped. Open agent PRs don't count (they're
@@ -34,6 +38,7 @@ RUNNER_WORKFLOW = os.environ.get("RUNNER_WORKFLOW", "selfheal-runner.yml")
 BASE_BRANCH = os.environ.get("BASE_BRANCH", "selfheal/base")
 AGENT_PR_LABEL = os.environ.get("AGENT_PR_LABEL", "selfheal-agent")
 RUN_BRANCH_PREFIX = "selfheal/run/"
+VARIANTS = ("without-seer", "with-seer")
 SKIP_WHILE_AGENT_PR_OPEN = os.environ.get("SKIP_WHILE_AGENT_PR_OPEN", "false").lower() == "true"
 
 logging.basicConfig(level=logging.INFO)
@@ -49,6 +54,27 @@ def valid_signature(body: bytes, signature: str) -> bool:
     return hmac.compare_digest(expected, signature)
 
 
+def variant_for(*texts) -> str:
+    """The agent version named in any of the texts (se tag, rule name, title), or "" for the
+    runner's default. Same rule as selfheal/harness/plan.py."""
+    for text in texts:
+        text = str(text or "").lower()
+        for variant in VARIANTS:
+            if variant in text:
+                return variant
+    return ""
+
+
+def event_tag(event: dict, key: str) -> str:
+    """A tag's value from an event payload, where tags are [key, value] pairs or dicts."""
+    for tag in event.get("tags") or []:
+        if isinstance(tag, (list, tuple)) and len(tag) == 2 and tag[0] == key:
+            return str(tag[1])
+        if isinstance(tag, dict) and tag.get("key") == key:
+            return str(tag.get("value", ""))
+    return ""
+
+
 def parse_alert(resource: str, payload: dict):
     """Return the alert to act on, or None if this delivery should be ignored."""
     action = payload.get("action")
@@ -58,24 +84,32 @@ def parse_alert(resource: str, payload: dict):
         if action != "critical":
             return None
         rule = (data.get("metric_alert") or {}).get("alert_rule") or {}
+        title = data.get("description_title") or rule.get("name") or "Metric alert"
         return {
             "kind": "metric_alert",
-            "title": data.get("description_title") or rule.get("name") or "Metric alert",
+            "title": title,
             "description": data.get("description_text", ""),
             "url": data.get("web_url", ""),
             "issue_id": "",
+            "rule": rule.get("name", ""),
+            "se": "",
+            "variant": variant_for(rule.get("name"), title),
         }
 
     if resource == "event_alert":
         if action != "triggered":
             return None
         event = data.get("event") or {}
+        se = event_tag(event, "se")
         return {
             "kind": "event_alert",
             "title": event.get("title") or data.get("triggered_rule") or "Issue alert",
             "description": data.get("triggered_rule", ""),
             "url": event.get("web_url", ""),
             "issue_id": str(event.get("issue_id", "")),
+            "rule": data.get("triggered_rule", ""),
+            "se": se,
+            "variant": variant_for(se, data.get("triggered_rule")),
         }
 
     return None
@@ -121,25 +155,41 @@ def github(method, path, **kwargs):
     return response
 
 
-def already_handling() -> str:
-    """Why a new run would be a repeat, or "" if none is in flight."""
+def branch_variant(branch: str) -> str:
+    """The version a run branch is for: selfheal/run/<variant>/<id>, or "" (both) for
+    selfheal/run/<id>."""
+    rest = branch.removeprefix("refs/heads/").removeprefix(RUN_BRANCH_PREFIX)
+    first = rest.split("/", 1)[0]
+    return first if first in VARIANTS and "/" in rest else ""
+
+
+def overlaps(variant: str, other: str) -> bool:
+    """Whether a run for `other` is a repeat for `variant`. A run with no version runs both."""
+    return not variant or not other or variant == other
+
+
+def already_handling(variant: str = "") -> str:
+    """Why a new run for this version would be a repeat, or "" if none is in flight."""
     # The runner deletes its run branch when it finishes, so one existing means a run is pending
     refs = github("GET", f"/repos/{GITHUB_REPO}/git/matching-refs/heads/{RUN_BRANCH_PREFIX}").json()
-    if refs:
-        return f"run branch {refs[0]['ref'].removeprefix('refs/heads/')} exists"
+    for ref in refs:
+        if overlaps(variant, branch_variant(ref["ref"])):
+            return f"run branch {ref['ref'].removeprefix('refs/heads/')} exists"
 
     for status in ("queued", "in_progress"):
         runs = github("GET", f"/repos/{GITHUB_REPO}/actions/workflows/{RUNNER_WORKFLOW}/runs",
-                      params={"status": status, "per_page": 1}).json()
-        if runs.get("total_count"):
-            return f"runner already {status}"
+                      params={"status": status, "per_page": 20}).json()
+        for run in runs.get("workflow_runs") or []:
+            if overlaps(variant, branch_variant(run.get("head_branch", ""))):
+                return f"runner already {status} ({run.get('head_branch')})"
 
     # Agent PRs are left open for demos, so they don't block new runs unless asked to
     if SKIP_WHILE_AGENT_PR_OPEN:
         pulls = github("GET", f"/repos/{GITHUB_REPO}/pulls",
                        params={"state": "open", "base": BASE_BRANCH, "per_page": 100}).json()
         for pr in pulls:
-            if any(label["name"] == AGENT_PR_LABEL for label in pr.get("labels", [])):
+            labels = {label["name"] for label in pr.get("labels", [])}
+            if AGENT_PR_LABEL in labels and (not variant or f"selfheal:{variant}" in labels):
                 return f"agent PR #{pr['number']} is still open"
     return ""
 
@@ -158,7 +208,9 @@ def create_run_branch(alert: dict) -> str:
     commit = github("POST", f"{repo}/commits", json={
         "message": f"Self-heal run: {alert['title']}", "tree": tree, "parents": [base_sha],
     }).json()["sha"]
-    branch = f"{RUN_BRANCH_PREFIX}{time.strftime('%Y%m%d-%H%M%S', time.gmtime())}"
+    # The version goes in the branch name, so repeats can be checked per version
+    version = f"{alert['variant']}/" if alert.get("variant") in VARIANTS else ""
+    branch = f"{RUN_BRANCH_PREFIX}{version}{time.strftime('%Y%m%d-%H%M%S', time.gmtime())}"
     github("POST", f"{repo}/refs", json={"ref": f"refs/heads/{branch}", "sha": commit})
     return branch
 
@@ -179,13 +231,13 @@ def sentry_webhook():
                  payload.get("action"), sorted((payload.get("data") or {}).keys()))
         return jsonify(status="ignored"), 200
 
-    reason = already_handling()
+    reason = already_handling(alert.get("variant", ""))
     if reason:
         log.info("skipped repeat alert '%s': %s", alert["title"], reason)
         return jsonify(status="skipped", reason=reason), 200
 
     branch = create_run_branch(alert)
-    log.info("created %s for '%s'", branch, alert["title"])
+    log.info("created %s for '%s' (version: %s)", branch, alert["title"], alert.get("variant") or "default")
     return jsonify(status="dispatched", branch=branch, alert=alert), 202
 
 

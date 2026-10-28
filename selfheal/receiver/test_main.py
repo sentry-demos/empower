@@ -186,3 +186,79 @@ def test_already_handling_finds_pending_run_branch():
 
     with patch.object(main, "github", side_effect=fake_github):
         assert main.already_handling() == "run branch selfheal/run/20261026-180000 exists"
+
+
+def issue_alert(se, rule="selfheal issue alert"):
+    return {"action": "triggered", "data": {
+        "event": {"title": "Exception: Error validating enough inventory for product", "issue_id": 1,
+                  "web_url": "https://demo.sentry.io/issues/1/",
+                  "tags": [["environment", "production"], ["se", se]]},
+        "triggered_rule": rule,
+    }}
+
+
+@pytest.mark.parametrize("se, rule, variant", [
+    ("selfheal-with-seer", "selfheal issue alert", "with-seer"),
+    ("selfheal-without-seer", "selfheal issue alert", "without-seer"),
+    ("chris", "Checkout failing [without-seer]", "without-seer"),
+    ("chris", "Checkout failing", ""),
+])
+def test_issue_alert_picks_version_from_se_tag_or_rule(client, se, rule, variant):
+    with patch.object(main, "already_handling", return_value="") as handling, \
+         patch.object(main, "create_run_branch", return_value="selfheal/run/1") as create:
+        deliver(client, "event_alert", issue_alert(se, rule))
+    assert create.call_args.args[0]["variant"] == variant
+    assert create.call_args.args[0]["se"] == se
+    handling.assert_called_once_with(variant)
+
+
+def test_metric_alert_picks_version_from_rule_name(client):
+    payload = json.loads(json.dumps(CRITICAL))
+    payload["data"]["metric_alert"]["alert_rule"]["name"] = "Checkout revenue dropped [with-seer]"
+    with patch.object(main, "already_handling", return_value=""), \
+         patch.object(main, "create_run_branch", return_value="selfheal/run/1") as create:
+        deliver(client, "metric_alert", payload)
+    assert create.call_args.args[0]["variant"] == "with-seer"
+
+
+def test_run_branch_carries_the_version():
+    with patch.object(main, "github") as gh:
+        gh.return_value.json.return_value = {"object": {"sha": "s"}, "tree": {"sha": "t"}, "sha": "x"}
+        branch = main.create_run_branch({"title": "t", "variant": "with-seer"})
+    assert branch.startswith("selfheal/run/with-seer/")
+    assert main.branch_variant(branch) == "with-seer"
+    assert main.branch_variant("selfheal/run/20261028-120000") == ""
+
+
+@pytest.mark.parametrize("pending, variant, blocked", [
+    ("selfheal/run/with-seer/20261028-120000", "without-seer", False),
+    ("selfheal/run/with-seer/20261028-120000", "with-seer", True),
+    ("selfheal/run/20261028-120000", "with-seer", True),   # a run with no version runs both
+    ("selfheal/run/with-seer/20261028-120000", "", True),
+])
+def test_versions_dont_block_each_other(pending, variant, blocked):
+    def fake_github(method, path, params=None, **kwargs):
+        class R:
+            def json(self):
+                if "matching-refs" in path:
+                    return [{"ref": f"refs/heads/{pending}"}]
+                return {"total_count": 0, "workflow_runs": []}
+        return R()
+
+    with patch.object(main, "github", side_effect=fake_github):
+        assert bool(main.already_handling(variant)) == blocked
+
+
+def test_running_runner_blocks_only_its_version():
+    def fake_github(method, path, params=None, **kwargs):
+        class R:
+            def json(self):
+                if "matching-refs" in path:
+                    return []
+                runs = [{"head_branch": "selfheal/run/without-seer/20261028-120000"}] if params["status"] == "in_progress" else []
+                return {"total_count": len(runs), "workflow_runs": runs}
+        return R()
+
+    with patch.object(main, "github", side_effect=fake_github):
+        assert main.already_handling("with-seer") == ""
+        assert "in_progress" in main.already_handling("without-seer")

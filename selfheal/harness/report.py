@@ -19,8 +19,11 @@ With neither, prints the message.
 Threading: with the bot token, messages are posted as replies to Sentry's own alert message in
 the channel, when one is found: the most recent message from the Sentry app within
 SELFHEAL_SLACK_THREAD_HOURS (default 6) that mentions SELFHEAL_SLACK_ALERT_MATCH (default
-"revenue") or the alert's title or link. Needs channels:history (groups:history for a private
-channel). With no match, e.g. runs started by trigger.sh, messages go to the channel itself.
+"revenue") or the alert's title or link. When the alert names a version (with-seer /
+without-seer), the message must also name it, so two alerts that both mention revenue each get
+their own thread. Issue alerts match on the issue's link first. Needs channels:history
+(groups:history for a private channel). With no match, e.g. runs started by trigger.sh,
+messages go to the channel itself.
 """
 import argparse
 import json
@@ -28,6 +31,8 @@ import os
 import time
 
 import requests
+
+from plan import alert_variant  # same directory: python puts the script's folder on sys.path
 
 VARIANTS = ("without-seer", "with-seer")
 SLACK_API = "https://slack.com/api"
@@ -70,6 +75,13 @@ def lookup_alert_message(token, channel, alert):
     needles = [os.environ.get("SELFHEAL_SLACK_ALERT_MATCH") or "revenue",
                alert.get("title"), alert.get("url")]
     needles = [n.lower() for n in needles if n]
+    variant = alert_variant(alert)
+    # Most specific first: the issue's own link (issue alerts), then the generic needles, which
+    # must come with the version's name when the alert has one
+    rules = []
+    if alert.get("issue_id"):
+        rules.append(lambda text: f"issues/{alert['issue_id']}" in text)
+    rules.append(lambda text: any(n in text for n in needles) and (not variant or variant in text))
     try:
         response = requests.get(
             f"{SLACK_API}/conversations.history",
@@ -87,9 +99,11 @@ def lookup_alert_message(token, channel, alert):
         return None, False
     # Newest first; the whole message (text, blocks, attachments) is searched, since Sentry
     # puts the alert name and link in blocks and attachments
-    for message in body.get("messages", []):
-        if is_from_sentry(message) and any(n in json.dumps(message).lower() for n in needles):
-            return message["ts"], False
+    messages = [(m, json.dumps(m).lower()) for m in body.get("messages", []) if is_from_sentry(m)]
+    for rule in rules:
+        for message, text in messages:
+            if rule(text):
+                return message["ts"], False
     return None, True
 
 
