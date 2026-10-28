@@ -57,6 +57,7 @@ jobs:
       - id: plan
         env:
           SELFHEAL_VARIANTS: ${{ vars.SELFHEAL_VARIANTS }}
+          SENTRY_MCP_TOKEN: ${{ secrets.SELFHEAL_SENTRY_MCP_TOKEN }}  # reads the issue's se tag
         run: |
           variants=$(python3 selfheal/harness/plan.py .selfheal/alert.json)
           echo "variants=$variants" >> "$GITHUB_OUTPUT"

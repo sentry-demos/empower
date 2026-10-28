@@ -178,9 +178,10 @@ Each alert picks its version (`harness/plan.py`), so you can show one, the other
 - **Either kind**: an alert with `with-seer` / `without-seer` in its name always gets that
   version. An alert that names neither runs `SELFHEAL_VARIANTS`.
 
-The receiver reads the `se` tag. Until it's redeployed with this version, issue alerts need the
-version in their name too. Runs for the two versions are independent: one in flight doesn't
-hold back an alert for the other.
+The receiver reads the `se` tag from the alert's event. If the event comes without tags, the
+runner's plan job looks up the issue's `se` tag in Sentry itself, so issue alerts never need the
+version in their name. Runs for the two versions are independent: one in flight doesn't hold
+back an alert for the other.
 
 The with-Seer agent doesn't use the Sentry MCP. `harness/seer_handoff.py` gets the issue, Seer's
 root cause (reusing Seer's automatic analysis if there is one, else starting a run and waiting
