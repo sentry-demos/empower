@@ -1,11 +1,16 @@
 """Sentry alert webhook -> GitHub Actions self-heal run.
 
 Sentry's internal integration ("Alert Rule Action" on) POSTs here when an alert
-fires. We verify the signature, act only on the move to critical (metric alert) or
-a triggered issue alert, skip repeats, then create a selfheal/run/<id> branch: one
-commit on top of selfheal/base adding .selfheal/alert.json. The push starts the runner
-workflow from that branch (no repository_dispatch, so nothing has to live on master),
-and the runner runs both versions (with / without Seer) on the same alert.
+fires. Several Sentry orgs can point their integration at this one receiver: each org's
+client secret is configured (SENTRY_CLIENT_SECRET for the default org, and
+SENTRY_CLIENT_SECRET_<ORG> for others, e.g. SENTRY_CLIENT_SECRET_TEAM_SE), and the secret
+that verifies a delivery tells us which org sent it.
+
+We act only on the move to critical (metric alert) or a triggered issue alert, skip
+repeats, pick the alert's target from targets.json (by org and project), then create a
+selfheal/run/<id> branch: one commit on top of that target's base branch adding
+.selfheal/alert.json. The push starts the runner workflow from that branch (no
+repository_dispatch, so nothing has to live on master).
 
 Repeats are detected statelessly from GitHub itself: if a run branch exists or a runner is
 queued or running, the alert is acknowledged and dropped. Open agent PRs don't count (they're
@@ -16,6 +21,7 @@ import hmac
 import json
 import logging
 import os
+import re
 import time
 
 import requests
@@ -23,8 +29,23 @@ from flask import Flask, jsonify, request
 
 GITHUB_API = "https://api.github.com"
 
+DEFAULT_ORG = os.environ.get("DEFAULT_SENTRY_ORG", "demo")
 # strip(): secrets pasted into `gcloud secrets create --data-file=-` often keep a trailing newline
 SENTRY_CLIENT_SECRET = os.environ.get("SENTRY_CLIENT_SECRET", "").strip()
+
+
+def client_secrets():
+    """org slug -> client secret: SENTRY_CLIENT_SECRET is the default org's, and
+    SENTRY_CLIENT_SECRET_TEAM_SE is team-se's (suffix lowercased, _ -> -)."""
+    secrets = {DEFAULT_ORG: SENTRY_CLIENT_SECRET} if SENTRY_CLIENT_SECRET else {}
+    for name, value in os.environ.items():
+        if name.startswith("SENTRY_CLIENT_SECRET_") and value.strip():
+            secrets[name.removeprefix("SENTRY_CLIENT_SECRET_").lower().replace("_", "-")] = value.strip()
+    return secrets
+
+
+# Bundled next to main.py by deploy.sh (a copy of selfheal/targets.json)
+TARGETS_FILE = os.environ.get("TARGETS_FILE", os.path.join(os.path.dirname(os.path.abspath(__file__)), "targets.json"))
 # GitHub auth: a GitHub App (org-owned; preferred) or, as a fallback, a token
 GITHUB_APP_ID = os.environ.get("GITHUB_APP_ID", "").strip()
 GITHUB_APP_PRIVATE_KEY = os.environ.get("GITHUB_APP_PRIVATE_KEY", "").strip()
@@ -42,11 +63,49 @@ log = logging.getLogger("selfheal-receiver")
 app = Flask(__name__)
 
 
+def verify_org(body: bytes, signature: str):
+    """The org whose client secret signed this delivery, or None if none did."""
+    if not signature:
+        return None
+    for org, secret in client_secrets().items():
+        expected = hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()
+        if hmac.compare_digest(expected, signature):
+            return org
+    return None
+
+
 def valid_signature(body: bytes, signature: str) -> bool:
-    if not SENTRY_CLIENT_SECRET or not signature:
-        return False
-    expected = hmac.new(SENTRY_CLIENT_SECRET.encode(), body, hashlib.sha256).hexdigest()
-    return hmac.compare_digest(expected, signature)
+    return verify_org(body, signature) is not None
+
+
+def load_targets():
+    # The deployed copy next to main.py, or selfheal/targets.json when run from the repo
+    repo_copy = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "targets.json")
+    for path in (TARGETS_FILE, repo_copy):
+        try:
+            with open(path) as f:
+                return {name: t for name, t in json.load(f).items() if not name.startswith("_")}
+        except (OSError, json.JSONDecodeError):
+            continue
+    log.error("no targets.json found; every alert will be ignored")
+    return {}
+
+
+def pick_target(org, project=None):
+    """(name, target) for an alert from this org: project match first, then the org's first
+    target. (None, None) if the org has no target."""
+    targets = load_targets()
+    in_org = [name for name, t in targets.items() if t.get("org") == org]
+    for name in in_org:
+        if project and project in targets[name].get("projects", []):
+            return name, targets[name]
+    return (in_org[0], targets[in_org[0]]) if in_org else (None, None)
+
+
+def org_from_url(url: str):
+    """Org slug from a Sentry URL: https://sentry.io/organizations/<org>/... or https://<org>.sentry.io/..."""
+    match = re.search(r"/organizations/([^/]+)/", url or "") or re.match(r"https://([^./]+)\.sentry\.io/", url or "")
+    return match.group(1) if match else None
 
 
 def parse_alert(resource: str, payload: dict):
@@ -76,6 +135,7 @@ def parse_alert(resource: str, payload: dict):
             "description": data.get("triggered_rule", ""),
             "url": event.get("web_url", ""),
             "issue_id": str(event.get("issue_id", "")),
+            "project_id": str(event.get("project", "")),
         }
 
     return None
@@ -144,11 +204,11 @@ def already_handling() -> str:
     return ""
 
 
-def create_run_branch(alert: dict) -> str:
-    """Commit .selfheal/alert.json on top of the base branch as a new run branch.
+def create_run_branch(alert: dict, base: str = BASE_BRANCH) -> str:
+    """Commit .selfheal/alert.json on top of the target's base branch as a new run branch.
     Building the commit before the ref means the branch appears with one push event."""
     repo = f"/repos/{GITHUB_REPO}/git"
-    base_sha = github("GET", f"{repo}/ref/heads/{BASE_BRANCH}").json()["object"]["sha"]
+    base_sha = github("GET", f"{repo}/ref/heads/{base}").json()["object"]["sha"]
     base_tree = github("GET", f"{repo}/commits/{base_sha}").json()["tree"]["sha"]
     tree = github("POST", f"{repo}/trees", json={
         "base_tree": base_tree,
@@ -166,8 +226,9 @@ def create_run_branch(alert: dict) -> str:
 @app.post("/sentry")
 def sentry_webhook():
     body = request.get_data()
-    if not valid_signature(body, request.headers.get("Sentry-Hook-Signature", "")):
-        log.warning("rejected delivery with bad signature")
+    org = verify_org(body, request.headers.get("Sentry-Hook-Signature", ""))
+    if org is None:
+        log.warning("rejected delivery with bad signature (no configured org's client secret matches)")
         return jsonify(error="invalid signature"), 401
 
     resource = request.headers.get("Sentry-Hook-Resource", "")
@@ -175,17 +236,26 @@ def sentry_webhook():
     alert = parse_alert(resource, payload)
     if alert is None:
         # Shape only (no values), so an unexpected payload format can be recognized from the logs
-        log.info("ignored %s delivery: action=%s data keys=%s", resource or "unknown",
+        log.info("ignored %s delivery from %s: action=%s data keys=%s", resource or "unknown", org,
                  payload.get("action"), sorted((payload.get("data") or {}).keys()))
         return jsonify(status="ignored"), 200
+
+    url_org = org_from_url(alert.get("url"))
+    if url_org and url_org != org:
+        log.warning("delivery signed by %s links to org %s; using %s", org, url_org, org)
+    target_name, target = pick_target(org, alert.get("project_slug"))
+    if not target:
+        log.info("ignored alert '%s' from %s: no target for this org in targets.json", alert["title"], org)
+        return jsonify(status="ignored", reason=f"no target for org {org}"), 200
+    alert.update(org=org, target=target_name)
 
     reason = already_handling()
     if reason:
         log.info("skipped repeat alert '%s': %s", alert["title"], reason)
         return jsonify(status="skipped", reason=reason), 200
 
-    branch = create_run_branch(alert)
-    log.info("created %s for '%s'", branch, alert["title"])
+    branch = create_run_branch(alert, target["base"])
+    log.info("created %s on %s for '%s' (%s, target %s)", branch, target["base"], alert["title"], org, target_name)
     return jsonify(status="dispatched", branch=branch, alert=alert), 202
 
 

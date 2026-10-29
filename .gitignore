@@ -113,3 +113,6 @@ agent/agent_sessions.db
 
 # google-github-actions/auth credentials (selfheal workflows)
 gha-creds-*.json
+
+# copied in by selfheal/receiver/deploy.sh
+selfheal/receiver/targets.json

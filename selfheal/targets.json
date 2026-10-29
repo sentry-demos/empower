@@ -1,0 +1,42 @@
+{
+  "_comment": "Where each Sentry alert's fix happens. The receiver picks a target by the alert's org (and project, when an org has several targets) and builds the run branch on its base; the runner reads the rest. Keys starting with _ are ignored.",
+  "checkout": {
+    "org": "demo",
+    "projects": ["backend-flask", "selfheal-flask"],
+    "base": "selfheal/base",
+    "project": "backend-flask",
+    "environment": "production",
+    "paths": ["flask/"],
+    "install": "pip install -r flask/requirements.txt pytest requests",
+    "tests": "python -m pytest flask/src/test -q",
+    "check": "",
+    "check_label": "failing order now succeeds",
+    "replay": true,
+    "prompt": "target_checkout.md",
+    "slack_match": "revenue"
+  },
+  "agent-context": {
+    "org": "team-se",
+    "projects": ["kunal-manager-agent"],
+    "base": "selfheal/agent-base",
+    "project": "kunal-manager-agent",
+    "environment": "",
+    "paths": ["agent/"],
+    "install": "pip install -r agent/requirements.txt tiktoken requests",
+    "tests": "python -m pytest agent/tests -q",
+    "test_env": {
+      "PYTHONPATH": "agent",
+      "OPENROUTER_API_KEY": "selfheal-test",
+      "API_HOST": "127.0.0.1",
+      "PORT": "8093",
+      "API_RELOAD": "false",
+      "MAX_TOKENS": "1000",
+      "AGENT_SENTRY_ENVIRONMENT": "selfheal-test"
+    },
+    "check": "python selfheal/harness/checks/policy_tokens.py",
+    "check_label": "policy answer under the token budget",
+    "replay": false,
+    "prompt": "target_agent_context.md",
+    "slack_match": "context snowball"
+  }
+}

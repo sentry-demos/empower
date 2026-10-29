@@ -177,6 +177,57 @@ def test_github_token_falls_back_without_app(monkeypatch):
     assert main.github_token() == "github_pat_x"
 
 
+TEAM_SE_SECRET = "team-se-secret"
+TOKEN_SPIKE = {"action": "triggered", "data": {
+    "event": {"title": "Kunal LLM Context Snowball", "issue_id": 7813412119, "project": 42,
+              "web_url": "https://sentry.io/organizations/team-se/issues/7813412119/events/abc/"},
+    "triggered_rule": "Token spike",
+}}
+
+
+def test_second_org_routes_to_its_target(client, monkeypatch):
+    monkeypatch.setenv("SENTRY_CLIENT_SECRET_TEAM_SE", TEAM_SE_SECRET)
+    with patch.object(main, "already_handling", return_value=""), \
+         patch.object(main, "create_run_branch", return_value="selfheal/run/1") as create:
+        response = deliver(client, "event_alert", TOKEN_SPIKE, secret=TEAM_SE_SECRET)
+
+    assert response.status_code == 202
+    alert, base = create.call_args.args
+    assert (alert["org"], alert["target"], base) == ("team-se", "agent-context", "selfheal/agent-base")
+    assert alert["issue_id"] == "7813412119"
+
+
+def test_default_org_still_routes_to_checkout(client):
+    payload = {**TOKEN_SPIKE, "data": {**TOKEN_SPIKE["data"], "event": {
+        **TOKEN_SPIKE["data"]["event"], "web_url": "https://sentry.io/organizations/demo/issues/1/"}}}
+    with patch.object(main, "already_handling", return_value=""), \
+         patch.object(main, "create_run_branch", return_value="selfheal/run/1") as create:
+        deliver(client, "event_alert", payload)
+
+    alert, base = create.call_args.args
+    assert (alert["org"], alert["target"], base) == ("demo", "checkout", "selfheal/base")
+
+
+def test_unconfigured_org_is_rejected(client, monkeypatch):
+    monkeypatch.delenv("SENTRY_CLIENT_SECRET_TEAM_SE", raising=False)
+    response = deliver(client, "event_alert", TOKEN_SPIKE, secret=TEAM_SE_SECRET)
+    assert response.status_code == 401
+
+
+def test_org_without_target_is_ignored(client, monkeypatch):
+    monkeypatch.setenv("SENTRY_CLIENT_SECRET_OTHER_ORG", "other-secret")
+    with patch.object(main, "create_run_branch") as create:
+        response = deliver(client, "event_alert", TOKEN_SPIKE, secret="other-secret")
+    assert response.json["status"] == "ignored"
+    create.assert_not_called()
+
+
+def test_org_from_url():
+    assert main.org_from_url("https://sentry.io/organizations/demo/issues/1/") == "demo"
+    assert main.org_from_url("https://team-se.sentry.io/issues/7813412119/") == "team-se"
+    assert main.org_from_url("") is None
+
+
 def test_already_handling_finds_pending_run_branch():
     def fake_github(method, path, **kwargs):
         class R:

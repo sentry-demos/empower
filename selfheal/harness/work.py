@@ -24,7 +24,8 @@ SCRUB_PATTERNS = [
 
 def scrub(text):
     text = str(text)
-    for name in ("SENTRY_MCP_TOKEN", "ANTHROPIC_AUTH_TOKEN", "ANTHROPIC_API_KEY"):
+    names = ["SENTRY_MCP_TOKEN", "ANTHROPIC_AUTH_TOKEN", "ANTHROPIC_API_KEY"]
+    for name in names + [n for n in os.environ if n.startswith("SENTRY_MCP_TOKEN_")]:
         value = os.environ.get(name, "")
         if len(value) >= 8:
             text = text.replace(value, "<redacted>")
@@ -78,7 +79,12 @@ def agent_step(name, tool_input, result, error):
     if name == "Bash":
         command = short_path(tool_input.get("command", ""))
         outcome = "failed" if error else "passed"
-        kind = "Replayed failing request" if "replay.py" in command else "Ran tests"
+        if "replay.py" in command:
+            kind = "Replayed failing request"
+        elif "harness/checks/" in command:
+            kind = "Ran the fix check"
+        else:
+            kind = "Ran tests"
         last = cell((str(result).strip().splitlines() or [""])[-1], 100)
         return f"{kind}: {outcome}", f"`{cell(command, 80)}` → {last}"
     return name, cell(json.dumps(tool_input), 100)

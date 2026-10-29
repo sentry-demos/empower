@@ -13,12 +13,13 @@ so this also posts the `pytest` commit status on the PR head (the required check
 import argparse
 import json
 import os
+import shlex
 import subprocess
 import sys
 
 import work  # same directory: python puts the script's folder on sys.path
 
-BASE =os.environ.get("BASE_BRANCH", "selfheal/base")
+BASE = os.environ.get("BASE_BRANCH", "selfheal/base")  # the target's base, set by target.py
 HARNESS = os.path.dirname(os.path.abspath(__file__))
 
 
@@ -32,34 +33,64 @@ def changed_files():
     return [line[3:].strip() for line in out.splitlines() if line.strip()]
 
 
+def target_paths():
+    return [p for p in (os.environ.get("TARGET_PATHS") or "flask/").split(",") if p]
+
+
+def run_command(command):
+    """Run one of the target's commands (tests, check) the way the agent did, from the repo root."""
+    args = shlex.split(command)
+    if args and args[0] == "python":
+        args[0] = sys.executable  # the job's Python, with the target's dependencies
+    return sh(*args, check=False)
+
+
+def last_line(proc):
+    return (proc.stdout.strip().splitlines() or proc.stderr.strip().splitlines() or [""])[-1]
+
+
 def verify(out):
     files = changed_files()
+    paths = target_paths()
     result = {"files_changed": files,
-              "in_scope": bool(files) and all(f.startswith("flask/") for f in files)}
+              "in_scope": bool(files) and all(f.startswith(tuple(paths)) for f in files)}
 
-    tests = sh(sys.executable, "-m", "pytest", "flask/src/test", "-q", check=False)
+    tests = run_command(os.environ.get("TARGET_TESTS") or "python -m pytest flask/src/test -q")
     result["tests_passed"] = tests.returncode == 0
-    result["tests_summary"] = (tests.stdout.strip().splitlines() or [""])[-1]
+    result["tests_summary"] = last_line(tests)
 
+    result["replay_status"] = None
     cart = os.path.join(out, "cart.json")
-    if os.path.exists(cart):
+    if (os.environ.get("TARGET_REPLAY") or "true") == "true" and os.path.exists(cart):
         replay = sh(sys.executable, os.path.join(HARNESS, "replay.py"), cart, check=False)
         lines = replay.stdout.strip().splitlines()
         result["replay_status"] = json.loads(lines[-1])["status"] if lines else None
-    else:
-        result["replay_status"] = None  # agent never pulled the cart from Sentry Logs
+
+    # The target's own proof the problem is gone (e.g. the token budget), if it has one
+    result["check_passed"] = None
+    if os.environ.get("TARGET_CHECK"):
+        checked = run_command(os.environ["TARGET_CHECK"])
+        result["check_passed"] = checked.returncode == 0
+        result["check_summary"] = last_line(checked)[:500]
+    result["check_label"] = os.environ.get("TARGET_CHECK_LABEL", "")
 
     result["secrets_found"] = leaked_secrets(files)
-    result["ok"] = (result["in_scope"] and result["tests_passed"] and result["replay_status"] == 200
-                    and not result["secrets_found"])
+    result["ok"] = (result["in_scope"] and result["tests_passed"] and result["check_passed"] is not False
+                    and result["replay_status"] in (None, 200) and not result["secrets_found"])
     return result
+
+
+def secret_values():
+    """Known secrets the agent's run had access to: the Sentry token(s) and the model key."""
+    names = ["SENTRY_MCP_TOKEN", "ANTHROPIC_AUTH_TOKEN", "ANTHROPIC_API_KEY"]
+    names += [n for n in os.environ if n.startswith("SENTRY_MCP_TOKEN_")]
+    return {name: os.environ.get(name, "") for name in names}
 
 
 def leaked_secrets(files):
     """Names of known secrets whose values appear in a changed file. The repo is public,
     so a PR must never carry the Sentry token or the model key, whatever the agent wrote."""
-    secrets = {name: os.environ.get(name, "") for name in
-               ("SENTRY_MCP_TOKEN", "ANTHROPIC_AUTH_TOKEN", "ANTHROPIC_API_KEY")}
+    secrets = secret_values()
     found = []
     for path in files:
         if not os.path.isfile(path):
@@ -75,7 +106,7 @@ def open_pr(variant, out, check):
         agent = json.load(f)
     run_id = os.environ.get("GITHUB_RUN_ID", "local")
     branch = f"selfheal/fix-{variant}-{run_id}"
-    title = f"[{variant}] Fix {agent.get('issue_short_id', 'checkout failure')}: {agent.get('fix_summary', '')}".strip()
+    title = f"[{variant}] Fix {agent.get('issue_short_id', 'the alerted issue')}: {agent.get('fix_summary', '')}".strip()
 
     body_path = os.path.join(out, "pr_body.md")
     body = open(body_path).read() if os.path.exists(body_path) else agent.get("root_cause", "")
@@ -91,14 +122,19 @@ def open_pr(variant, out, check):
         f"[run {run_id}]({os.environ.get('GITHUB_SERVER_URL', '')}/{os.environ.get('GITHUB_REPOSITORY', '')}/actions/runs/{run_id})._\n\n"
         "**Harness verification**\n"
         f"- Files: {', '.join(check['files_changed'])}\n"
-        f"- pytest: {'passed' if check['tests_passed'] else 'FAILED'} ({check['tests_summary']})\n"
-        f"- Replay of the production cart: HTTP {check['replay_status']}\n"
+        f"- Tests: {'passed' if check['tests_passed'] else 'FAILED'} ({check['tests_summary']})\n"
     )
+    if check.get("replay_status") is not None:
+        body += f"- Replay of the failing production request: HTTP {check['replay_status']}\n"
+    if check.get("check_passed") is not None:
+        label = check.get("check_label") or "Target check"
+        body += f"- {label[:1].upper() + label[1:]}: {'passed' if check['check_passed'] else 'FAILED'}\n"
+        body += f"  ```\n  {work.scrub(check.get('check_summary', ''))}\n  ```\n"
     with open(body_path, "w") as f:
         f.write(body)
 
     sh("git", "checkout", "-b", branch)
-    sh("git", "add", "--", "flask/")
+    sh("git", "add", "--", *target_paths())
     sh("git", "commit", "-m", title, "-m", f"Fixes {agent.get('issue_short_id', '')}".strip())
     sh("git", "push", "origin", branch)
     for label in ("selfheal-agent", f"selfheal:{variant}"):
@@ -128,9 +164,11 @@ def main():
     if check["secrets_found"]:
         blockers.append(f"changed files contain secret values ({', '.join(check['secrets_found'])})")
     if not check["in_scope"]:
-        blockers.append("changes are empty or outside flask/")
+        blockers.append(f"changes are empty or outside {', '.join(target_paths())}")
     if not check["tests_passed"]:
         blockers.append("tests fail")
+    if check.get("check_passed") is False:
+        blockers.append(f"the target check failed ({check.get('check_label') or os.environ.get('TARGET_CHECK')})")
     if not os.path.exists(os.path.join(args.out, "result.json")):
         blockers.append("the agent wrote no result.json")
 

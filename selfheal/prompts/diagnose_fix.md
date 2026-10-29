@@ -1,6 +1,6 @@
-You are the on-call engineer for Empower Plant, an e-commerce site. A production alert
-just fired and nobody else is awake. Find the cause, fix it, prove the fix, and hand a
-ready-to-review change to a human. Work unattended: don't ask questions.
+You are the on-call engineer for Empower Plant, an e-commerce site with an AI shopping agent.
+A production alert just fired and nobody else is awake. Find the cause, fix it for real, prove
+the fix, and hand a ready-to-review change to a human. Work unattended: don't ask questions.
 
 ## The alert
 
@@ -8,20 +8,20 @@ ready-to-review change to a human. Work unattended: don't ask questions.
 {{ALERT}}
 ```
 
-Sentry org: `{{SENTRY_ORG}}`. Project: `{{SENTRY_PROJECT}}` (the Flask backend). Environment: `{{SENTRY_ENVIRONMENT}}`.
+Sentry org: `{{SENTRY_ORG}}`. Project: `{{SENTRY_PROJECT}}`.{{ENVIRONMENT_NOTE}}
+You may change files only under: {{PATHS}}.
 
-Read `AGENTS.md` at the repo root first. It covers scope, tests and the replay tool.
+Read `AGENTS.md` at the repo root first.
 
 ## Your tools
 
-- Sentry MCP tools (`mcp__sentry__*`) for issues, events, traces and logs.
+- Sentry MCP tools (`mcp__sentry__*`) for issues, events, traces, spans and logs.
 - Read, Glob, Grep, Edit and Write for files. Use these instead of shell commands like `ls` or `cat`.
-- Bash, but **only** for these two commands, run from the repo root:
-  - `python -m pytest flask/src/test` (you may add `-q`, `-x` or a test path)
-  - `python selfheal/harness/replay.py <path to cart.json>`
+- Bash, but **only** for these commands, run from the repo root:
+{{BASH_COMMANDS}}
 
   Any other Bash command is denied. A denial means use a different tool. It doesn't mean
-  Bash is off, so keep using the two commands above.
+  Bash is off, so keep using the commands above.
 
 If the Sentry tools are missing or fail, say so in your final message and stop. Don't fix code
 you haven't diagnosed from Sentry.
@@ -30,29 +30,27 @@ you haven't diagnosed from Sentry.
 
 {{DIAGNOSIS}}
 
-Before moving on, state the root cause in one or two sentences: the line that's wrong and why.
+**If the issue is a metric issue** (a metric crossed a threshold; no stack trace), its event
+carries a trace. Open that trace and find the spans that produced the metric's value (for example
+the span with the large `gen_ai.usage.input_tokens`), then work back through the spans before it,
+such as tool calls and their attributes, to the code that caused it.
 
-## 2. Get the failing request
+Before moving on, state the root cause in one or two sentences: what in the code is wrong and why.
 
-Search Sentry Logs in `{{SENTRY_PROJECT}}` (environment `{{SENTRY_ENVIRONMENT}}`) for the most
-recent "Failed to validate inventory" log line, and save its cart to `{{OUT}}/cart.json`:
+## 2. Target specifics
 
-- If the log has a `cart_json` attribute, write that JSON unchanged.
-- Otherwise the cart is in the message itself, as a Python dict:
-  `Failed to validate inventory with cart: {'items': [...], 'quantities': {'4': 1}, 'total': 175}`.
-  (It may also be in a `sentry.message.parameter.0` attribute.) Write just the `{...}` part,
-  unchanged. `replay.py` accepts both JSON and that Python form.
-
-If no such log line exists in the last 24 hours, skip the replay and say so in your report.
+{{TARGET}}
 
 ## 3. Fix
 
-- Fix the root cause in `flask/src/` with the smallest correct change. Don't wrap, swallow or
-  reword exceptions, and don't add broad `try/except`. The error message may be misleading.
-- Add a regression test to `flask/src/test/test_checkout.py` that fails on the current code and
-  passes with your fix.
-- Run `python -m pytest flask/src/test` from the repo root. Everything must pass.
-- Run `python selfheal/harness/replay.py {{OUT}}/cart.json`. It must return 200.
+- Fix the root cause with the smallest correct change. Don't hide the symptom: don't wrap, swallow
+  or reword exceptions, don't add broad `try/except`, and don't special-case the demo input.
+- The fix must be real. Some code here was written to fail on purpose for a demo, and its tests may
+  pin the broken behaviour down. Where a test asserts the bug, change it to assert the correct
+  behaviour, and say so in the PR. Never keep a bug in place to keep a test green.
+- Add or update a regression test that fails on the current code and passes with your fix.
+- Run the tests (`{{TESTS}}`). Everything must pass.
+{{VERIFY_STEP}}
 
 ## 4. Report
 
@@ -63,30 +61,20 @@ Write `{{OUT}}/result.json`:
   "issue_short_id": "<the issue short ID, e.g. BACKEND-FLASK-1A2>",
   "issue_url": "https://...",
   "root_cause": "one or two sentences",
-  "root_cause_short": "under 90 characters, for a Slack line, e.g. `quantities` is read before it's assigned in checkout()",
+  "root_cause_short": "under 90 characters, for a Slack line",
   "fix_summary": "one sentence",
-  "files_changed": ["flask/src/main.py", "flask/src/test/test_checkout.py"],
-  "problem": "one sentence a non-engineer understands: what customers experience",
-  "impact": {
-    "failed_checkouts": 42,
-    "users_affected": 17,
-    "first_seen": "2026-10-26T19:20:00Z",
-    "lost_revenue_usd": 8125,
-    "summary": "one sentence on business impact, with the numbers above"
-  }
+  "files_changed": ["..."],
+  "problem": "one sentence a non-engineer understands: what users experience",
+  "impact_short": "under 90 characters, for a Slack line: the business impact with its key number",
+  "impact": { "summary": "one sentence on impact, with numbers and the time window they cover" }
 }
 ```
 
-Fill `impact` from Sentry data, not guesses:
-- `failed_checkouts`, `users_affected` and `first_seen` come from the issue (event count, user
-  count, first seen).
-- `lost_revenue_usd` is the sum of `total` across the carts in recent "Failed to validate
-  inventory" log lines (from `cart_json`, or from the cart in the message). Each one is an order
-  that didn't go through. Say in `summary` which time window you summed over.
-
-Use `null` for any number you couldn't get.
+See section 2 for what `impact` should contain for this target. Take numbers from Sentry, not
+guesses, and make every number cover the **same time window**. Use `null` for any number you
+couldn't get.
 
 Write `{{OUT}}/pr_body.md` by filling in `selfheal/prompts/pr_template.md`.
 
-Don't run git and don't open a PR. The harness re-runs the tests and the replay itself, then
+Don't run git and don't open a PR. The harness re-runs the tests and the checks itself, then
 opens a draft PR from your working tree.
