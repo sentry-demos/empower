@@ -27,10 +27,8 @@ SESSION_TTL_SECONDS = 30 * 60
 TOOL_RESULTS_KEPT = 1
 
 # Above this, even a kept tool result is collapsed. Ordinary results are 1-2KB;
-# search_policies returns ~160KB of raw HTML (the context snowball, see
-# tools/shop/policies.py), and carrying that into the next turn would re-send it
-# on both of the orchestrator's LLM calls there. Collapsing it here keeps the
-# spike to the one turn that asked the question.
+# a result this large would be re-sent on both of the orchestrator's LLM calls
+# in the next turn, so this is a backstop against any tool returning a blob.
 KEPT_TOOL_RESULT_MAX_CHARS = 16_000
 
 # Replaces the body of a superseded tool result. Says the work happened and that

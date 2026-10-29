@@ -1,9 +1,9 @@
 """A mock Confluence export of the Empower Plant help centre.
 
-search_policies hands the model every page of this, raw, which is the context
-snowball in the demo. Each page is wrapped in the chrome a real space export
-carries — navigation, breadcrumbs, inline styles, analytics tags — so most of
-what the model is made to read is markup rather than policy.
+search_policies searches these pages and gives the model only the matching ones,
+as text. Each page is wrapped in the chrome a real space export carries —
+navigation, breadcrumbs, inline styles, analytics tags — so most of a raw page is
+markup rather than policy, which is why it is stripped before the model sees it.
 
 Built in code at import time rather than committed as a ~150KB fixture. The
 pages are deterministic, so the token count of the spike is the same every run.
