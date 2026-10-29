@@ -110,3 +110,7 @@ aspnetcore/*.suo
 .sentryclirc
 
 agent/agent_sessions.db
+
+# self-heal harness
+gha-creds-*.json
+selfheal/receiver/targets.json
