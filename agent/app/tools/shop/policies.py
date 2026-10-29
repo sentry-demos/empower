@@ -1,22 +1,17 @@
 """Store policy lookup, backed by a mock help-centre export.
 
-This is the context snowball in the demo. search_policies is meant to find the
-page that answers the customer's question, but it ignores the query and returns
-every page of the export as raw HTML — about 160KB. checkout_agent stops on its
-first tool, so that blob becomes the delegation's result verbatim and lands in
-the orchestrator's next gen_ai.chat call as tens of thousands of input tokens.
-
-The answer the customer gets is right, and nothing errors. The only sign is the
-input token count on that one span, with policy.pages and policy.bytes on the
-tool span above it saying where it came from.
-
-The fix (strip the markup, return only the pages that match the query) is left
-for Seer to propose, so the tests pin the broken behaviour down on purpose.
+search_policies finds the pages of the export that answer the customer's
+question and returns their text, without the export's markup. checkout_agent
+stops on its first tool, so whatever this returns becomes the delegation's
+result verbatim and lands in the orchestrator's next gen_ai.chat call: it has
+to be just the answer, not the help centre.
 """
 
+import html
 import json
 import logging
 import re
+from typing import Any
 
 from agents import RunContextWrapper, function_tool
 
@@ -32,17 +27,69 @@ logging.basicConfig(level=logging.DEBUG)
 # from there into Session Replay.
 EXCERPT_CHARS = 200
 
+# Most pages handed to the model for one question.
+MAX_PAGES = 3
+
+# A title match counts for more than the same word somewhere in the body.
+TITLE_WEIGHT = 3
+
 _TAGS = re.compile(r"<[^>]+>")
+_WORDS = re.compile(r"[a-z0-9]+")
+_SUFFIXES = ("ing", "es", "ed", "s")
+
+# Words that say nothing about which page is wanted. "policy" is here because
+# "return policy" must find "Returns & refunds", not every page called a policy.
+_FILLER = {
+    "a", "an", "and", "are", "about", "can", "do", "does", "for", "how", "i",
+    "in", "is", "it", "me", "my", "of", "on", "or", "the", "to", "what",
+    "when", "where", "with", "you", "your",
+}  # fmt: skip
+_GENERIC = {"policy", "policies"}
 
 
-def _excerpt(html: str) -> str:
-    """The first EXCERPT_CHARS of a page's body copy, without markup."""
-    body = html.split('class="wiki-content"', 1)[-1]
-    body = body.split("</h1>", 1)[-1].split("</div>", 1)[0]
+def _stem(word: str) -> str:
+    for suffix in _SUFFIXES:
+        if word.endswith(suffix) and len(word) - len(suffix) >= 3:
+            return word[: -len(suffix)]
+    return word
+
+
+def _terms(query: str) -> list[str]:
+    words = [w for w in _WORDS.findall(query.lower()) if w not in _FILLER]
+    specific = [w for w in words if w not in _GENERIC]
+    return [_stem(w) for w in specific or words]
+
+
+def _body_text(page_html: str) -> str:
+    """A page's body copy as plain text, without the export's page chrome."""
+    body = page_html.split('class="wiki-content"', 1)[-1]
+    body = body.split("</h1>", 1)[-1].split('<div class="page-metadata">', 1)[0]
     # Paragraph breaks become spaces, or "number.</p><p>Once" reads "number.Once".
     body = body.replace("</p>", " ")
-    text = _TAGS.sub("", body).replace("&ndash;", "–").replace("&amp;", "&")
-    return " ".join(text.split())[:EXCERPT_CHARS]
+    return " ".join(html.unescape(_TAGS.sub("", body)).split())
+
+
+def _excerpt(text: str) -> str:
+    return text[:EXCERPT_CHARS]
+
+
+def _find_pages(query: str) -> list[dict[str, Any]]:
+    """The best-matching pages, most relevant first, as title and plain text."""
+    terms = _terms(query)
+    scored = []
+    for page in policy_export.pages():
+        text = _body_text(page["html"])
+        title_words = _WORDS.findall(page["title"].lower())
+        body_words = _WORDS.findall(text.lower())
+        score = sum(
+            TITLE_WEIGHT * any(w.startswith(t) for w in title_words)
+            + any(w.startswith(t) for w in body_words)
+            for t in terms
+        )
+        if score:
+            scored.append((score, {"title": page["title"], "text": text}))
+    scored.sort(key=lambda match: -match[0])  # stable: ties keep export order
+    return [page for _, page in scored[:MAX_PAGES]]
 
 
 @function_tool  # type: ignore[misc]
@@ -53,25 +100,22 @@ async def search_policies(context: RunContextWrapper[ChatSession], query: str) -
         query: What the customer wants to know, e.g. "return policy".
 
     Returns:
-        JSON with the matching help centre pages.
+        JSON with the help centre pages that best match, as plain text.
     """
     session = context.context
     logging.debug(f"search_policies query={query!r}")
 
-    # The bug: every page, raw, whatever was asked.
-    pages = policy_export.pages()
+    pages = _find_pages(query)
     payload = json.dumps({"query": query, "pages": pages})
 
     set_tool_attribute("policy.pages", len(pages))
     set_tool_attribute("policy.bytes", len(payload))
     logging.info(f"search_policies returned {len(pages)} pages, {len(payload)} bytes")
 
-    answer = next(
-        page for page in pages if page["title"] == policy_export.RETURNS_PAGE_TITLE
-    )
-    session.record_widget(
-        "search_policies",
-        "policy",
-        {"title": answer["title"], "excerpt": _excerpt(answer["html"])},
-    )
+    if pages:
+        session.record_widget(
+            "search_policies",
+            "policy",
+            {"title": pages[0]["title"], "excerpt": _excerpt(pages[0]["text"])},
+        )
     return payload

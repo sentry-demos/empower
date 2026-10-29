@@ -1,10 +1,8 @@
-"""search_policies, the context snowball.
+"""search_policies returns the pages that answer the question, as plain text.
 
-The tool ignores the query and returns the whole help-centre export as raw
-HTML. That is the demo — one policy question costing tens of thousands of input
-tokens — so these tests pin the oversized payload down on purpose, along with
-the two things that keep it contained: the chat card stays small, and the next
-turn's history doesn't carry the blob at all.
+It used to ignore the query and return the whole help-centre export as raw HTML
+(~160KB, ~47k input tokens on the next LLM call). These tests keep it to the
+matching pages, markup-free, and keep the history guard for oversized results.
 """
 
 import json
@@ -14,40 +12,78 @@ from test_tool_errors import _run_in_tool_span
 
 from app.session import OMITTED_TOOL_RESULT, ChatSession, trim_tool_outputs
 from app.tools.shop import search_policies
+from app.tools.shop.policies import MAX_PAGES
 from app.tools.shop.policy_export import PAGE_COUNT, RETURNS_PAGE_TITLE
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("query", ["return policy", "shipping to Canada", ""])
-async def test_every_page_is_returned_whatever_the_query(query):
+@pytest.mark.parametrize(
+    "query", ["return policy", "What is your return policy?", "shipping to Canada"]
+)
+async def test_only_matching_pages_are_returned_as_plain_text(query):
     payload, _ = await _run_in_tool_span(
         search_policies, {"query": query}, ChatSession("p1")
     )
 
     assert PAGE_COUNT == 50
-    assert len(payload["pages"]) == PAGE_COUNT
-    # Raw export HTML, chrome and all — not extracted text.
-    assert all(page["html"].startswith("<!DOCTYPE html>") for page in payload["pages"])
+    assert 0 < len(payload["pages"]) <= MAX_PAGES
+    for page in payload["pages"]:
+        assert set(page) == {"title", "text"}
+        assert "<" not in page["text"] and "&" not in page["text"]
+    assert len(json.dumps(payload)) < 4_000
 
 
 @pytest.mark.asyncio
-async def test_payload_is_big_enough_to_spike_input_tokens():
-    payload, span = await _run_in_tool_span(
-        search_policies, {"query": "return policy"}, ChatSession("p2")
+@pytest.mark.parametrize("query", ["return policy", "What is your return policy?"])
+async def test_return_question_finds_the_returns_page(query):
+    payload, _ = await _run_in_tool_span(
+        search_policies, {"query": query}, ChatSession("p2")
     )
 
-    size = len(json.dumps(payload))
-    # ~3KB a page. Roughly 40k tokens against a 1-2k baseline turn.
-    assert 120_000 < size < 200_000
-    assert span["data"]["policy.pages"] == PAGE_COUNT
-    assert span["data"]["policy.bytes"] == pytest.approx(size, rel=0.01)
-    # Nothing failed; that is the point.
+    first = payload["pages"][0]
+    assert first["title"] == RETURNS_PAGE_TITLE
+    assert "30 days" in first["text"]
+    assert "5–7 business days" in first["text"]
+
+
+@pytest.mark.asyncio
+async def test_shipping_question_ranks_shipping_pages_first():
+    payload, _ = await _run_in_tool_span(
+        search_policies, {"query": "shipping to Canada"}, ChatSession("p3")
+    )
+
+    titles = [page["title"] for page in payload["pages"]]
+    assert titles[:2] == ["Shipping times and carriers", "International shipping"]
+
+
+@pytest.mark.asyncio
+async def test_unmatched_question_returns_no_pages_and_no_card():
+    session = ChatSession("p4")
+    payload, span = await _run_in_tool_span(
+        search_policies, {"query": "zzyzx"}, session
+    )
+
+    assert payload["pages"] == []
+    assert span["data"]["policy.pages"] == 0
+    assert session.drain_widgets() == []
+
+
+@pytest.mark.asyncio
+async def test_span_reports_the_returned_size():
+    payload, span = await _run_in_tool_span(
+        search_policies, {"query": "return policy"}, ChatSession("p5")
+    )
+
+    assert span["data"]["policy.pages"] == len(payload["pages"])
+    assert span["data"]["policy.bytes"] == pytest.approx(
+        len(json.dumps(payload)), rel=0.01
+    )
     assert span.get("status") != "internal_error"
 
 
 @pytest.mark.asyncio
 async def test_card_carries_the_answer_not_the_export():
-    session = ChatSession("p3")
+    session = ChatSession("p6")
     await _run_in_tool_span(search_policies, {"query": "return policy"}, session)
 
     (widget,) = session.drain_widgets()
@@ -60,29 +96,24 @@ async def test_card_carries_the_answer_not_the_export():
 
 
 @pytest.mark.asyncio
-async def test_spike_is_one_turn_wide():
-    """The blob is collapsed before the next turn, though it is the latest."""
-    blob, _ = await _run_in_tool_span(
-        search_policies, {"query": "return policy"}, ChatSession("p4")
-    )
-    session = ChatSession("p5")
-    session.remember(
-        [
-            {"role": "user", "content": "What is your return policy?"},
-            {"type": "function_call", "call_id": "c1", "name": "ask_checkout_agent"},
-            {
-                "type": "function_call_output",
-                "call_id": "c1",
-                "output": json.dumps(blob),
-            },
-            {"role": "assistant", "content": "Returns are accepted within 30 days."},
-        ]
-    )
+async def test_card_follows_the_question():
+    session = ChatSession("p7")
+    await _run_in_tool_span(search_policies, {"query": "shipping to Canada"}, session)
 
-    assert session.history[2]["output"] == OMITTED_TOOL_RESULT.format(
+    (widget,) = session.drain_widgets()
+    assert widget["data"]["title"] != RETURNS_PAGE_TITLE
+
+
+def test_oversized_latest_result_is_still_collapsed():
+    blob = json.dumps({"pages": ["x" * 20_000]})
+    history = [
+        {"type": "function_call", "call_id": "c1", "name": "ask_checkout_agent"},
+        {"type": "function_call_output", "call_id": "c1", "output": blob},
+    ]
+
+    assert trim_tool_outputs(history)[1]["output"] == OMITTED_TOOL_RESULT.format(
         tool="ask_checkout_agent"
     )
-    assert len(json.dumps(session.history)) < 2_000
 
 
 def test_ordinary_latest_result_is_still_kept():
