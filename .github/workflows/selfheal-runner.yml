@@ -7,6 +7,9 @@ name: selfheal-runner
 #
 # Each job resolves the alert's target (selfheal/targets.json: base branch, Sentry org and
 # project, code paths, tests, verification check) with selfheal/harness/target.py.
+# The alert also picks the agent version (selfheal/harness/plan.py): with-seer or without-seer,
+# from the event's se tag or the alert's name, or else SELFHEAL_VARIANTS. Each agent opens a
+# draft PR, the reviewer agent comments on it, and Slack gets the result.
 # Uses only the Actions GITHUB_TOKEN and the repo's existing GCP login. See selfheal/README.md.
 run-name: "Self-heal: ${{ github.ref_name }}"
 
@@ -15,7 +18,9 @@ on:
     branches: ["selfheal/run/**"]
 
 concurrency:
-  group: selfheal-runner
+  # One run at a time per version, so a with-Seer run doesn't queue behind a without-Seer one.
+  # The receiver names run branches selfheal/run/<version>/<id>; others run both versions.
+  group: selfheal-runner-${{ contains(github.ref_name, '/without-seer/') && 'without-seer' || (contains(github.ref_name, '/with-seer/') && 'with-seer' || 'all') }}
   cancel-in-progress: false
 
 env:
@@ -36,10 +41,36 @@ env:
   PYTHONDONTWRITEBYTECODE: "1"
 
 jobs:
+  plan:
+    # Which version(s) this alert runs
+    if: vars.SELFHEAL_ENABLED == 'true'  # opt-in per repo, so forks and other repos never run it
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions:
+      contents: read
+    outputs:
+      variants: ${{ steps.plan.outputs.variants }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            selfheal
+            .selfheal
+      - id: plan
+        env:
+          SELFHEAL_VARIANTS: ${{ vars.SELFHEAL_VARIANTS }}
+          # Read the issue's se tag, with the alert org's token
+          SENTRY_MCP_TOKEN: ${{ secrets.SELFHEAL_SENTRY_MCP_TOKEN }}
+          SENTRY_MCP_TOKEN_TEAM_SE: ${{ secrets.SELFHEAL_SENTRY_MCP_TOKEN_TEAM_SE }}
+        run: |
+          variants=$(python3 selfheal/harness/plan.py .selfheal/alert.json)
+          echo "variants=$variants" >> "$GITHUB_OUTPUT"
+          echo "::notice title=Versions::$variants"
+
   announce:
     # Replies in the Sentry alert's Slack thread as soon as the run starts. Runs alongside the
     # fix jobs (nothing waits on it), and a Slack problem never fails the run.
-    if: vars.SELFHEAL_ENABLED == 'true'
+    needs: plan
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -57,14 +88,14 @@ jobs:
           SELFHEAL_SLACK_BOT_TOKEN: ${{ secrets.SELFHEAL_SLACK_BOT_TOKEN }}
           SELFHEAL_SLACK_CHANNEL: ${{ vars.SELFHEAL_SLACK_CHANNEL }}
           SELFHEAL_SLACK_WEBHOOK_URL: ${{ secrets.SELFHEAL_SLACK_WEBHOOK_URL }}
-          VARIANTS: ${{ vars.SELFHEAL_VARIANTS || '["without-seer"]' }}
+          VARIANTS: ${{ needs.plan.outputs.variants }}
         run: |
           pip install requests
           eval "$(python selfheal/harness/target.py --alert .selfheal/alert.json --shell)"
           python selfheal/harness/report.py started --alert .selfheal/alert.json --variants "$VARIANTS"
 
   fix:
-    if: vars.SELFHEAL_ENABLED == 'true'  # opt-in per repo, so forks and other repos never run it
+    needs: plan
     name: fix (${{ matrix.variant }})
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -77,9 +108,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # with-seer is off until Seer is set up for the project; turn it on with the repo variable
-        # SELFHEAL_VARIANTS='["without-seer", "with-seer"]'
-        variant: ${{ fromJSON(vars.SELFHEAL_VARIANTS || '["without-seer"]') }}
+        variant: ${{ fromJSON(needs.plan.outputs.variants) }}
 
     steps:
       - uses: actions/checkout@v4
@@ -111,6 +140,15 @@ jobs:
 
       - uses: ./.github/actions/selfheal-claude
 
+      - name: Seer finds the root cause (with-seer)
+        # The with-Seer agent doesn't explore Sentry: the harness gets the issue, Seer's root cause,
+        # the failing cart and the impact first, and hands them to the agent in its prompt
+        if: matrix.variant == 'with-seer'
+        env:
+          SENTRY_MCP_TOKEN: ${{ secrets.SELFHEAL_SENTRY_MCP_TOKEN }}
+          SENTRY_MCP_TOKEN_TEAM_SE: ${{ secrets.SELFHEAL_SENTRY_MCP_TOKEN_TEAM_SE }}
+        run: python selfheal/harness/seer_handoff.py --alert "$RUNNER_TEMP/selfheal/alert.json" --out "$OUT"
+
       - name: Prepare prompt and Sentry MCP
         env:
           # One Sentry token per org; prepare.py picks the alert's
@@ -128,15 +166,20 @@ jobs:
         continue-on-error: true  # still verify and score whatever it produced
         run: |
           DISALLOWED="Read(/$SECRETS/**) Grep(/$SECRETS/**) Glob(/$SECRETS/**)"
-          if [ "${{ matrix.variant }}" = "without-seer" ]; then
+          # Bash limited to the target's tests and checks (e.g. cart replay, token budget)
+          TOOLS="Read Edit Write Glob Grep $(python selfheal/harness/prepare.py allowed-bash)"
+          if [ "${{ matrix.variant }}" = "with-seer" ]; then
+            # Seer's root cause is in the prompt: no Sentry MCP for this agent
+            MCP=()
+          else
+            MCP=(--mcp-config "$SECRETS/mcp.json")
+            TOOLS="$TOOLS ToolSearch mcp__sentry"
             DISALLOWED="$DISALLOWED mcp__sentry__analyze_issue_with_seer"
           fi
-          ALLOWED_BASH=$(python selfheal/harness/prepare.py allowed-bash)
           python selfheal/harness/run_agent.py \
             --name "fix-${{ matrix.variant }}" --variant "${{ matrix.variant }}" \
-            --prompt-file "$OUT/prompt.md" --out "$OUT" --mcp-config "$SECRETS/mcp.json" \
-            --allowed-tools "Read Edit Write Glob Grep ToolSearch $ALLOWED_BASH mcp__sentry" \
-            --disallowed-tools "$DISALLOWED"
+            --prompt-file "$OUT/prompt.md" --out "$OUT" "${MCP[@]}" \
+            --allowed-tools "$TOOLS" --disallowed-tools "$DISALLOWED"
 
       - name: Verify independently and open draft PR
         env:
@@ -161,13 +204,14 @@ jobs:
             ${{ env.OUT }}/result.json
             ${{ env.OUT }}/cart.json
             ${{ env.OUT }}/alert.json
+            ${{ env.OUT }}/handoff.json
           if-no-files-found: warn
 
   review:
     # PRs opened with GITHUB_TOKEN don't trigger pull_request workflows, so the reviewer
     # agent runs here, once per agent PR. It only comments; a human approves and merges.
-    needs: fix
-    if: always() && vars.SELFHEAL_ENABLED == 'true'
+    needs: [plan, fix]
+    if: always() && needs.plan.result == 'success'
     name: review (${{ matrix.variant }})
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -178,9 +222,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # with-seer is off until Seer is set up for the project; turn it on with the repo variable
-        # SELFHEAL_VARIANTS='["without-seer", "with-seer"]'
-        variant: ${{ fromJSON(vars.SELFHEAL_VARIANTS || '["without-seer"]') }}
+        variant: ${{ fromJSON(needs.plan.outputs.variants) }}
 
     steps:
       - uses: actions/download-artifact@v4
@@ -252,8 +294,8 @@ jobs:
             --variant "${{ matrix.variant }}" --results "$RUNNER_TEMP/scorecard"
 
   report:
-    needs: [fix, review]
-    if: always() && vars.SELFHEAL_ENABLED == 'true'
+    needs: [plan, fix, review]
+    if: always() && needs.plan.result == 'success'
     runs-on: ubuntu-latest
     permissions:
       contents: write       # delete the run branch and superseded PR branches
@@ -268,24 +310,30 @@ jobs:
       - name: Resolve the target
         run: python3 selfheal/harness/target.py --alert .selfheal/alert.json --github-env
 
-      - name: Close the previous run's agent PRs for this target
-        # PRs stay open for demos, but only the latest pair per target: once this run has
-        # opened at least one PR, close agent PRs from earlier runs into the same base branch.
-        # A failed run leaves them alone.
+      - name: Close the previous run's agent PRs
+        # PRs stay open for demos, but only the latest one per target and version: once this
+        # run's agent opened a PR, close that version's earlier PRs into the same base branch.
+        # Other targets, the other version, and versions whose agent opened nothing this time
+        # are left alone.
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          new_prs=$(jq -r '.pr_url // empty' results/*/verify.json 2>/dev/null | tr '\n' ' ')
-          if [ -z "$new_prs" ]; then
-            echo "This run opened no PRs; keeping the existing ones."
-            exit 0
-          fi
-          gh pr list --repo "$GITHUB_REPOSITORY" --base "$BASE_BRANCH" --label selfheal-agent --state open \
-              --json number,headRefName --jq ".[] | select(.headRefName | endswith(\"-$GITHUB_RUN_ID\") | not) | .number" |
-            while read -r pr; do
-              gh pr close "$pr" --repo "$GITHUB_REPOSITORY" --delete-branch \
-                --comment "Superseded by a newer self-heal run: $new_prs"
-            done
+          for verify in results/*/verify.json; do
+            [ -f "$verify" ] || continue
+            new_pr=$(jq -r '.pr_url // empty' "$verify")
+            variant=$(basename "$(dirname "$verify")")
+            if [ -z "$new_pr" ]; then
+              echo "$variant opened no PR; keeping its existing ones."
+              continue
+            fi
+            gh pr list --repo "$GITHUB_REPOSITORY" --base "$BASE_BRANCH" --label selfheal-agent \
+                --label "selfheal:$variant" --state open --json number,headRefName \
+                --jq ".[] | select(.headRefName | endswith(\"-$GITHUB_RUN_ID\") | not) | .number" |
+              while read -r pr; do
+                gh pr close "$pr" --repo "$GITHUB_REPOSITORY" --delete-branch \
+                  --comment "Superseded by a newer self-heal run: $new_pr"
+              done
+          done
 
       - name: Post to Slack if an agent opened no PR
         env:

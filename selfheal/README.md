@@ -24,8 +24,10 @@ drive.py live ──► selfheal-flask /checkout ──► 500, checkout.capture
             model key read from GCP Secret Manager via the existing GCP login
             fix job per version:
               without-seer: MCP ?disable-skills=seer, analyze_issue_with_seer denied
-              with-seer:    MCP + analyze_issue_with_seer
-              → fix + regression test → pull cart_json from Sentry Logs → replay → 200
+              with-seer:    no MCP. The harness (seer_handoff.py) gets the issue, Seer's root
+                            cause (reusing Seer's automatic analysis if there is one), the failing
+                            cart and the impact, and hands them to the agent in its prompt
+              → fix + regression test → replay the cart from Sentry Logs → 200
               → harness re-runs pytest + replay itself → draft PR (GITHUB_TOKEN)
                 + `pytest` commit status on the PR head
             review job per PR: comments MERGE/ADJUST/CLOSE (never approves)
@@ -49,12 +51,13 @@ drive.py live ──► selfheal-flask /checkout ──► 500, checkout.capture
 | Path | What it does |
 |---|---|
 | `receiver/` | Webhook receiver for Cloud Run. `deploy.sh` deploys it. |
-| `harness/prepare.py` | Renders the prompt and the Sentry MCP config for each version. |
+| `harness/seer_handoff.py` | With-Seer runs: gets Seer's root cause, the failing cart and the impact before the agent starts. |
+| `harness/prepare.py` | Renders the prompt for each version, and the Sentry MCP config for without-Seer. |
 | `harness/run_agent.py` | Runs headless `claude -p`, streams each step to the Actions log, writes `stats.json`, sends the scorecard span. |
 | `harness/replay.py` | Replays a captured cart against the working tree. Exits 0 on HTTP 200. |
 | `harness/open_pr.py` | Re-checks scope, tests and replay, then opens the draft PR. |
 | `harness/report.py` | Slack messages for the run scorecard and for reviewer verdicts. |
-| `prompts/` | Diagnose + fix (with one diagnosis section per version), reviewer, PR template. |
+| `prompts/` | Without-Seer diagnose + fix, with-Seer fix from Seer's handoff (`fix_from_seer.md`), reviewer, PR template. |
 | `scripts/drive.py` | Purchase traffic: `baseline` (healthy revenue) or `live` (real checkouts). |
 | `scripts/arm.sh` | Makes sure the bug is on `selfheal/base` and deployed. |
 | `scripts/reset.sh` | Closes agent PRs, resolves issues, re-arms. |
@@ -179,7 +182,8 @@ export. `selfheal/agent-base` is his PR branch plus this harness, built by
 `scripts/refresh-agent-base.sh`; agent PRs target it, so his PR and fork are never touched. Re-run
 the script (then `git push --force origin selfheal/agent-base`) when his PR or the harness
 changes. His tests pin the bug on purpose; the agent is told to update them to the correct
-behaviour.
+behaviour. It runs without Seer only (`variants` in targets.json): the with-Seer handoff
+(`seer_handoff.py`, `fix_from_seer.md`) is written for the checkout bug.
 
 **Adding an org:**
 1. In that org: a `selfheal` internal integration (Alert Rule Action on, webhook URL = the same
@@ -192,6 +196,30 @@ behaviour.
 4. A target for it in `targets.json`.
 
 Manual runs: `SELFHEAL_TARGET=agent-context selfheal/scripts/trigger.sh "Kunal LLM Context Snowball" 7813412119`.
+
+## Choosing with or without Seer
+
+Each alert picks its version (`harness/plan.py`), so you can show one, the other, or both:
+
+- **Issue alerts**: the event's `se` tag. Browse the site with `?se=selfheal-with-seer` or
+  `?se=selfheal-without-seer`; the tag reaches the Flask backend and gives each version its own
+  issue. Make one issue alert per tag: project `backend-flask`, environment `production`, when
+  "a new issue is created" or "the issue changes from resolved to unresolved", if tag `se`
+  equals the value, then the selfheal internal integration (and Slack).
+- **Metric alerts**: the alert's name. Put `with-seer` or `without-seer` in it, e.g.
+  "Revenue Metric Alert [with-seer]". Both fire on the same drop, each starts its own version,
+  and each version replies in its own alert's Slack thread.
+- **Either kind**: an alert with `with-seer` / `without-seer` in its name always gets that
+  version. An alert that names neither runs `SELFHEAL_VARIANTS`.
+
+The receiver reads the `se` tag from the alert's event. If the event comes without tags, the
+runner's plan job looks up the issue's `se` tag in Sentry itself, so issue alerts never need the
+version in their name. Runs for the two versions are independent: one in flight doesn't hold
+back an alert for the other.
+
+The with-Seer agent doesn't use the Sentry MCP. `harness/seer_handoff.py` gets the issue, Seer's
+root cause (reusing Seer's automatic analysis if there is one, else starting a run and waiting
+for it), the failing cart and the impact, and hands them to the agent in its prompt.
 
 ## Running the demo
 
@@ -208,7 +236,7 @@ Actions and watch both agents work, then Slack for the scorecard and the reviewe
 Approve and merge one PR. Keep `drive.py live` running: after `selfheal-deploy` finishes,
 checkouts succeed, revenue recovers, the alert resolves and the issue shows resolved in the release.
 
-To run without an alert: `selfheal/scripts/trigger.sh "Alert title"`.
+To run without an alert: `selfheal/scripts/trigger.sh "Alert title" [issue-id] [with-seer|without-seer]`.
 
 After the demo:
 

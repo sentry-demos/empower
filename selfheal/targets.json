@@ -37,6 +37,8 @@
     "check_label": "policy answer under the token budget",
     "replay": false,
     "prompt": "target_agent_context.md",
-    "slack_match": "context snowball"
+    "slack_match": "context snowball",
+    "_variants": "with-seer's handoff (seer_handoff.py, fix_from_seer.md) is checkout-specific for now",
+    "variants": ["without-seer"]
   }
 }

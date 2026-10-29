@@ -120,6 +120,14 @@ def run(args):
         "tool_calls": len(tools),
         "seer_calls": sum(1 for t in tools.values() if t["name"].endswith("analyze_issue_with_seer")),
     }
+    # with-seer: the harness got Seer's root cause before the agent started. Count that time in
+    # the scorecard, so both versions are timed from the alert to a verified fix.
+    handoff = load_json(os.path.join(args.out, "handoff.json"))
+    if handoff:
+        stats["handoff_s"] = handoff.get("seconds", 0)
+        stats["agent_s"] = stats["duration_s"]
+        stats["duration_s"] = round(stats["duration_s"] + stats["handoff_s"], 1)
+        stats["seer_calls"] = sum(1 for c in handoff.get("calls", []) if c.get("layer") == "seer")
     print(f"■ [{args.name}] {json.dumps(stats)}", flush=True)
 
     send_agent_span(args, stats, tools, started, ended)
@@ -129,6 +137,14 @@ def run(args):
     with open(os.path.join(args.out, "timeline.json"), "w") as f:
         json.dump([timeline_entry(entry, started) for entry in timeline], f, indent=2)
     return stats
+
+
+def load_json(path):
+    try:
+        with open(path) as f:
+            return json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return {}
 
 
 def timeline_entry(entry, started):

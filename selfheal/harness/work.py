@@ -3,7 +3,8 @@
 Splits the run into the three layers a customer cares about:
   1. Sentry telemetry: what the agent pulled from Sentry through the MCP (issues, stack traces,
      traces, logs), i.e. data Sentry already had.
-  2. Seer: Sentry's AI root-cause analysis (with-Seer runs only).
+  2. Seer: Sentry's AI root-cause analysis (with-Seer runs only). In with-Seer runs the harness
+     makes the Sentry and Seer calls before the agent starts (seer_handoff.py, handoff.json).
   3. Agent: Claude Code's own work on the code (read, edit, test, replay).
 
 Inputs and results are shortened and scrubbed (emails, IPs, tokens, known secret values),
@@ -90,6 +91,54 @@ def agent_step(name, tool_input, result, error):
     return name, cell(json.dumps(tool_input), 100)
 
 
+def render_handoff(timeline, stats, handoff):
+    """with-seer runs: the harness asked Sentry and Seer before the agent started, and the agent
+    only worked on the code."""
+    sentry = [c for c in handoff.get("calls", []) if c.get("layer") == "sentry"]
+    seer = [c for c in handoff.get("calls", []) if c.get("layer") == "seer"]
+    agent = [t for t in timeline if t["type"] == "tool" and not t["name"].startswith(("mcp__", "ToolSearch"))]
+    notes = [t["text"] for t in timeline if t["type"] == "note"]
+    run = handoff.get("seer") or {}
+
+    lines = [
+        "## How this fix was found",
+        "",
+        "| Layer | What it is | Used in this run |",
+        "|---|---|---|",
+        f"| **Sentry telemetry** | Data Sentry already had: the issue, its impact, the failing request from Logs | {len(sentry)} calls, before the agent started |",
+        f"| **Seer** | Sentry's AI root-cause analysis on that telemetry | run {run.get('run_id')}"
+        + (" (Seer's earlier automatic analysis)" if run.get("reused") else " (started for this alert)")
+        + ", handed to the agent |",
+        f"| **Agent** (Claude Code) | Confirms Seer's cause in the code, fixes it, runs tests, replays the failing request | {len(agent)} steps, no Sentry tools |",
+        "",
+    ]
+    if stats:
+        lines += [f"{stats.get('duration_s')}s total (Seer handoff {stats.get('handoff_s')}s + agent"
+                  f" {stats.get('agent_s')}s) · {stats.get('turns')} turns · "
+                  f"{stats.get('input_tokens', 0) + stats.get('output_tokens', 0):,} tokens · "
+                  f"${stats.get('cost_usd', 0):.2f} · model `{stats.get('model')}`", ""]
+
+    lines += ["### 1. Sentry telemetry", "", "| At | Call | Returned |", "|---|---|---|"]
+    lines += [f"| {c['at_s']}s | {c['call']} | {cell(c.get('returned', ''), 150)} |" for c in sentry]
+
+    lines += ["", "### 2. Seer", "", "| At | Call | Returned |", "|---|---|---|"]
+    lines += [f"| {c['at_s']}s | {c['call']} | {cell(c.get('returned', ''), 150)} |" for c in seer]
+    if run.get("root_cause"):
+        lines += ["", "<details><summary>Root cause Seer handed to the agent</summary>", "",
+                  scrub(run["root_cause"]), "", "</details>"]
+
+    lines += ["", "### 3. Agent (Claude Code)", "", "| At | Step | Detail |", "|---|---|---|"]
+    for t in agent:
+        step, detail = agent_step(t["name"], t["input"], t["result"], t["error"])
+        lines.append(f"| {t['at_s']}s | {step} | {detail} |")
+
+    if notes:
+        lines += ["", "<details><summary>Agent's notes, in order</summary>", ""]
+        lines += [f"{i}. {cell(note, 400)}" for i, note in enumerate(notes, 1)]
+        lines += ["", "</details>"]
+    return "\n".join(lines) + "\n"
+
+
 def render(timeline, stats, variant):
     mcp = [t for t in timeline if t["type"] == "tool" and t["name"].startswith("mcp__sentry__")
            and not t["name"].endswith("analyze_issue_with_seer")]
@@ -154,4 +203,8 @@ def render_from(out, variant):
             stats = json.load(f)
     except (OSError, json.JSONDecodeError):
         stats = {}
-    return render(timeline, stats, variant)
+    try:
+        with open(os.path.join(out, "handoff.json")) as f:
+            return render_handoff(timeline, stats, json.load(f))
+    except (OSError, json.JSONDecodeError):
+        return render(timeline, stats, variant)

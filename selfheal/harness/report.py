@@ -18,10 +18,13 @@ With neither, prints the message.
 
 Threading: with the bot token, messages are posted as replies to Sentry's own alert message in
 the channel, when one is found: the most recent message from the Sentry app within
-SELFHEAL_SLACK_THREAD_HOURS (default 6) that mentions the alert's title, link or issue ID, or
-failing that, the target's match text (SELFHEAL_SLACK_ALERT_MATCH, set per target in
-targets.json). Needs channels:history (groups:history for a private channel). With no match,
-e.g. runs started by trigger.sh, messages go to the channel itself.
+SELFHEAL_SLACK_THREAD_HOURS (default 6) that matches, most specific first: the issue's link
+(issue alerts), the alert's title or link, then the target's match text
+(SELFHEAL_SLACK_ALERT_MATCH, set per target in targets.json). When the alert names a version
+(with-seer / without-seer), the title/link and match-text rules also need the message to name
+it, so two alerts on the same metric each get their own thread. Needs channels:history
+(groups:history for a private channel). With no match, e.g. runs started by trigger.sh,
+messages go to the channel itself.
 """
 import argparse
 import json
@@ -29,6 +32,8 @@ import os
 import time
 
 import requests
+
+from plan import alert_variant  # same directory: python puts the script's folder on sys.path
 
 VARIANTS = ("without-seer", "with-seer")
 SLACK_API = "https://slack.com/api"
@@ -68,10 +73,22 @@ def lookup_alert_message(token, channel, alert):
     """(ts, retryable): ts of the newest matching Sentry message, or None and whether a
     retry could help (no match yet) or not (Slack refused the lookup)."""
     hours = float(os.environ.get("SELFHEAL_SLACK_THREAD_HOURS") or 6)
-    # This alert's own title, link and issue ID first; the target's match text only as a fallback,
-    # so a reply can't land under another org's or target's alert that happens to match it
-    specific = [n.lower() for n in (alert.get("title"), alert.get("url"), alert.get("issue_id")) if n]
+    variant = alert_variant(alert)
+    specific = [n.lower() for n in (alert.get("title"), alert.get("url")) if n]
     fallback = (os.environ.get("SELFHEAL_SLACK_ALERT_MATCH") or "").lower()
+
+    def names_variant(text):
+        return not variant or variant in text
+
+    # Most specific first: the issue's own link (issue alerts), then this alert's title or link,
+    # then the target's match text, so a reply can't land under another org's or target's alert.
+    # The last two must come with the version's name when the alert has one.
+    rules = []
+    if alert.get("issue_id"):
+        rules.append(lambda text: f"issues/{alert['issue_id']}" in text)
+    rules.append(lambda text: any(n in text for n in specific) and names_variant(text))
+    if fallback:
+        rules.append(lambda text: fallback in text and names_variant(text))
     try:
         response = requests.get(
             f"{SLACK_API}/conversations.history",
@@ -89,13 +106,10 @@ def lookup_alert_message(token, channel, alert):
         return None, False
     # Newest first; the whole message (text, blocks, attachments) is searched, since Sentry
     # puts the alert name and link in blocks and attachments
-    sentry_messages = [(m, json.dumps(m).lower()) for m in body.get("messages", []) if is_from_sentry(m)]
-    for message, text in sentry_messages:
-        if any(n in text for n in specific):
-            return message["ts"], False
-    if fallback:
-        for message, text in sentry_messages:
-            if fallback in text:
+    messages = [(m, json.dumps(m).lower()) for m in body.get("messages", []) if is_from_sentry(m)]
+    for rule in rules:
+        for message, text in messages:
+            if rule(text):
                 return message["ts"], False
     return None, True
 
