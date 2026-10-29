@@ -1,31 +1,39 @@
 #!/bin/bash
 # Start a self-heal run by hand, the same way the receiver does on a Sentry alert:
-# push a selfheal/run/<id> branch that adds .selfheal/alert.json on top of selfheal/base.
-# The push starts selfheal-runner from that branch; the runner deletes the branch when done.
+# push a selfheal/run/<id> branch that adds .selfheal/alert.json on top of the target's base
+# branch. The push starts selfheal-runner from that branch; the runner deletes it when done.
 #
 #   selfheal/scripts/trigger.sh ["Alert title"] [sentry-issue-id]
+#   SELFHEAL_TARGET=agent-context selfheal/scripts/trigger.sh "Kunal LLM Context Snowball" 7813412119
 #
+# SELFHEAL_TARGET picks a target from selfheal/targets.json (default: checkout, the demo org).
 # Needs push access to the remote (SELFHEAL_REMOTE, default origin = sentry-demos/empower).
 set -euo pipefail
 
+TARGET=${SELFHEAL_TARGET:-checkout}
 TITLE=${1:-"Critical: Checkout revenue dropped"}
 ISSUE_ID=${2:-}
 REMOTE=${SELFHEAL_REMOTE:-origin}
-BASE=selfheal/base
 branch="selfheal/run/$(date -u +%Y%m%d-%H%M%S)"
 
 cd "$(git rev-parse --show-toplevel)"
+read -r BASE ORG < <(python3 -c "
+import json, sys
+t = json.load(open('selfheal/targets.json')).get(sys.argv[1])
+if not t:
+    sys.exit(f'Unknown target {sys.argv[1]!r}; see selfheal/targets.json')
+print(t['base'], t['org'])" "$TARGET")
 git fetch -q "$REMOTE" "$BASE"
 
 tmp=$(mktemp -d)
 trap 'git worktree remove --force "$tmp" 2>/dev/null || true' EXIT
 git worktree add -q --detach "$tmp" "$REMOTE/$BASE"
 mkdir -p "$tmp/.selfheal"
-python3 - "$TITLE" "$ISSUE_ID" > "$tmp/.selfheal/alert.json" <<'EOF'
+python3 - "$TITLE" "$ISSUE_ID" "$ORG" "$TARGET" > "$tmp/.selfheal/alert.json" <<'EOF'
 import json, sys
-title, issue_id = sys.argv[1], sys.argv[2]
+title, issue_id, org, target = sys.argv[1:5]
 print(json.dumps({"kind": "manual", "title": title, "description": "Triggered with selfheal/scripts/trigger.sh",
-                  "url": "", "issue_id": issue_id}, indent=2))
+                  "url": "", "issue_id": issue_id, "org": org, "target": target}, indent=2))
 EOF
 git -C "$tmp" add .selfheal/alert.json
 git -C "$tmp" commit -q -m "Self-heal run: $TITLE"

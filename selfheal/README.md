@@ -160,6 +160,39 @@ GITHUB_SHA=$(git rev-parse HEAD) SENTRY_AUTH_TOKEN=... ./deploy flask --env=self
 `SELFHEAL_FLASK_URL` for the scripts is the service URL, for example
 `https://selfheal-flask-dot-sales-engineering-sf.uc.r.appspot.com`.
 
+## More orgs and targets
+
+`selfheal/targets.json` lists where each alert's fix happens. One receiver serves every org: it
+checks which org's client secret signed the webhook, picks that org's target (by project when an
+org has several), and builds the run on the target's base branch. demo's checkout flow is the
+`checkout` target and the default.
+
+| Target | Org / project | Base branch | Code | Proof the fix works |
+|---|---|---|---|---|
+| `checkout` | `demo` / `backend-flask` | `selfheal/base` | `flask/` | Flask tests; replay of the failing cart from Sentry Logs |
+| `agent-context` | `team-se` / `kunal-manager-agent` | `selfheal/agent-base` | `agent/` | Agent tests; `harness/checks/policy_tokens.py` (policy answer under 4,000 tokens, still answering) |
+
+**`agent-context`** is the "context snowball" in Kunal's shopping-agent scenarios
+(sentry-demos/empower#1692, from his fork). The alert is a metric issue: one `gen_ai.chat` span
+with ~48k input tokens, caused by the `search_policies` tool returning the whole help-centre
+export. `selfheal/agent-base` is his PR branch plus this harness, built by
+`scripts/refresh-agent-base.sh`; agent PRs target it, so his PR and fork are never touched. Re-run
+the script (then `git push --force origin selfheal/agent-base`) when his PR or the harness
+changes. His tests pin the bug on purpose; the agent is told to update them to the correct
+behaviour.
+
+**Adding an org:**
+1. In that org: a `selfheal` internal integration (Alert Rule Action on, webhook URL = the same
+   receiver `…/sentry`; Organization, Project and Team Read; Issue & Event Read & Write), and the
+   `selfheal` action on the alert.
+2. Its client secret in GCP as `SELFHEAL_SENTRY_CLIENT_SECRET_<ORG>` (e.g. `_TEAM_SE`). Add the org
+   to `EXTRA_ORGS` when running `receiver/deploy.sh` (default `team-se`) and redeploy.
+3. Its token as the GitHub secret `SELFHEAL_SENTRY_MCP_TOKEN_<ORG>`, passed in the runner's
+   "Prepare prompt and Sentry MCP" and "Verify" steps.
+4. A target for it in `targets.json`.
+
+Manual runs: `SELFHEAL_TARGET=agent-context selfheal/scripts/trigger.sh "Kunal LLM Context Snowball" 7813412119`.
+
 ## Running the demo
 
 ```bash
