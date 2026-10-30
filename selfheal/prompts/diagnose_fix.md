@@ -76,5 +76,11 @@ couldn't get.
 
 Write `{{OUT}}/pr_body.md` by filling in `selfheal/prompts/pr_template.md`.
 
+Refer to the issue by its short ID or link, never after "fix", "fixes", "fixed", "close(s/d)" or
+"resolve(s/d)", anywhere in `result.json` or `pr_body.md` ("Fixes BACKEND-FLASK-1A2", "this
+resolves <issue link>", "fix the bug in BACKEND-FLASK-1A2"). Sentry's GitHub integration reads those
+words as this change fixing the issue, and then the issue's alert can't fire again. Write
+"Sentry issue: BACKEND-FLASK-1A2" or "addresses BACKEND-FLASK-1A2" instead.
+
 Don't run git and don't open a PR. The harness re-runs the tests and the checks itself, then
 opens a draft PR from your working tree.

@@ -6,7 +6,7 @@
 
 <What is wrong, the file and line, and why it produced this error.>
 
-## Fix
+## Change
 
 <What changed and why it addresses the root cause rather than the symptom.>
 
@@ -15,5 +15,3 @@
 - Regression test: `<test name>` fails before the fix, passes after.
 - `pytest src/test`: <result>
 - Replay of the failing production cart from Sentry Logs: <HTTP status>
-
-Fixes <SHORT-ID>

@@ -28,6 +28,9 @@ jobs:
       - name: Flask tests
         run: python -m pytest flask/src/test -v
 
+      - name: Harness tests (agent PRs never say "Fixes <issue>")
+        run: python -m pytest selfheal/harness -v
+
       - name: Receiver tests
         run: |
           pip install -r selfheal/receiver/requirements.txt

@@ -17,7 +17,8 @@ import shlex
 import subprocess
 import sys
 
-import work  # same directory: python puts the script's folder on sys.path
+import issue_refs  # same directory: python puts the script's folder on sys.path
+import work
 
 BASE = os.environ.get("BASE_BRANCH", "selfheal/base")  # the target's base, set by target.py
 HARNESS = os.path.dirname(os.path.abspath(__file__))
@@ -101,12 +102,15 @@ def leaked_secrets(files):
     return sorted(set(found))
 
 
-def open_pr(variant, out, check):
+def pr_text(variant, out, check):
+    """(title, commit message, body) for the PR, none of which Sentry reads as fixing the issue."""
     with open(os.path.join(out, "result.json")) as f:
         agent = json.load(f)
     run_id = os.environ.get("GITHUB_RUN_ID", "local")
-    branch = f"selfheal/fix-{variant}-{run_id}"
-    title = f"[{variant}] Fix {agent.get('issue_short_id', 'the alerted issue')}: {agent.get('fix_summary', '')}".strip()
+    short_id, issue_url = agent.get("issue_short_id", ""), agent.get("issue_url", "")
+    # Name the issue, never "Fix <ID>": Sentry would read that as this commit fixing it (issue_refs.py)
+    title = f"[{variant}] {short_id or 'Alerted issue'}: {agent.get('fix_summary', '')}".strip()
+    message = f"Sentry issue: {short_id} {issue_url}".strip()
 
     body_path = os.path.join(out, "pr_body.md")
     body = open(body_path).read() if os.path.exists(body_path) else agent.get("root_cause", "")
@@ -130,12 +134,23 @@ def open_pr(variant, out, check):
         label = check.get("check_label") or "Target check"
         body += f"- {label[:1].upper() + label[1:]}: {'passed' if check['check_passed'] else 'FAILED'}\n"
         body += f"  ```\n  {work.scrub(check.get('check_summary', ''))}\n  ```\n"
+    # The agent writes prose too ("This fixes KUNAL-..."): reword it, then make sure nothing is left
+    title, body = (issue_refs.neutralize(text, short_id, issue_url) for text in (title, body))
+    issue_refs.check({"title": title, "commit": message, "body": body}, short_id, issue_url)
+    return title, message, body
+
+
+def open_pr(variant, out, check):
+    title, message, body = pr_text(variant, out, check)
+    body_path = os.path.join(out, "pr_body.md")
     with open(body_path, "w") as f:
         f.write(body)
 
+    run_id = os.environ.get("GITHUB_RUN_ID", "local")
+    branch = f"selfheal/fix-{variant}-{run_id}"
     sh("git", "checkout", "-b", branch)
     sh("git", "add", "--", *target_paths())
-    sh("git", "commit", "-m", title, "-m", f"Fixes {agent.get('issue_short_id', '')}".strip())
+    sh("git", "commit", "-m", title, "-m", message)
     sh("git", "push", "origin", branch)
     for label in ("selfheal-agent", f"selfheal:{variant}"):
         sh("gh", "label", "create", label, "--force", "--color", "6C5FC7")
@@ -172,12 +187,15 @@ def main():
     if not os.path.exists(os.path.join(args.out, "result.json")):
         blockers.append("the agent wrote no result.json")
 
+    check["pr_url"] = None
     if blockers:
-        check["pr_url"] = None
         print(f"Not opening a PR: {'; '.join(blockers)}", flush=True)
     else:
-        check["pr_url"] = open_pr(args.variant, args.out, check)
-        print(f"Draft PR: {check['pr_url']}", flush=True)
+        try:
+            check["pr_url"] = open_pr(args.variant, args.out, check)
+            print(f"Draft PR: {check['pr_url']}", flush=True)
+        except issue_refs.ClosingReference as e:  # the PR would silence the issue's alert
+            print(f"Not opening a PR: {e}", flush=True)
 
     with open(os.path.join(args.out, "verify.json"), "w") as f:
         json.dump(check, f, indent=2)

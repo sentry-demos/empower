@@ -35,4 +35,6 @@ Every fix needs a regression test that fails before the fix and passes after it.
 
 ## Conventions
 
-- Reference the Sentry issue short ID as `Fixes <SHORT-ID>` in the PR body.
+- Reference the Sentry issue by short ID or link, never after a fix keyword (fix, fixes, fixed,
+  close(s/d), resolve(s/d)). Sentry's GitHub integration reads "Fixes <SHORT-ID>" as this change
+  fixing the issue, and the issue then stops reopening, so its alert can't fire again.

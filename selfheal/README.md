@@ -42,7 +42,7 @@ drive.py live ──► selfheal-flask /checkout ──► 500, checkout.capture
           Presenter approves and merges one PR (branch protection requires a human)
                                                         │
           selfheal-deploy.yml: deploy selfheal-flask, release selfheal-flask@<sha> with commits,
-          "Fixes SELFHEAL-FLASK-N" resolves the issue, sibling agent PR is closed
+          sibling agent PR is closed
           → live traffic succeeds → revenue recovers → alert resolves
 ```
 
@@ -145,8 +145,10 @@ optional `cleanup_projects` keep-list change in point 4. Step-by-step test instr
    Action: the internal integration.
 7. **Issue alert (backup)**: new issue in `selfheal-flask`, `environment:selfheal`, action:
    the internal integration.
-8. Resolve through commits works because the deploy sets commits on the release and the PR body
-   says `Fixes SELFHEAL-FLASK-N`.
+8. Agent commits and PRs name the issue (`Sentry issue: SELFHEAL-FLASK-N`) but never say
+   `Fixes SELFHEAL-FLASK-N`: Sentry would link the unmerged commit as the issue's fix and stop
+   reopening the issue, so its alert couldn't fire again. `harness/issue_refs.py` rewords any
+   such phrase and blocks the PR if one is left. Resolve the issue in Sentry after merging.
 
 ### GCP (`sales-engineering-sf`)
 

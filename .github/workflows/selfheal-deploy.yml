@@ -1,7 +1,7 @@
 name: selfheal-deploy
 # Deploys flask to the selfheal-flask App Engine service on every merge to selfheal/base,
-# creating a Sentry release named after the commit SHA with commits attached, so
-# "Fixes SELFHEAL-FLASK-N" resolves the issue when the fix ships.
+# creating a Sentry release named after the commit SHA with commits attached. Agent PRs don't
+# say "Fixes <SHORT-ID>" (see selfheal/harness/issue_refs.py), so the release doesn't resolve the issue.
 
 on:
   push:
