@@ -1,6 +1,7 @@
 """Checkout Agent — the cart and order specialist.
 
-Owns the cart, the checkout form, coupons and placing the order. Invoked by
+Owns the cart, the checkout form, coupons and placing the order, looking up
+or cancelling orders already placed, and the store's policies. Invoked by
 shopping_agent as a delegated sub-run, which is also what puts its spans in
 their own Sentry project (see app/telemetry.py).
 """
@@ -15,7 +16,11 @@ from config import settings
 from ..tools.shop import (
     add_to_cart,
     apply_coupon,
+    cancel_order,
+    get_order_status,
+    list_orders,
     purchase,
+    search_policies,
     start_checkout,
     view_cart,
 )
@@ -34,10 +39,16 @@ does what you were asked, and nothing more:
 the customer was just shown.
 - view_cart shows the cart, start_checkout returns the prefilled form.
 - apply_coupon applies a promo code. purchase places the order.
+- list_orders shows the customer's past orders. get_order_status looks up one
+order already placed, by its number. cancel_order cancels one. "Order #445" is
+order_id=445.
+- search_policies answers questions about store policies: returns, shipping,
+refunds.
 
 Starting checkout is not applying a coupon, and neither one is buying. A promo
 code appearing on the checkout form is not a request to apply it. Only apply a
-coupon when asked for a coupon, and only place the order when asked to buy.
+coupon when asked for a coupon, only place the order when asked to buy, and
+only cancel an order when asked to cancel it.
 """
 
 # Same constraint as the other agents: store=true is rejected here. See
@@ -58,10 +69,20 @@ checkout_agent = Agent(
     instructions=CHECKOUT_AGENT_INSTRUCTIONS,
     model=settings.agent_model,
     model_settings=_model_settings,
-    tools=[add_to_cart, view_cart, start_checkout, apply_coupon, purchase],
+    tools=[
+        add_to_cart,
+        view_cart,
+        start_checkout,
+        apply_coupon,
+        purchase,
+        list_orders,
+        get_order_status,
+        cancel_order,
+        search_policies,
+    ],
     # Exactly one tool call per delegation, enforced rather than asked for.
     #
-    # This agent holds all five shopping tools, and by default the SDK loops
+    # This agent holds all of the shopping tools, and by default the SDK loops
     # until the model stops calling them — so one "Purchase" message was
     # observed running a cart op, start_checkout, apply_coupon AND purchase in a
     # single delegation, four cards deep. Conversely, at minimal reasoning effort

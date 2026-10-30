@@ -72,6 +72,10 @@ TOOL_AGENTS = {
     "start_checkout": "shopping",
     "apply_coupon": "shopping",
     "purchase": "shopping",
+    "list_orders": "shopping",
+    "get_order_status": "shopping",
+    "cancel_order": "shopping",
+    "search_policies": "shopping",
 }
 
 # SDK agent name -> agent id, for whoever is speaking. Only the orchestrator and
@@ -119,6 +123,10 @@ WIDGET_TYPES = {
     "start_checkout": "checkout",
     "apply_coupon": "promo",
     "purchase": "confirmation",
+    "list_orders": "orders",
+    "get_order_status": "order",
+    "cancel_order": "order",
+    "search_policies": "policy",
 }
 
 # Suggestion pills, keyed by the tool that last ran. Derived here rather than
@@ -132,6 +140,7 @@ _PILLS = {
         "checkout": "chat-pill-checkout",
         "apply_coupon": "chat-pill-apply-coupon",
         "purchase": "chat-pill-purchase",
+        "cancel_order": "chat-pill-cancel-order",
     }
 }
 
@@ -161,6 +170,11 @@ PILLS_BY_LAST_TOOL: dict[str | None, list[dict[str, str]]] = {
     # The order is the last step either way: on success the cart is emptied, on
     # failure the customer has seen the error. Offer a fresh start.
     "purchase": PILLS_INITIAL,
+    # The cancel-order demo is two steps: the customer lists their orders, then
+    # asks to cancel one. Order 445 is the seeded order that is always
+    # cancellable (see _postgres/data/orders.sql), so the pill names it rather
+    # than reading an id out of the list.
+    "list_orders": [{"id": _PILLS["id"]["cancel_order"], "label": "Cancel order #445"}],
 }
 
 

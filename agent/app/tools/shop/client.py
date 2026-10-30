@@ -70,6 +70,28 @@ async def get(path: str, params: dict[str, Any] | None = None) -> Any:
         return response.json()
 
 
+async def fetch(path: str, params: dict[str, Any] | None = None) -> tuple[int, Any]:
+    """GET a Flask endpoint, returning (status_code, decoded body).
+
+    The non-raising counterpart of get(), for endpoints where a 404 is an
+    answer — an order number that doesn't exist — rather than a fault.
+    """
+    async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT_SECONDS) as client:
+        response = await client.get(
+            f"{flask_url()}{path}", params=params, headers=outbound_headers()
+        )
+
+    return _decoded(response)
+
+
+def _decoded(response: httpx.Response) -> tuple[int, Any]:
+    try:
+        return response.status_code, response.json()
+    except ValueError:
+        # Some failure paths return an empty body with just a status code.
+        return response.status_code, {"text": response.text}
+
+
 async def post(
     path: str, json_body: Any, params: dict[str, Any] | None = None
 ) -> tuple[int, Any]:
@@ -88,8 +110,4 @@ async def post(
             headers=outbound_headers(),
         )
 
-    try:
-        return response.status_code, response.json()
-    except ValueError:
-        # Some failure paths return an empty body with just a status code.
-        return response.status_code, {"text": response.text}
+    return _decoded(response)
