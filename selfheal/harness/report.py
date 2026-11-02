@@ -21,9 +21,10 @@ SELFHEAL_SLACK_CHANNEL (channel ID), or SELFHEAL_SLACK_WEBHOOK_URL (an incoming 
 With neither, prints the message.
 
 Threading: with the bot token, messages are posted as replies to Sentry's own alert message in
-the channel, when one is found: the most recent message from the Sentry app within
-SELFHEAL_SLACK_THREAD_HOURS (default 6) that matches, most specific first: the issue's link
-(issue alerts), the alert's title or link, then the target's match text
+the channel, when one is found: the most recent message from the Sentry app that matches, most
+specific first: the issue's link (issue alerts; within SELFHEAL_SLACK_ISSUE_THREAD_DAYS, default
+30, since Sentry threads a repeat issue alert under the issue's first alert message), then
+within SELFHEAL_SLACK_THREAD_HOURS (default 6) the alert's title or link, then the target's match text
 (SELFHEAL_SLACK_ALERT_MATCH, set per target in targets.json). When the alert names a version
 (with-seer / without-seer), the title/link and match-text rules also need the message to name
 it, so two alerts on the same metric each get their own thread. Needs channels:history
@@ -81,41 +82,63 @@ def lookup_alert_message(token, channel, alert):
     specific = [n.lower() for n in (alert.get("title"), alert.get("url")) if n]
     fallback = (os.environ.get("SELFHEAL_SLACK_ALERT_MATCH") or "").lower()
 
+    recent = time.time() - hours * 3600
+
     def names_variant(text):
         return not variant or variant in text
 
     # Most specific first: the issue's own link (issue alerts), then this alert's title or link,
     # then the target's match text, so a reply can't land under another org's or target's alert.
-    # The last two must come with the version's name when the alert has one.
+    # The last two must come with the version's name when the alert has one, and look only at
+    # recent messages. The issue's link is specific enough to look further back: with Slack
+    # threads on for issue alerts, Sentry posts a repeat alert as a reply under the issue's
+    # first alert message, which can be days old, and conversations.history only lists that one.
     rules = []
+    oldest = recent
     if alert.get("issue_id"):
-        rules.append(lambda text: f"issues/{alert['issue_id']}" in text)
-    rules.append(lambda text: any(n in text for n in specific) and names_variant(text))
+        rules.append(lambda message, text: f"issues/{alert['issue_id']}" in text)
+        oldest = time.time() - float(os.environ.get("SELFHEAL_SLACK_ISSUE_THREAD_DAYS") or 30) * 86400
+    rules.append(lambda message, text: float(message["ts"]) >= recent
+                 and any(n in text for n in specific) and names_variant(text))
     if fallback:
-        rules.append(lambda text: fallback in text and names_variant(text))
-    try:
-        response = requests.get(
-            f"{SLACK_API}/conversations.history",
-            headers={"Authorization": f"Bearer {token}"},
-            params={"channel": channel, "oldest": f"{time.time() - hours * 3600:.0f}", "limit": 100},
-            timeout=15,
-        )
-        body = response.json()
-    except (requests.RequestException, ValueError) as err:
-        print(f"Slack thread lookup failed ({err}); posting to the channel")
-        return None, False
-    if not body.get("ok"):
-        print(f"Slack thread lookup failed: {body.get('error')} (needs channels:history, or"
+        rules.append(lambda message, text: float(message["ts"]) >= recent
+                     and fallback in text and names_variant(text))
+    messages, error = channel_history(token, channel, oldest)
+    if error:
+        print(f"Slack thread lookup failed: {error} (needs channels:history, or"
               f" groups:history for a private channel); posting to the channel")
         return None, False
     # Newest first; the whole message (text, blocks, attachments) is searched, since Sentry
     # puts the alert name and link in blocks and attachments
-    messages = [(m, json.dumps(m).lower()) for m in body.get("messages", []) if is_from_sentry(m)]
+    messages = [(m, json.dumps(m).lower()) for m in messages if is_from_sentry(m)]
     for rule in rules:
         for message, text in messages:
-            if rule(text):
-                return message["ts"], False
+            if rule(message, text):
+                # A match that is itself a reply (sent to the channel too) belongs to its thread
+                return message.get("thread_ts") or message["ts"], False
     return None, True
+
+
+def channel_history(token, channel, oldest, max_pages=10):
+    """(messages, error): the channel's top-level messages since `oldest`, newest first."""
+    messages, cursor = [], None
+    for _ in range(max_pages):
+        params = {"channel": channel, "oldest": f"{oldest:.0f}", "limit": 200}
+        if cursor:
+            params["cursor"] = cursor
+        try:
+            body = requests.get(f"{SLACK_API}/conversations.history",
+                                headers={"Authorization": f"Bearer {token}"},
+                                params=params, timeout=15).json()
+        except (requests.RequestException, ValueError) as err:
+            return messages, str(err)
+        if not body.get("ok"):
+            return messages, body.get("error")
+        messages += body.get("messages", [])
+        cursor = (body.get("response_metadata") or {}).get("next_cursor")
+        if not cursor:
+            break
+    return messages, None
 
 
 def post(text, blocks, alert=None, thread_attempts=1):
