@@ -8,6 +8,10 @@
     python selfheal/harness/report.py started --alert alert.json --variants '["without-seer"]'
         Posted when the run starts: the agents are on it, with a link to the run.
 
+    python selfheal/harness/report.py status --kind seer|sentry --variant V --dir DIR
+        Progress while a fix job runs: Seer's root cause was queried (with-seer), or what the
+        agent pulled from Sentry (without-seer). open_pr.py also posts "Opening draft PR".
+
     python selfheal/harness/report.py run --alert alert.json --results DIR
         Posted when the run ends: the side-by-side scorecard. DIR holds one sub-directory
         per variant with the files above.
@@ -188,6 +192,103 @@ def report_started(args):
          thread_attempts=attempts)
 
 
+def post_status(text, alert):
+    """A progress line in the alert's thread. Never fails the step: the run matters more."""
+    try:
+        post(text, [{"type": "section", "text": {"type": "mrkdwn", "text": text}}], alert)
+    except (requests.RequestException, RuntimeError) as err:
+        print(f"Status message not posted ({err}): {text}")
+
+
+# What each Sentry MCP call looked at, as (singular, plural) for a one-line summary.
+# Setup calls (find_organizations, whoami, ...) are left out.
+SENTRY_LOOKUPS = {
+    "get_issue_details": ("the issue", "the issue"),
+    "search_issues": ("issue search", "issue searches"),
+    "get_trace_details": ("trace", "traces"),
+    "search_traces": ("trace search", "trace searches"),
+    "search_issue_events": ("event search", "event searches"),
+    "search_logs": ("log search", "log searches"),
+    "search_errors": ("error search", "error searches"),
+    "search_metrics": ("metrics query", "metrics queries"),
+    "search_replays": ("replay search", "replay searches"),
+    "search_profiles": ("profile search", "profile searches"),
+    "get_issue_activity": ("issue history", "issue history"),
+    "get_issue_breadcrumbs": ("breadcrumb trail", "breadcrumb trails"),
+}
+SEARCH_EVENTS_DATASETS = {"spans": ("span search", "span searches"), "logs": ("log search", "log searches"),
+                          "errors": ("error search", "error searches")}
+RESOURCE_TYPES = {"issue": ("the issue", "the issue"), "trace": ("trace", "traces"),
+                  "event": ("event", "events"), "breadcrumbs": ("breadcrumb trail", "breadcrumb trails")}
+
+
+def sentry_lookup(name, tool_input):
+    """(singular, plural) for one Sentry MCP call, or None for setup calls."""
+    name = name.removeprefix("mcp__sentry__")
+    if name == "execute_sentry_tool":  # the MCP's catch-all: the real tool is in its arguments
+        name, tool_input = tool_input.get("name", ""), tool_input.get("arguments") or {}
+    if name == "get_sentry_resource":
+        kind = tool_input.get("resourceType") or ("issue" if "/issues/" in str(tool_input.get("url", "")) else "")
+        return RESOURCE_TYPES.get(kind, ("Sentry resource", "Sentry resources"))
+    if name == "search_events":
+        return SEARCH_EVENTS_DATASETS.get(tool_input.get("dataset"), ("event search", "event searches"))
+    return SENTRY_LOOKUPS.get(name)
+
+
+def sentry_summary(timeline, short_id):
+    """One sentence on what the agent pulled from Sentry, or "" if it pulled nothing."""
+    calls = [t for t in timeline if t.get("type") == "tool" and t["name"].startswith("mcp__sentry__")
+             and not t.get("error") and not t["name"].endswith("analyze_issue_with_seer")]
+    counts = {}  # insertion order: the order the agent looked at things
+    for call in calls:
+        lookup = sentry_lookup(call["name"], call.get("input") or {})
+        if lookup:
+            counts[lookup] = counts.get(lookup, 0) + 1
+    if not counts:
+        return ""
+    parts = [one if one == many else f"{n} {one if n == 1 else many}" for (one, many), n in counts.items()]
+    listed = parts[0] if len(parts) == 1 else ", ".join(parts[:-1]) + " and " + parts[-1]
+    done_s = max(c.get("at_s", 0) + c.get("seconds", 0) for c in calls)
+    return f"Investigated {short_id or 'the issue'} in Sentry: read {listed} ({len(calls)} calls, {done_s:.0f}s)."
+
+
+def report_status(args):
+    """Progress in the alert's thread while a fix job runs: what Sentry (or Seer) told the agent."""
+    alert = load(os.path.join(args.dir, "alert.json"))
+    label = LABELS.get(args.variant, args.variant)
+    if args.kind == "seer":
+        handoff = load(os.path.join(args.dir, "handoff.json"))
+        seer = handoff.get("seer") or {}
+        if not seer:
+            print("No Seer handoff; nothing to post")
+            return
+        issue = (handoff.get("issue") or {}).get("short_id") or "the issue"
+        source = "its earlier analysis" if seer.get("reused") else "a new analysis"
+        text = (f"🔎 *Seer root cause* ({label}) · pulled {issue}, its logs and impact from Sentry,"
+                f" then queried Seer ({source}, {seer.get('seconds', 0):.0f}s): "
+                f"{first_sentence(seer.get('root_cause'), 200)}")
+    else:
+        timeline = load(os.path.join(args.dir, "timeline.json"), default=[])
+        agent = load(os.path.join(args.dir, "result.json"))
+        summary = sentry_summary(timeline, agent.get("issue_short_id"))
+        if not summary:
+            print("The agent made no Sentry calls; nothing to post")
+            return
+        text = f"🔎 *Sentry telemetry* ({label}) · {summary}"
+    post_status(text, alert)
+
+
+def report_opening_pr(variant, out, check):
+    """Called by open_pr.py once the harness has verified the fix, right before it opens the PR."""
+    verified = "tests pass"
+    if check.get("replay_status") == 200:
+        verified += ", failing request now succeeds"
+    if check.get("check_passed"):
+        verified += f", {check.get('check_label') or 'fix check passes'}"
+    post_status(f"*Opening draft PR* ({LABELS.get(variant, variant)}) · fix verified: {verified}",
+                load(os.path.join(out, "alert.json")))
+
+
 def report_run(args):
     """End of run. Each opened PR already got its own "Fix ready for review" message, so this
     posts only for agents that didn't open one; otherwise the thread would just stop."""
@@ -249,5 +350,11 @@ if __name__ == "__main__":
     started.add_argument("--alert", required=True)
     started.add_argument("--variants", default='["without-seer"]', type=json.loads,
                          help='JSON list of the variants this run starts, e.g. ["without-seer"]')
+    status = sub.add_parser("status")
+    status.add_argument("--kind", required=True, choices=["seer", "sentry"],
+                        help="seer: after the with-Seer handoff; sentry: after the agent's Sentry calls")
+    status.add_argument("--variant", required=True)
+    status.add_argument("--dir", required=True, help="The fix job's output dir (alert.json and handoff/timeline)")
     args = parser.parse_args()
-    {"run": report_run, "review": report_review, "started": report_started}[args.mode](args)
+    {"run": report_run, "review": report_review, "started": report_started,
+     "status": report_status}[args.mode](args)

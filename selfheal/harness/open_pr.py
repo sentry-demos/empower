@@ -18,6 +18,7 @@ import subprocess
 import sys
 
 import issue_refs  # same directory: python puts the script's folder on sys.path
+import report
 import work
 
 BASE = os.environ.get("BASE_BRANCH", "selfheal/base")  # the target's base, set by target.py
@@ -142,6 +143,7 @@ def pr_text(variant, out, check):
 
 def open_pr(variant, out, check):
     title, message, body = pr_text(variant, out, check)
+    report.report_opening_pr(variant, out, check)  # progress in the alert's Slack thread
     body_path = os.path.join(out, "pr_body.md")
     with open(body_path, "w") as f:
         f.write(body)

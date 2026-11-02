@@ -141,6 +141,10 @@ commands. Always pass the run ID: plain `gh run list` / `gh run watch` fail in t
 - `announce`: right away, a one-line Slack reply, "Self-heal started … watch the run", linking
   to the run. For alert-driven runs it waits up to about a minute for Sentry's alert message,
   so the reply lands in its thread.
+- `fix (...)` progress lines in the same thread: "🔎 Seer root cause" once the with-Seer handoff
+  has queried Seer (with Seer's first sentence), "🔎 Sentry telemetry" after the without-Seer
+  agent finishes (what it read: the issue, traces, span/log searches), and "Opening draft PR"
+  once the harness has verified the fix. They never fail the job if Slack refuses them.
 - `review (...)`: a MERGE / ADJUST / CLOSE comment on each PR, then a four-line Slack
   notification: "Fix ready for review" with the PR link, business impact, a one-line root cause,
   and verification + verdict.
