@@ -1,10 +1,7 @@
-"""search_policies, the context snowball.
+"""search_policies must return only the pages that answer the query, as text.
 
-The tool ignores the query and returns the whole help-centre export as raw
-HTML. That is the demo — one policy question costing tens of thousands of input
-tokens — so these tests pin the oversized payload down on purpose, along with
-the two things that keep it contained: the chat card stays small, and the next
-turn's history doesn't carry the blob at all.
+Regression tests for the context snowball: the tool used to return the whole
+help-centre export as raw HTML (~47k tokens) for every policy question.
 """
 
 import json
@@ -18,31 +15,42 @@ from app.tools.shop.policy_export import PAGE_COUNT, RETURNS_PAGE_TITLE
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("query", ["return policy", "shipping to Canada", ""])
-async def test_every_page_is_returned_whatever_the_query(query):
+@pytest.mark.parametrize(
+    "query", ["return policy", "What is your return policy?", "shipping to Canada", ""]
+)
+async def test_only_matching_pages_are_returned_as_text(query):
     payload, _ = await _run_in_tool_span(
         search_policies, {"query": query}, ChatSession("p1")
     )
 
     assert PAGE_COUNT == 50
-    assert len(payload["pages"]) == PAGE_COUNT
-    # Raw export HTML, chrome and all — not extracted text.
-    assert all(page["html"].startswith("<!DOCTYPE html>") for page in payload["pages"])
+    assert len(payload["pages"]) <= 3
+    assert all("html" not in page and "<" not in page["text"] for page in payload["pages"])
 
 
 @pytest.mark.asyncio
-async def test_payload_is_big_enough_to_spike_input_tokens():
+async def test_return_question_gets_the_returns_page_and_stays_small():
     payload, span = await _run_in_tool_span(
         search_policies, {"query": "return policy"}, ChatSession("p2")
     )
 
+    assert payload["pages"][0]["title"] == RETURNS_PAGE_TITLE
+    assert "30 days" in payload["pages"][0]["text"]
     size = len(json.dumps(payload))
-    # ~3KB a page. Roughly 40k tokens against a 1-2k baseline turn.
-    assert 120_000 < size < 200_000
-    assert span["data"]["policy.pages"] == PAGE_COUNT
+    assert size < 8_000
+    assert span["data"]["policy.pages"] == len(payload["pages"])
     assert span["data"]["policy.bytes"] == pytest.approx(size, rel=0.01)
-    # Nothing failed; that is the point.
-    assert span.get("status") != "internal_error"
+
+
+@pytest.mark.asyncio
+async def test_shipping_question_gets_shipping_pages():
+    payload, _ = await _run_in_tool_span(
+        search_policies, {"query": "shipping to Canada"}, ChatSession("p6")
+    )
+
+    titles = [page["title"] for page in payload["pages"]]
+    assert "International shipping" in titles
+    assert "shipping" in titles[0].lower()
 
 
 @pytest.mark.asyncio
@@ -60,8 +68,8 @@ async def test_card_carries_the_answer_not_the_export():
 
 
 @pytest.mark.asyncio
-async def test_spike_is_one_turn_wide():
-    """The blob is collapsed before the next turn, though it is the latest."""
+async def test_small_policy_result_is_kept_in_history():
+    """A normal-sized policy result is not collapsed."""
     blob, _ = await _run_in_tool_span(
         search_policies, {"query": "return policy"}, ChatSession("p4")
     )
@@ -79,10 +87,12 @@ async def test_spike_is_one_turn_wide():
         ]
     )
 
-    assert session.history[2]["output"] == OMITTED_TOOL_RESULT.format(
-        tool="ask_checkout_agent"
+    # The result is small now, so it is kept like any ordinary latest result.
+    assert session.history[2]["output"] == json.dumps(blob)
+    assert OMITTED_TOOL_RESULT.format(tool="ask_checkout_agent") not in json.dumps(
+        session.history
     )
-    assert len(json.dumps(session.history)) < 2_000
+    assert len(json.dumps(session.history)) < 4_000
 
 
 def test_ordinary_latest_result_is_still_kept():
