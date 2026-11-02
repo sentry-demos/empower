@@ -62,7 +62,7 @@ def test_without_seer_status(tmp_path, no_slack, capsys):
     out = run_dir(tmp_path, **{"timeline.json": TIMELINE, "result.json": {"issue_short_id": "KUNAL-MANAGER-AGENT-7"}})
     report.report_status(Namespace(kind="sentry", variant="without-seer", dir=out))
     assert capsys.readouterr().out.startswith(
-        "🔎 *Sentry telemetry* (without Seer) · Investigated KUNAL-MANAGER-AGENT-7 in Sentry: read the issue,")
+        "🔎 *Sentry telemetry* · Investigated KUNAL-MANAGER-AGENT-7 in Sentry: read the issue,")
 
 
 def test_seer_status(tmp_path, no_slack, capsys):
@@ -71,7 +71,7 @@ def test_seer_status(tmp_path, no_slack, capsys):
                         "root_cause": "In checkout(), `quantities` is read before it is assigned. The guard..."}}
     report.report_status(Namespace(kind="seer", variant="with-seer", dir=run_dir(tmp_path, **{"handoff.json": handoff})))
     assert capsys.readouterr().out.splitlines()[0] == (
-        "🔎 *Seer root cause* (with Seer) · pulled BACKEND-FLASK-JJ, its logs and impact from Sentry, then queried"
+        "🔎 *Seer root cause* · pulled BACKEND-FLASK-JJ, its logs and impact from Sentry, then queried"
         " Seer (its earlier analysis, 2s): In checkout(), `quantities` is read before it is assigned.")
 
 
@@ -80,7 +80,7 @@ def test_opening_pr_status(tmp_path, no_slack, capsys):
              "check_label": "policy answer under the token budget"}
     report.report_opening_pr("without-seer", run_dir(tmp_path), check)
     assert capsys.readouterr().out.splitlines()[0] == (
-        "*Opening draft PR* (without Seer) · fix verified: tests pass, policy answer under the token budget")
+        "*Opening draft PR* · fix verified: tests pass, policy answer under the token budget")
 
 
 def test_slack_failure_never_fails_the_step(tmp_path, monkeypatch, capsys):
@@ -89,3 +89,17 @@ def test_slack_failure_never_fails_the_step(tmp_path, monkeypatch, capsys):
     monkeypatch.setattr(report, "post", refuse)
     report.post_status("hello", {})
     assert "Status message not posted" in capsys.readouterr().out
+
+
+def test_fix_ready_footer_has_no_version(tmp_path, no_slack, capsys):
+    out = run_dir(tmp_path, **{"stats.json": {"duration_s": 132.0, "cost_usd": 0.46},
+                               "verify.json": {"tests_passed": True, "check_passed": True,
+                                               "check_label": "policy answer under the token budget"},
+                               "result.json": {"impact_short": "~47.8k input tokens per policy question",
+                                               "root_cause_short": "search_policies returns every page"}})
+    review = tmp_path / "review.md"
+    review.write_text("**Verdict: MERGE**\n")
+    report.report_review(Namespace(pr_url="https://github.com/o/r/pull/1725", review=str(review),
+                                   variant="without-seer", results=out))
+    assert capsys.readouterr().out.splitlines()[3] == (
+        "tests pass, policy answer under the token budget · reviewer: MERGE · 132s, $0.46")

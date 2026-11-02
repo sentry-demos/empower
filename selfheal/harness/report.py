@@ -255,7 +255,6 @@ def sentry_summary(timeline, short_id):
 def report_status(args):
     """Progress in the alert's thread while a fix job runs: what Sentry (or Seer) told the agent."""
     alert = load(os.path.join(args.dir, "alert.json"))
-    label = LABELS.get(args.variant, args.variant)
     if args.kind == "seer":
         handoff = load(os.path.join(args.dir, "handoff.json"))
         seer = handoff.get("seer") or {}
@@ -264,7 +263,7 @@ def report_status(args):
             return
         issue = (handoff.get("issue") or {}).get("short_id") or "the issue"
         source = "its earlier analysis" if seer.get("reused") else "a new analysis"
-        text = (f"🔎 *Seer root cause* ({label}) · pulled {issue}, its logs and impact from Sentry,"
+        text = (f"🔎 *Seer root cause* · pulled {issue}, its logs and impact from Sentry,"
                 f" then queried Seer ({source}, {seer.get('seconds', 0):.0f}s): "
                 f"{first_sentence(seer.get('root_cause'), 200)}")
     else:
@@ -274,7 +273,7 @@ def report_status(args):
         if not summary:
             print("The agent made no Sentry calls; nothing to post")
             return
-        text = f"🔎 *Sentry telemetry* ({label}) · {summary}"
+        text = f"🔎 *Sentry telemetry* · {summary}"
     post_status(text, alert)
 
 
@@ -285,7 +284,7 @@ def report_opening_pr(variant, out, check):
         verified += ", failing request now succeeds"
     if check.get("check_passed"):
         verified += f", {check.get('check_label') or 'fix check passes'}"
-    post_status(f"*Opening draft PR* ({LABELS.get(variant, variant)}) · fix verified: {verified}",
+    post_status(f"*Opening draft PR* · fix verified: {verified}",
                 load(os.path.join(out, "alert.json")))
 
 
@@ -322,9 +321,9 @@ def report_review(args):
         verified += ", failing order now succeeds"
     if check.get("check_passed"):
         verified += f", {check.get('check_label') or 'fix check passes'}"
-    footer = f"{verified} · reviewer: {verdict} · {LABELS.get(args.variant, args.variant)}"
+    footer = f"{verified} · reviewer: {verdict}"
     if stats:
-        footer += f", {stats['duration_s']:.0f}s, ${stats['cost_usd']:.2f}"
+        footer += f" · {stats['duration_s']:.0f}s, ${stats['cost_usd']:.2f}"
 
     text = "\n".join([
         f"*Fix ready for review* · 🔧 <{args.pr_url}|PR #{pr_number}>",
