@@ -708,7 +708,7 @@ def ios_react_native_sim_driver(request, se_prefix):
         options = XCUITestOptions().load_capabilities({
             'appium:deviceName': 'iPhone 13 Simulator',
             'platformName': 'iOS',
-            'appium:platformVersion': '15.5',
+            'appium:platformVersion': '16.4',
 
             'sauce:options': {
                 'appiumVersion': '2.0.0',
