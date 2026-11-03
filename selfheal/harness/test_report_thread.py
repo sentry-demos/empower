@@ -86,6 +86,20 @@ def test_title_match_only_looks_at_recent_messages(slack):
     assert float(history.calls[0]["oldest"]) >= NOW - 6 * 3600 - 5  # no 30-day scan without an issue
 
 
+def test_metric_monitor_alert_matches_by_its_title(slack, monkeypatch):
+    # A metric monitor's alert arrives as an issue alert on its metric issue, but Sentry's Slack
+    # message links the alert rule, not the issue, so it's found by title. No target match text
+    # here: the title alone (with its em dash) has to match.
+    monkeypatch.delenv("SELFHEAL_SLACK_ALERT_MATCH", raising=False)
+    alert = {"kind": "event_alert", "issue_id": "7825689300",
+             "title": "Chris LLM Context Snowball — max input tokens spike (Copy 11/2/26)"}
+    critical = sentry_message(NOW - 120, "", attachments=[{"title": "Critical: Chris LLM Context Snowball"
+                                                          " — max input tokens spike (Copy 11/2/26)",
+                                                          "title_link": "https://team-se.sentry.io/alerts/rules/details/1/"}])
+    slack([critical])
+    assert report.lookup_alert_message("xoxb-test", "C1", alert) == (critical["ts"], False)
+
+
 def test_slack_refusal_posts_to_the_channel(monkeypatch):
     body = {"ok": False, "error": "missing_scope"}
     monkeypatch.setattr(report.requests, "get",

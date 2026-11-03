@@ -116,8 +116,9 @@ def lookup_alert_message(token, channel, alert):
               f" groups:history for a private channel); posting to the channel")
         return None, False
     # Newest first; the whole message (text, blocks, attachments) is searched, since Sentry
-    # puts the alert name and link in blocks and attachments
-    messages = [(m, json.dumps(m).lower()) for m in messages if is_from_sentry(m)]
+    # puts the alert name and link in blocks and attachments. ensure_ascii=False keeps titles
+    # like "Context Snowball — max input tokens" matchable (the em dash isn't escaped)
+    messages = [(m, json.dumps(m, ensure_ascii=False).lower()) for m in messages if is_from_sentry(m)]
     for rule in rules:
         for message, text in messages:
             if rule(message, text):
