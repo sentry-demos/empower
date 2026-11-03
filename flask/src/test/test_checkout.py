@@ -18,3 +18,25 @@ def test_checkout_without_inventory_validation_succeeds(client, inventory):
     assert response.status_code == 200
     assert json.loads(response.data) == {"status": "success"}
     assert inventory.decrements == []
+
+
+def test_checkout_with_inventory_validation_succeeds(client, inventory):
+    # Regression test: `quantities` was read before it was assigned, so every
+    # validated checkout raised UnboundLocalError.
+    inventory.stock.update({3: 10, 4: 5})
+
+    response = post_checkout(client, make_order({3: 2, 4: 1}))
+
+    assert response.status_code == 200
+    assert json.loads(response.data) == {"status": "success"}
+    assert sorted(inventory.decrements) == [(3, 2), (4, 1)]
+
+
+def test_checkout_reports_out_of_stock_item(client, inventory):
+    inventory.stock.update({3: 1})
+
+    response = post_checkout(client, make_order({3: 2}))
+
+    assert response.status_code == 200
+    assert json.loads(response.data) == {"status": "failed"}
+    assert inventory.decrements == []
