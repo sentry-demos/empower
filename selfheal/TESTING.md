@@ -20,7 +20,7 @@ apps other people demo. It does add these:
 | Model spend on the key you point it at | Defaults to `AGENT_OPENROUTER_API_KEY`, the agent demo's key, owned by EPD. Ask EPD first. |
 
 Two things stay off: the App Engine deploy (`SELFHEAL_DEPLOY` unset) and Slack (no
-`SELFHEAL_SLACK_WEBHOOK_URL`, so results print in the job log).
+`SELFHEAL_SLACK_BOT_TOKEN`, so results print in the job log).
 
 ## Cost
 
@@ -166,18 +166,17 @@ log until it's set up:
    gh variable set SELFHEAL_SLACK_CHANNEL --repo sentry-demos/empower --body C0123ABCD
    ```
 
-An incoming webhook (`SELFHEAL_SLACK_WEBHOOK_URL`) also works if you have one; the bot token
-takes priority. If posting fails, the job log shows Slack's error, e.g. `not_in_channel`
-(invite the bot) or `missing_scope` (add `chat:write`). Agent PRs stay open; they don't block
-later runs.
+If posting fails, the job log shows Slack's error, e.g. `not_in_channel` (invite the bot) or
+`missing_scope` (add `chat:write`). Agent PRs stay open; they don't block later runs.
 
-**Replies in the Sentry alert's thread.** If the alert that starts runs also has a Slack action
-posting to the same channel, the bot replies in the thread of Sentry's alert message instead of
-posting to the channel. It finds the message by looking back 6 hours (`SELFHEAL_SLACK_THREAD_HOURS`)
-for the newest message from the Sentry app mentioning "revenue" (`SELFHEAL_SLACK_ALERT_MATCH`), or
-the alert's title or link. This needs the bot scope `channels:history` (`groups:history` for a
-private channel), and Sentry's app invited to the channel. Runs started by `trigger.sh` have no
-alert message, so they post to the channel; the job log says why.
+**Threads only.** The bot only ever replies in the thread of Sentry's own alert message, in the
+channel(s) the alert posts to, so the alert needs a Slack action too. It never posts in a
+channel by itself. It finds the message by the issue's link, or by looking back 6 hours
+(`SELFHEAL_SLACK_THREAD_HOURS`) for the alert's title or the target's match text
+(`SELFHEAL_SLACK_ALERT_MATCH`). This needs the bot scope `channels:history` (`groups:history` for
+a private channel). When there's no thread to reply in (the alert posts to another Slack
+workspace, the bot can't read the channel, or the run came from `trigger.sh`), the message is
+dropped: the run shows a "Slack message not posted" warning with the reason and the text.
 - In `selfheal-harness` → Agents: an `invoke_agent` trace per agent.
 
 **Likely first-run failures:**

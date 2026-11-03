@@ -81,10 +81,9 @@ optional `cleanup_projects` keep-list change in point 4. Step-by-step test instr
 2. **New secret:** only `SELFHEAL_SENTRY_MCP_TOKEN`, the token of a `selfheal` internal
    integration (org-owned, no browser sign-in; see TESTING.md step 1). The same integration
    carries the alert webhook. For Slack: `SELFHEAL_SLACK_BOT_TOKEN` (an existing approved bot's
-   `xoxb-` token with `chat:write`, `channels:history`, and ideally `channels:join`) plus the
-   `SELFHEAL_SLACK_CHANNEL` variable (the fallback channel's ID; the bot otherwise replies in the
-   alert's own channels, see "Slack: where the bot posts"), or an incoming webhook in
-   `SELFHEAL_SLACK_WEBHOOK_URL`.
+   `xoxb-` token with `chat:write`, `channels:history`, and ideally `channels:join`), and
+   optionally the `SELFHEAL_SLACK_CHANNEL` variable (a channel ID to look in when an alert's own
+   channels can't be looked up; see "Slack: where the bot posts").
 3. **Repository variables:**
    - `SELFHEAL_ENABLED=true` turns the selfheal workflows on. They do nothing without it.
    - `SELFHEAL_MODEL` is the model id (an OpenRouter `provider/model` id when using OpenRouter).
@@ -268,8 +267,11 @@ SENTRY_AUTH_TOKEN=... selfheal/scripts/reset.sh
 
 The bot replies where the alert posts. The plan job looks the alert up in Sentry by name
 (`harness/slack_channels.py`), reads its Slack actions' channels, and the bot replies in each,
-in the thread of Sentry's alert message there. If the alert has no Slack action, or the bot
-can't use the channel, it posts to `SELFHEAL_SLACK_CHANNEL` (#demo-selfhealing) instead.
+in the thread of Sentry's alert message there. It only ever replies in that thread: if it can't
+find one (the alert posts to another Slack workspace, the bot can't read the channel, the run
+came from `trigger.sh`), the message is dropped and the GitHub run shows a "Slack message not
+posted" warning. `SELFHEAL_SLACK_CHANNEL` (#demo-selfhealing) is only where it looks for the
+thread when Sentry can't tell it the alert's channels; it never posts there otherwise.
 
 For an SE's alert to work end to end:
 - The alert has a Slack action and the selfheal webhook action, in the demo or team-se org, on a

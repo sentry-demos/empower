@@ -37,8 +37,15 @@ TIMELINE = [
 
 @pytest.fixture
 def no_slack(monkeypatch):
-    for name in ("SELFHEAL_SLACK_BOT_TOKEN", "SELFHEAL_SLACK_CHANNEL", "SELFHEAL_SLACK_WEBHOOK_URL"):
+    for name in ("SELFHEAL_SLACK_BOT_TOKEN", "SELFHEAL_SLACK_CHANNEL", "SELFHEAL_SLACK_CHANNELS"):
         monkeypatch.delenv(name, raising=False)
+
+
+def message(capsys):
+    """What would have been posted: the job log without its "not posted" warning line."""
+    out = capsys.readouterr().out
+    assert "::warning title=Slack message not posted::SELFHEAL_SLACK_BOT_TOKEN isn't set" in out
+    return "\n".join(line for line in out.splitlines() if not line.startswith("::warning"))
 
 
 def run_dir(tmp_path, **files):
@@ -61,7 +68,7 @@ def test_sentry_summary_is_empty_without_sentry_calls():
 def test_without_seer_status(tmp_path, no_slack, capsys):
     out = run_dir(tmp_path, **{"timeline.json": TIMELINE, "result.json": {"issue_short_id": "KUNAL-MANAGER-AGENT-7"}})
     report.report_status(Namespace(kind="sentry", variant="without-seer", dir=out))
-    assert capsys.readouterr().out.startswith(
+    assert message(capsys).startswith(
         "🔎 *Sentry telemetry* · Investigated KUNAL-MANAGER-AGENT-7 with 5 Sentry MCP calls")
 
 
@@ -70,7 +77,7 @@ def test_seer_status(tmp_path, no_slack, capsys):
                "seer": {"run_id": 42, "reused": True, "seconds": 2.4,
                         "root_cause": "In checkout(), `quantities` is read before it is assigned. The guard..."}}
     report.report_status(Namespace(kind="seer", variant="with-seer", dir=run_dir(tmp_path, **{"handoff.json": handoff})))
-    assert capsys.readouterr().out.splitlines()[0] == (
+    assert message(capsys).splitlines()[0] == (
         "🔎 *Seer root cause* · pulled BACKEND-FLASK-JJ, its logs and impact from Sentry, then queried"
         " Seer (its earlier analysis, 2s): In checkout(), `quantities` is read before it is assigned.")
 
@@ -79,7 +86,7 @@ def test_opening_pr_status(tmp_path, no_slack, capsys):
     check = {"tests_passed": True, "replay_status": None, "check_passed": True,
              "check_label": "policy answer under the token budget"}
     report.report_opening_pr("without-seer", run_dir(tmp_path), check)
-    assert capsys.readouterr().out.splitlines()[0] == (
+    assert message(capsys).splitlines()[0] == (
         "*Opening draft PR* · fix verified: tests pass, policy answer under the token budget")
 
 
@@ -101,7 +108,7 @@ def test_fix_ready_footer_has_no_version(tmp_path, no_slack, capsys):
     review.write_text("**Verdict: MERGE**\n")
     report.report_review(Namespace(pr_url="https://github.com/o/r/pull/1725", review=str(review),
                                    variant="without-seer", results=out))
-    assert capsys.readouterr().out.splitlines()[3] == (
+    assert message(capsys).splitlines()[3] == (
         "tests pass, policy answer under the token budget · reviewer: MERGE · 132s, $0.46")
 
 
@@ -121,7 +128,7 @@ def test_metric_alert_gets_the_dashboard_link(tmp_path, no_slack, dashboard, cap
     seen = []
     report.report_dashboard(out, lookup=lambda issue_id, org: seen.append((issue_id, org)) or "metric")
     assert seen == [("7825689300", "team-se")]
-    assert capsys.readouterr().out.splitlines()[0] == (
+    assert message(capsys).splitlines()[0] == (
         "📊 See the impact on the <https://demo.sentry.io/dashboard/510044/?project=5808623"
         "&amp;project=4508968134377472&amp;statsPeriod=7d|Critical Experience dashboard>")
 

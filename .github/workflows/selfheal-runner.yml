@@ -94,7 +94,6 @@ jobs:
           SELFHEAL_SLACK_BOT_TOKEN: ${{ secrets.SELFHEAL_SLACK_BOT_TOKEN }}
           SELFHEAL_SLACK_CHANNEL: ${{ vars.SELFHEAL_SLACK_CHANNEL }}
           SELFHEAL_SLACK_CHANNELS: ${{ needs.plan.outputs.slack_channels }}
-          SELFHEAL_SLACK_WEBHOOK_URL: ${{ secrets.SELFHEAL_SLACK_WEBHOOK_URL }}
           VARIANTS: ${{ needs.plan.outputs.variants }}
         run: |
           pip install requests
@@ -162,7 +161,6 @@ jobs:
           SELFHEAL_SLACK_BOT_TOKEN: ${{ secrets.SELFHEAL_SLACK_BOT_TOKEN }}
           SELFHEAL_SLACK_CHANNEL: ${{ vars.SELFHEAL_SLACK_CHANNEL }}
           SELFHEAL_SLACK_CHANNELS: ${{ needs.plan.outputs.slack_channels }}
-          SELFHEAL_SLACK_WEBHOOK_URL: ${{ secrets.SELFHEAL_SLACK_WEBHOOK_URL }}
         run: python selfheal/harness/report.py status --kind seer --variant with-seer --dir "$OUT"
 
       - name: Prepare prompt and Sentry MCP
@@ -204,7 +202,6 @@ jobs:
           SELFHEAL_SLACK_BOT_TOKEN: ${{ secrets.SELFHEAL_SLACK_BOT_TOKEN }}
           SELFHEAL_SLACK_CHANNEL: ${{ vars.SELFHEAL_SLACK_CHANNEL }}
           SELFHEAL_SLACK_CHANNELS: ${{ needs.plan.outputs.slack_channels }}
-          SELFHEAL_SLACK_WEBHOOK_URL: ${{ secrets.SELFHEAL_SLACK_WEBHOOK_URL }}
         run: python selfheal/harness/report.py status --kind sentry --variant without-seer --dir "$OUT"
 
       - name: Verify independently and open draft PR
@@ -214,7 +211,6 @@ jobs:
           SELFHEAL_SLACK_BOT_TOKEN: ${{ secrets.SELFHEAL_SLACK_BOT_TOKEN }}
           SELFHEAL_SLACK_CHANNEL: ${{ vars.SELFHEAL_SLACK_CHANNEL }}
           SELFHEAL_SLACK_CHANNELS: ${{ needs.plan.outputs.slack_channels }}
-          SELFHEAL_SLACK_WEBHOOK_URL: ${{ secrets.SELFHEAL_SLACK_WEBHOOK_URL }}
           # For the leak check only
           SENTRY_MCP_TOKEN: ${{ secrets.SELFHEAL_SENTRY_MCP_TOKEN }}
           SENTRY_MCP_TOKEN_TEAM_SE: ${{ secrets.SELFHEAL_SENTRY_MCP_TOKEN_TEAM_SE }}
@@ -305,7 +301,6 @@ jobs:
           SELFHEAL_SLACK_BOT_TOKEN: ${{ secrets.SELFHEAL_SLACK_BOT_TOKEN }}
           SELFHEAL_SLACK_CHANNEL: ${{ vars.SELFHEAL_SLACK_CHANNEL }}
           SELFHEAL_SLACK_CHANNELS: ${{ needs.plan.outputs.slack_channels }}
-          SELFHEAL_SLACK_WEBHOOK_URL: ${{ secrets.SELFHEAL_SLACK_WEBHOOK_URL }}
         run: |
           OUT="$RUNNER_TEMP/review"
           mkdir -p "$OUT"
@@ -373,7 +368,6 @@ jobs:
           SELFHEAL_SLACK_BOT_TOKEN: ${{ secrets.SELFHEAL_SLACK_BOT_TOKEN }}
           SELFHEAL_SLACK_CHANNEL: ${{ vars.SELFHEAL_SLACK_CHANNEL }}
           SELFHEAL_SLACK_CHANNELS: ${{ needs.plan.outputs.slack_channels }}
-          SELFHEAL_SLACK_WEBHOOK_URL: ${{ secrets.SELFHEAL_SLACK_WEBHOOK_URL }}
         run: |
           pip install requests
           python selfheal/harness/report.py run --alert .selfheal/alert.json --results results

@@ -151,20 +151,35 @@ def test_joins_a_public_channel_it_isnt_in(slack):
     assert fake.posted == [("C0587CAE9QD", SENTRY_MESSAGE["ts"])]
 
 
-@pytest.mark.parametrize("fake_kwargs", [
-    {"member": {"C0DEMOSELF1"}},                                  # private channel, bot not invited
-    {"member": {"C0DEMOSELF1"}, "missing": {"C0587CAE9QD"}},      # another workspace
+@pytest.mark.parametrize("fake_kwargs, why", [
+    ({"member": {"C0DEMOSELF1"}}, "not_in_channel"),                              # private, bot not invited
+    ({"member": {"C0DEMOSELF1"}, "missing": {"C0587CAE9QD"}}, "another Slack workspace"),
+    ({"member": {"C0587CAE9QD", "C0DEMOSELF1"}}, "No Sentry alert message"),      # no alert message there
 ])
-def test_falls_back_to_the_default_channel(slack, fake_kwargs):
-    fake = slack(FakeSlack({}, **fake_kwargs), ["C0587CAE9QD"])
-    report.post("Self-heal started", [], ALERT)
-    assert fake.posted == [("C0DEMOSELF1", None)]
+def test_no_thread_means_no_post_anywhere(slack, capsys, fake_kwargs, why):
+    # Nothing goes to #demo-selfhealing (C0DEMOSELF1) or any other channel: the run shows why
+    fake = slack(FakeSlack({"C0DEMOSELF1": [SENTRY_MESSAGE]}, **fake_kwargs), ["C0587CAE9QD"])
+    assert report.post("*Self-heal started* · agents are investigating", [], ALERT) is False
+    assert fake.posted == []
+    out = capsys.readouterr().out
+    assert why in out
+    assert ("::warning title=Slack message not posted::No Sentry alert thread the bot can reply in,"
+            " in C0587CAE9QD: Self-heal started · agents are investigating") in out
 
 
-def test_no_alert_channels_posts_to_the_default_as_before(slack):
+def test_runs_with_no_known_alert_channel_look_in_the_default_channel(slack):
+    # The plan job couldn't read the alert's Slack action: SELFHEAL_SLACK_CHANNEL is searched for
+    # Sentry's thread, and the reply still only goes in that thread
     fake = slack(FakeSlack({"C0DEMOSELF1": [SENTRY_MESSAGE]}, member={"C0DEMOSELF1"}), [])
     report.post("Self-heal started", [], ALERT)
     assert fake.posted == [("C0DEMOSELF1", SENTRY_MESSAGE["ts"])]
+
+
+def test_alert_retries_dont_wait_on_a_channel_in_another_workspace(slack, monkeypatch):
+    monkeypatch.setattr(report.time, "sleep", lambda s: pytest.fail("waited for a channel it can't see"))
+    fake = slack(FakeSlack({}, member=set(), missing={"C0587CAE9QD"}), ["C0587CAE9QD"])
+    report.post("Self-heal started", [], ALERT, thread_attempts=5)
+    assert fake.posted == []
 
 
 def test_alert_posting_to_two_channels_gets_replies_in_both(slack):

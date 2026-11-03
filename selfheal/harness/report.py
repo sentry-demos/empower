@@ -16,25 +16,26 @@
         Posted when the run ends: the side-by-side scorecard. DIR holds one sub-directory
         per variant with the files above.
 
-Slack: SELFHEAL_SLACK_BOT_TOKEN (an existing bot's xoxb- token with chat:write) plus
-SELFHEAL_SLACK_CHANNEL (channel ID), or SELFHEAL_SLACK_WEBHOOK_URL (an incoming webhook).
-With neither, prints the message.
+Slack: SELFHEAL_SLACK_BOT_TOKEN, an existing bot's xoxb- token (chat:write, channels:history,
+ideally channels:join). Without it, messages are only printed in the job log.
 
-Channels: with the bot, messages go to the Slack channels the alert itself posts to
-(SELFHEAL_SLACK_CHANNELS, looked up in Sentry by slack_channels.py in the plan job). The bot
-joins a public channel it isn't in yet (needs channels:join); private channels need an invite.
-If none of them works, or the alert has no Slack action, SELFHEAL_SLACK_CHANNEL is used.
+Threads only: every message is a reply in the thread of Sentry's own alert message, never a
+post in a channel. Where to look: the Slack channels the alert itself posts to
+(SELFHEAL_SLACK_CHANNELS, looked up in Sentry by slack_channels.py in the plan job), or
+SELFHEAL_SLACK_CHANNEL when that lookup found none. The bot joins a public channel it isn't in
+yet (needs channels:join); private channels need an invite. If no thread is found (the alert
+posts to another Slack workspace, the bot can't read the channel, a trigger.sh run has no alert
+message), the message isn't posted: the job logs it and shows a "Slack message not posted"
+warning on the run.
 
-Threading: with the bot token, messages are posted as replies to Sentry's own alert message in
-the channel, when one is found: the most recent message from the Sentry app that matches, most
+Finding the thread: the most recent message from the Sentry app that matches, most
 specific first: the issue's link (issue alerts; within SELFHEAL_SLACK_ISSUE_THREAD_DAYS, default
 30, since Sentry threads a repeat issue alert under the issue's first alert message), then
 within SELFHEAL_SLACK_THREAD_HOURS (default 6) the alert's title or link, then the target's match text
 (SELFHEAL_SLACK_ALERT_MATCH, set per target in targets.json). When the alert names a version
 (with-seer / without-seer), the title/link and match-text rules also need the message to name
 it, so two alerts on the same metric each get their own thread. Needs channels:history
-(groups:history for a private channel). With no match, e.g. runs started by trigger.sh,
-messages go to the channel itself.
+(groups:history for a private channel).
 """
 import argparse
 import json
@@ -63,8 +64,8 @@ def is_from_sentry(message):
 
 
 def find_alert_thread(token, channel, alert, attempts=1, wait_s=15):
-    """ts of Sentry's alert message to reply under, or None. Never raises: threading is a
-    nicety, so any problem (missing scope, no match) falls back to a channel post.
+    """ts of Sentry's alert message to reply under, or None. Never raises: with no thread
+    (missing scope, no match), the message just isn't posted in this channel.
 
     attempts > 1 retries a missing match: the run can start a few seconds before Sentry's
     Slack message lands, so the first message of a run waits a little for it."""
@@ -75,7 +76,7 @@ def find_alert_thread(token, channel, alert, attempts=1, wait_s=15):
         if attempt < attempts - 1:
             print(f"No Sentry alert message yet; retrying in {wait_s}s")
             time.sleep(wait_s)
-    print("No Sentry alert message found to reply under; posting to the channel")
+    print(f"No Sentry alert message in {channel} to reply under")
     return None
 
 
@@ -112,8 +113,9 @@ def lookup_alert_message(token, channel, alert):
     if error == "not_in_channel" and join_channel(token, channel):
         messages, error = channel_history(token, channel, oldest)
     if error:
-        print(f"Slack thread lookup failed: {error} (needs channels:history, or"
-              f" groups:history for a private channel); posting to the channel")
+        why = (" (the channel is in another Slack workspace, or the bot can't see it)" if error == "channel_not_found"
+               else " (needs channels:history, or groups:history and an invite for a private channel)")
+        print(f"Slack thread lookup in {channel} failed: {error}{why}")
         return None, False
     # Newest first; the whole message (text, blocks, attachments) is searched, since Sentry
     # puts the alert name and link in blocks and attachments. ensure_ascii=False keeps titles
@@ -172,55 +174,55 @@ def alert_channels():
     return [c for c in channels if isinstance(c, str) and c] if isinstance(channels, list) else []
 
 
-def post_to_channel(token, channel, text, blocks, alert, thread_attempts, required):
-    """Post in one channel, in the thread of Sentry's alert message when there is one. True if
-    posted. A failure raises when `required` (the fallback channel), else returns False."""
-    message = {"channel": channel, "text": text, "blocks": blocks, "unfurl_links": False}
-    thread_ts = find_alert_thread(token, channel, alert or {}, attempts=thread_attempts)
-    if thread_ts:
-        message["thread_ts"] = thread_ts
-    response = requests.post(
-        f"{SLACK_API}/chat.postMessage",
-        headers={"Authorization": f"Bearer {token}"},
-        json=message,
-        timeout=15,
-    )
-    response.raise_for_status()
-    body = response.json()
-    # Slack answers 200 with ok: false on errors (bad channel, not in channel, missing scope)
-    if body.get("ok"):
-        return True
-    problem = (f"Slack chat.postMessage to {channel} failed: {body.get('error')}"
-               f" (needs chat:write, and the bot invited to {channel} unless it has chat:write.public)")
-    if required:
-        raise RuntimeError(problem)
-    print(problem)
-    return False
+def reply_in_thread(token, channel, thread_ts, text, blocks):
+    """Reply under Sentry's alert message. True if Slack took it."""
+    try:
+        body = requests.post(
+            f"{SLACK_API}/chat.postMessage",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"channel": channel, "thread_ts": thread_ts, "text": text, "blocks": blocks,
+                  "unfurl_links": False},
+            timeout=15,
+        ).json()
+    except (requests.RequestException, ValueError) as err:
+        body = {"error": str(err)}
+    # Slack answers 200 with ok: false on errors (not in channel, missing scope)
+    if not body.get("ok"):
+        print(f"Slack reply in {channel} failed: {body.get('error')} (needs chat:write)")
+    return bool(body.get("ok"))
+
+
+def not_posted(text, reason):
+    """Make a dropped message visible on the GitHub run: a warning annotation plus the text."""
+    first_line = " ".join(text.splitlines()[0].replace("*", "").split()) if text else ""
+    # Workflow commands end at a newline, and % : , need escaping in the title/message
+    message = f"{reason}: {first_line}".replace("%", "%25").replace("\r", "").replace("\n", " ")
+    print(f"::warning title=Slack message not posted::{message}")
+    print(text)
 
 
 def post(text, blocks, alert=None, thread_attempts=1):
-    """Post with an existing Slack bot's token if configured, else an incoming webhook, else
-    print (the job log). With the bot: in each Slack channel the alert posts to, in the thread
-    of Sentry's alert message there; if none works (another workspace, the bot not in a private
-    channel, or the alert has no Slack action), in SELFHEAL_SLACK_CHANNEL."""
+    """Reply in the thread of Sentry's alert message, and nowhere else. True if posted in at
+    least one channel. Looks in the Slack channels the alert posts to (SELFHEAL_SLACK_CHANNELS),
+    or SELFHEAL_SLACK_CHANNEL when the plan job found none. With no thread in any of them, the
+    message is dropped with a warning on the run, never posted in a channel. Never raises."""
     token = os.environ.get("SELFHEAL_SLACK_BOT_TOKEN")
-    channel = os.environ.get("SELFHEAL_SLACK_CHANNEL")
-    url = os.environ.get("SELFHEAL_SLACK_WEBHOOK_URL")
-    if token and (channel or alert_channels()):
-        posted = False
-        for alert_channel in alert_channels():
-            posted = post_to_channel(token, alert_channel, text, blocks, alert, thread_attempts,
-                                     required=False) or posted
-        if not posted:
-            if not channel:
-                raise RuntimeError("Couldn't post in any of the alert's Slack channels, and"
-                                   " SELFHEAL_SLACK_CHANNEL isn't set")
-            post_to_channel(token, channel, text, blocks, alert, thread_attempts, required=True)
-    elif url:
-        requests.post(url, json={"text": text, "blocks": blocks}, timeout=15).raise_for_status()
-    else:
-        print(text)
-        print(json.dumps(blocks, indent=2))
+    if not token:
+        not_posted(text, "SELFHEAL_SLACK_BOT_TOKEN isn't set")
+        return False
+    fallback = os.environ.get("SELFHEAL_SLACK_CHANNEL")
+    channels = alert_channels() or ([fallback] if fallback else [])
+    if not channels:
+        not_posted(text, "No Slack channel to look in (the alert has no Slack action, and SELFHEAL_SLACK_CHANNEL isn't set)")
+        return False
+    posted = False
+    for channel in channels:
+        thread_ts = find_alert_thread(token, channel, alert or {}, attempts=thread_attempts)
+        if thread_ts and reply_in_thread(token, channel, thread_ts, text, blocks):
+            posted = True
+    if not posted:
+        not_posted(text, f"No Sentry alert thread the bot can reply in, in {', '.join(channels)}")
+    return posted
 
 
 LABELS = {"without-seer": "without Seer", "with-seer": "with Seer"}
