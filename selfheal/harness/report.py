@@ -20,6 +20,11 @@ Slack: SELFHEAL_SLACK_BOT_TOKEN (an existing bot's xoxb- token with chat:write) 
 SELFHEAL_SLACK_CHANNEL (channel ID), or SELFHEAL_SLACK_WEBHOOK_URL (an incoming webhook).
 With neither, prints the message.
 
+Channels: with the bot, messages go to the Slack channels the alert itself posts to
+(SELFHEAL_SLACK_CHANNELS, looked up in Sentry by slack_channels.py in the plan job). The bot
+joins a public channel it isn't in yet (needs channels:join); private channels need an invite.
+If none of them works, or the alert has no Slack action, SELFHEAL_SLACK_CHANNEL is used.
+
 Threading: with the bot token, messages are posted as replies to Sentry's own alert message in
 the channel, when one is found: the most recent message from the Sentry app that matches, most
 specific first: the issue's link (issue alerts; within SELFHEAL_SLACK_ISSUE_THREAD_DAYS, default
@@ -104,6 +109,8 @@ def lookup_alert_message(token, channel, alert):
         rules.append(lambda message, text: float(message["ts"]) >= recent
                      and fallback in text and names_variant(text))
     messages, error = channel_history(token, channel, oldest)
+    if error == "not_in_channel" and join_channel(token, channel):
+        messages, error = channel_history(token, channel, oldest)
     if error:
         print(f"Slack thread lookup failed: {error} (needs channels:history, or"
               f" groups:history for a private channel); posting to the channel")
@@ -141,29 +148,73 @@ def channel_history(token, channel, oldest, max_pages=10):
     return messages, None
 
 
+def join_channel(token, channel):
+    """Join a public channel so its history can be read (needs channels:join). Private channels
+    need someone to invite the bot instead."""
+    try:
+        body = requests.post(f"{SLACK_API}/conversations.join", headers={"Authorization": f"Bearer {token}"},
+                             json={"channel": channel}, timeout=15).json()
+    except (requests.RequestException, ValueError) as err:
+        body = {"error": str(err)}
+    if not body.get("ok"):
+        print(f"Can't join {channel}: {body.get('error')} (invite the bot, or give it channels:join)")
+    return bool(body.get("ok"))
+
+
+def alert_channels():
+    """The Slack channels the alert posts to (SELFHEAL_SLACK_CHANNELS, a JSON list of IDs the
+    plan job looked up in Sentry; see slack_channels.py)."""
+    try:
+        channels = json.loads(os.environ.get("SELFHEAL_SLACK_CHANNELS") or "[]")
+    except ValueError:
+        return []
+    return [c for c in channels if isinstance(c, str) and c] if isinstance(channels, list) else []
+
+
+def post_to_channel(token, channel, text, blocks, alert, thread_attempts, required):
+    """Post in one channel, in the thread of Sentry's alert message when there is one. True if
+    posted. A failure raises when `required` (the fallback channel), else returns False."""
+    message = {"channel": channel, "text": text, "blocks": blocks, "unfurl_links": False}
+    thread_ts = find_alert_thread(token, channel, alert or {}, attempts=thread_attempts)
+    if thread_ts:
+        message["thread_ts"] = thread_ts
+    response = requests.post(
+        f"{SLACK_API}/chat.postMessage",
+        headers={"Authorization": f"Bearer {token}"},
+        json=message,
+        timeout=15,
+    )
+    response.raise_for_status()
+    body = response.json()
+    # Slack answers 200 with ok: false on errors (bad channel, not in channel, missing scope)
+    if body.get("ok"):
+        return True
+    problem = (f"Slack chat.postMessage to {channel} failed: {body.get('error')}"
+               f" (needs chat:write, and the bot invited to {channel} unless it has chat:write.public)")
+    if required:
+        raise RuntimeError(problem)
+    print(problem)
+    return False
+
+
 def post(text, blocks, alert=None, thread_attempts=1):
-    """Post with an existing Slack bot's token if configured (in the thread of Sentry's alert
-    message when there is one), else an incoming webhook, else print (the job log)."""
+    """Post with an existing Slack bot's token if configured, else an incoming webhook, else
+    print (the job log). With the bot: in each Slack channel the alert posts to, in the thread
+    of Sentry's alert message there; if none works (another workspace, the bot not in a private
+    channel, or the alert has no Slack action), in SELFHEAL_SLACK_CHANNEL."""
     token = os.environ.get("SELFHEAL_SLACK_BOT_TOKEN")
     channel = os.environ.get("SELFHEAL_SLACK_CHANNEL")
     url = os.environ.get("SELFHEAL_SLACK_WEBHOOK_URL")
-    if token and channel:
-        message = {"channel": channel, "text": text, "blocks": blocks, "unfurl_links": False}
-        thread_ts = find_alert_thread(token, channel, alert or {}, attempts=thread_attempts)
-        if thread_ts:
-            message["thread_ts"] = thread_ts
-        response = requests.post(
-            f"{SLACK_API}/chat.postMessage",
-            headers={"Authorization": f"Bearer {token}"},
-            json=message,
-            timeout=15,
-        )
-        response.raise_for_status()
-        body = response.json()
-        # Slack answers 200 with ok: false on errors (bad channel, not in channel, missing scope)
-        if not body.get("ok"):
-            raise RuntimeError(f"Slack chat.postMessage failed: {body.get('error')}"
-                               f" (needs chat:write, and the bot invited to {channel} unless it has chat:write.public)")
+    if token and (channel or alert_channels()):
+        posted = False
+        for alert_channel in alert_channels():
+            posted = post_to_channel(token, alert_channel, text, blocks, alert, thread_attempts,
+                                     required=False) or posted
+        if not posted:
+            if not channel:
+                raise RuntimeError("Couldn't post in any of the alert's Slack channels, and"
+                                   " SELFHEAL_SLACK_CHANNEL isn't set")
+            post_to_channel(token, channel, text, blocks, alert, thread_attempts, required=True)
     elif url:
         requests.post(url, json={"text": text, "blocks": blocks}, timeout=15).raise_for_status()
     else:

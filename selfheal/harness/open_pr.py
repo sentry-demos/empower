@@ -150,7 +150,10 @@ def open_pr(variant, out, check):
         f.write(body)
 
     run_id = os.environ.get("GITHUB_RUN_ID", "local")
-    branch = f"selfheal/fix-{variant}-{run_id}"
+    # The run key (alert + issue) in the name lets the report job close only this alert's
+    # earlier PRs for this issue, not another SE's
+    key = os.environ.get("SELFHEAL_RUN_KEY")
+    branch = f"selfheal/fix-{variant}-{key}-{run_id}" if key else f"selfheal/fix-{variant}-{run_id}"
     sh("git", "checkout", "-b", branch)
     sh("git", "add", "--", *target_paths())
     sh("git", "commit", "-m", title, "-m", message)

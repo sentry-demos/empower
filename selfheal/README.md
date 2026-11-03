@@ -81,8 +81,10 @@ optional `cleanup_projects` keep-list change in point 4. Step-by-step test instr
 2. **New secret:** only `SELFHEAL_SENTRY_MCP_TOKEN`, the token of a `selfheal` internal
    integration (org-owned, no browser sign-in; see TESTING.md step 1). The same integration
    carries the alert webhook. For Slack: `SELFHEAL_SLACK_BOT_TOKEN` (an existing approved bot's
-   `xoxb-` token with `chat:write`) plus the `SELFHEAL_SLACK_CHANNEL` variable (channel ID), or
-   an incoming webhook in `SELFHEAL_SLACK_WEBHOOK_URL`.
+   `xoxb-` token with `chat:write`, `channels:history`, and ideally `channels:join`) plus the
+   `SELFHEAL_SLACK_CHANNEL` variable (the fallback channel's ID; the bot otherwise replies in the
+   alert's own channels, see "Slack: where the bot posts"), or an incoming webhook in
+   `SELFHEAL_SLACK_WEBHOOK_URL`.
 3. **Repository variables:**
    - `SELFHEAL_ENABLED=true` turns the selfheal workflows on. They do nothing without it.
    - `SELFHEAL_MODEL` is the model id (an OpenRouter `provider/model` id when using OpenRouter).
@@ -255,8 +257,29 @@ SENTRY_AUTH_TOKEN=... selfheal/scripts/reset.sh
 - Agents get a fixed tool list: read/edit files, `python -m pytest`, `replay.py`, and the Sentry
   MCP. No git and no network access beyond the MCP. The harness, not the agent, verifies the fix
   and opens the PR, and refuses changes outside `flask/`.
-- The receiver ignores repeats while a run is active or an agent PR is open. The deploy closes
-  the sibling PR after a merge, so the next break fires a fresh run.
+- One run at a time per alert per issue (the run key): the receiver ignores a repeat while that
+  alert's run on that issue is active, so an alert that fires on every event still starts one
+  run. Runs for other alerts or issues go side by side, so several SEs can demo at once, each
+  with their own alert. A new PR closes only earlier PRs for the same alert, issue and version.
+- Alerts from projects no target lists (say a React error in demo) are ignored, instead of
+  sending the checkout agent after the Flask code.
+
+## Slack: where the bot posts
+
+The bot replies where the alert posts. The plan job looks the alert up in Sentry by name
+(`harness/slack_channels.py`), reads its Slack actions' channels, and the bot replies in each,
+in the thread of Sentry's alert message there. If the alert has no Slack action, or the bot
+can't use the channel, it posts to `SELFHEAL_SLACK_CHANNEL` (#demo-selfhealing) instead.
+
+For an SE's alert to work end to end:
+- The alert has a Slack action and the selfheal webhook action, in the demo or team-se org, on a
+  project a target in `targets.json` lists.
+- The channel is in the Sentry Slack workspace, where the bot (Rusted Advisor) is installed.
+- The bot can read the channel: in a public channel it joins by itself if the app has
+  `channels:join` (else `/invite @Rusted Advisor`); a private channel needs the invite plus
+  `groups:history`.
+- Two SEs on the same issue in the same channel share Sentry's thread for that issue. Separate
+  channels, or separate issues, keep their runs apart.
 
 ## Testing locally
 

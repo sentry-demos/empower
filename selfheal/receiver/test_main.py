@@ -132,9 +132,9 @@ def test_already_handling_finds_open_agent_pr():
 
     with patch.object(main, "github", side_effect=fake_github):
         # Open agent PRs are kept for demos, so by default they don't block a new run
-        assert main.already_handling() == ""
+        assert main.already_handling("kabc") == ""
         with patch.object(main, "SKIP_WHILE_AGENT_PR_OPEN", True):
-            assert main.already_handling() == "agent PR #7 is still open"
+            assert main.already_handling("kabc") == "agent PR #7 is still open"
 
 
 def test_github_app_token_is_minted_and_cached(monkeypatch):
@@ -232,11 +232,14 @@ def test_already_handling_finds_pending_run_branch():
     def fake_github(method, path, **kwargs):
         class R:
             def json(self):
-                return [{"ref": "refs/heads/selfheal/run/20261026-180000"}]
+                if "matching-refs" in path:
+                    return [{"ref": "refs/heads/selfheal/run/kabc/20261026-180000"}]
+                return {"total_count": 0, "workflow_runs": []}
         return R()
 
     with patch.object(main, "github", side_effect=fake_github):
-        assert main.already_handling() == "run branch selfheal/run/20261026-180000 exists"
+        assert main.already_handling("kabc") == "run branch selfheal/run/kabc/20261026-180000 exists"
+        assert main.already_handling("kother") == ""
 
 
 def issue_alert(se, rule="selfheal issue alert"):
@@ -260,7 +263,7 @@ def test_issue_alert_picks_version_from_se_tag_or_rule(client, se, rule, variant
         deliver(client, "event_alert", issue_alert(se, rule))
     assert create.call_args.args[0]["variant"] == variant
     assert create.call_args.args[0]["se"] == se
-    handling.assert_called_once_with(variant)
+    handling.assert_called_once_with(create.call_args.args[0]["run_key"], variant)
 
 
 def test_metric_alert_picks_version_from_rule_name(client):
@@ -281,13 +284,33 @@ def test_run_branch_carries_the_version():
     assert main.branch_variant("selfheal/run/20261028-120000") == ""
 
 
-@pytest.mark.parametrize("pending, variant, blocked", [
-    ("selfheal/run/with-seer/20261028-120000", "without-seer", False),
-    ("selfheal/run/with-seer/20261028-120000", "with-seer", True),
-    ("selfheal/run/20261028-120000", "with-seer", True),   # a run with no version runs both
-    ("selfheal/run/with-seer/20261028-120000", "", True),
+def test_run_branch_carries_the_run_key():
+    with patch.object(main, "github") as gh:
+        gh.return_value.json.return_value = {"object": {"sha": "s"}, "tree": {"sha": "t"}, "sha": "x"}
+        branch = main.create_run_branch({"title": "t", "variant": "without-seer", "run_key": "k0123456789"})
+    assert branch.startswith("selfheal/run/without-seer/k0123456789/")
+    assert main.branch_variant(branch) == "without-seer"
+    assert main.branch_has_key(branch, "k0123456789")
+    assert main.branch_variant("selfheal/run/k0123456789/20261028-120000") == ""
+
+
+def test_run_key_is_per_alert_per_issue():
+    base = {"org": "demo", "rule": "Chris S. every event alert", "issue_id": "7762252014"}
+    assert main.run_key(base) == main.run_key(dict(base))
+    assert main.run_key(base) != main.run_key({**base, "rule": "Alex every event alert"})
+    assert main.run_key(base) != main.run_key({**base, "issue_id": "7817323193"})
+    assert main.run_key(base) != main.run_key({**base, "org": "team-se"})
+    # The runner computes the same key (selfheal/harness/test_slack_channels.py pins the same value)
+    assert main.run_key(base) == "k6df77c1326"
+
+
+@pytest.mark.parametrize("pending, key, blocked", [
+    ("selfheal/run/kaaaaaaaaaa/20261028-120000", "kaaaaaaaaaa", True),                # same alert, same issue
+    ("selfheal/run/without-seer/kaaaaaaaaaa/20261028-120000", "kaaaaaaaaaa", True),
+    ("selfheal/run/kaaaaaaaaaa/20261028-120000", "kbbbbbbbbbb", False),               # another SE's alert, or issue
+    ("selfheal/run/20261028-120000", "kaaaaaaaaaa", False),                           # older runs have no key
 ])
-def test_versions_dont_block_each_other(pending, variant, blocked):
+def test_only_the_same_alert_and_issue_blocks(pending, key, blocked):
     def fake_github(method, path, params=None, **kwargs):
         class R:
             def json(self):
@@ -297,19 +320,46 @@ def test_versions_dont_block_each_other(pending, variant, blocked):
         return R()
 
     with patch.object(main, "github", side_effect=fake_github):
-        assert bool(main.already_handling(variant)) == blocked
+        assert bool(main.already_handling(key)) == blocked
 
 
-def test_running_runner_blocks_only_its_version():
+def test_running_runner_blocks_only_its_key():
     def fake_github(method, path, params=None, **kwargs):
         class R:
             def json(self):
                 if "matching-refs" in path:
                     return []
-                runs = [{"head_branch": "selfheal/run/without-seer/20261028-120000"}] if params["status"] == "in_progress" else []
+                runs = [{"head_branch": "selfheal/run/kaaaaaaaaaa/20261028-120000"}] if params["status"] == "in_progress" else []
                 return {"total_count": len(runs), "workflow_runs": runs}
         return R()
 
     with patch.object(main, "github", side_effect=fake_github):
-        assert main.already_handling("with-seer") == ""
-        assert "in_progress" in main.already_handling("without-seer")
+        assert main.already_handling("kbbbbbbbbbb") == ""
+        assert "in_progress" in main.already_handling("kaaaaaaaaaa")
+
+
+def demo_issue_alert(project_url):
+    return {"action": "triggered", "data": {
+        "event": {"title": "TypeError: Cannot read properties of undefined", "issue_id": 99,
+                  "url": project_url, "web_url": "https://sentry.io/organizations/demo/issues/99/"},
+        "triggered_rule": "Chris S. every event alert",
+    }}
+
+
+def test_alert_on_a_project_no_target_lists_is_ignored(client):
+    payload = demo_issue_alert("https://sentry.io/api/0/projects/demo/react/events/abc/")
+    with patch.object(main, "create_run_branch") as create, patch.object(main, "github") as gh:
+        response = deliver(client, "event_alert", payload)
+    assert response.json == {"status": "ignored", "reason": "no target for org demo, project react"}
+    create.assert_not_called()
+    gh.assert_not_called()
+
+
+def test_alert_on_a_listed_project_routes_to_its_target(client):
+    payload = demo_issue_alert("https://sentry.io/api/0/projects/demo/backend-flask/events/abc/")
+    with patch.object(main, "already_handling", return_value=""), \
+         patch.object(main, "create_run_branch", return_value="selfheal/run/1") as create:
+        deliver(client, "event_alert", payload)
+    alert, base = create.call_args.args
+    assert (alert["target"], alert["project_slug"], base) == ("checkout", "backend-flask", "selfheal/base")
+    assert alert["run_key"] == main.run_key({"org": "demo", "rule": "Chris S. every event alert", "issue_id": "99"})

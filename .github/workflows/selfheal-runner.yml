@@ -18,9 +18,9 @@ on:
     branches: ["selfheal/run/**"]
 
 concurrency:
-  # One run at a time per version, so a with-Seer run doesn't queue behind a without-Seer one.
-  # The receiver names run branches selfheal/run/<version>/<id>; others run both versions.
-  group: selfheal-runner-${{ contains(github.ref_name, '/without-seer/') && 'without-seer' || (contains(github.ref_name, '/with-seer/') && 'with-seer' || 'all') }}
+  # Runs go side by side, so several SEs can demo at once. The receiver already starts at most
+  # one run per alert per issue (the run key in selfheal/run/[<version>/]<key>/<id>).
+  group: selfheal-runner-${{ github.ref_name }}
   cancel-in-progress: false
 
 env:
@@ -50,6 +50,7 @@ jobs:
       contents: read
     outputs:
       variants: ${{ steps.plan.outputs.variants }}
+      slack_channels: ${{ steps.plan.outputs.slack_channels }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -66,6 +67,11 @@ jobs:
           variants=$(python3 selfheal/harness/plan.py .selfheal/alert.json)
           echo "variants=$variants" >> "$GITHUB_OUTPUT"
           echo "::notice title=Versions::$variants"
+          # Where the alert posts in Slack, so the bot replies in those threads (else the
+          # SELFHEAL_SLACK_CHANNEL variable's channel)
+          channels=$(python3 selfheal/harness/slack_channels.py .selfheal/alert.json || echo '[]')
+          echo "slack_channels=$channels" >> "$GITHUB_OUTPUT"
+          echo "::notice title=Slack channels::${channels}"
 
   announce:
     # Replies in the Sentry alert's Slack thread as soon as the run starts. Runs alongside the
@@ -87,6 +93,7 @@ jobs:
         env:
           SELFHEAL_SLACK_BOT_TOKEN: ${{ secrets.SELFHEAL_SLACK_BOT_TOKEN }}
           SELFHEAL_SLACK_CHANNEL: ${{ vars.SELFHEAL_SLACK_CHANNEL }}
+          SELFHEAL_SLACK_CHANNELS: ${{ needs.plan.outputs.slack_channels }}
           SELFHEAL_SLACK_WEBHOOK_URL: ${{ secrets.SELFHEAL_SLACK_WEBHOOK_URL }}
           VARIANTS: ${{ needs.plan.outputs.variants }}
         run: |
@@ -154,6 +161,7 @@ jobs:
         env:
           SELFHEAL_SLACK_BOT_TOKEN: ${{ secrets.SELFHEAL_SLACK_BOT_TOKEN }}
           SELFHEAL_SLACK_CHANNEL: ${{ vars.SELFHEAL_SLACK_CHANNEL }}
+          SELFHEAL_SLACK_CHANNELS: ${{ needs.plan.outputs.slack_channels }}
           SELFHEAL_SLACK_WEBHOOK_URL: ${{ secrets.SELFHEAL_SLACK_WEBHOOK_URL }}
         run: python selfheal/harness/report.py status --kind seer --variant with-seer --dir "$OUT"
 
@@ -195,6 +203,7 @@ jobs:
         env:
           SELFHEAL_SLACK_BOT_TOKEN: ${{ secrets.SELFHEAL_SLACK_BOT_TOKEN }}
           SELFHEAL_SLACK_CHANNEL: ${{ vars.SELFHEAL_SLACK_CHANNEL }}
+          SELFHEAL_SLACK_CHANNELS: ${{ needs.plan.outputs.slack_channels }}
           SELFHEAL_SLACK_WEBHOOK_URL: ${{ secrets.SELFHEAL_SLACK_WEBHOOK_URL }}
         run: python selfheal/harness/report.py status --kind sentry --variant without-seer --dir "$OUT"
 
@@ -204,6 +213,7 @@ jobs:
           # "Opening draft PR" in the alert's Slack thread
           SELFHEAL_SLACK_BOT_TOKEN: ${{ secrets.SELFHEAL_SLACK_BOT_TOKEN }}
           SELFHEAL_SLACK_CHANNEL: ${{ vars.SELFHEAL_SLACK_CHANNEL }}
+          SELFHEAL_SLACK_CHANNELS: ${{ needs.plan.outputs.slack_channels }}
           SELFHEAL_SLACK_WEBHOOK_URL: ${{ secrets.SELFHEAL_SLACK_WEBHOOK_URL }}
           # For the leak check only
           SENTRY_MCP_TOKEN: ${{ secrets.SELFHEAL_SENTRY_MCP_TOKEN }}
@@ -294,6 +304,7 @@ jobs:
           PR_URL: ${{ steps.pr.outputs.url }}
           SELFHEAL_SLACK_BOT_TOKEN: ${{ secrets.SELFHEAL_SLACK_BOT_TOKEN }}
           SELFHEAL_SLACK_CHANNEL: ${{ vars.SELFHEAL_SLACK_CHANNEL }}
+          SELFHEAL_SLACK_CHANNELS: ${{ needs.plan.outputs.slack_channels }}
           SELFHEAL_SLACK_WEBHOOK_URL: ${{ secrets.SELFHEAL_SLACK_WEBHOOK_URL }}
         run: |
           OUT="$RUNNER_TEMP/review"
@@ -332,10 +343,10 @@ jobs:
         run: python3 selfheal/harness/target.py --alert .selfheal/alert.json --github-env
 
       - name: Close the previous run's agent PRs
-        # PRs stay open for demos, but only the latest one per target and version: once this
-        # run's agent opened a PR, close that version's earlier PRs into the same base branch.
-        # Other targets, the other version, and versions whose agent opened nothing this time
-        # are left alone.
+        # PRs stay open for demos, but only the latest one per alert, issue and version: once
+        # this run's agent opened a PR, close that version's earlier PRs for the same run key
+        # (selfheal/fix-<version>-<key>-<run id>). Other SEs' alerts, other issues, the other
+        # version, and versions whose agent opened nothing this time are left alone.
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -349,7 +360,8 @@ jobs:
             fi
             gh pr list --repo "$GITHUB_REPOSITORY" --base "$BASE_BRANCH" --label selfheal-agent \
                 --label "selfheal:$variant" --state open --json number,headRefName \
-                --jq ".[] | select(.headRefName | endswith(\"-$GITHUB_RUN_ID\") | not) | .number" |
+                --jq ".[] | select(.headRefName | startswith(\"selfheal/fix-$variant-$SELFHEAL_RUN_KEY-\"))
+                          | select(.headRefName | endswith(\"-$GITHUB_RUN_ID\") | not) | .number" |
               while read -r pr; do
                 gh pr close "$pr" --repo "$GITHUB_REPOSITORY" --delete-branch \
                   --comment "Superseded by a newer self-heal run: $new_pr"
@@ -360,6 +372,7 @@ jobs:
         env:
           SELFHEAL_SLACK_BOT_TOKEN: ${{ secrets.SELFHEAL_SLACK_BOT_TOKEN }}
           SELFHEAL_SLACK_CHANNEL: ${{ vars.SELFHEAL_SLACK_CHANNEL }}
+          SELFHEAL_SLACK_CHANNELS: ${{ needs.plan.outputs.slack_channels }}
           SELFHEAL_SLACK_WEBHOOK_URL: ${{ secrets.SELFHEAL_SLACK_WEBHOOK_URL }}
         run: |
           pip install requests

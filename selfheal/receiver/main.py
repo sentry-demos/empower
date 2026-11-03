@@ -6,20 +6,21 @@ client secret is configured (SENTRY_CLIENT_SECRET for the default org, and
 SENTRY_CLIENT_SECRET_<ORG> for others, e.g. SENTRY_CLIENT_SECRET_TEAM_SE), and the secret
 that verifies a delivery tells us which org sent it.
 
-We act only on the move to critical (metric alert) or a triggered issue alert, skip
-repeats, pick the alert's target from targets.json (by org and project), then create a
-selfheal/run/[<version>/]<id> branch: one commit on top of that target's base branch adding
-.selfheal/alert.json. The push starts the runner workflow from that branch (no
-repository_dispatch, so nothing has to live on master), and the runner runs the version the
-alert names (see variant_for), or the repo's default.
+We act only on the move to critical (metric alert) or a triggered issue alert, pick the
+alert's target from targets.json (by org and project; alerts from projects no target lists are
+ignored), skip repeats, then create a selfheal/run/[<version>/]<run key>/<id> branch: one commit
+on top of that target's base branch adding .selfheal/alert.json. The push starts the runner
+workflow from that branch (no repository_dispatch, so nothing has to live on master), and the
+runner runs the version the alert names (see variant_for), or the repo's default.
 
 Picking a version: an issue alert's event tag se=selfheal-with-seer / se=selfheal-without-seer,
-or "with-seer" / "without-seer" in the alert rule's name. The two versions are independent: a
-with-Seer run in flight doesn't hold back a without-Seer alert, and the other way round.
+or "with-seer" / "without-seer" in the alert rule's name.
 
-Repeats are detected statelessly from GitHub itself: if a run branch exists or a runner is
-queued or running, the alert is acknowledged and dropped. Open agent PRs don't count (they're
-left open for demos) unless SKIP_WHILE_AGENT_PR_OPEN=true.
+Repeats: one run at a time per alert per issue (the run key, see run_key), so several SEs can
+demo at once, even on the same issue, while an alert that fires on every event still starts
+one run. Detected statelessly from GitHub itself: if a run branch with the key exists or a
+runner for it is queued or running, the alert is acknowledged and dropped. Open agent PRs don't
+count (they're left open for demos) unless SKIP_WHILE_AGENT_PR_OPEN=true.
 """
 import hashlib
 import hmac
@@ -98,14 +99,31 @@ def load_targets():
 
 
 def pick_target(org, project=None):
-    """(name, target) for an alert from this org: project match first, then the org's first
-    target. (None, None) if the org has no target."""
+    """(name, target) for an alert from this org and project. (None, None) if the org has no
+    target, or the project is known and no target lists it: an alert on another project (say
+    a React error in demo) mustn't send the checkout agent after the Flask code. When the
+    project is unknown, the org's first target."""
     targets = load_targets()
     in_org = [name for name, t in targets.items() if t.get("org") == org]
-    for name in in_org:
-        if project and project in targets[name].get("projects", []):
-            return name, targets[name]
+    if project:
+        for name in in_org:
+            if project in targets[name].get("projects", []):
+                return name, targets[name]
+        return None, None
     return (in_org[0], targets[in_org[0]]) if in_org else (None, None)
+
+
+def project_from_url(url: str):
+    """Project slug from a Sentry API URL: .../api/0/projects/<org>/<project>/events/<id>/"""
+    match = re.search(r"/projects/[^/]+/([^/]+)/", url or "")
+    return match.group(1) if match else None
+
+
+def run_key(alert: dict) -> str:
+    """One run at a time per alert per issue: a short hash of the org, the alert rule (or the
+    title, when there's no rule) and the issue. Same rule as selfheal/harness/target.py."""
+    parts = [alert.get("org") or "", alert.get("rule") or alert.get("title") or "", alert.get("issue_id") or ""]
+    return "k" + hashlib.sha1("|".join(parts).encode()).hexdigest()[:10]
 
 
 def org_from_url(url: str):
@@ -145,12 +163,14 @@ def parse_alert(resource: str, payload: dict):
             return None
         rule = (data.get("metric_alert") or {}).get("alert_rule") or {}
         title = data.get("description_title") or rule.get("name") or "Metric alert"
+        projects = rule.get("projects") or []
         return {
             "kind": "metric_alert",
             "title": title,
             "description": data.get("description_text", ""),
             "url": data.get("web_url", ""),
             "issue_id": "",
+            "project_slug": projects[0] if len(projects) == 1 else None,
             "rule": rule.get("name", ""),
             "se": "",
             "variant": variant_for(rule.get("name"), title),
@@ -168,6 +188,7 @@ def parse_alert(resource: str, payload: dict):
             "url": event.get("web_url", ""),
             "issue_id": str(event.get("issue_id", "")),
             "project_id": str(event.get("project", "")),
+            "project_slug": project_from_url(event.get("url")),
             "rule": data.get("triggered_rule", ""),
             "se": se,
             "variant": variant_for(se, data.get("triggered_rule")),
@@ -217,31 +238,32 @@ def github(method, path, **kwargs):
 
 
 def branch_variant(branch: str) -> str:
-    """The version a run branch is for: selfheal/run/<variant>/<id>, or "" (both) for
-    selfheal/run/<id>."""
+    """The version a run branch is for: selfheal/run/<variant>/..., or "" (both) for
+    selfheal/run/<id> and selfheal/run/<run key>/<id>."""
     rest = branch.removeprefix("refs/heads/").removeprefix(RUN_BRANCH_PREFIX)
     first = rest.split("/", 1)[0]
     return first if first in VARIANTS and "/" in rest else ""
 
 
-def overlaps(variant: str, other: str) -> bool:
-    """Whether a run for `other` is a repeat for `variant`. A run with no version runs both."""
-    return not variant or not other or variant == other
+def branch_has_key(branch: str, key: str) -> bool:
+    """Whether a run branch (selfheal/run/[<variant>/]<run key>/<id>) is for this run key."""
+    return f"/{key}/" in branch.removeprefix("refs/heads/")
 
 
-def already_handling(variant: str = "") -> str:
-    """Why a new run for this version would be a repeat, or "" if none is in flight."""
+def already_handling(key: str, variant: str = "") -> str:
+    """Why a new run for this alert and issue (its run key) would be a repeat, or "" if none
+    is in flight. Runs for other alerts or other issues go ahead side by side."""
     # The runner deletes its run branch when it finishes, so one existing means a run is pending
     refs = github("GET", f"/repos/{GITHUB_REPO}/git/matching-refs/heads/{RUN_BRANCH_PREFIX}").json()
     for ref in refs:
-        if overlaps(variant, branch_variant(ref["ref"])):
+        if branch_has_key(ref["ref"], key):
             return f"run branch {ref['ref'].removeprefix('refs/heads/')} exists"
 
     for status in ("queued", "in_progress"):
         runs = github("GET", f"/repos/{GITHUB_REPO}/actions/workflows/{RUNNER_WORKFLOW}/runs",
-                      params={"status": status, "per_page": 20}).json()
+                      params={"status": status, "per_page": 100}).json()
         for run in runs.get("workflow_runs") or []:
-            if overlaps(variant, branch_variant(run.get("head_branch", ""))):
+            if branch_has_key(run.get("head_branch", ""), key):
                 return f"runner already {status} ({run.get('head_branch')})"
 
     # Agent PRs are left open for demos, so they don't block new runs unless asked to
@@ -269,9 +291,11 @@ def create_run_branch(alert: dict, base: str = BASE_BRANCH) -> str:
     commit = github("POST", f"{repo}/commits", json={
         "message": f"Self-heal run: {alert['title']}", "tree": tree, "parents": [base_sha],
     }).json()["sha"]
-    # The version goes in the branch name, so repeats can be checked per version
+    # The version and run key go in the branch name: the runner reads the version from it, and
+    # repeats are checked by key
     version = f"{alert['variant']}/" if alert.get("variant") in VARIANTS else ""
-    branch = f"{RUN_BRANCH_PREFIX}{version}{time.strftime('%Y%m%d-%H%M%S', time.gmtime())}"
+    key = f"{alert['run_key']}/" if alert.get("run_key") else ""
+    branch = f"{RUN_BRANCH_PREFIX}{version}{key}{time.strftime('%Y%m%d-%H%M%S', time.gmtime())}"
     github("POST", f"{repo}/refs", json={"ref": f"refs/heads/{branch}", "sha": commit})
     return branch
 
@@ -296,13 +320,16 @@ def sentry_webhook():
     url_org = org_from_url(alert.get("url"))
     if url_org and url_org != org:
         log.warning("delivery signed by %s links to org %s; using %s", org, url_org, org)
-    target_name, target = pick_target(org, alert.get("project_slug"))
+    project = alert.get("project_slug")
+    target_name, target = pick_target(org, project)
     if not target:
-        log.info("ignored alert '%s' from %s: no target for this org in targets.json", alert["title"], org)
-        return jsonify(status="ignored", reason=f"no target for org {org}"), 200
+        where = f"org {org}" + (f", project {project}" if project else "")
+        log.info("ignored alert '%s': no target for %s in targets.json", alert["title"], where)
+        return jsonify(status="ignored", reason=f"no target for {where}"), 200
     alert.update(org=org, target=target_name)
+    alert["run_key"] = run_key(alert)
 
-    reason = already_handling(alert.get("variant", ""))
+    reason = already_handling(alert["run_key"], alert.get("variant", ""))
     if reason:
         log.info("skipped repeat alert '%s': %s", alert["title"], reason)
         return jsonify(status="skipped", reason=reason), 200

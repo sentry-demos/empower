@@ -4,12 +4,14 @@
         Appends the target's settings to $GITHUB_ENV for the rest of the job: SELFHEAL_TARGET,
         BASE_BRANCH, SENTRY_ORG, SENTRY_PROJECT, SENTRY_ENVIRONMENT, TARGET_PATHS,
         TARGET_INSTALL, TARGET_TESTS, TARGET_CHECK, TARGET_CHECK_LABEL, TARGET_REPLAY,
-        TARGET_PROMPT, SELFHEAL_SLACK_ALERT_MATCH (unless set), and the target's test_env.
+        TARGET_PROMPT, SELFHEAL_SLACK_ALERT_MATCH (unless set), TARGET_DASHBOARD_URL/LABEL,
+        SELFHEAL_RUN_KEY, and the target's test_env.
 
 The alert says which target it is for ("target", set by the receiver). Older alert files
 without one fall back to the first target for their org, then to "checkout".
 """
 import argparse
+import hashlib
 import json
 import os
 import shlex
@@ -37,6 +39,16 @@ def resolve(alert, targets):
     return name, targets[name]
 
 
+def run_key(alert):
+    """The alert's run key: one run at a time, and one open agent PR, per alert per issue. The
+    receiver sets it; runs started another way (trigger.sh) get the same hash it would use.
+    Same rule as selfheal/receiver/main.py."""
+    if alert.get("run_key"):
+        return alert["run_key"]
+    parts = [alert.get("org") or "", alert.get("rule") or alert.get("title") or "", alert.get("issue_id") or ""]
+    return "k" + hashlib.sha1("|".join(parts).encode()).hexdigest()[:10]
+
+
 def env_lines(name, target, alert):
     # Repo variables (SELFHEAL_VAR_*) stay as overrides for the checkout target, so demo works
     # as before; other targets use targets.json only
@@ -61,6 +73,7 @@ def env_lines(name, target, alert):
     dashboard = target.get("dashboard") or {}
     lines["TARGET_DASHBOARD_URL"] = dashboard.get("url", "")
     lines["TARGET_DASHBOARD_LABEL"] = dashboard.get("label", "")
+    lines["SELFHEAL_RUN_KEY"] = run_key(alert)
     lines.update(target.get("test_env", {}))
     return lines
 
