@@ -38,7 +38,7 @@ import time
 
 import requests
 
-from plan import alert_variant  # same directory: python puts the script's folder on sys.path
+from plan import alert_variant, issue_category  # same directory: python puts the script's folder on sys.path
 
 VARIANTS = ("without-seer", "with-seer")
 SLACK_API = "https://slack.com/api"
@@ -272,7 +272,8 @@ def sentry_summary(timeline, short_id):
     parts = [one if one == many else f"{n} {one if n == 1 else many}" for (one, many), n in counts.items()]
     listed = parts[0] if len(parts) == 1 else ", ".join(parts[:-1]) + " and " + parts[-1]
     done_s = max(c.get("at_s", 0) + c.get("seconds", 0) for c in calls)
-    return f"Investigated {short_id or 'the issue'} in Sentry: read {listed} ({len(calls)} calls, {done_s:.0f}s)."
+    return (f"Investigated {short_id or 'the issue'} with {len(calls)} Sentry MCP call{'s' if len(calls) != 1 else ''}"
+            f" ({done_s:.0f}s): read {listed}.")
 
 
 def report_status(args):
@@ -298,6 +299,26 @@ def report_status(args):
             return
         text = f"🔎 *Sentry telemetry* · {summary}"
     post_status(text, alert)
+
+
+def is_metric_alert(alert, lookup=issue_category):
+    """Metric alerts arrive as metric_alert, or (Monitors & Alerts) as an issue alert whose issue
+    is a metric issue, which only Sentry can tell us."""
+    if alert.get("kind") == "metric_alert":
+        return True
+    return bool(alert.get("issue_id")) and lookup(alert["issue_id"], alert.get("org")) == "metric"
+
+
+def report_dashboard(out, lookup=issue_category):
+    """For metric alerts, the target's dashboard (TARGET_DASHBOARD_URL), before the PR opens."""
+    url = os.environ.get("TARGET_DASHBOARD_URL")
+    alert = load(os.path.join(out, "alert.json"))
+    if not url or not is_metric_alert(alert, lookup):
+        return
+    label = os.environ.get("TARGET_DASHBOARD_LABEL") or "dashboard"
+    # Slack wants &, < and > escaped, link targets included
+    url = url.replace("&", "&amp;").replace("<", "%3C").replace(">", "%3E")
+    post_status(f"📊 See the impact on the <{url}|{label}>", alert)
 
 
 def report_opening_pr(variant, out, check):

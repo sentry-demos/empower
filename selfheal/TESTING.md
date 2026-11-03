@@ -143,7 +143,8 @@ commands. Always pass the run ID: plain `gh run list` / `gh run watch` fail in t
   so the reply lands in its thread.
 - `fix (...)` progress lines in the same thread: "🔎 Seer root cause" once the with-Seer handoff
   has queried Seer (with Seer's first sentence), "🔎 Sentry telemetry" after the without-Seer
-  agent finishes (what it read: the issue, traces, span/log searches), and "Opening draft PR"
+  agent finishes (its Sentry MCP calls: the issue, traces, span/log searches), for metric alerts
+  a link to the target's dashboard (`dashboard` in `targets.json`), and "Opening draft PR"
   once the harness has verified the fix. They never fail the job if Slack refuses them.
 - `review (...)`: a MERGE / ADJUST / CLOSE comment on each PR, then a four-line Slack
   notification: "Fix ready for review" with the PR link, business impact, a one-line root cause,

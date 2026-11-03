@@ -40,22 +40,32 @@ def sentry_token(org):
             or os.environ.get("SENTRY_MCP_TOKEN"))
 
 
-def issue_se_tag(issue_id, org=None):
-    """The `se` tag on the issue's latest event, or "" if it can't be read. Uses only the
+def sentry_issue_get(issue_id, org=None, suffix="", what="issue lookup"):
+    """GET /organizations/<org>/issues/<id>/<suffix>, or {} if it can't be read. Uses only the
     standard library, so the plan job needs no installs."""
     org = org or os.environ.get("SENTRY_ORG") or "demo"
     token = sentry_token(org)
     if not (issue_id and token):
-        return ""
+        return {}
     api = os.environ.get("SENTRY_API_URL", "https://sentry.io/api/0").rstrip("/")
-    url = f"{api}/organizations/{org}/issues/{urllib.parse.quote(str(issue_id))}/events/latest/"
+    url = f"{api}/organizations/{org}/issues/{urllib.parse.quote(str(issue_id))}/{suffix}"
     request = urllib.request.Request(url, headers={"Authorization": f"Bearer {token}"})
     try:
         with urllib.request.urlopen(request, timeout=20) as response:
-            event = json.load(response)
+            return json.load(response)
     except (OSError, ValueError) as err:
-        print(f"::warning title=se tag lookup::issue {issue_id}: {err}", file=sys.stderr)
-        return ""
+        print(f"::warning title={what}::issue {issue_id}: {err}", file=sys.stderr)
+        return {}
+
+
+def issue_category(issue_id, org=None):
+    """The issue's category ("error", "metric", ...), or "" if it can't be read."""
+    return str(sentry_issue_get(issue_id, org, what="issue category lookup").get("issueCategory") or "")
+
+
+def issue_se_tag(issue_id, org=None):
+    """The `se` tag on the issue's latest event, or "" if it can't be read."""
+    event = sentry_issue_get(issue_id, org, "events/latest/", "se tag lookup")
     for tag in event.get("tags") or []:
         if isinstance(tag, dict) and tag.get("key") == "se":
             return str(tag.get("value") or "")

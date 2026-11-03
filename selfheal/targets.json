@@ -13,7 +13,12 @@
     "check_label": "failing order now succeeds",
     "replay": true,
     "prompt": "target_checkout.md",
-    "slack_match": "revenue"
+    "slack_match": "revenue",
+    "_dashboard": "Linked in Slack for metric alerts, before the draft PR opens",
+    "dashboard": {
+      "label": "Critical Experience dashboard",
+      "url": "https://demo.sentry.io/dashboard/510044/?project=5808623&project=4508968134377472&project=4512138282270720&project=4512138284367872&project=4512138287906816&statsPeriod=7d"
+    }
   },
   "agent-context": {
     "org": "team-se",
@@ -38,6 +43,10 @@
     "replay": false,
     "prompt": "target_agent_context.md",
     "slack_match": "context snowball",
+    "dashboard": {
+      "label": "Critical Experience dashboard",
+      "url": "https://demo.sentry.io/dashboard/510044/?project=5808623&project=4508968134377472&project=4512138282270720&project=4512138284367872&project=4512138287906816&statsPeriod=7d"
+    },
     "_variants": "with-seer's handoff (seer_handoff.py, fix_from_seer.md) is checkout-specific for now",
     "variants": ["without-seer"]
   }

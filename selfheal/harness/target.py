@@ -58,6 +58,9 @@ def env_lines(name, target, alert):
         "TARGET_PROMPT": target["prompt"],
     }
     lines["SELFHEAL_SLACK_ALERT_MATCH"] = setting("SLACK_ALERT_MATCH", target.get("slack_match", ""))
+    dashboard = target.get("dashboard") or {}
+    lines["TARGET_DASHBOARD_URL"] = dashboard.get("url", "")
+    lines["TARGET_DASHBOARD_LABEL"] = dashboard.get("label", "")
     lines.update(target.get("test_env", {}))
     return lines
 

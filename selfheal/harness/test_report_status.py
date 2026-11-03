@@ -50,8 +50,8 @@ def run_dir(tmp_path, **files):
 
 def test_sentry_summary_names_what_the_agent_read():
     assert report.sentry_summary(TIMELINE, "KUNAL-MANAGER-AGENT-7") == (
-        "Investigated KUNAL-MANAGER-AGENT-7 in Sentry: read the issue, 1 trace, 2 span searches"
-        " and 1 log search (5 calls, 56s).")
+        "Investigated KUNAL-MANAGER-AGENT-7 with 5 Sentry MCP calls (56s): read the issue, 1 trace,"
+        " 2 span searches and 1 log search.")
 
 
 def test_sentry_summary_is_empty_without_sentry_calls():
@@ -62,7 +62,7 @@ def test_without_seer_status(tmp_path, no_slack, capsys):
     out = run_dir(tmp_path, **{"timeline.json": TIMELINE, "result.json": {"issue_short_id": "KUNAL-MANAGER-AGENT-7"}})
     report.report_status(Namespace(kind="sentry", variant="without-seer", dir=out))
     assert capsys.readouterr().out.startswith(
-        "🔎 *Sentry telemetry* · Investigated KUNAL-MANAGER-AGENT-7 in Sentry: read the issue,")
+        "🔎 *Sentry telemetry* · Investigated KUNAL-MANAGER-AGENT-7 with 5 Sentry MCP calls")
 
 
 def test_seer_status(tmp_path, no_slack, capsys):
@@ -103,3 +103,53 @@ def test_fix_ready_footer_has_no_version(tmp_path, no_slack, capsys):
                                    variant="without-seer", results=out))
     assert capsys.readouterr().out.splitlines()[3] == (
         "tests pass, policy answer under the token budget · reviewer: MERGE · 132s, $0.46")
+
+
+DASHBOARD = ("https://demo.sentry.io/dashboard/510044/?project=5808623&project=4508968134377472"
+             "&statsPeriod=7d")
+
+
+@pytest.fixture
+def dashboard(monkeypatch):
+    monkeypatch.setenv("TARGET_DASHBOARD_URL", DASHBOARD)
+    monkeypatch.setenv("TARGET_DASHBOARD_LABEL", "Critical Experience dashboard")
+
+
+def test_metric_alert_gets_the_dashboard_link(tmp_path, no_slack, dashboard, capsys):
+    # Monitors & Alerts: a metric alert arrives as an issue alert on a metric issue
+    out = run_dir(tmp_path, **{"alert.json": {"kind": "event_alert", "issue_id": "7825689300", "org": "team-se"}})
+    seen = []
+    report.report_dashboard(out, lookup=lambda issue_id, org: seen.append((issue_id, org)) or "metric")
+    assert seen == [("7825689300", "team-se")]
+    assert capsys.readouterr().out.splitlines()[0] == (
+        "📊 See the impact on the <https://demo.sentry.io/dashboard/510044/?project=5808623"
+        "&amp;project=4508968134377472&amp;statsPeriod=7d|Critical Experience dashboard>")
+
+
+def test_legacy_metric_alert_needs_no_lookup(tmp_path, no_slack, dashboard, capsys):
+    out = run_dir(tmp_path, **{"alert.json": {"kind": "metric_alert", "title": "Revenue drop"}})
+    report.report_dashboard(out, lookup=lambda *a: pytest.fail("no lookup needed"))
+    assert "Critical Experience dashboard" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("category", ["error", ""])  # "" when Sentry can't be reached
+def test_error_alert_gets_no_dashboard_link(tmp_path, no_slack, dashboard, capsys, category):
+    out = run_dir(tmp_path, **{"alert.json": {"kind": "event_alert", "issue_id": "7817323193", "org": "demo"}})
+    report.report_dashboard(out, lookup=lambda *a: category)
+    assert capsys.readouterr().out == ""
+
+
+def test_no_dashboard_configured_posts_nothing(tmp_path, no_slack, monkeypatch, capsys):
+    monkeypatch.delenv("TARGET_DASHBOARD_URL", raising=False)
+    report.report_dashboard(run_dir(tmp_path, **{"alert.json": {"kind": "metric_alert"}}))
+    assert capsys.readouterr().out == ""
+
+
+@pytest.mark.parametrize("org,expected", [("demo", "checkout"), ("team-se", "agent-context")])
+def test_targets_carry_the_dashboard(org, expected):
+    import target
+    name, config = target.resolve({"org": org}, target.load_targets())
+    lines = target.env_lines(name, config, {"org": org})
+    assert name == expected
+    assert lines["TARGET_DASHBOARD_URL"].startswith("https://demo.sentry.io/dashboard/510044/")
+    assert lines["TARGET_DASHBOARD_LABEL"] == "Critical Experience dashboard"
