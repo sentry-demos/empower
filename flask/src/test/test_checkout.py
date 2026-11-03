@@ -1,6 +1,4 @@
-"""/checkout tests. These pass on selfheal/base, where the validate_inventory path is
-intentionally broken; a fix for that path should add its own regression test here.
-"""
+"""/checkout tests, including regression tests for the validate_inventory path."""
 import json
 
 from .conftest import make_order
@@ -17,4 +15,24 @@ def test_checkout_without_inventory_validation_succeeds(client, inventory):
 
     assert response.status_code == 200
     assert json.loads(response.data) == {"status": "success"}
+    assert inventory.decrements == []
+
+
+def test_checkout_with_validation_in_stock_succeeds(client, inventory):
+    inventory.stock.update({4: 5})
+
+    response = post_checkout(client, make_order({4: 1}))
+
+    assert response.status_code == 200
+    assert json.loads(response.data) == {"status": "success"}
+    assert inventory.decrements == [(4, 1)]
+
+
+def test_checkout_with_validation_out_of_stock_reports_failure(client, inventory):
+    inventory.stock.update({4: 0})
+
+    response = post_checkout(client, make_order({4: 1}))
+
+    assert response.status_code == 200
+    assert json.loads(response.data) == {"status": "failed"}
     assert inventory.decrements == []
