@@ -16,6 +16,7 @@ import os
 import shlex
 import subprocess
 import sys
+import time
 
 import issue_refs  # same directory: python puts the script's folder on sys.path
 import report
@@ -27,7 +28,40 @@ HARNESS = os.path.dirname(os.path.abspath(__file__))
 
 def sh(*cmd, cwd=None, check=True):
     print("$", " ".join(cmd), flush=True)
-    return subprocess.run(cmd, cwd=cwd, check=check, text=True, capture_output=True)
+    proc = subprocess.run(cmd, cwd=cwd, check=False, text=True, capture_output=True)
+    if proc.returncode != 0:
+        # Show why (git's or GitHub's own message), which the traceback alone doesn't
+        print(f"  exit {proc.returncode}: {(proc.stderr or proc.stdout).strip()[-2000:]}", flush=True)
+        if check:
+            raise subprocess.CalledProcessError(proc.returncode, cmd, proc.stdout, proc.stderr)
+    return proc
+
+
+def create_pr(branch, title, body_path, labels, attempts=3, wait_s=5):
+    """Open the draft PR and return its URL. Labels go on separately, best effort: a GitHub
+    hiccup while labelling once made `gh pr create` fail after it had opened the PR, and the
+    run reported no fix. If creating fails, a PR that exists for the branch anyway is used."""
+    created = sh("gh", "pr", "create", "--draft", "--base", BASE, "--head", branch, "--title", title,
+                 "--body-file", body_path, check=False)
+    lines = created.stdout.strip().splitlines()
+    url = lines[-1] if created.returncode == 0 and lines else ""
+    if not url:
+        found = sh("gh", "pr", "view", branch, "--json", "url", "--jq", ".url", check=False)
+        url = found.stdout.strip() if found.returncode == 0 else ""
+        if not url:
+            raise RuntimeError(f"gh pr create failed: {(created.stderr or created.stdout).strip()}")
+        print(f"gh pr create reported an error, but {url} exists for {branch}; using it", flush=True)
+
+    for attempt in range(attempts):
+        if sh("gh", "pr", "edit", url, *[arg for label in labels for arg in ("--add-label", label)],
+              check=False).returncode == 0:
+            break
+        if attempt < attempts - 1:
+            time.sleep(wait_s)
+    else:
+        # The PR stands; only the report job's clean-up of older PRs relies on the labels
+        print(f"::warning title=PR labels::Couldn't add {', '.join(labels)} to {url}", flush=True)
+    return url
 
 
 def changed_files():
@@ -158,10 +192,10 @@ def open_pr(variant, out, check):
     sh("git", "add", "--", *target_paths())
     sh("git", "commit", "-m", title, "-m", message)
     sh("git", "push", "origin", branch)
-    for label in ("selfheal-agent", f"selfheal:{variant}"):
-        sh("gh", "label", "create", label, "--force", "--color", "6C5FC7")
-    pr = sh("gh", "pr", "create", "--draft", "--base", BASE, "--head", branch, "--title", title,
-            "--body-file", body_path, "--label", "selfheal-agent", "--label", f"selfheal:{variant}")
+    labels = ("selfheal-agent", f"selfheal:{variant}")
+    for label in labels:
+        sh("gh", "label", "create", label, "--force", "--color", "6C5FC7", check=False)
+    url = create_pr(branch, title, body_path, labels)
 
     head = sh("git", "rev-parse", "HEAD").stdout.strip()
     sh("gh", "api", f"repos/{os.environ['GITHUB_REPOSITORY']}/statuses/{head}",
@@ -169,7 +203,7 @@ def open_pr(variant, out, check):
        "-f", "context=pytest", "-f", f"description={check['tests_summary'][:140]}",
        "-f", f"target_url={os.environ.get('GITHUB_SERVER_URL', '')}/{os.environ['GITHUB_REPOSITORY']}/actions/runs/{run_id}")
     check["branch"] = branch
-    return pr.stdout.strip().splitlines()[-1]
+    return url
 
 
 def main():
