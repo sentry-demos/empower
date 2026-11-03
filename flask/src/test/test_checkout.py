@@ -10,6 +10,27 @@ def post_checkout(client, order):
     return client.post("/checkout", data=json.dumps(order), content_type="application/json")
 
 
+def test_checkout_with_inventory_validation_in_stock_succeeds(client, inventory):
+    # Regression: `quantities` was read before it was assigned (UnboundLocalError -> HTTP 500)
+    inventory.stock.update({3: 10})
+
+    response = post_checkout(client, make_order({3: 3}))
+
+    assert response.status_code == 200
+    assert json.loads(response.data) == {"status": "success"}
+    assert inventory.decrements == [(3, 3)]
+
+
+def test_checkout_with_inventory_validation_out_of_stock(client, inventory):
+    inventory.stock.update({3: 1})
+
+    response = post_checkout(client, make_order({3: 3}))
+
+    assert response.status_code == 200
+    assert json.loads(response.data) == {"status": "failed"}
+    assert inventory.decrements == []
+
+
 def test_checkout_without_inventory_validation_succeeds(client, inventory):
     inventory.stock.update({3: 10})
 
