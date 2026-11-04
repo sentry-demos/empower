@@ -14,4 +14,6 @@ Werkzeug==3.1.5
 flask_caching==2.3.0
 tiktoken==0.8.0
 celery==5.4.0
+# kombu 5.7.0 requires redis-py >= 6.4; keep pinned while redis==5.0.1
+kombu==5.6.2
 statsig==0.57.1
