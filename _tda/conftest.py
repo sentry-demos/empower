@@ -255,8 +255,8 @@ def scale_batch_size_phase(base_size, random, offset_hours):
     """Hour curve shifted by offset_hours, no weekday scaling. Mean multiplier is 1.
 
     Tests that fill in around cexp checkout need to not all pile into the same
-    trough: test_ai_agent.py and test_basic_checkout.py already share the +12
-    phase, so a third one competing for it starves one of them.
+    trough: test_basic_checkout.py sits on the +12 phase, so others are offset
+    from it rather than competing for it.
     """
     exact = base_size * _hourly_volume_weight(offset_hours) * len(HOUR_OF_DAY_VOLUME)
     return _stochastic_round(exact, random)

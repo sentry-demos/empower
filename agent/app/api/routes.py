@@ -29,8 +29,7 @@ def set_plant_failure_flags(raw_request: Request) -> None:
 
     Both endpoints need this: ChatWidget.jsx maps the operator-facing
     `agent_advice_error` / `agent_info_error` page params onto these for /chat
-    the same way it used to for /buy-plants, and test_ai_agent.py drives those
-    two error paths through the chat widget.
+    the same way it used to for /buy-plants.
 
     Called from the endpoint rather than from inside stream_turn: the handler
     and the StreamingResponse body it returns run in the same task, so a
