@@ -3,7 +3,53 @@ import pytest
 import sentry_sdk
 from urllib.parse import urlencode
 from selenium.webdriver.common.by import By
-from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.common.exceptions import (
+    ElementClickInterceptedException,
+    NoSuchElementException,
+    TimeoutException,
+)
+
+# Markup rendered by Sentry.showReportDialog(), which the frontends open on purpose
+# (e.g. vue/src/main.js beforeSend on "Internal Server Error") as a demo feature.
+REPORT_DIALOG_WRAPPER = '.sentry-error-embed-wrapper'
+REPORT_DIALOG_CLOSE = '.sentry-error-embed .close'
+
+
+def dismiss_report_dialog(driver, timeout=5):
+    """Close the Sentry user-feedback report dialog if it is covering the page."""
+    sentry_sdk.add_breadcrumb(
+        category='tda',
+        message='Dismissing Sentry report dialog that intercepted a click',
+        level='info',
+    )
+    try:
+        driver.find_element(By.CSS_SELECTOR, REPORT_DIALOG_CLOSE).click()
+    except Exception:
+        # Fall back to removing the overlay so the test can continue interacting with the page
+        driver.execute_script(
+            "document.querySelectorAll(arguments[0]).forEach(function (el) { el.remove(); });",
+            REPORT_DIALOG_WRAPPER,
+        )
+    try:
+        WebDriverWait(driver, timeout).until(
+            EC.invisibility_of_element_located((By.CSS_SELECTOR, REPORT_DIALOG_WRAPPER))
+        )
+    except TimeoutException:
+        pass
+
+
+def click_dismissing_report_dialog(driver, element):
+    """Click element; if the Sentry report dialog intercepts it, dismiss the dialog and retry once.
+
+    A second interception propagates so the caller still reports it to Sentry.
+    """
+    try:
+        element.click()
+    except ElementClickInterceptedException:
+        dismiss_report_dialog(driver)
+        element.click()
 
 
 # Skip before desktop_web_driver so a 0-draw does not open a Sauce session.
@@ -40,7 +86,7 @@ def test_basic_checkout(desktop_web_driver, endpoints, random, sleep_length, cex
                         add_to_cart_btn = desktop_web_driver.find_element(By.CSS_SELECTOR, '.products-list button')
 
                     for i in range(random.randrange(4) + 1):
-                        add_to_cart_btn.click()
+                        click_dismissing_report_dialog(desktop_web_driver, add_to_cart_btn)
                 except NoSuchElementException as err:
                     continue
 
