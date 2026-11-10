@@ -5,7 +5,7 @@
         BASE_BRANCH, SENTRY_ORG, SENTRY_PROJECT, SENTRY_ENVIRONMENT, TARGET_PATHS,
         TARGET_INSTALL, TARGET_TESTS, TARGET_CHECK, TARGET_CHECK_LABEL, TARGET_REPLAY,
         TARGET_PROMPT, SELFHEAL_SLACK_ALERT_MATCH (unless set), TARGET_DASHBOARD_URL/LABEL,
-        SELFHEAL_RUN_KEY, TARGET_TELEMETRY, and the target's test_env.
+        SELFHEAL_RUN_KEY, TARGET_TELEMETRY, FRONTEND_PROJECT, and the target's test_env.
 
 The alert says which target it is for ("target", set by the receiver). Older alert files
 without one fall back to the first target for their org, then to "checkout".
@@ -29,7 +29,7 @@ def pick(targets, org=None, project=None):
     """Target name for an alert from this org/project: project match first, then org."""
     in_org = [name for name, t in targets.items() if t["org"] == org]
     for name in in_org:
-        if project and project in targets[name].get("projects", []):
+        if project and project in targets[name].get("projects", []) + targets[name].get("frontend_projects", []):
             return name
     return in_org[0] if in_org else None
 
@@ -55,11 +55,16 @@ def env_lines(name, target, alert):
     checkout = name == DEFAULT_TARGET
     def setting(var, value):
         return (os.environ.get(f"SELFHEAL_VAR_{var}") or value) if checkout else value
+    # An alert on a frontend project (a browser error from a failed API call) is followed
+    # through its trace to the target's own project, which stays SENTRY_PROJECT
+    slug = alert.get("project_slug")
+    frontend = slug if slug and slug in target.get("frontend_projects", []) else ""
     lines = {
         "SELFHEAL_TARGET": name,
         "BASE_BRANCH": target["base"],
         "SENTRY_ORG": alert.get("org") or setting("SENTRY_ORG", target["org"]),
-        "SENTRY_PROJECT": alert.get("project_slug") or setting("SENTRY_PROJECT", target["project"]),
+        "SENTRY_PROJECT": (None if frontend else slug) or setting("SENTRY_PROJECT", target["project"]),
+        "FRONTEND_PROJECT": frontend,
         "SENTRY_ENVIRONMENT": setting("SENTRY_ENVIRONMENT", target.get("environment", "")),
         "TARGET_PATHS": ",".join(target["paths"]),
         "TARGET_INSTALL": target["install"],

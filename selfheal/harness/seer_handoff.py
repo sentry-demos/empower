@@ -4,7 +4,9 @@ The with-Seer agent doesn't explore Sentry itself. This script does the Sentry w
 over the plain Sentry API (the same endpoints the Sentry MCP server calls):
 
   1. The issue behind the alert: the one the alert names, or else the unresolved error issue
-     with the most events in the last hour in SENTRY_PROJECT / SENTRY_ENVIRONMENT.
+     with the most events in the last hour in SENTRY_PROJECT / SENTRY_ENVIRONMENT. When the
+     alert's issue is in FRONTEND_PROJECT (a browser error from a failed API call), its latest
+     event's trace leads to the SENTRY_PROJECT error behind it, and that's the issue used below.
   2. Seer's root cause analysis for it. If Seer has already analyzed the issue (Seer's automatic
      runs on the project), that analysis is used as is; otherwise a run is started and polled
      until the root cause is in.
@@ -17,7 +19,7 @@ if there's no root cause to hand over, so the agent never starts without one.
 Usage:
     python selfheal/harness/seer_handoff.py --alert alert.json --out DIR
 Needs SENTRY_MCP_TOKEN (read issues, events and logs; start Seer), SENTRY_ORG, SENTRY_PROJECT
-and SENTRY_ENVIRONMENT. SENTRY_API_URL defaults to https://sentry.io/api/0.
+and SENTRY_ENVIRONMENT; FRONTEND_PROJECT when the alert can be on a frontend issue. SENTRY_API_URL defaults to https://sentry.io/api/0.
 """
 import argparse
 import ast
@@ -33,6 +35,7 @@ API = os.environ.get("SENTRY_API_URL", "https://sentry.io/api/0").rstrip("/")
 ORG = os.environ.get("SENTRY_ORG") or "demo"
 PROJECT = os.environ.get("SENTRY_PROJECT") or "selfheal-flask"
 ENVIRONMENT = os.environ.get("SENTRY_ENVIRONMENT") or "selfheal"
+FRONTEND_PROJECT = os.environ.get("FRONTEND_PROJECT", "")
 LOG_MESSAGE = "Failed to validate inventory"
 
 SEER_TIMEOUT_S = int(os.environ.get("SELFHEAL_SEER_TIMEOUT_S") or 480)
@@ -89,6 +92,32 @@ def find_issue(alert):
     CALLS[-1]["returned"] = (f"{issue['shortId']}: {issue.get('count')} events, {issue.get('userCount')} users,"
                              f" first seen {issue.get('firstSeen')}")
     return issue
+
+
+def backend_issue_from_trace(frontend):
+    """(backend issue, trace ID) for a frontend issue: its latest event's trace, and the
+    SENTRY_PROJECT error in that trace. Stops if there is none: the request may have gone to
+    another backend, which this target can't fix."""
+    event = sentry("GET", f"/organizations/{ORG}/issues/{frontend['id']}/events/latest/", "sentry",
+                   "Latest event of the frontend issue")
+    trace_id = ((event.get("contexts") or {}).get("trace") or {}).get("trace_id")
+    CALLS[-1]["returned"] = f"event {event.get('eventID')}, trace {trace_id}"
+    if not trace_id:
+        raise SystemExit(fail(f"{frontend['shortId']}'s latest event has no trace to follow to {PROJECT}"))
+    rows = sentry("GET", f"/organizations/{ORG}/events/", "sentry", f"{PROJECT} errors in that trace", params={
+        "dataset": "errors", "query": f"trace:{trace_id} project:{PROJECT}",
+        "field": ["issue.id", "issue", "title", "timestamp"], "sort": "-timestamp", "per_page": 5,
+        "statsPeriod": "14d", "referrer": "selfheal.handoff",
+    }).get("data") or []
+    if not rows:
+        CALLS[-1]["returned"] = "none"
+        raise SystemExit(fail(f"The trace of {frontend['shortId']}'s latest event ({trace_id}) has no {PROJECT}"
+                              f" error: another backend probably served that request, and this run only fixes {PROJECT}"))
+    CALLS[-1]["returned"] = f"{rows[0].get('issue')}: {rows[0].get('title')}"
+    backend = sentry("GET", f"/organizations/{ORG}/issues/{rows[0]['issue.id']}/", "sentry", "Backend issue details")
+    CALLS[-1]["returned"] = (f"{backend['shortId']}: {backend.get('count')} events, {backend.get('userCount')} users,"
+                             f" first seen {backend.get('firstSeen')}")
+    return backend, trace_id
 
 
 # --- 2. Seer's root cause -------------------------------------------------------------------
@@ -208,15 +237,20 @@ def failing_carts(issue, out):
 
 # --- Output ---------------------------------------------------------------------------------
 
-def handoff_md(issue, seer, logs, out):
+def handoff_md(issue, seer, logs, out, frontend=None, trace_id=None):
+    """frontend: the alert's frontend issue, when issue was found through its trace. The PR names
+    the alert's issue; the browser side knows the users, the backend side counts the failures."""
     impact = {
         "failed_checkouts": int(issue["count"]) if str(issue.get("count", "")).isdigit() else None,
-        "users_affected": issue.get("userCount"),
+        "users_affected": (frontend or issue).get("userCount"),
         "first_seen": issue.get("firstSeen"),
         "lost_revenue_usd": logs["lost_revenue_usd"],
     }
     window = logs.get("window")
-    report = {"issue_short_id": issue["shortId"], "issue_url": issue.get("permalink", ""), "impact": impact}
+    alerted = frontend or issue
+    report = {"issue_short_id": alerted["shortId"], "issue_url": alerted.get("permalink", ""), "impact": impact}
+    path = ([f"**Alert issue (frontend):** [{frontend['shortId']}]({frontend.get('permalink', '')}) — {frontend.get('title', '')}",
+             f"**Followed its trace** (`{trace_id}`) to the backend error behind it:"] if frontend else [])
     cart_line = (f"The most recent failing request (logged {logs['latest']}) is saved at `{out}/cart.json`."
                  if logs["saved"] else
                  "No failing request was found in Sentry Logs in the last 24 hours, so there's no cart to "
@@ -224,7 +258,7 @@ def handoff_md(issue, seer, logs, out):
     revenue_note = (f"`lost_revenue_usd` is the sum of `total` across {logs['carts']} failed carts logged"
                     f" between {window[0]} and {window[1]} UTC." if logs.get("window") else
                     "`lost_revenue_usd` is unknown (no carts in Sentry Logs).")
-    return impact, "\n".join([
+    return impact, "\n".join(path + [
         f"**Issue:** [{issue['shortId']}]({issue.get('permalink', '')}) — {issue.get('title', '')}",
         f"**Seer run:** {seer['run_id']} ({seer['status']}"
         + (", Seer's earlier automatic analysis" if seer["reused"] else ", started for this alert") + ")",
@@ -260,17 +294,23 @@ def main():
     with open(args.alert) as f:
         alert = json.load(f)
 
+    frontend = trace_id = None
     try:
         issue = find_issue(alert)
+        if FRONTEND_PROJECT and (issue.get("project") or {}).get("slug") == FRONTEND_PROJECT:
+            frontend = issue
+            issue, trace_id = backend_issue_from_trace(frontend)
         seer = seer_root_cause(issue)
         logs = failing_carts(issue, out)
     except requests.RequestException as err:
         last = CALLS[-1] if CALLS else {}
         return fail(f"{last.get('call', 'Sentry call')}: {err}")
 
-    impact, markdown = handoff_md(issue, seer, logs, out)
+    impact, markdown = handoff_md(issue, seer, logs, out, frontend, trace_id)
     handoff = {"issue": {"id": issue["id"], "short_id": issue["shortId"], "url": issue.get("permalink"),
                          "title": issue.get("title")},
+               "frontend_issue": ({"id": frontend["id"], "short_id": frontend["shortId"], "url": frontend.get("permalink"),
+                                   "title": frontend.get("title"), "trace_id": trace_id} if frontend else None),
                "seer": seer, "logs": logs, "impact": impact, "calls": CALLS,
                "seconds": round(time.time() - STARTED, 1)}
     with open(os.path.join(out, "handoff.json"), "w") as f:

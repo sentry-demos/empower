@@ -100,14 +100,14 @@ def load_targets():
 
 def pick_target(org, project=None):
     """(name, target) for an alert from this org and project. (None, None) if the org has no
-    target, or the project is known and no target lists it: an alert on another project (say
-    a React error in demo) mustn't send the checkout agent after the Flask code. When the
-    project is unknown, the org's first target."""
+    target, or the project is known and no target lists it (in projects, or in frontend_projects:
+    browser projects whose errors the agent follows through their trace to the target's code).
+    When the project is unknown, the org's first target."""
     targets = load_targets()
     in_org = [name for name, t in targets.items() if t.get("org") == org]
     if project:
         for name in in_org:
-            if project in targets[name].get("projects", []):
+            if project in targets[name].get("projects", []) + targets[name].get("frontend_projects", []):
                 return name, targets[name]
         return None, None
     return (in_org[0], targets[in_org[0]]) if in_org else (None, None)

@@ -3,6 +3,8 @@
   "checkout": {
     "org": "demo",
     "projects": ["backend-flask", "selfheal-flask"],
+    "_frontend_projects": "Alerts on these start a run too: the agent starts from the browser error (a 500 from /checkout) and follows its trace to the Flask error behind it. If another backend served that request, it stops without a fix",
+    "frontend_projects": ["frontend-react"],
     "base": "selfheal/base",
     "project": "backend-flask",
     "environment": "production",

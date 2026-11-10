@@ -260,8 +260,15 @@ SENTRY_AUTH_TOKEN=... selfheal/scripts/reset.sh
   alert's run on that issue is active, so an alert that fires on every event still starts one
   run. Runs for other alerts or issues go side by side, so several SEs can demo at once, each
   with their own alert. A new PR closes only earlier PRs for the same alert, issue and version.
-- Alerts from projects no target lists (say a React error in demo) are ignored, instead of
+- Alerts from projects no target lists (say an Angular error in demo) are ignored, instead of
   sending the checkout agent after the Flask code.
+- Frontend alerts: a target's `frontend_projects` (checkout: `frontend-react`) start runs too.
+  The agent starts from the browser error ("Error: 500 - Internal Server Error" on
+  `/checkout-form`), follows its trace to the backend error behind it, and fixes that; the PR
+  names the frontend issue and shows the path. The with-Seer handoff does the same before asking
+  Seer about the backend issue. Each frontend 500 issue groups one backend (its `backendType`
+  tag; the Flask one is FRONTEND-REACT-77Q in demo), so point the alert at
+  `backendType:flask`: on another backend's trace the run stops without a fix.
 
 ## Telemetry follow-up
 

@@ -363,3 +363,13 @@ def test_alert_on_a_listed_project_routes_to_its_target(client):
     alert, base = create.call_args.args
     assert (alert["target"], alert["project_slug"], base) == ("checkout", "backend-flask", "selfheal/base")
     assert alert["run_key"] == main.run_key({"org": "demo", "rule": "Chris S. every event alert", "issue_id": "99"})
+
+
+def test_frontend_alert_routes_to_the_backend_target(client):
+    # A browser 500 from /checkout: the agent follows its trace to the Flask error
+    payload = demo_issue_alert("https://sentry.io/api/0/projects/demo/frontend-react/events/abc/")
+    with patch.object(main, "already_handling", return_value=""), \
+         patch.object(main, "create_run_branch", return_value="selfheal/run/1") as create:
+        deliver(client, "event_alert", payload)
+    alert, base = create.call_args.args
+    assert (alert["target"], alert["project_slug"], base) == ("checkout", "frontend-react", "selfheal/base")

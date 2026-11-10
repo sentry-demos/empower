@@ -34,7 +34,7 @@ you haven't diagnosed from Sentry.
 carries a trace. Open that trace and find the spans that produced the metric's value (for example
 the span with the large `gen_ai.usage.input_tokens`), then work back through the spans before it,
 such as tool calls and their attributes, to the code that caused it.
-
+{{FRONTEND_NOTE}}
 Before moving on, state the root cause in one or two sentences: what in the code is wrong and why.
 
 ## 2. Target specifics

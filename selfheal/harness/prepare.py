@@ -72,6 +72,14 @@ SENTRY_WRITE_TOOLS = [
 ]
 
 
+def frontend_note(frontend, backend):
+    """The diagnosis step for an alert on a frontend project ("" otherwise): start from the
+    browser error and follow its trace to the backend error behind it."""
+    if not frontend:
+        return ""
+    return "\n" + render(read_prompt("frontend_alert.md"), FRONTEND_PROJECT=frontend, SENTRY_PROJECT=backend).strip() + "\n"
+
+
 def telemetry_settings():
     """The target's telemetry block (TARGET_TELEMETRY, set by target.py)."""
     return json.loads(os.environ.get("TARGET_TELEMETRY") or "{}")
@@ -144,7 +152,9 @@ def main():
         if check:
             verify.append(f"- Run `{check}`. It must pass.")
         # DIAGNOSIS and TARGET go in first: they use the placeholders filled after them
+        backend = os.environ.get("SENTRY_PROJECT") or "backend-flask"
         prompt = render(read_prompt("diagnose_fix.md"),
+                        FRONTEND_NOTE=frontend_note(os.environ.get("FRONTEND_PROJECT", ""), backend),
                         DIAGNOSIS=diagnosis.strip(),
                         TARGET=read_prompt(os.environ.get("TARGET_PROMPT") or "target_checkout.md").strip(),
                         ALERT=alert, OUT=out, TESTS=tests, CHECK=check, BASH_COMMANDS=commands,
@@ -153,7 +163,7 @@ def main():
                         ENVIRONMENT_NOTE=f" Environment: `{environment}`." if environment else "",
                         ENVIRONMENT_INLINE=f", environment `{environment}`," if environment else "",
                         SENTRY_ORG=os.environ.get("SENTRY_ORG") or "demo",
-                        SENTRY_PROJECT=os.environ.get("SENTRY_PROJECT") or "backend-flask")
+                        SENTRY_PROJECT=backend)
         os.makedirs(os.path.dirname(os.path.abspath(args.mcp_out)), exist_ok=True)
         with open(args.mcp_out, "w") as f:
             json.dump(mcp_config(args.variant), f)
