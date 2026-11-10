@@ -101,13 +101,6 @@ def alert_workflows(alert):
     return preferred(workflows, calls_webhook)
 
 
-def alert_slack_actions(alert):
-    """The alert's Slack actions, as Sentry returns them (type, integrationId, config, data), so
-    a new alert can notify the same channels. Never its webhook actions."""
-    return [action for workflow in alert_workflows(alert) for action in workflow_actions(workflow)
-            if action.get("type") == "slack"]
-
-
 def alert_slack_channels(alert):
     """Slack channel IDs the alert posts to, in a stable order, or [] if unknown."""
     org, name = alert.get("org"), alert.get("rule")

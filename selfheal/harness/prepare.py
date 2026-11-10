@@ -59,9 +59,9 @@ def bash_commands(tests, check, replay):
     return "\n".join(lines), " ".join(rules)
 
 
-# Sentry MCP tools that change things in Sentry. The telemetry agent's token can create
-# monitors and alerts (the harness needs that), so the agent is denied every one of these:
-# it proposes the monitor, and the harness creates it.
+# Sentry MCP tools that change things in Sentry. The telemetry agent only reads Sentry, whatever
+# its token allows, so it's denied every one of these: it proposes the monitor, and a person
+# creates it from the pre-filled form the harness links (monitor_preview.py).
 SENTRY_WRITE_TOOLS = [
     "add_issue_note", "add_team_to_project", "analyze_issue_with_seer", "create_alert_rule", "create_dsn",
     "create_metric_monitor", "create_monitor", "create_project", "create_team", "create_uptime_monitor",

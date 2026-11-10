@@ -6,11 +6,12 @@ import json
 import os
 import subprocess
 import sys
+from urllib.parse import parse_qs, urlparse
 
 import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import create_monitor  # noqa: E402
+import monitor_preview  # noqa: E402
 import open_telemetry_pr  # noqa: E402
 import prepare  # noqa: E402
 import report  # noqa: E402
@@ -27,11 +28,7 @@ SPEC = {
 ALERT = {"org": "team-se", "rule": "Notify via selfheal", "issue_id": "7825689300",
          "title": "Chris LLM Context Snowball — max input tokens spike"}
 SETTINGS = {"goal": "the number of help-centre documents", "project": "kunal-manager-agent",
-            "window_seconds": 300, "frequency_minutes": 5}
-SLACK_ACTION = {"id": "17582152", "type": "slack", "integrationId": "1", "status": "active", "data": {},
-                "config": {"targetType": "specific", "targetDisplay": "demo-selfhealing", "targetIdentifier": "C0CCD3THU0H"}}
-WEBHOOK_ACTION = {"id": "17582151", "type": "webhook", "integrationId": None, "data": {},
-                  "config": {"targetIdentifier": "selfheal-4cd71e"}}
+            "window_seconds": 300}
 
 
 def write(tmp_path, **files):
@@ -118,118 +115,63 @@ def test_pr_text_links_the_fix_and_never_closes_the_issue(tmp_path, monkeypatch)
     assert "addresses KUNAL-MANAGER-AGENT-7" in body  # the agent's "fixes" was reworded
 
 
-# --- the monitor ----------------------------------------------------------------------------
+# --- the monitor preview --------------------------------------------------------------------
 
-class FakeSentry:
-    """Sentry's API for the calls create_monitor makes, recording what was sent."""
-
-    def __init__(self, existing=(), workflows=(), fail=None):
-        self.existing, self.workflows, self.fail = list(existing), list(workflows), fail
-        self.sent = []
-
-    def __call__(self, org, method, path, body=None, params=None):
-        self.sent.append((method, path, body, params))
-        if self.fail and self.fail in path and method == "POST":
-            raise create_monitor.SentryError(f"POST {path}: HTTP 400: {{\"dataSources\": [\"invalid aggregate\"]}}")
-        if path == f"/projects/{org}/kunal-manager-agent/":
-            return {"id": "4512069456953344", "slug": "kunal-manager-agent"}
-        # As Sentry does: monitors are listed per org but created under their project
-        if path == f"/organizations/{org}/detectors/" and method == "GET":
-            return self.existing
-        if path == f"/organizations/{org}/detectors/":
-            raise create_monitor.SentryError(f"POST {path}: HTTP 405: {{\"detail\":\"Method \\\"POST\\\" not allowed.\"}}")
-        if path == f"/projects/{org}/kunal-manager-agent/detectors/":
-            raise create_monitor.SentryError(f"POST {path}: HTTP 404: ")
-        if path == f"/organizations/{org}/projects/kunal-manager-agent/detectors/" and method == "POST":
-            return {"id": "10900001", **body}
-        if path == f"/organizations/{org}/workflows/" and method == "POST":
-            return {"id": "6300001", **body}
-        raise AssertionError(f"unexpected Sentry call {method} {path}")
-
-    def posted(self, suffix):
-        return [body for method, path, body, _ in self.sent if method == "POST" and path.endswith(suffix)]
+PREVIEW = ("https://team-se.sentry.io/monitors/new/settings/?detectorType=metric_issue&dataset=metrics"
+           "&aggregate=max%28value%2Cagent.policy.documents%2Cdistribution%2C-%29&project=4512069456953344")
 
 
-@pytest.fixture
-def sentry(monkeypatch):
-    def install(slack_actions=(SLACK_ACTION,), **kwargs):
-        fake = FakeSentry(**kwargs)
-        monkeypatch.setattr(create_monitor, "sentry", fake)
-        monkeypatch.setattr(create_monitor.slack_channels, "alert_slack_actions", lambda alert: list(slack_actions))
-        return fake
-    return install
+def test_preview_link_prefills_the_monitor_form(tmp_path):
+    spec = telemetry_spec.load(write(tmp_path, **{"telemetry.json": SPEC}))
+    url = monitor_preview.preview_url("team-se", spec, "4512069456953344")
+    assert url == PREVIEW
+    # The fields Sentry's form reads from its URL (useInitialMetricDetectorFormData)
+    assert parse_qs(urlparse(url).query) == {
+        "detectorType": ["metric_issue"], "dataset": ["metrics"], "project": ["4512069456953344"],
+        "aggregate": ["max(value,agent.policy.documents,distribution,-)"]}
 
 
-def test_creates_the_monitor_on_the_new_metric(tmp_path, sentry):
-    fake = sentry()
-    monitor = create_monitor.create(write(tmp_path, **{"telemetry.json": SPEC}), ALERT, SETTINGS)
-
-    [detector] = fake.posted("/detectors/")
-    # The same shape as Sentry's MCP create_metric_monitor sends
-    assert detector["type"] == "metric_issue" and "projectId" not in detector
-    assert detector["config"] == {"detectionType": "static", "comparisonDelta": None}
-    assert detector["dataSources"] == [{
-        "dataset": "events_analytics_platform", "query": "",
-        "aggregate": "max(value,agent.policy.documents,distribution,-)",
-        "environment": None, "eventTypes": ["trace_item_metric"], "timeWindow": 300}]
-    assert detector["conditionGroup"]["conditions"] == [
-        {"type": "gt", "comparison": 10, "conditionResult": 75},
-        {"type": "lte", "comparison": 10, "conditionResult": 0}]
-    assert monitor["url"] == "https://team-se.sentry.io/monitors/10900001/"
-    assert (monitor["reused"], monitor["alert_id"]) == (False, "6300001")
+def test_slack_line_says_what_threshold_to_set(tmp_path):
+    spec = telemetry_spec.load(write(tmp_path, **{"telemetry.json": SPEC}))
+    assert monitor_preview.slack_text(PREVIEW, spec, 300) == (
+        f"<{PREVIEW}|Preview monitor>: max of agent.policy.documents over 5 min"
+        " · set the threshold to *10* documents · open to review and create")
 
 
-def test_alert_copies_slack_actions_and_never_the_selfheal_webhook(tmp_path, sentry, monkeypatch):
-    # alert_slack_actions is what filters; check it against the real "Notify via selfheal" shape
-    monkeypatch.setattr(create_monitor.slack_channels, "alert_workflows",
-                        lambda alert: [{"actionFilters": [{"actions": [WEBHOOK_ACTION, SLACK_ACTION]}]}])
-    assert create_monitor.slack_channels.alert_slack_actions(ALERT) == [SLACK_ACTION]
+def test_preview_creates_nothing_in_sentry(tmp_path, no_slack, monkeypatch, capsys):
+    calls = []
 
-    fake = sentry()
-    create_monitor.create(write(tmp_path, **{"telemetry.json": SPEC}), ALERT, SETTINGS)
-    [alert] = fake.posted("/workflows/")
-    assert alert["detectorIds"] == ["10900001"] and alert["config"] == {"frequency": 5}
-    assert alert["actionFilters"][0]["actions"] == [{
-        "type": "slack", "integrationId": "1", "data": {},
-        "config": {"targetType": "specific", "targetDisplay": "demo-selfhealing", "targetIdentifier": "C0CCD3THU0H"}}]
-
-
-def test_existing_monitor_is_reused_not_duplicated(tmp_path, sentry):
-    name = "agent.policy.documents — max above 10 (self-heal telemetry)"
-    fake = sentry(existing=[{"id": "10900001", "name": name, "type": "metric_issue", "workflowIds": ["6300001"]}])
-    monitor = create_monitor.create(write(tmp_path, **{"telemetry.json": SPEC}), ALERT, SETTINGS)
-    assert monitor["reused"] and monitor["id"] == "10900001"
-    assert fake.posted("/detectors/") == [] and fake.posted("/workflows/") == []
-
-
-def test_no_slack_action_means_monitor_without_alert(tmp_path, sentry, capsys):
-    fake = sentry(slack_actions=())
-    monitor = create_monitor.create(write(tmp_path, **{"telemetry.json": SPEC}), ALERT, SETTINGS)
-    assert monitor["alert_id"] is None and fake.posted("/workflows/") == []
-    assert "no Slack action to copy" in capsys.readouterr().out
-
-
-def test_slack_says_created_monitor_with_its_link(tmp_path, sentry, no_slack, monkeypatch, capsys):
-    sentry()
+    def fake_get(org, path, params=None):
+        calls.append(("GET", path))
+        return {"id": "4512069456953344", "slug": "kunal-manager-agent"}, None
+    monkeypatch.setattr(monitor_preview.slack_channels, "sentry_get", fake_get)
     monkeypatch.setenv("TARGET_TELEMETRY", json.dumps(SETTINGS))
     out = write(tmp_path, **{"telemetry.json": SPEC, "alert.json": ALERT})
-    monkeypatch.setattr(sys, "argv", ["create_monitor.py", "--out", out])
-    create_monitor.main()
-    assert ("<https://team-se.sentry.io/monitors/10900001/|Created monitor>: alerts when max > 10 documents"
-            " in 5 min") in capsys.readouterr().out
+    monkeypatch.setattr(sys, "argv", ["monitor_preview.py", "--out", out])
+    monitor_preview.main()
+    assert calls == [("GET", "/projects/team-se/kunal-manager-agent/")]  # one read, no writes
+    assert json.loads((tmp_path / "monitor_preview.json").read_text())["url"] == PREVIEW
+    assert f"<{PREVIEW}|Preview monitor>" in capsys.readouterr().out
 
 
-def test_sentry_refusal_is_a_warning_with_sentrys_reason(tmp_path, sentry, no_slack, monkeypatch, capsys):
-    sentry(fail="/detectors/")
+def test_preview_without_the_project_id_still_links_the_form(tmp_path, no_slack, monkeypatch, capsys):
+    monkeypatch.setattr(monitor_preview.slack_channels, "sentry_get", lambda *a, **k: (None, None))
     monkeypatch.setenv("TARGET_TELEMETRY", json.dumps(SETTINGS))
     out = write(tmp_path, **{"telemetry.json": SPEC, "alert.json": ALERT})
-    monkeypatch.setattr(sys, "argv", ["create_monitor.py", "--out", out])
-    with pytest.raises(SystemExit) as exited:
-        create_monitor.main()
-    assert exited.value.code == 1
-    out = capsys.readouterr().out
-    assert "::warning title=No monitor created::" in out and "invalid aggregate" in out
-    assert "Created monitor" not in out
+    monkeypatch.setattr(sys, "argv", ["monitor_preview.py", "--out", out])
+    monitor_preview.main()
+    assert "the form will ask for the project" in capsys.readouterr().out
+    assert "project=" not in json.loads((tmp_path / "monitor_preview.json").read_text())["url"]
+
+
+def test_bad_proposal_gets_no_preview(tmp_path, no_slack, monkeypatch, capsys):
+    out = write(tmp_path, **{"telemetry.json": {**SPEC, "monitor": {**SPEC["monitor"], "threshold": -1}},
+                             "alert.json": ALERT})
+    monkeypatch.setattr(sys, "argv", ["monitor_preview.py", "--out", out])
+    with pytest.raises(SystemExit):
+        monitor_preview.main()
+    output = capsys.readouterr().out
+    assert "::warning title=No monitor preview::" in output and "Preview monitor" not in output
 
 
 # --- wiring ---------------------------------------------------------------------------------

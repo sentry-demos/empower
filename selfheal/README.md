@@ -277,17 +277,17 @@ snowball), the run doesn't stop at the fix. The `telemetry` job, after the revie
    the code really emits the proposed metric, and no secret leaks. Then it opens its own draft PR
    into the base (label `selfheal-telemetry`) and posts "*Telemetry improvement* 🔧: PR #N /
    Instrumented code to capture new application metric in Sentry · <metric>" in the alert's thread.
-3. `harness/create_monitor.py` validates the proposal (`telemetry_spec.py`) and creates a Metric
-   Monitor on the metric in the target's telemetry project, e.g.
-   `max(value,agent.policy.documents,distribution,-)` over 5 minutes. A monitor with the same
-   name is reused. Its Alert copies the Slack action(s) of the alert that started the run, never
-   the selfheal webhook, so a breach notifies people without starting another run. Then it posts
-   "Created monitor: alerts when max > 10 documents in 5 min" with the monitor's link.
+3. `harness/monitor_preview.py` validates the proposal (`telemetry_spec.py`) and links Sentry's
+   new-monitor form, pre-filled with the project, the Application Metrics dataset and the
+   aggregate, e.g. `max(value,agent.policy.documents,distribution,-)`. **Nothing is created in
+   Sentry**, so SEs demoing at once don't each leave a monitor behind. The form doesn't take a
+   threshold or name from its URL, so the thread says what to set: "Preview monitor: max of
+   agent.policy.documents over 5 min · set the threshold to 10 documents · open to review and
+   create". Whoever creates it adds its alert in the form.
 
-Needs the org's Sentry token (`SELFHEAL_SENTRY_MCP_TOKEN_<ORG>`) with **Alerts: Read & Write**.
-The metric only has data once the instrumentation runs (merged, or checked out locally), so the
-monitor stays quiet until then. Any step that fails shows a warning on the run and skips its
-Slack message; the fix PR is unaffected.
+The org's Sentry token is only read from here (to look up the project's ID). The metric only has
+data once the instrumentation runs (merged, or checked out locally). Any step that fails shows a
+warning on the run and skips its Slack message; the fix PR is unaffected.
 
 ## Slack: where the bot posts
 

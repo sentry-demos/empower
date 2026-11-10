@@ -323,7 +323,7 @@ jobs:
   telemetry:
     # Follow-up for targets with a `telemetry` block (targets.json): a second agent takes the fix
     # PR, instruments the cause as a Sentry Application Metric in its own PR into the base, and
-    # the harness creates a metric monitor on it, alerting the original alert's Slack channels.
+    # the thread gets a link to a pre-filled monitor form for it (nothing is created in Sentry).
     needs: [plan, review]
     if: always() && needs.plan.result == 'success'
     runs-on: ubuntu-latest
@@ -408,8 +408,8 @@ jobs:
         if: steps.fix.outputs.url
         continue-on-error: true  # still verify whatever it produced
         run: |
-          # Read-only Sentry: the token can create monitors (for the harness), so every Sentry
-          # tool that changes something is denied to the agent
+          # Read-only Sentry: whatever the token allows, every Sentry tool that changes
+          # something is denied to the agent
           DISALLOWED="Read(/$SECRETS/**) Grep(/$SECRETS/**) Glob(/$SECRETS/**) $(python selfheal/harness/prepare.py sentry-write-tools)"
           TOOLS="Read Edit Write Glob Grep Bash(python -m pytest:*) ToolSearch mcp__sentry"
           python selfheal/harness/run_agent.py --name telemetry --variant telemetry \
@@ -434,16 +434,17 @@ jobs:
           python selfheal/harness/open_telemetry_pr.py --out "$OUT" \
             --fix-pr-url "${{ steps.fix.outputs.url }}" --fix-result "${{ steps.fix.outputs.result }}"
 
-      - name: Create the metric monitor and its alert
+      - name: Link a pre-filled monitor form (nothing is created in Sentry)
         if: steps.fix.outputs.url && steps.pr.outcome == 'success'
         continue-on-error: true
         env:
+          # Read-only here: only to look up the project's ID for the form
           SENTRY_MCP_TOKEN: ${{ secrets.SELFHEAL_SENTRY_MCP_TOKEN }}
           SENTRY_MCP_TOKEN_TEAM_SE: ${{ secrets.SELFHEAL_SENTRY_MCP_TOKEN_TEAM_SE }}
           SELFHEAL_SLACK_BOT_TOKEN: ${{ secrets.SELFHEAL_SLACK_BOT_TOKEN }}
           SELFHEAL_SLACK_CHANNEL: ${{ vars.SELFHEAL_SLACK_CHANNEL }}
           SELFHEAL_SLACK_CHANNELS: ${{ needs.plan.outputs.slack_channels }}
-        run: python selfheal/harness/create_monitor.py --out "$OUT"
+        run: python selfheal/harness/monitor_preview.py --out "$OUT"
 
       - name: Upload the telemetry results
         if: always() && steps.fix.outputs.url
@@ -454,7 +455,7 @@ jobs:
           path: |
             ${{ env.OUT }}/telemetry.json
             ${{ env.OUT }}/telemetry_verify.json
-            ${{ env.OUT }}/monitor.json
+            ${{ env.OUT }}/monitor_preview.json
             ${{ env.OUT }}/stats.json
 
   report:

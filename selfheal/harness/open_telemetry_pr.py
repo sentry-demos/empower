@@ -92,12 +92,12 @@ def pr_text(out, spec, check, fix_pr_url, fix_result):
         "\n\n---\n"
         f"_Opened by the self-heal telemetry agent from "
         f"[run {run_id}]({os.environ.get('GITHUB_SERVER_URL', '')}/{os.environ.get('GITHUB_REPOSITORY', '')}/actions/runs/{run_id})._"
-        " The harness creates the monitor in Sentry from this proposal.\n\n"
+        " The alert's Slack thread links a pre-filled Sentry monitor form for the proposed monitor.\n\n"
         "**Harness verification**\n"
         f"- Files: {', '.join(check['files_changed'])}\n"
         f"- Tests: passed ({check['tests_summary']})\n"
         f"- Emits `{name}` via `sentry_sdk.metrics.{spec['metric']['type']}`: yes\n"
-        f"- Monitor: `{spec['monitor']['sentry_aggregate']}`, alerts when {telemetry_spec.describe(spec, window)}\n"
+        f"- Proposed monitor: `{spec['monitor']['sentry_aggregate']}`, alerts when {telemetry_spec.describe(spec, window)}\n"
     )
     title, body = (issue_refs.neutralize(text, short_id, issue_url) for text in (title, body))
     issue_refs.check({"title": title, "commit": message, "body": body}, short_id, issue_url)

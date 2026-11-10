@@ -58,9 +58,9 @@ The commands you may run:
 ## 3. Propose the monitor
 
 Pick a threshold that separates a healthy value from the problem, using the numbers you found
-and what the fix PR says normal looks like. The harness creates the monitor from your proposal:
-max (or another aggregate) of your metric over a {{WINDOW_MINUTES}}-minute window, critical above
-the threshold.
+and what the fix PR says normal looks like. The harness turns your proposal into a pre-filled
+Sentry monitor form for a person to review and create: max (or another aggregate) of your metric
+over a {{WINDOW_MINUTES}}-minute window, critical above the threshold.
 
 ## 4. Report
 
@@ -86,4 +86,4 @@ Refer to the Sentry issue by its short ID or link, never after "fix", "fixes", "
 "close(s/d)" or "resolve(s/d)": Sentry would read that as this change closing the issue.
 
 Don't run git, don't open a PR, and don't create anything in Sentry. The harness re-runs the
-tests, opens the PR and creates the monitor.
+tests, opens the PR and links the monitor form.
