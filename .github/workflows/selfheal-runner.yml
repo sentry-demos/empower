@@ -155,7 +155,7 @@ jobs:
           SENTRY_MCP_TOKEN_TEAM_SE: ${{ secrets.SELFHEAL_SENTRY_MCP_TOKEN_TEAM_SE }}
         run: python selfheal/harness/seer_handoff.py --alert "$RUNNER_TEMP/selfheal/alert.json" --out "$OUT"
 
-      - name: Post "Seer root cause" to Slack (with-seer)
+      - name: Post "Seer RCA" to Slack (with-seer)
         if: matrix.variant == 'with-seer'
         env:
           SELFHEAL_SLACK_BOT_TOKEN: ${{ secrets.SELFHEAL_SLACK_BOT_TOKEN }}
@@ -195,7 +195,7 @@ jobs:
             --prompt-file "$OUT/prompt.md" --out "$OUT" "${MCP[@]}" \
             --allowed-tools "$TOOLS" --disallowed-tools "$DISALLOWED"
 
-      - name: Post "Sentry telemetry" to Slack (without-seer)
+      - name: Post "Sentry MCP calls" to Slack (without-seer)
         # After the agent, not during it: the Slack token stays out of the agent's environment
         if: matrix.variant == 'without-seer'
         env:
@@ -207,7 +207,7 @@ jobs:
       - name: Verify independently and open draft PR
         env:
           GH_TOKEN: ${{ github.token }}
-          # "Opening draft PR" in the alert's Slack thread
+          # "Drafting PR" in the alert's Slack thread
           SELFHEAL_SLACK_BOT_TOKEN: ${{ secrets.SELFHEAL_SLACK_BOT_TOKEN }}
           SELFHEAL_SLACK_CHANNEL: ${{ vars.SELFHEAL_SLACK_CHANNEL }}
           SELFHEAL_SLACK_CHANNELS: ${{ needs.plan.outputs.slack_channels }}
@@ -372,7 +372,7 @@ jobs:
         run: bash -c "$TARGET_INSTALL"
 
       - name: Post the telemetry bridge message to Slack
-        # Bridges "Fix ready for review" and the telemetry PR a few minutes later, so the thread
+        # Bridges "PR ready for review" and the telemetry PR a few minutes later, so the thread
         # doesn't look finished
         if: steps.fix.outputs.url
         continue-on-error: true

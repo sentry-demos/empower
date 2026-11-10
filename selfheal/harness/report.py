@@ -225,9 +225,6 @@ def post(text, blocks, alert=None, thread_attempts=1):
     return posted
 
 
-LABELS = {"without-seer": "without Seer", "with-seer": "with Seer"}
-
-
 def first_sentence(text, limit=160):
     """Shortest useful form of an agent's explanation, for a scannable Slack line."""
     text = " ".join(str(text or "").split())
@@ -260,9 +257,7 @@ def run_url():
 def report_started(args):
     """First reply on the alert: the agents are on it, with a link to watch them work."""
     alert = load(args.alert)
-    agents = " and ".join(LABELS.get(v, v) for v in args.variants)
-    text = (f"*Self-heal started* · agents ({agents}) are investigating with Sentry telemetry"
-            f" · <{run_url()}|watch the run>")
+    text = f"*Self-heal started*: <{run_url()}|agents are investigating>"
     # Alert-driven runs can start before Sentry's Slack message lands: wait up to ~1 min for it
     attempts = 1 if alert.get("kind") == "manual" else 5
     post(text, [{"type": "section", "text": {"type": "mrkdwn", "text": text}}], alert,
@@ -312,8 +307,8 @@ def sentry_lookup(name, tool_input):
     return SENTRY_LOOKUPS.get(name)
 
 
-def sentry_summary(timeline, short_id):
-    """One sentence on what the agent pulled from Sentry, or "" if it pulled nothing."""
+def sentry_summary(timeline):
+    """What the agent pulled from Sentry ("read the issue + 1 span search"), or "" if nothing."""
     calls = [t for t in timeline if t.get("type") == "tool" and t["name"].startswith("mcp__sentry__")
              and not t.get("error") and not t["name"].endswith("analyze_issue_with_seer")]
     counts = {}  # insertion order: the order the agent looked at things
@@ -324,14 +319,13 @@ def sentry_summary(timeline, short_id):
     if not counts:
         return ""
     parts = [one if one == many else f"{n} {one if n == 1 else many}" for (one, many), n in counts.items()]
-    listed = parts[0] if len(parts) == 1 else ", ".join(parts[:-1]) + " and " + parts[-1]
-    done_s = max(c.get("at_s", 0) + c.get("seconds", 0) for c in calls)
-    return (f"Investigated {short_id or 'the issue'} with {len(calls)} Sentry MCP call{'s' if len(calls) != 1 else ''}"
-            f" ({done_s:.0f}s): read {listed}.")
+    return "read " + " + ".join(parts)
 
 
-TELEMETRY_STARTED = ("*Next: telemetry improvement* · an agent is adding a Sentry metric for this,"
-                     " and a monitor to alert on it directly (a few minutes)")
+# How long until the next message, from typical runs: the review job, the telemetry job
+REVIEW_ETA_MIN = 1
+TELEMETRY_ETA_MIN = 2
+TELEMETRY_STARTED = f"*Telemetry improvement*: an agent is adding a Sentry metric and monitor, eta ~{TELEMETRY_ETA_MIN} min"
 
 
 def report_status(args):
@@ -346,19 +340,15 @@ def report_status(args):
         if not seer:
             print("No Seer handoff; nothing to post")
             return
-        issue = (handoff.get("issue") or {}).get("short_id") or "the issue"
-        source = "its earlier analysis" if seer.get("reused") else "a new analysis"
-        text = (f"🔎 *Seer root cause* · pulled {issue}, its logs and impact from Sentry,"
-                f" then queried Seer ({source}, {seer.get('seconds', 0):.0f}s): "
-                f"{first_sentence(seer.get('root_cause'), 200)}")
+        source = "earlier analysis" if seer.get("reused") else "new analysis"
+        text = f"*Seer RCA*: queried ({source}, {seer.get('seconds', 0):.0f}s)"
     else:
         timeline = load(os.path.join(args.dir, "timeline.json"), default=[])
-        agent = load(os.path.join(args.dir, "result.json"))
-        summary = sentry_summary(timeline, agent.get("issue_short_id"))
+        summary = sentry_summary(timeline)
         if not summary:
             print("The agent made no Sentry calls; nothing to post")
             return
-        text = f"🔎 *Sentry telemetry* · {summary}"
+        text = f"*Sentry MCP calls*: {summary}"
     post_status(text, alert)
 
 
@@ -379,18 +369,13 @@ def report_dashboard(out, lookup=issue_category):
     label = os.environ.get("TARGET_DASHBOARD_LABEL") or "dashboard"
     # Slack wants &, < and > escaped, link targets included
     url = url.replace("&", "&amp;").replace("<", "%3C").replace(">", "%3E")
-    post_status(f"📊 See the impact on the <{url}|{label}>", alert)
+    post_status(f"*Relevant dashboard*: <{url}|{label}>", alert)
 
 
 def report_opening_pr(variant, out, check):
-    """Called by open_pr.py once the harness has verified the fix, right before it opens the PR."""
-    verified = "tests pass"
-    if check.get("replay_status") == 200:
-        verified += ", failing request now succeeds"
-    if check.get("check_passed"):
-        verified += f", {check.get('check_label') or 'fix check passes'}"
-    post_status(f"*Opening draft PR* · fix verified: {verified}",
-                load(os.path.join(out, "alert.json")))
+    """Called by open_pr.py once the harness has verified the fix, right before it opens the PR.
+    The "PR ready for review" message follows once the reviewer agent is done."""
+    post_status(f"*Drafting PR*: eta ~{REVIEW_ETA_MIN} min", load(os.path.join(out, "alert.json")))
 
 
 def report_run(args):
@@ -403,38 +388,22 @@ def report_run(args):
     if not failed:
         print("Every agent opened a PR and posted its own message; nothing to add.")
         return
-    agents = " and ".join(LABELS.get(v, v) for v in failed)
-    text = f"*No fix proposed* ({agents}) · see the <{run_url()}|run log> for why"
+    text = f"*No fix proposed*: see the <{run_url()}|run log> for why"
     post(text, [{"type": "section", "text": {"type": "mrkdwn", "text": text}}], alert)
 
 
 def report_review(args):
-    """The human-in-the-loop ping, kept scannable: impact, root cause, verification, PR link.
-    Everything else (how the fix was found, the review) is in the PR."""
-    with open(args.review) as f:
-        review = [line.strip() for line in f.read().strip().splitlines() if line.strip()]
-    verdict = review[0].replace("**", "").replace("Verdict:", "").strip() if review else "?"
-
-    stats = load(os.path.join(args.results, "stats.json"))
-    check = load(os.path.join(args.results, "verify.json"))
+    """The human-in-the-loop ping, kept scannable: PR link, impact, root cause.
+    Everything else (verification, how the fix was found, the review) is in the PR."""
     agent = load(os.path.join(args.results, "result.json"))
     alert = load(os.path.join(args.results, "alert.json"))
     pr_number = args.pr_url.rstrip("/").rsplit("/", 1)[-1]
-
-    verified = ("tests pass" if check.get("tests_passed") else "tests FAIL")
-    if check.get("replay_status") == 200:
-        verified += ", failing order now succeeds"
-    if check.get("check_passed"):
-        verified += f", {check.get('check_label') or 'fix check passes'}"
-    footer = f"{verified} · reviewer: {verdict}"
-    if stats:
-        footer += f" · {stats['duration_s']:.0f}s, ${stats['cost_usd']:.2f}"
-
+    root_cause = agent.get("root_cause_short") or first_sentence(agent.get("root_cause") or "see the PR", 120)
     text = "\n".join([
-        f"*Fix ready for review* · 🔧 <{args.pr_url}|PR #{pr_number}>",
-        agent.get("impact_short") or impact_line(agent.get("impact") or {}),
-        f"Root cause: {agent.get('root_cause_short') or first_sentence(agent.get('root_cause') or 'see the PR', 120)}",
-        footer,
+        f"*PR ready for review* · <{args.pr_url}|PR #{pr_number}>",
+        "",
+        f"• {agent.get('impact_short') or impact_line(agent.get('impact') or {})}",
+        f"• Root cause: {root_cause}",
     ])
     post(text, [{"type": "section", "text": {"type": "mrkdwn", "text": text}}], alert)
 
@@ -447,7 +416,7 @@ if __name__ == "__main__":
     run.add_argument("--results", required=True)
     review = sub.add_parser("review")
     review.add_argument("--pr-url", required=True)
-    review.add_argument("--review", required=True)
+    review.add_argument("--review", required=True, help="The reviewer's verdict (kept in the PR, not in Slack)")
     review.add_argument("--variant", required=True)
     review.add_argument("--results", required=True, help="Dir with this variant's stats/verify/result.json")
     started = sub.add_parser("started")

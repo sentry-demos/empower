@@ -96,8 +96,8 @@ def test_blockers_name_every_problem():
 def test_slack_message_matches_fix_ready_for_review(tmp_path):
     spec = telemetry_spec.load(write(tmp_path, **{"telemetry.json": SPEC}))
     assert open_telemetry_pr.slack_text("https://github.com/sentry-demos/empower/pull/1751", spec) == (
-        "*Telemetry improvement* 🔧: <https://github.com/sentry-demos/empower/pull/1751|PR #1751>\n"
-        "Instrumented code to capture new application metric in Sentry · agent.policy.documents")
+        "*Telemetry PR ready for review* · <https://github.com/sentry-demos/empower/pull/1751|PR #1751>\n\n"
+        "• New application metric: `agent.policy.documents`")
 
 
 def test_pr_text_links_the_fix_and_never_closes_the_issue(tmp_path, monkeypatch):
@@ -134,8 +134,7 @@ def test_preview_link_prefills_the_monitor_form(tmp_path):
 def test_slack_line_says_what_threshold_to_set(tmp_path):
     spec = telemetry_spec.load(write(tmp_path, **{"telemetry.json": SPEC}))
     assert monitor_preview.slack_text(PREVIEW, spec, 300) == (
-        f"<{PREVIEW}|Preview monitor>: max of agent.policy.documents over 5 min"
-        " · set the threshold to *10* documents · open to review and create")
+        f"*Proposed monitor*: <{PREVIEW}|preview> · max over 5 min, set threshold to *10* documents")
 
 
 def test_preview_creates_nothing_in_sentry(tmp_path, no_slack, monkeypatch, capsys):
@@ -151,7 +150,7 @@ def test_preview_creates_nothing_in_sentry(tmp_path, no_slack, monkeypatch, caps
     monitor_preview.main()
     assert calls == [("GET", "/projects/team-se/kunal-manager-agent/")]  # one read, no writes
     assert json.loads((tmp_path / "monitor_preview.json").read_text())["url"] == PREVIEW
-    assert f"<{PREVIEW}|Preview monitor>" in capsys.readouterr().out
+    assert f"<{PREVIEW}|preview>" in capsys.readouterr().out
 
 
 def test_preview_without_the_project_id_still_links_the_form(tmp_path, no_slack, monkeypatch, capsys):
@@ -171,7 +170,7 @@ def test_bad_proposal_gets_no_preview(tmp_path, no_slack, monkeypatch, capsys):
     with pytest.raises(SystemExit):
         monitor_preview.main()
     output = capsys.readouterr().out
-    assert "::warning title=No monitor preview::" in output and "Preview monitor" not in output
+    assert "::warning title=No monitor preview::" in output and "Proposed monitor" not in output
 
 
 # --- wiring ---------------------------------------------------------------------------------

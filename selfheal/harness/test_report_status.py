@@ -56,20 +56,18 @@ def run_dir(tmp_path, **files):
 
 
 def test_sentry_summary_names_what_the_agent_read():
-    assert report.sentry_summary(TIMELINE, "KUNAL-MANAGER-AGENT-7") == (
-        "Investigated KUNAL-MANAGER-AGENT-7 with 5 Sentry MCP calls (56s): read the issue, 1 trace,"
-        " 2 span searches and 1 log search.")
+    assert report.sentry_summary(TIMELINE) == "read the issue + 1 trace + 2 span searches + 1 log search"
 
 
 def test_sentry_summary_is_empty_without_sentry_calls():
-    assert report.sentry_summary([t for t in TIMELINE if not t.get("name", "").startswith("mcp__")], "X-1") == ""
+    assert report.sentry_summary([t for t in TIMELINE if not t.get("name", "").startswith("mcp__")]) == ""
 
 
 def test_without_seer_status(tmp_path, no_slack, capsys):
     out = run_dir(tmp_path, **{"timeline.json": TIMELINE, "result.json": {"issue_short_id": "KUNAL-MANAGER-AGENT-7"}})
     report.report_status(Namespace(kind="sentry", variant="without-seer", dir=out))
-    assert message(capsys).startswith(
-        "🔎 *Sentry telemetry* · Investigated KUNAL-MANAGER-AGENT-7 with 5 Sentry MCP calls")
+    assert message(capsys).splitlines()[0] == (
+        "*Sentry MCP calls*: read the issue + 1 trace + 2 span searches + 1 log search")
 
 
 def test_seer_status(tmp_path, no_slack, capsys):
@@ -77,24 +75,20 @@ def test_seer_status(tmp_path, no_slack, capsys):
                "seer": {"run_id": 42, "reused": True, "seconds": 2.4,
                         "root_cause": "In checkout(), `quantities` is read before it is assigned. The guard..."}}
     report.report_status(Namespace(kind="seer", variant="with-seer", dir=run_dir(tmp_path, **{"handoff.json": handoff})))
-    assert message(capsys).splitlines()[0] == (
-        "🔎 *Seer root cause* · pulled BACKEND-FLASK-JJ, its logs and impact from Sentry, then queried"
-        " Seer (its earlier analysis, 2s): In checkout(), `quantities` is read before it is assigned.")
+    assert message(capsys).splitlines()[0] == "*Seer RCA*: queried (earlier analysis, 2s)"
 
 
 def test_telemetry_started_bridges_the_thread(tmp_path, no_slack, capsys):
     report.report_status(Namespace(kind="telemetry", variant="telemetry", dir=run_dir(tmp_path)))
     assert message(capsys).splitlines()[0] == (
-        "*Next: telemetry improvement* · an agent is adding a Sentry metric for this,"
-        " and a monitor to alert on it directly (a few minutes)")
+        "*Telemetry improvement*: an agent is adding a Sentry metric and monitor, eta ~2 min")
 
 
 def test_opening_pr_status(tmp_path, no_slack, capsys):
     check = {"tests_passed": True, "replay_status": None, "check_passed": True,
              "check_label": "policy answer under the token budget"}
     report.report_opening_pr("without-seer", run_dir(tmp_path), check)
-    assert message(capsys).splitlines()[0] == (
-        "*Opening draft PR* · fix verified: tests pass, policy answer under the token budget")
+    assert message(capsys).splitlines()[0] == "*Drafting PR*: eta ~1 min"
 
 
 def test_slack_failure_never_fails_the_step(tmp_path, monkeypatch, capsys):
@@ -105,7 +99,7 @@ def test_slack_failure_never_fails_the_step(tmp_path, monkeypatch, capsys):
     assert "Status message not posted" in capsys.readouterr().out
 
 
-def test_fix_ready_footer_has_no_version(tmp_path, no_slack, capsys):
+def test_pr_ready_lists_impact_and_root_cause(tmp_path, no_slack, capsys):
     out = run_dir(tmp_path, **{"stats.json": {"duration_s": 132.0, "cost_usd": 0.46},
                                "verify.json": {"tests_passed": True, "check_passed": True,
                                                "check_label": "policy answer under the token budget"},
@@ -115,8 +109,12 @@ def test_fix_ready_footer_has_no_version(tmp_path, no_slack, capsys):
     review.write_text("**Verdict: MERGE**\n")
     report.report_review(Namespace(pr_url="https://github.com/o/r/pull/1725", review=str(review),
                                    variant="without-seer", results=out))
-    assert message(capsys).splitlines()[3] == (
-        "tests pass, policy answer under the token budget · reviewer: MERGE · 132s, $0.46")
+    assert message(capsys).splitlines()[:4] == [
+        "*PR ready for review* · <https://github.com/o/r/pull/1725|PR #1725>",
+        "",
+        "• ~47.8k input tokens per policy question",
+        "• Root cause: search_policies returns every page",
+    ]
 
 
 DASHBOARD = ("https://demo.sentry.io/dashboard/510044/?project=5808623&project=4508968134377472"
@@ -136,7 +134,7 @@ def test_metric_alert_gets_the_dashboard_link(tmp_path, no_slack, dashboard, cap
     report.report_dashboard(out, lookup=lambda issue_id, org: seen.append((issue_id, org)) or "metric")
     assert seen == [("7825689300", "team-se")]
     assert message(capsys).splitlines()[0] == (
-        "📊 See the impact on the <https://demo.sentry.io/dashboard/510044/?project=5808623"
+        "*Relevant dashboard*: <https://demo.sentry.io/dashboard/510044/?project=5808623"
         "&amp;project=4508968134377472&amp;statsPeriod=7d|Critical Experience dashboard>")
 
 
@@ -167,3 +165,14 @@ def test_targets_carry_the_dashboard(org, expected):
     assert name == expected
     assert lines["TARGET_DASHBOARD_URL"].startswith("https://demo.sentry.io/dashboard/510044/")
     assert lines["TARGET_DASHBOARD_LABEL"] == "Critical Experience dashboard"
+
+
+def test_started_links_the_run(tmp_path, no_slack, capsys, monkeypatch):
+    monkeypatch.setenv("GITHUB_SERVER_URL", "https://github.com")
+    monkeypatch.setenv("GITHUB_REPOSITORY", "sentry-demos/empower")
+    monkeypatch.setenv("GITHUB_RUN_ID", "42877140514")
+    alert = tmp_path / "alert.json"
+    alert.write_text(json.dumps({"kind": "manual"}))
+    report.report_started(Namespace(alert=str(alert), variants=["without-seer"]))
+    assert message(capsys).splitlines()[0] == (
+        "*Self-heal started*: <https://github.com/sentry-demos/empower/actions/runs/42877140514|agents are investigating>")

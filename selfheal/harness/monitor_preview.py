@@ -6,8 +6,7 @@ Sentry's own Insights pages build: detectors/.../useInitialMetricDetectorFormDat
     https://team-se.sentry.io/monitors/new/settings/?detectorType=metric_issue&project=<id>
         &dataset=metrics&aggregate=max(value,agent.policy.documents,distribution,-)
 It doesn't read a threshold or name from the URL, so the Slack line says what threshold to set:
-    "<Preview monitor>: max of agent.policy.documents over 5 min · set the threshold to 10
-     documents · open to review and create"
+    "*Proposed monitor*: <preview> · max over 5 min, set threshold to *10* documents"
 
 Usage (repo root, after open_telemetry_pr.py):
     python selfheal/harness/monitor_preview.py --out DIR
@@ -46,9 +45,8 @@ def slack_text(url, spec, window_seconds):
     threshold = monitor["threshold"]
     threshold = int(threshold) if float(threshold).is_integer() else threshold
     label = f" {monitor['unit_label']}" if monitor["unit_label"] else ""
-    return (f"<{url}|Preview monitor>: {monitor['aggregate']} of {spec['metric']['name']} over"
-            f" {int(window_seconds) // 60} min · set the threshold to *{threshold}*{label}"
-            f" · open to review and create")
+    return (f"*Proposed monitor*: <{url}|preview> · {monitor['aggregate']} over {int(window_seconds) // 60} min,"
+            f" set threshold to *{threshold}*{label}")
 
 
 def main():

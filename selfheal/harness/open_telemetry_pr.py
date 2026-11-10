@@ -105,10 +105,10 @@ def pr_text(out, spec, check, fix_pr_url, fix_result):
 
 
 def slack_text(pr_url, spec):
-    """Two lines in the alert's thread, shaped like "Fix ready for review"."""
+    """Shaped like "PR ready for review"."""
     number = pr_url.rstrip("/").rsplit("/", 1)[-1]
-    return (f"*Telemetry improvement* 🔧: <{pr_url}|PR #{number}>\n"
-            f"Instrumented code to capture new application metric in Sentry · {spec['metric']['name']}")
+    return (f"*Telemetry PR ready for review* · <{pr_url}|PR #{number}>\n\n"
+            f"• New application metric: `{spec['metric']['name']}`")
 
 
 def close_earlier(prefix, keep_url):

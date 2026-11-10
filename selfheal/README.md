@@ -33,8 +33,8 @@ drive.py live ──► selfheal-flask /checkout ──► 500, checkout.capture
             review job per PR: comments MERGE/ADJUST/CLOSE (never approves)
             report job: scorecard, then deletes the run branch
                                                         │
-          Slack, in the thread of Sentry's alert: per PR a four-line "Fix ready for review"
-          (PR link, impact, root cause, verification + verdict). If an agent opens no PR, a
+          Slack, in the thread of Sentry's alert: per PR a "PR ready for review"
+          (PR link, impact, root cause; verification and verdict are in the PR). If an agent opens no PR, a
           one-line "No fix proposed" with the run log instead. The PR carries the detail, including "How this fix was found": every
           Sentry MCP call, Seer call and agent step. Agent PRs stay open for demos.
           Sentry selfheal-harness project: one gen_ai.invoke_agent span per run (Agent Tracing)
@@ -275,15 +275,14 @@ snowball), the run doesn't stop at the fix. The `telemetry` job, after the revie
    `search_policies`. It proposes a monitor in `telemetry.json`: aggregate, threshold, reasoning.
 2. `harness/open_telemetry_pr.py` checks the change stays in the target's paths, the tests pass,
    the code really emits the proposed metric, and no secret leaks. Then it opens its own draft PR
-   into the base (label `selfheal-telemetry`) and posts "*Telemetry improvement* 🔧: PR #N /
-   Instrumented code to capture new application metric in Sentry · <metric>" in the alert's thread.
+   into the base (label `selfheal-telemetry`) and posts "Telemetry PR ready for review · PR #N /
+   • New application metric: `<metric>`" in the alert's thread.
 3. `harness/monitor_preview.py` validates the proposal (`telemetry_spec.py`) and links Sentry's
    new-monitor form, pre-filled with the project, the Application Metrics dataset and the
    aggregate, e.g. `max(value,agent.policy.documents,distribution,-)`. **Nothing is created in
    Sentry**, so SEs demoing at once don't each leave a monitor behind. The form doesn't take a
-   threshold or name from its URL, so the thread says what to set: "Preview monitor: max of
-   agent.policy.documents over 5 min · set the threshold to 10 documents · open to review and
-   create". Whoever creates it adds its alert in the form.
+   threshold or name from its URL, so the thread says what to set: "Proposed monitor: preview · max
+   over 5 min, set threshold to 10 documents". Whoever creates it adds its alert in the form.
 
 The org's Sentry token is only read from here (to look up the project's ID). The metric only has
 data once the instrumentation runs (merged, or checked out locally). Any step that fails shows a

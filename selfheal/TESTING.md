@@ -138,18 +138,17 @@ commands. Always pass the run ID: plain `gh run list` / `gh run watch` fail in t
   found** section: each Sentry MCP call (what it asked for, what came back), any Seer call, and
   each agent step (reads, edits, tests, replay), so you can see where Sentry's telemetry ends and
   the agent's work begins. Tool results there are scrubbed of emails, IPs and tokens.
-- `announce`: right away, a one-line Slack reply, "Self-heal started … watch the run", linking
-  to the run. For alert-driven runs it waits up to about a minute for Sentry's alert message,
+- `announce`: right away, a one-line Slack reply, "Self-heal started: agents are investigating",
+  linking to the run. For alert-driven runs it waits up to about a minute for Sentry's alert message,
   so the reply lands in its thread.
-- `fix (...)` progress lines in the same thread: "🔎 Seer root cause" once the with-Seer handoff
-  has queried Seer (with Seer's first sentence), "🔎 Sentry telemetry" after the without-Seer
-  agent finishes (its Sentry MCP calls: the issue, traces, span/log searches), for metric alerts
-  a link to the target's dashboard (`dashboard` in `targets.json`), and "Opening draft PR"
-  once the harness has verified the fix. They never fail the job if Slack refuses them.
-- `review (...)`: a MERGE / ADJUST / CLOSE comment on each PR, then a four-line Slack
-  notification: "Fix ready for review" with the PR link, business impact, a one-line root cause,
-  and verification + verdict.
-- `report`: posts to Slack only if an agent didn't open a PR ("No fix proposed … see the run
+- `fix (...)` one-line progress messages in the same thread: "Seer RCA: queried" once the with-Seer
+  handoff has queried Seer, "Sentry MCP calls: read the issue + 1 span search" after the
+  without-Seer agent finishes, for metric alerts "Relevant dashboard" (`dashboard` in
+  `targets.json`), and "Drafting PR: eta ~1 min" once the harness has verified the fix. They never fail the job if Slack refuses them.
+- `review (...)`: a MERGE / ADJUST / CLOSE comment on each PR, then a Slack notification:
+  "PR ready for review" with the PR link, then bullets for the business impact and the root
+  cause. Verification and the verdict are in the PR.
+- `report`: posts to Slack only if an agent didn't open a PR ("No fix proposed: see the run
   log for why"), then deletes the run branch.
 
 Both messages go to Slack through an existing, already-approved Slack bot. They print in the job
