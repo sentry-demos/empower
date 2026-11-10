@@ -5,7 +5,7 @@
         BASE_BRANCH, SENTRY_ORG, SENTRY_PROJECT, SENTRY_ENVIRONMENT, TARGET_PATHS,
         TARGET_INSTALL, TARGET_TESTS, TARGET_CHECK, TARGET_CHECK_LABEL, TARGET_REPLAY,
         TARGET_PROMPT, SELFHEAL_SLACK_ALERT_MATCH (unless set), TARGET_DASHBOARD_URL/LABEL,
-        SELFHEAL_RUN_KEY, and the target's test_env.
+        SELFHEAL_RUN_KEY, TARGET_TELEMETRY, and the target's test_env.
 
 The alert says which target it is for ("target", set by the receiver). Older alert files
 without one fall back to the first target for their org, then to "checkout".
@@ -74,6 +74,8 @@ def env_lines(name, target, alert):
     lines["TARGET_DASHBOARD_URL"] = dashboard.get("url", "")
     lines["TARGET_DASHBOARD_LABEL"] = dashboard.get("label", "")
     lines["SELFHEAL_RUN_KEY"] = run_key(alert)
+    # The telemetry follow-up's settings (JSON), or "" when the target doesn't have one
+    lines["TARGET_TELEMETRY"] = json.dumps(target["telemetry"]) if target.get("telemetry") else ""
     lines.update(target.get("test_env", {}))
     return lines
 

@@ -263,6 +263,32 @@ SENTRY_AUTH_TOKEN=... selfheal/scripts/reset.sh
 - Alerts from projects no target lists (say a React error in demo) are ignored, instead of
   sending the checkout agent after the Flask code.
 
+## Telemetry follow-up
+
+For targets with a `telemetry` block in `targets.json` (today `agent-context`, Kunal's context
+snowball), the run doesn't stop at the fix. The `telemetry` job, after the review:
+
+1. A second agent (`prompts/telemetry.md`) reads the fix PR and the issue, looks at the data in
+   Sentry (read-only: every Sentry tool that changes something is denied), and instruments the
+   cause as a Sentry Application Metric on the base branch, without the fix. For the snowball:
+   `sentry_sdk.metrics.distribution("agent.policy.documents", len(pages), ...)` in
+   `search_policies`. It proposes a monitor in `telemetry.json`: aggregate, threshold, reasoning.
+2. `harness/open_telemetry_pr.py` checks the change stays in the target's paths, the tests pass,
+   the code really emits the proposed metric, and no secret leaks. Then it opens its own draft PR
+   into the base (label `selfheal-telemetry`) and posts "(PR #N) Instrumented code to capture
+   new application metric in Sentry · `<metric>`" in the alert's thread.
+3. `harness/create_monitor.py` validates the proposal (`telemetry_spec.py`) and creates a Metric
+   Monitor on the metric in the target's telemetry project, e.g.
+   `max(value,agent.policy.documents,distribution,-)` over 5 minutes. A monitor with the same
+   name is reused. Its Alert copies the Slack action(s) of the alert that started the run, never
+   the selfheal webhook, so a breach notifies people without starting another run. Then it posts
+   "Created monitor: alerts when max > 10 documents in 5 min" with the monitor's link.
+
+Needs the org's Sentry token (`SELFHEAL_SENTRY_MCP_TOKEN_<ORG>`) with **Alerts: Read & Write**.
+The metric only has data once the instrumentation runs (merged, or checked out locally), so the
+monitor stays quiet until then. Any step that fails shows a warning on the run and skips its
+Slack message; the fix PR is unaffected.
+
 ## Slack: where the bot posts
 
 The bot replies where the alert posts. The plan job looks the alert up in Sentry by name

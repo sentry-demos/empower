@@ -4,6 +4,8 @@ Usage:
     python selfheal/harness/prepare.py fix --variant with-seer|without-seer --alert alert.json \
         --out DIR --mcp-out SECRETS_DIR/mcp.json
     python selfheal/harness/prepare.py review --out DIR
+    python selfheal/harness/prepare.py telemetry --alert alert.json --out DIR --mcp-out SECRETS_DIR/mcp.json \
+        --fix-pr-url URL    (DIR holds fix_pr.md and fix_pr.diff)
 
 with-seer fix runs read DIR/handoff.md (from seer_handoff.py, run first) into the prompt and get
 no Sentry MCP: Seer's root cause is handed straight to the coding agent.
@@ -57,6 +59,24 @@ def bash_commands(tests, check, replay):
     return "\n".join(lines), " ".join(rules)
 
 
+# Sentry MCP tools that change things in Sentry. The telemetry agent's token can create
+# monitors and alerts (the harness needs that), so the agent is denied every one of these:
+# it proposes the monitor, and the harness creates it.
+SENTRY_WRITE_TOOLS = [
+    "add_issue_note", "add_team_to_project", "analyze_issue_with_seer", "create_alert_rule", "create_dsn",
+    "create_metric_monitor", "create_monitor", "create_project", "create_team", "create_uptime_monitor",
+    "delete_alert_rule", "delete_metric_monitor", "delete_monitor_environment", "delete_uptime_monitor",
+    "execute_sentry_tool", "link_issue", "onboarding_status_update", "remove_team_from_project",
+    "submit_feedback_to_sentry_team", "unlink_issue", "update_alert_rule", "update_dsn", "update_issue",
+    "update_metric_monitor", "update_project", "update_uptime_monitor",
+]
+
+
+def telemetry_settings():
+    """The target's telemetry block (TARGET_TELEMETRY, set by target.py)."""
+    return json.loads(os.environ.get("TARGET_TELEMETRY") or "{}")
+
+
 def mcp_config(variant):
     """Sentry's MCP server run locally over stdio with an API token. The hosted MCP
     (mcp.sentry.dev) only takes OAuth sign-ins and rejects API tokens.
@@ -77,12 +97,17 @@ def mcp_config(variant):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("mode", choices=["fix", "review", "allowed-bash"])
+    parser.add_argument("mode", choices=["fix", "review", "telemetry", "allowed-bash", "sentry-write-tools"])
     parser.add_argument("--variant", choices=VARIANTS)
     parser.add_argument("--alert", help="JSON file with the alert from the webhook")
-    parser.add_argument("--out", help="Output dir (fix and review modes)")
-    parser.add_argument("--mcp-out", help="Where to write the MCP config (fix mode)")
+    parser.add_argument("--out", help="Output dir (fix, review and telemetry modes)")
+    parser.add_argument("--mcp-out", help="Where to write the MCP config (fix and telemetry modes)")
+    parser.add_argument("--fix-pr-url", default="", help="The fix agent's PR (telemetry mode)")
     args = parser.parse_args()
+    if args.mode == "sentry-write-tools":
+        # --disallowedTools for an agent that may only read Sentry
+        print(" ".join(f"mcp__sentry__{name}" for name in SENTRY_WRITE_TOOLS))
+        return
     if args.mode == "allowed-bash":
         # The --allowedTools Bash rules matching the commands the prompt lists
         _, rules = bash_commands(os.environ.get("TARGET_TESTS") or "python -m pytest flask/src/test -q",
@@ -132,6 +157,25 @@ def main():
         os.makedirs(os.path.dirname(os.path.abspath(args.mcp_out)), exist_ok=True)
         with open(args.mcp_out, "w") as f:
             json.dump(mcp_config(args.variant), f)
+        os.chmod(args.mcp_out, 0o600)
+    elif args.mode == "telemetry":
+        # A follow-up to the fix PR: instrument the cause as an Application Metric. Tests only
+        # (the target's check proves the fix, which this working tree doesn't have)
+        with open(args.alert) as f:
+            alert = json.dumps(json.load(f), indent=2)
+        settings = telemetry_settings()
+        tests = os.environ.get("TARGET_TESTS") or "python -m pytest flask/src/test -q"
+        commands, _ = bash_commands(tests, "", False)
+        prompt = render(read_prompt("telemetry.md"),
+                        ALERT=alert, OUT=out, FIX_PR_URL=args.fix_pr_url, TESTS=tests, BASH_COMMANDS=commands,
+                        GOAL=settings.get("goal") or "the value behind this alert",
+                        WINDOW_MINUTES=str(int(settings.get("window_seconds") or 300) // 60),
+                        PATHS=", ".join(f"`{p}`" for p in (os.environ.get("TARGET_PATHS") or "flask/").split(",")),
+                        SENTRY_ORG=os.environ.get("SENTRY_ORG") or "demo",
+                        SENTRY_PROJECT=settings.get("project") or os.environ.get("SENTRY_PROJECT") or "")
+        os.makedirs(os.path.dirname(os.path.abspath(args.mcp_out)), exist_ok=True)
+        with open(args.mcp_out, "w") as f:
+            json.dump(mcp_config("without-seer"), f)
         os.chmod(args.mcp_out, 0o600)
     else:
         prompt = render(read_prompt("reviewer.md"), OUT=out,

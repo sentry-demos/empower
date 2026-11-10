@@ -89,16 +89,33 @@ def preferred(items, calls):
     return with_webhook or items
 
 
+def alert_workflows(alert):
+    """The alert that fired, as Sentry workflows (usually one): same-named ones that call a
+    webhook win. [] if it can't be found."""
+    org, name = alert.get("org"), alert.get("rule")
+    if not (org and name):
+        return []
+    # The name search narrows the list; if it finds nothing (its syntax can differ), list them all
+    workflows = (named(org, f"/organizations/{org}/workflows/", name, {"query": name})
+                 or named(org, f"/organizations/{org}/workflows/", name))
+    return preferred(workflows, calls_webhook)
+
+
+def alert_slack_actions(alert):
+    """The alert's Slack actions, as Sentry returns them (type, integrationId, config, data), so
+    a new alert can notify the same channels. Never its webhook actions."""
+    return [action for workflow in alert_workflows(alert) for action in workflow_actions(workflow)
+            if action.get("type") == "slack"]
+
+
 def alert_slack_channels(alert):
     """Slack channel IDs the alert posts to, in a stable order, or [] if unknown."""
     org, name = alert.get("org"), alert.get("rule")
     if not (org and name):
         return []
     channels = []
-    # The name search narrows the list; if it finds nothing (its syntax can differ), list them all
-    workflows = (named(org, f"/organizations/{org}/workflows/", name, {"query": name})
-                 or named(org, f"/organizations/{org}/workflows/", name))
-    for workflow in preferred(workflows, calls_webhook):
+    workflows = alert_workflows(alert)
+    for workflow in workflows:
         channels += workflow_channels(workflow)
     if not workflows and alert.get("project_slug"):
         rules = named(org, f"/projects/{org}/{alert['project_slug']}/rules/", name)

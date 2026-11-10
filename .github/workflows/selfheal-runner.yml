@@ -320,8 +320,134 @@ jobs:
           python selfheal/harness/report.py review --pr-url "$PR_URL" --review "$OUT/review.md" \
             --variant "${{ matrix.variant }}" --results "$RUNNER_TEMP/scorecard"
 
+  telemetry:
+    # Follow-up for targets with a `telemetry` block (targets.json): a second agent takes the fix
+    # PR, instruments the cause as a Sentry Application Metric in its own PR into the base, and
+    # the harness creates a metric monitor on it, alerting the original alert's Slack channels.
+    needs: [plan, review]
+    if: always() && needs.plan.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          path: ${{ runner.temp }}/results
+
+      - name: Find the fix PR and the target's telemetry settings
+        id: fix
+        run: |
+          python3 selfheal/harness/target.py --alert .selfheal/alert.json --github-env
+          eval "$(python3 selfheal/harness/target.py --alert .selfheal/alert.json --shell)"
+          if [ -z "$TARGET_TELEMETRY" ]; then
+            echo "Target $SELFHEAL_TARGET has no telemetry follow-up."
+            exit 0
+          fi
+          for verify in "$RUNNER_TEMP"/results/*/verify.json; do
+            [ -f "$verify" ] || continue
+            url=$(jq -r '.pr_url // empty' "$verify")
+            if [ -n "$url" ]; then
+              echo "url=$url" >> "$GITHUB_OUTPUT"
+              echo "result=$(dirname "$verify")/result.json" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          done
+          echo "No fix PR this run; no telemetry follow-up."
+
+      - uses: actions/setup-python@v5
+        if: steps.fix.outputs.url
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: agent/requirements.txt
+
+      - name: Install the target's dependencies
+        if: steps.fix.outputs.url
+        run: bash -c "$TARGET_INSTALL"
+
+      - if: steps.fix.outputs.url
+        uses: ./.github/actions/selfheal-claude
+
+      - name: Prepare the telemetry prompt and Sentry MCP
+        if: steps.fix.outputs.url
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SENTRY_MCP_TOKEN: ${{ secrets.SELFHEAL_SENTRY_MCP_TOKEN }}
+          SENTRY_MCP_TOKEN_TEAM_SE: ${{ secrets.SELFHEAL_SENTRY_MCP_TOKEN_TEAM_SE }}
+          FIX_PR_URL: ${{ steps.fix.outputs.url }}
+        run: |
+          OUT="$RUNNER_TEMP/selfheal/telemetry"
+          SECRETS="$RUNNER_TEMP/selfheal-secrets"
+          mkdir -p "$OUT"
+          echo "OUT=$OUT" >> "$GITHUB_ENV"
+          echo "SECRETS=$SECRETS" >> "$GITHUB_ENV"
+          cp .selfheal/alert.json "$OUT/alert.json"
+          gh pr view "$FIX_PR_URL" --json title,body --jq '"# " + .title + "\n\n" + .body' > "$OUT/fix_pr.md"
+          gh pr diff "$FIX_PR_URL" > "$OUT/fix_pr.diff"
+          python selfheal/harness/prepare.py telemetry --alert .selfheal/alert.json --out "$OUT" \
+            --mcp-out "$SECRETS/mcp.json" --fix-pr-url "$FIX_PR_URL"
+
+      - name: Telemetry agent instruments the code
+        if: steps.fix.outputs.url
+        continue-on-error: true  # still verify whatever it produced
+        run: |
+          # Read-only Sentry: the token can create monitors (for the harness), so every Sentry
+          # tool that changes something is denied to the agent
+          DISALLOWED="Read(/$SECRETS/**) Grep(/$SECRETS/**) Glob(/$SECRETS/**) $(python selfheal/harness/prepare.py sentry-write-tools)"
+          TOOLS="Read Edit Write Glob Grep Bash(python -m pytest:*) ToolSearch mcp__sentry"
+          python selfheal/harness/run_agent.py --name telemetry --variant telemetry \
+            --prompt-file "$OUT/prompt.md" --out "$OUT" --mcp-config "$SECRETS/mcp.json" \
+            --allowed-tools "$TOOLS" --disallowed-tools "$DISALLOWED"
+
+      - name: Verify the instrumentation and open its PR
+        id: pr
+        if: steps.fix.outputs.url
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SENTRY_MCP_TOKEN: ${{ secrets.SELFHEAL_SENTRY_MCP_TOKEN }}
+          SENTRY_MCP_TOKEN_TEAM_SE: ${{ secrets.SELFHEAL_SENTRY_MCP_TOKEN_TEAM_SE }}
+          SELFHEAL_SLACK_BOT_TOKEN: ${{ secrets.SELFHEAL_SLACK_BOT_TOKEN }}
+          SELFHEAL_SLACK_CHANNEL: ${{ vars.SELFHEAL_SLACK_CHANNEL }}
+          SELFHEAL_SLACK_CHANNELS: ${{ needs.plan.outputs.slack_channels }}
+        run: |
+          rm -rf "$SECRETS"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          python selfheal/harness/open_telemetry_pr.py --out "$OUT" \
+            --fix-pr-url "${{ steps.fix.outputs.url }}" --fix-result "${{ steps.fix.outputs.result }}"
+
+      - name: Create the metric monitor and its alert
+        if: steps.fix.outputs.url && steps.pr.outcome == 'success'
+        continue-on-error: true
+        env:
+          SENTRY_MCP_TOKEN: ${{ secrets.SELFHEAL_SENTRY_MCP_TOKEN }}
+          SENTRY_MCP_TOKEN_TEAM_SE: ${{ secrets.SELFHEAL_SENTRY_MCP_TOKEN_TEAM_SE }}
+          SELFHEAL_SLACK_BOT_TOKEN: ${{ secrets.SELFHEAL_SLACK_BOT_TOKEN }}
+          SELFHEAL_SLACK_CHANNEL: ${{ vars.SELFHEAL_SLACK_CHANNEL }}
+          SELFHEAL_SLACK_CHANNELS: ${{ needs.plan.outputs.slack_channels }}
+        run: python selfheal/harness/create_monitor.py --out "$OUT"
+
+      - name: Upload the telemetry results
+        if: always() && steps.fix.outputs.url
+        uses: actions/upload-artifact@v4
+        with:
+          name: telemetry
+          if-no-files-found: ignore
+          path: |
+            ${{ env.OUT }}/telemetry.json
+            ${{ env.OUT }}/telemetry_verify.json
+            ${{ env.OUT }}/monitor.json
+            ${{ env.OUT }}/stats.json
+
   report:
-    needs: [plan, fix, review]
+    needs: [plan, fix, review, telemetry]
     if: always() && needs.plan.result == 'success'
     runs-on: ubuntu-latest
     permissions:

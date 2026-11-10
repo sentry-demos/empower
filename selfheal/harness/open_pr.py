@@ -65,7 +65,8 @@ def create_pr(branch, title, body_path, labels, attempts=3, wait_s=5):
 
 
 def changed_files():
-    out = sh("git", "status", "--porcelain").stdout
+    # --untracked-files=all lists each new file, not just a new folder, so every one is scanned
+    out = sh("git", "status", "--porcelain", "--untracked-files=all").stdout
     return [line[3:].strip() for line in out.splitlines() if line.strip()]
 
 
