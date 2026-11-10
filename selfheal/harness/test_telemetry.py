@@ -126,11 +126,14 @@ class FakeSentry:
             raise create_monitor.SentryError(f"POST {path}: HTTP 400: {{\"dataSources\": [\"invalid aggregate\"]}}")
         if path == f"/projects/{org}/kunal-manager-agent/":
             return {"id": "4512069456953344", "slug": "kunal-manager-agent"}
-        if path.endswith("/detectors/") and method == "GET":
+        # As Sentry does: monitors are listed per org but created under their project
+        if path == f"/organizations/{org}/detectors/" and method == "GET":
             return self.existing
-        if path.endswith("/detectors/"):
+        if path == f"/organizations/{org}/detectors/":
+            raise create_monitor.SentryError(f"POST {path}: HTTP 405: {{\"detail\":\"Method \\\"POST\\\" not allowed.\"}}")
+        if path == f"/projects/{org}/kunal-manager-agent/detectors/" and method == "POST":
             return {"id": "10900001", **body}
-        if path.endswith("/workflows/"):
+        if path == f"/organizations/{org}/workflows/" and method == "POST":
             return {"id": "6300001", **body}
         raise AssertionError(f"unexpected Sentry call {method} {path}")
 

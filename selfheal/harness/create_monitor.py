@@ -118,7 +118,8 @@ def create(out, alert, settings):
     detector = find_monitor(org, project_id, name)
     reused = detector is not None
     if not reused:
-        detector = sentry(org, "POST", f"/organizations/{org}/detectors/",
+        # Monitors are created under their project; the org-level endpoint only lists them (405)
+        detector = sentry(org, "POST", f"/projects/{org}/{project}/detectors/",
                           detector_payload(spec, name, project_id, window))
     result = {"id": str(detector["id"]), "name": name, "reused": reused, "org": org, "project": project,
               "aggregate": spec["monitor"]["sentry_aggregate"], "threshold": spec["monitor"]["threshold"],
