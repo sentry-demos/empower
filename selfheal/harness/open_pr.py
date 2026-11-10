@@ -37,6 +37,21 @@ def sh(*cmd, cwd=None, check=True):
     return proc
 
 
+RUN_FILES = [".selfheal/alert.json"]  # what the receiver's (or trigger.sh's) run commit adds
+
+
+def start_branch(branch):
+    """Create the PR branch from the base the run started on, keeping the agent's changes.
+
+    A run branch is the base plus one commit adding .selfheal/alert.json. Branching from HEAD
+    would carry that commit, and the alert file, into the PR, so the branch starts one commit
+    back when HEAD is that commit. The agent's changes are in the working tree, and that commit
+    touched no file they could clash with."""
+    run_commit = sh("git", "diff", "--name-only", "HEAD~1", "HEAD", check=False)
+    start = "HEAD~1" if run_commit.returncode == 0 and run_commit.stdout.split() == RUN_FILES else "HEAD"
+    sh("git", "checkout", "-b", branch, start)
+
+
 def create_pr(branch, title, body_path, labels, attempts=3, wait_s=5):
     """Open the draft PR and return its URL. Labels go on separately, best effort: a GitHub
     hiccup while labelling once made `gh pr create` fail after it had opened the PR, and the
@@ -189,7 +204,7 @@ def open_pr(variant, out, check):
     # earlier PRs for this issue, not another SE's
     key = os.environ.get("SELFHEAL_RUN_KEY")
     branch = f"selfheal/fix-{variant}-{key}-{run_id}" if key else f"selfheal/fix-{variant}-{run_id}"
-    sh("git", "checkout", "-b", branch)
+    start_branch(branch)
     sh("git", "add", "--", *target_paths())
     sh("git", "commit", "-m", title, "-m", message)
     sh("git", "push", "origin", branch)

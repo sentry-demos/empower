@@ -20,7 +20,8 @@ import issue_refs  # same directory: python puts the script's folder on sys.path
 import report
 import telemetry_spec
 import work
-from open_pr import BASE, changed_files, create_pr, last_line, leaked_secrets, run_command, sh, target_paths
+from open_pr import (BASE, changed_files, create_pr, last_line, leaked_secrets, run_command, sh, start_branch,
+                     target_paths)
 
 LABEL = "selfheal-telemetry"
 
@@ -121,7 +122,7 @@ def open_telemetry_pr(out, spec, check, fix_pr_url, fix_result):
     key = os.environ.get("SELFHEAL_RUN_KEY") or "manual"
     prefix = f"selfheal/telemetry-{key}-"
     branch = prefix + os.environ.get("GITHUB_RUN_ID", "local")
-    sh("git", "checkout", "-b", branch)
+    start_branch(branch)  # from the base, so the run's .selfheal/alert.json stays out of the PR
     sh("git", "add", "--", *target_paths())
     sh("git", "commit", "-m", title, "-m", message)
     sh("git", "push", "origin", branch)
