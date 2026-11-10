@@ -10,6 +10,7 @@ turn's history doesn't carry the blob at all.
 import json
 
 import pytest
+import sentry_sdk
 from test_tool_errors import _run_in_tool_span
 
 from app.session import OMITTED_TOOL_RESULT, ChatSession, trim_tool_outputs
@@ -43,6 +44,25 @@ async def test_payload_is_big_enough_to_spike_input_tokens():
     assert span["data"]["policy.bytes"] == pytest.approx(size, rel=0.01)
     # Nothing failed; that is the point.
     assert span.get("status") != "internal_error"
+
+
+@pytest.mark.asyncio
+async def test_document_count_metric_is_emitted(monkeypatch):
+    calls = []
+
+    def fake_distribution(name, value, **kwargs):
+        calls.append((name, value, kwargs))
+
+    monkeypatch.setattr(sentry_sdk.metrics, "distribution", fake_distribution)
+    payload, _ = await _run_in_tool_span(
+        search_policies, {"query": "return policy"}, ChatSession("m1")
+    )
+
+    assert len(calls) == 1
+    name, value, kwargs = calls[0]
+    assert name == "agent.policy.documents"
+    assert value == len(payload["pages"])
+    assert kwargs["attributes"] == {"tool": "search_policies"}
 
 
 @pytest.mark.asyncio
