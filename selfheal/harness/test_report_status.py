@@ -82,6 +82,13 @@ def test_seer_status(tmp_path, no_slack, capsys):
         " Seer (its earlier analysis, 2s): In checkout(), `quantities` is read before it is assigned.")
 
 
+def test_telemetry_started_bridges_the_thread(tmp_path, no_slack, capsys):
+    report.report_status(Namespace(kind="telemetry", variant="telemetry", dir=run_dir(tmp_path)))
+    assert message(capsys).splitlines()[0] == (
+        "*Next: telemetry improvement* · an agent is adding a Sentry metric for this,"
+        " and a monitor to alert on it directly (a few minutes)")
+
+
 def test_opening_pr_status(tmp_path, no_slack, capsys):
     check = {"tests_passed": True, "replay_status": None, "check_passed": True,
              "check_label": "policy answer under the token budget"}

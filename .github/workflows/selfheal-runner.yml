@@ -371,6 +371,17 @@ jobs:
         if: steps.fix.outputs.url
         run: bash -c "$TARGET_INSTALL"
 
+      - name: Post the telemetry bridge message to Slack
+        # Bridges "Fix ready for review" and the telemetry PR a few minutes later, so the thread
+        # doesn't look finished
+        if: steps.fix.outputs.url
+        continue-on-error: true
+        env:
+          SELFHEAL_SLACK_BOT_TOKEN: ${{ secrets.SELFHEAL_SLACK_BOT_TOKEN }}
+          SELFHEAL_SLACK_CHANNEL: ${{ vars.SELFHEAL_SLACK_CHANNEL }}
+          SELFHEAL_SLACK_CHANNELS: ${{ needs.plan.outputs.slack_channels }}
+        run: python selfheal/harness/report.py status --kind telemetry --variant telemetry --dir .selfheal
+
       - if: steps.fix.outputs.url
         uses: ./.github/actions/selfheal-claude
 

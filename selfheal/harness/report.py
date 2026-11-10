@@ -8,7 +8,7 @@
     python selfheal/harness/report.py started --alert alert.json --variants '["without-seer"]'
         Posted when the run starts: the agents are on it, with a link to the run.
 
-    python selfheal/harness/report.py status --kind seer|sentry --variant V --dir DIR
+    python selfheal/harness/report.py status --kind seer|sentry|telemetry --variant V --dir DIR
         Progress while a fix job runs: Seer's root cause was queried (with-seer), or what the
         agent pulled from Sentry (without-seer). open_pr.py also posts "Opening draft PR".
 
@@ -330,10 +330,17 @@ def sentry_summary(timeline, short_id):
             f" ({done_s:.0f}s): read {listed}.")
 
 
+TELEMETRY_STARTED = ("*Next: telemetry improvement* · an agent is adding a Sentry metric for this,"
+                     " and a monitor to alert on it directly (a few minutes)")
+
+
 def report_status(args):
-    """Progress in the alert's thread while a fix job runs: what Sentry (or Seer) told the agent."""
+    """Progress in the alert's thread while a fix job runs: what Sentry (or Seer) told the agent,
+    or (telemetry) that the follow-up has started, so the thread doesn't look finished at the fix."""
     alert = load(os.path.join(args.dir, "alert.json"))
-    if args.kind == "seer":
+    if args.kind == "telemetry":
+        text = TELEMETRY_STARTED
+    elif args.kind == "seer":
         handoff = load(os.path.join(args.dir, "handoff.json"))
         seer = handoff.get("seer") or {}
         if not seer:
@@ -448,8 +455,9 @@ if __name__ == "__main__":
     started.add_argument("--variants", default='["without-seer"]', type=json.loads,
                          help='JSON list of the variants this run starts, e.g. ["without-seer"]')
     status = sub.add_parser("status")
-    status.add_argument("--kind", required=True, choices=["seer", "sentry"],
-                        help="seer: after the with-Seer handoff; sentry: after the agent's Sentry calls")
+    status.add_argument("--kind", required=True, choices=["seer", "sentry", "telemetry"],
+                        help="seer: after the with-Seer handoff; sentry: after the agent's Sentry calls;"
+                             " telemetry: when the telemetry follow-up starts")
     status.add_argument("--variant", required=True)
     status.add_argument("--dir", required=True, help="The fix job's output dir (alert.json and handoff/timeline)")
     args = parser.parse_args()
