@@ -1,0 +1,15 @@
+{
+  "kind": "event_alert",
+  "title": "Chris LLM Context Snowball \u2014 max input tokens spike (Copy 11/2/26)",
+  "description": "Notify via selfheal",
+  "url": "https://sentry.io/organizations/team-se/issues/7825689300/events/2b5c20daf8904be690f5e92fd37c08f5/",
+  "issue_id": "7825689300",
+  "project_id": "4512069456953344",
+  "project_slug": "kunal-manager-agent",
+  "rule": "Notify via selfheal",
+  "se": "",
+  "variant": "",
+  "org": "team-se",
+  "target": "agent-context",
+  "run_key": "k666da673fb"
+}
