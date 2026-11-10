@@ -138,7 +138,9 @@ class FakeSentry:
             return self.existing
         if path == f"/organizations/{org}/detectors/":
             raise create_monitor.SentryError(f"POST {path}: HTTP 405: {{\"detail\":\"Method \\\"POST\\\" not allowed.\"}}")
-        if path == f"/projects/{org}/kunal-manager-agent/detectors/" and method == "POST":
+        if path == f"/projects/{org}/kunal-manager-agent/detectors/":
+            raise create_monitor.SentryError(f"POST {path}: HTTP 404: ")
+        if path == f"/organizations/{org}/projects/kunal-manager-agent/detectors/" and method == "POST":
             return {"id": "10900001", **body}
         if path == f"/organizations/{org}/workflows/" and method == "POST":
             return {"id": "6300001", **body}
@@ -163,11 +165,13 @@ def test_creates_the_monitor_on_the_new_metric(tmp_path, sentry):
     monitor = create_monitor.create(write(tmp_path, **{"telemetry.json": SPEC}), ALERT, SETTINGS)
 
     [detector] = fake.posted("/detectors/")
-    assert detector["type"] == "metric_issue" and detector["projectId"] == "4512069456953344"
+    # The same shape as Sentry's MCP create_metric_monitor sends
+    assert detector["type"] == "metric_issue" and "projectId" not in detector
+    assert detector["config"] == {"detectionType": "static", "comparisonDelta": None}
     assert detector["dataSources"] == [{
-        "queryType": 1, "dataset": "events_analytics_platform", "query": "",
-        "aggregate": "max(value,agent.policy.documents,distribution,-)", "timeWindow": 300,
-        "environment": None, "eventTypes": ["trace_item_metric"]}]
+        "dataset": "events_analytics_platform", "query": "",
+        "aggregate": "max(value,agent.policy.documents,distribution,-)",
+        "environment": None, "eventTypes": ["trace_item_metric"], "timeWindow": 300}]
     assert detector["conditionGroup"]["conditions"] == [
         {"type": "gt", "comparison": 10, "conditionResult": 75},
         {"type": "lte", "comparison": 10, "conditionResult": 0}]

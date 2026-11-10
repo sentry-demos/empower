@@ -28,7 +28,8 @@ import telemetry_spec
 from plan import sentry_token
 
 METRIC_EVENT_TYPE = "trace_item_metric"  # Application Metrics on Sentry's events platform
-QUERY_TYPE_PERFORMANCE = 1  # what Sentry uses for events_analytics_platform queries
+# Requests below are shaped like those of Sentry's own MCP server (@sentry/mcp-server 0.49:
+# createMetricMonitor and createAlertRule), whose tools create monitors and alerts that work.
 
 
 class SentryError(RuntimeError):
@@ -59,27 +60,26 @@ def monitor_name(spec):
     return f"{spec['metric']['name']} — {m['aggregate']} above {m['threshold']} (self-heal telemetry)"
 
 
-def detector_payload(spec, name, project_id, window_seconds):
+def detector_payload(spec, name, window_seconds):
     threshold = spec["monitor"]["threshold"]
     return {
-        "name": name,
         "type": "metric_issue",
-        "projectId": str(project_id),
+        "name": name,
         "description": spec["monitor"].get("reasoning") or None,
-        "config": {"detectionType": "static"},
+        "config": {"detectionType": "static", "comparisonDelta": None},
         "conditionGroup": {"logicType": "any", "conditions": [
             {"type": "gt", "comparison": threshold, "conditionResult": 75},   # critical
             {"type": "lte", "comparison": threshold, "conditionResult": 0},   # resolved
         ]},
         "dataSources": [{
-            "queryType": QUERY_TYPE_PERFORMANCE,
             "dataset": "events_analytics_platform",
             "query": "",
             "aggregate": spec["monitor"]["sentry_aggregate"],
-            "timeWindow": int(window_seconds),
             "environment": None,
             "eventTypes": [METRIC_EVENT_TYPE],
+            "timeWindow": int(window_seconds),
         }],
+        "workflowIds": [],
     }
 
 
@@ -118,9 +118,10 @@ def create(out, alert, settings):
     detector = find_monitor(org, project_id, name)
     reused = detector is not None
     if not reused:
-        # Monitors are created under their project; the org-level endpoint only lists them (405)
-        detector = sentry(org, "POST", f"/projects/{org}/{project}/detectors/",
-                          detector_payload(spec, name, project_id, window))
+        # Created under the org's project (/projects/<org>/<project>/detectors/ is a 404, and
+        # /organizations/<org>/detectors/ only lists them: 405)
+        detector = sentry(org, "POST", f"/organizations/{org}/projects/{project}/detectors/",
+                          detector_payload(spec, name, window))
     result = {"id": str(detector["id"]), "name": name, "reused": reused, "org": org, "project": project,
               "aggregate": spec["monitor"]["sentry_aggregate"], "threshold": spec["monitor"]["threshold"],
               "url": f"https://{org}.sentry.io/monitors/{detector['id']}/",
