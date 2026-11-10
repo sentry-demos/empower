@@ -93,3 +93,27 @@ def test_ordinary_latest_result_is_still_kept():
     ]
 
     assert trim_tool_outputs(history)[1]["output"] == products
+
+
+@pytest.mark.asyncio
+async def test_policy_documents_metric_is_emitted(monkeypatch):
+    import sentry_sdk
+
+    calls = []
+    monkeypatch.setattr(
+        sentry_sdk.metrics,
+        "distribution",
+        lambda name, value, **kwargs: calls.append((name, value, kwargs)),
+    )
+
+    payload, _ = await _run_in_tool_span(
+        search_policies, {"query": "return policy"}, ChatSession("p-metric")
+    )
+
+    assert calls == [
+        (
+            "agent.policy.documents",
+            len(payload["pages"]),
+            {"attributes": {"tool": "search_policies"}},
+        )
+    ]
