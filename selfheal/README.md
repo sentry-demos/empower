@@ -275,8 +275,8 @@ snowball), the run doesn't stop at the fix. The `telemetry` job, after the revie
    `search_policies`. It proposes a monitor in `telemetry.json`: aggregate, threshold, reasoning.
 2. `harness/open_telemetry_pr.py` checks the change stays in the target's paths, the tests pass,
    the code really emits the proposed metric, and no secret leaks. Then it opens its own draft PR
-   into the base (label `selfheal-telemetry`) and posts "(PR #N) Instrumented code to capture
-   new application metric in Sentry · `<metric>`" in the alert's thread.
+   into the base (label `selfheal-telemetry`) and posts "*Telemetry improvement* 🔧: PR #N /
+   Instrumented code to capture new application metric in Sentry · <metric>" in the alert's thread.
 3. `harness/create_monitor.py` validates the proposal (`telemetry_spec.py`) and creates a Metric
    Monitor on the metric in the target's telemetry project, e.g.
    `max(value,agent.policy.documents,distribution,-)` over 5 minutes. A monitor with the same

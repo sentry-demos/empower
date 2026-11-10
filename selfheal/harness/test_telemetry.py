@@ -96,6 +96,13 @@ def test_blockers_name_every_problem():
     assert any("doesn't emit" in b for b in found)
 
 
+def test_slack_message_matches_fix_ready_for_review(tmp_path):
+    spec = telemetry_spec.load(write(tmp_path, **{"telemetry.json": SPEC}))
+    assert open_telemetry_pr.slack_text("https://github.com/sentry-demos/empower/pull/1751", spec) == (
+        "*Telemetry improvement* 🔧: <https://github.com/sentry-demos/empower/pull/1751|PR #1751>\n"
+        "Instrumented code to capture new application metric in Sentry · agent.policy.documents")
+
+
 def test_pr_text_links_the_fix_and_never_closes_the_issue(tmp_path, monkeypatch):
     monkeypatch.setenv("TARGET_TELEMETRY", json.dumps(SETTINGS))
     out = write(tmp_path, **{"telemetry.json": SPEC,

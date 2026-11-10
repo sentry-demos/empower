@@ -104,6 +104,13 @@ def pr_text(out, spec, check, fix_pr_url, fix_result):
     return title, message, body
 
 
+def slack_text(pr_url, spec):
+    """Two lines in the alert's thread, shaped like "Fix ready for review"."""
+    number = pr_url.rstrip("/").rsplit("/", 1)[-1]
+    return (f"*Telemetry improvement* 🔧: <{pr_url}|PR #{number}>\n"
+            f"Instrumented code to capture new application metric in Sentry · {spec['metric']['name']}")
+
+
 def close_earlier(prefix, keep_url):
     """Earlier telemetry PRs for the same alert and issue: only the latest stays open."""
     listed = sh("gh", "pr", "list", "--base", BASE, "--label", LABEL, "--state", "open",
@@ -150,10 +157,8 @@ def main():
         print(f"::warning title=No telemetry PR::{'; '.join(found)}", flush=True)
     else:
         check["pr_url"] = open_telemetry_pr(args.out, spec, check, args.fix_pr_url, fix_result)
-        number = check["pr_url"].rstrip("/").rsplit("/", 1)[-1]
         print(f"Telemetry PR: {check['pr_url']}", flush=True)
-        report.post_status(f"(<{check['pr_url']}|PR #{number}>) Instrumented code to capture new application"
-                           f" metric in Sentry · `{spec['metric']['name']}`", alert)
+        report.post_status(slack_text(check["pr_url"], spec), alert)
     with open(os.path.join(args.out, "telemetry_verify.json"), "w") as f:
         json.dump(check, f, indent=2)
     sys.exit(0 if check["pr_url"] else 1)
