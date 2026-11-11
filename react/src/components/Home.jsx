@@ -10,9 +10,7 @@ const divStyle = {
 
 function Home({ frontendSlowdown, backend }) {
   // Which of the two things the home page can be: the hero, or the agent
-  // conversation that replaces it. The floating chat button stays available in
-  // both, so this is an addition to the entry points rather than a change to
-  // them — see the note in ChatWidget.jsx about test_ai_agent.py.
+  // conversation that replaces it.
   const [agentView, setAgentView] = useState(false);
 
   useEffect(() => {
@@ -30,7 +28,7 @@ function Home({ frontendSlowdown, backend }) {
   }, []);
 
   if (agentView) {
-    return <ChatWidget fullView onExitFull={() => setAgentView(false)} />;
+    return <ChatWidget onExitFull={() => setAgentView(false)} />;
   }
 
   return (
@@ -58,7 +56,6 @@ function Home({ frontendSlowdown, backend }) {
           </button>
         </div>
       </div>
-      <ChatWidget />
     </div>
   );
 }
