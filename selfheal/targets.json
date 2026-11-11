@@ -1,0 +1,61 @@
+{
+  "_comment": "Where each Sentry alert's fix happens. The receiver picks a target by the alert's org (and project, when an org has several targets) and builds the run branch on its base; the runner reads the rest. Keys starting with _ are ignored.",
+  "checkout": {
+    "org": "demo",
+    "projects": ["backend-flask", "selfheal-flask"],
+    "_frontend_projects": "Alerts on these start a run too: the agent starts from the browser error (a 500 from /checkout) and follows its trace to the Flask error behind it. If another backend served that request, it stops without a fix",
+    "frontend_projects": ["frontend-react"],
+    "base": "selfheal/base",
+    "project": "backend-flask",
+    "environment": "production",
+    "paths": ["flask/"],
+    "install": "pip install -r flask/requirements.txt pytest requests",
+    "tests": "python -m pytest flask/src/test -q",
+    "check": "",
+    "check_label": "failing order now succeeds",
+    "replay": true,
+    "prompt": "target_checkout.md",
+    "slack_match": "revenue",
+    "_dashboard": "Linked in Slack for metric alerts, before the draft PR opens",
+    "dashboard": {
+      "label": "Critical Experience dashboard",
+      "url": "https://demo.sentry.io/dashboard/510044/?project=5808623&project=4508968134377472&project=4512138282270720&project=4512138284367872&project=4512138287906816&statsPeriod=7d"
+    }
+  },
+  "agent-context": {
+    "org": "team-se",
+    "projects": ["kunal-manager-agent"],
+    "base": "selfheal/agent-base",
+    "project": "kunal-manager-agent",
+    "environment": "",
+    "paths": ["agent/"],
+    "install": "pip install -r agent/requirements.txt tiktoken requests",
+    "tests": "python -m pytest agent/tests -q",
+    "test_env": {
+      "PYTHONPATH": "agent",
+      "OPENROUTER_API_KEY": "selfheal-test",
+      "API_HOST": "127.0.0.1",
+      "PORT": "8093",
+      "API_RELOAD": "false",
+      "MAX_TOKENS": "1000",
+      "AGENT_SENTRY_ENVIRONMENT": "selfheal-test"
+    },
+    "check": "python selfheal/harness/checks/policy_tokens.py",
+    "check_label": "policy answer under the token budget",
+    "replay": false,
+    "prompt": "target_agent_context.md",
+    "slack_match": "context snowball",
+    "dashboard": {
+      "label": "Critical Experience dashboard",
+      "url": "https://demo.sentry.io/dashboard/510044/?project=5808623&project=4508968134377472&project=4512138282270720&project=4512138284367872&project=4512138287906816&statsPeriod=7d"
+    },
+    "_telemetry": "After the fix PR opens, a second agent instruments the code with a Sentry Application Metric for this goal (its own PR into base), and the alert's thread links a pre-filled Sentry monitor form for it (nothing is created in Sentry)",
+    "telemetry": {
+      "goal": "the number of help-centre documents (policy pages) the shopping agent sends to the model for one question",
+      "project": "kunal-manager-agent",
+      "window_seconds": 300
+    },
+    "_variants": "with-seer's handoff (seer_handoff.py, fix_from_seer.md) is checkout-specific for now",
+    "variants": ["without-seer"]
+  }
+}
