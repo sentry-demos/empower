@@ -18,3 +18,23 @@ def test_checkout_without_inventory_validation_succeeds(client, inventory):
     assert response.status_code == 200
     assert json.loads(response.data) == {"status": "success"}
     assert inventory.decrements == []
+
+
+def test_checkout_with_inventory_validation_in_stock_succeeds(client, inventory):
+    inventory.stock.update({4: 10})
+
+    response = post_checkout(client, make_order({4: 2}))
+
+    assert response.status_code == 200
+    assert json.loads(response.data) == {"status": "success"}
+    assert inventory.decrements == [(4, 2)]
+
+
+def test_checkout_with_inventory_validation_out_of_stock_reports_failed(client, inventory):
+    inventory.stock.update({4: 1})
+
+    response = post_checkout(client, make_order({4: 2}))
+
+    assert response.status_code == 200
+    assert json.loads(response.data) == {"status": "failed"}
+    assert inventory.decrements == []
