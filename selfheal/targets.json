@@ -23,11 +23,11 @@
     }
   },
   "agent-context": {
-    "org": "team-se",
-    "projects": ["kunal-manager-agent"],
-    "base": "selfheal/agent-base",
-    "project": "kunal-manager-agent",
-    "environment": "",
+    "org": "demo",
+    "projects": ["manager-agent"],
+    "base": "selfheal/base",
+    "project": "manager-agent",
+    "environment": "production",
     "paths": ["agent/"],
     "install": "pip install -r agent/requirements.txt tiktoken requests",
     "tests": "python -m pytest agent/tests -q",
@@ -52,7 +52,7 @@
     "_telemetry": "After the fix PR opens, a second agent instruments the code with a Sentry Application Metric for this goal (its own PR into base), and the alert's thread links a pre-filled Sentry monitor form for it (nothing is created in Sentry)",
     "telemetry": {
       "goal": "the number of help-centre documents (policy pages) the shopping agent sends to the model for one question",
-      "project": "kunal-manager-agent",
+      "project": "manager-agent",
       "window_seconds": 300
     },
     "_variants": "with-seer's handoff (seer_handoff.py, fix_from_seer.md) is checkout-specific for now",

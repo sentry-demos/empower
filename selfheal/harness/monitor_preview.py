@@ -3,7 +3,7 @@ creating anything in Sentry (so SEs demoing at once don't each leave a monitor b
 
 Sentry's new-monitor page fills its project, dataset and aggregate from the URL (the same link
 Sentry's own Insights pages build: detectors/.../useInitialMetricDetectorFormData.tsx), e.g.
-    https://team-se.sentry.io/monitors/new/settings/?detectorType=metric_issue&project=<id>
+    https://demo.sentry.io/monitors/new/settings/?detectorType=metric_issue&project=<id>
         &dataset=metrics&aggregate=max(value,agent.policy.documents,distribution,-)
 It doesn't read a threshold or name from the URL, so the Slack line says what threshold to set:
     "*Proposed monitor*: <preview> · max over 5 min, set threshold to *10* documents"

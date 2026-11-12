@@ -185,16 +185,27 @@ TOKEN_SPIKE = {"action": "triggered", "data": {
 }}
 
 
-def test_second_org_routes_to_its_target(client, monkeypatch):
-    monkeypatch.setenv("SENTRY_CLIENT_SECRET_TEAM_SE", TEAM_SE_SECRET)
+def test_agent_alert_in_demo_routes_to_the_agent_target(client):
+    # Both targets are in demo now; the alert's project picks one
+    payload = {**TOKEN_SPIKE, "data": {**TOKEN_SPIKE["data"], "event": {
+        **TOKEN_SPIKE["data"]["event"], "web_url": "https://sentry.io/organizations/demo/issues/7813412119/",
+        "url": "https://sentry.io/api/0/projects/demo/manager-agent/events/abc/"}}}
     with patch.object(main, "already_handling", return_value=""), \
          patch.object(main, "create_run_branch", return_value="selfheal/run/1") as create:
-        response = deliver(client, "event_alert", TOKEN_SPIKE, secret=TEAM_SE_SECRET)
+        response = deliver(client, "event_alert", payload)
 
     assert response.status_code == 202
     alert, base = create.call_args.args
-    assert (alert["org"], alert["target"], base) == ("team-se", "agent-context", "selfheal/agent-base")
+    assert (alert["org"], alert["target"], base) == ("demo", "agent-context", "selfheal/base")
     assert alert["issue_id"] == "7813412119"
+
+
+def test_team_se_has_no_target_any_more(client, monkeypatch):
+    monkeypatch.setenv("SENTRY_CLIENT_SECRET_TEAM_SE", TEAM_SE_SECRET)
+    with patch.object(main, "create_run_branch") as create:
+        response = deliver(client, "event_alert", TOKEN_SPIKE, secret=TEAM_SE_SECRET)
+    assert response.json["status"] == "ignored"
+    create.assert_not_called()
 
 
 def test_default_org_still_routes_to_checkout(client):

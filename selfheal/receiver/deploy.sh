@@ -6,7 +6,8 @@
 # and the app's numeric ID is passed in GITHUB_APP_ID:
 #   GITHUB_APP_ID=123456 selfheal/receiver/deploy.sh
 #
-# EXTRA_ORGS lists the other Sentry orgs (default "team-se"); their targets are in selfheal/targets.json.
+# EXTRA_ORGS lists any other Sentry orgs with a target in selfheal/targets.json (default: none; every
+# target is in demo). E.g. EXTRA_ORGS=team-se loads SELFHEAL_SENTRY_CLIENT_SECRET_TEAM_SE.
 # Fallback without an app: GITHUB_AUTH=token uses a token from secret SELFHEAL_GITHUB_TOKEN.
 # min-instances=1 keeps it always on, so the first alert of a demo isn't a cold start.
 set -euo pipefail
@@ -15,7 +16,7 @@ GCP_PROJECT=${GCP_PROJECT:-sales-engineering-sf}
 GCP_REGION=${GCP_REGION:-us-central1}
 SERVICE=${SERVICE:-selfheal-receiver}
 GITHUB_AUTH=${GITHUB_AUTH:-app}
-EXTRA_ORGS=${EXTRA_ORGS:-team-se}
+EXTRA_ORGS=${EXTRA_ORGS:-}
 
 env_vars="GITHUB_REPO=${GITHUB_REPO:-sentry-demos/empower},BASE_BRANCH=selfheal/base"
 secrets="SENTRY_CLIENT_SECRET=SELFHEAL_SENTRY_CLIENT_SECRET:latest"

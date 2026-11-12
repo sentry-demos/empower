@@ -157,11 +157,12 @@ def test_no_dashboard_configured_posts_nothing(tmp_path, no_slack, monkeypatch, 
     assert capsys.readouterr().out == ""
 
 
-@pytest.mark.parametrize("org,expected", [("demo", "checkout"), ("team-se", "agent-context")])
-def test_targets_carry_the_dashboard(org, expected):
+@pytest.mark.parametrize("project,expected", [("backend-flask", "checkout"), ("manager-agent", "agent-context")])
+def test_targets_carry_the_dashboard(project, expected):
     import target
-    name, config = target.resolve({"org": org}, target.load_targets())
-    lines = target.env_lines(name, config, {"org": org})
+    alert = {"org": "demo", "project": project, "project_slug": project}
+    name, config = target.resolve(alert, target.load_targets())
+    lines = target.env_lines(name, config, alert)
     assert name == expected
     assert lines["TARGET_DASHBOARD_URL"].startswith("https://demo.sentry.io/dashboard/510044/")
     assert lines["TARGET_DASHBOARD_LABEL"] == "Critical Experience dashboard"

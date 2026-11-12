@@ -62,7 +62,6 @@ jobs:
           SELFHEAL_VARIANTS: ${{ vars.SELFHEAL_VARIANTS }}
           # Read the issue's se tag, with the alert org's token
           SENTRY_MCP_TOKEN: ${{ secrets.SELFHEAL_SENTRY_MCP_TOKEN }}
-          SENTRY_MCP_TOKEN_TEAM_SE: ${{ secrets.SELFHEAL_SENTRY_MCP_TOKEN_TEAM_SE }}
         run: |
           variants=$(python3 selfheal/harness/plan.py .selfheal/alert.json)
           echo "variants=$variants" >> "$GITHUB_OUTPUT"
@@ -152,7 +151,6 @@ jobs:
         if: matrix.variant == 'with-seer'
         env:
           SENTRY_MCP_TOKEN: ${{ secrets.SELFHEAL_SENTRY_MCP_TOKEN }}
-          SENTRY_MCP_TOKEN_TEAM_SE: ${{ secrets.SELFHEAL_SENTRY_MCP_TOKEN_TEAM_SE }}
         run: python selfheal/harness/seer_handoff.py --alert "$RUNNER_TEMP/selfheal/alert.json" --out "$OUT"
 
       - name: Post "Seer RCA" to Slack (with-seer)
@@ -167,7 +165,6 @@ jobs:
         env:
           # One Sentry token per org; prepare.py picks the alert's
           SENTRY_MCP_TOKEN: ${{ secrets.SELFHEAL_SENTRY_MCP_TOKEN }}
-          SENTRY_MCP_TOKEN_TEAM_SE: ${{ secrets.SELFHEAL_SENTRY_MCP_TOKEN_TEAM_SE }}
         run: |
           # The MCP config holds the Sentry token and model key: keep it in its own folder,
           # which the agent is denied from reading (next step)
@@ -213,7 +210,6 @@ jobs:
           SELFHEAL_SLACK_CHANNELS: ${{ needs.plan.outputs.slack_channels }}
           # For the leak check only
           SENTRY_MCP_TOKEN: ${{ secrets.SELFHEAL_SENTRY_MCP_TOKEN }}
-          SENTRY_MCP_TOKEN_TEAM_SE: ${{ secrets.SELFHEAL_SENTRY_MCP_TOKEN_TEAM_SE }}
         run: |
           rm -rf "$SECRETS"
           git config user.name "github-actions[bot]"
@@ -390,7 +386,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           SENTRY_MCP_TOKEN: ${{ secrets.SELFHEAL_SENTRY_MCP_TOKEN }}
-          SENTRY_MCP_TOKEN_TEAM_SE: ${{ secrets.SELFHEAL_SENTRY_MCP_TOKEN_TEAM_SE }}
           FIX_PR_URL: ${{ steps.fix.outputs.url }}
         run: |
           OUT="$RUNNER_TEMP/selfheal/telemetry"
@@ -423,7 +418,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           SENTRY_MCP_TOKEN: ${{ secrets.SELFHEAL_SENTRY_MCP_TOKEN }}
-          SENTRY_MCP_TOKEN_TEAM_SE: ${{ secrets.SELFHEAL_SENTRY_MCP_TOKEN_TEAM_SE }}
           SELFHEAL_SLACK_BOT_TOKEN: ${{ secrets.SELFHEAL_SLACK_BOT_TOKEN }}
           SELFHEAL_SLACK_CHANNEL: ${{ vars.SELFHEAL_SLACK_CHANNEL }}
           SELFHEAL_SLACK_CHANNELS: ${{ needs.plan.outputs.slack_channels }}
@@ -440,7 +434,6 @@ jobs:
         env:
           # Read-only here: only to look up the project's ID for the form
           SENTRY_MCP_TOKEN: ${{ secrets.SELFHEAL_SENTRY_MCP_TOKEN }}
-          SENTRY_MCP_TOKEN_TEAM_SE: ${{ secrets.SELFHEAL_SENTRY_MCP_TOKEN_TEAM_SE }}
           SELFHEAL_SLACK_BOT_TOKEN: ${{ secrets.SELFHEAL_SLACK_BOT_TOKEN }}
           SELFHEAL_SLACK_CHANNEL: ${{ vars.SELFHEAL_SLACK_CHANNEL }}
           SELFHEAL_SLACK_CHANNELS: ${{ needs.plan.outputs.slack_channels }}

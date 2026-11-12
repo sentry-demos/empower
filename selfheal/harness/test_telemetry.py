@@ -175,13 +175,14 @@ def test_bad_proposal_gets_no_preview(tmp_path, no_slack, monkeypatch, capsys):
 
 # --- wiring ---------------------------------------------------------------------------------
 
-@pytest.mark.parametrize("org, has_telemetry", [("team-se", True), ("demo", False)])
-def test_only_targets_with_a_telemetry_block_get_the_follow_up(org, has_telemetry):
-    name, config = target.resolve({"org": org}, target.load_targets())
-    settings = target.env_lines(name, config, {"org": org})["TARGET_TELEMETRY"]
+@pytest.mark.parametrize("project, has_telemetry", [("manager-agent", True), ("backend-flask", False)])
+def test_only_targets_with_a_telemetry_block_get_the_follow_up(project, has_telemetry):
+    alert = {"org": "demo", "project": project, "project_slug": project}
+    name, config = target.resolve(alert, target.load_targets())
+    settings = target.env_lines(name, config, alert)["TARGET_TELEMETRY"]
     assert bool(settings) is has_telemetry
     if has_telemetry:
-        assert json.loads(settings)["project"] == "kunal-manager-agent"
+        assert json.loads(settings)["project"] == "manager-agent"
 
 
 def test_telemetry_prompt_is_fully_rendered(tmp_path, monkeypatch):

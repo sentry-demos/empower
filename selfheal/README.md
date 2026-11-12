@@ -169,22 +169,20 @@ GITHUB_SHA=$(git rev-parse HEAD) SENTRY_AUTH_TOKEN=... ./deploy flask --env=self
 ## More orgs and targets
 
 `selfheal/targets.json` lists where each alert's fix happens. One receiver serves every org: it
-checks which org's client secret signed the webhook, picks that org's target (by project when an
-org has several), and builds the run on the target's base branch. demo's checkout flow is the
-`checkout` target and the default.
+checks which org's client secret signed the webhook, picks that org's target by the alert's
+project, and builds the run on the target's base branch. Both targets are in demo; `checkout`
+is the default when an alert names no project.
 
 | Target | Org / project | Base branch | Code | Proof the fix works |
 |---|---|---|---|---|
-| `checkout` | `demo` / `backend-flask` | `selfheal/base` | `flask/` | Flask tests; replay of the failing cart from Sentry Logs |
-| `agent-context` | `team-se` / `kunal-manager-agent` | `selfheal/agent-base` | `agent/` | Agent tests; `harness/checks/policy_tokens.py` (policy answer under 4,000 tokens, still answering) |
+| `checkout` | `demo` / `backend-flask` (and `frontend-react`, followed through the trace) | `selfheal/base` | `flask/` | Flask tests; replay of the failing cart from Sentry Logs |
+| `agent-context` | `demo` / `manager-agent` | `selfheal/base` | `agent/` | Agent tests; `harness/checks/policy_tokens.py` (policy answer under 4,000 tokens, still answering) |
 
 **`agent-context`** is the "context snowball" in Kunal's shopping-agent scenarios
-(sentry-demos/empower#1692, from his fork). The alert is a metric issue: one `gen_ai.chat` span
-with ~48k input tokens, caused by the `search_policies` tool returning the whole help-centre
-export. `selfheal/agent-base` is his PR branch plus this harness, built by
-`scripts/refresh-agent-base.sh`; agent PRs target it, so his PR and fork are never touched. Re-run
-the script (then `git push --force origin selfheal/agent-base`) when his PR or the harness
-changes. His tests pin the bug on purpose; the agent is told to update them to the correct
+(sentry-demos/empower#1692, merged into master and from there into `selfheal/base`). The alert is
+a metric issue on `manager-agent`: one `gen_ai.chat` span with ~48k input tokens, caused by the
+`search_policies` tool returning the whole help-centre export. Merge master into `selfheal/base`
+again when the agent code changes. His tests pin the bug on purpose; the agent is told to update them to the correct
 behaviour. It runs without Seer only (`variants` in targets.json): the with-Seer handoff
 (`seer_handoff.py`, `fix_from_seer.md`) is written for the checkout bug.
 
@@ -193,9 +191,9 @@ behaviour. It runs without Seer only (`variants` in targets.json): the with-Seer
    receiver `…/sentry`; Organization, Project and Team Read; Issue & Event Read & Write), and the
    `selfheal` action on the alert.
 2. Its client secret in GCP as `SELFHEAL_SENTRY_CLIENT_SECRET_<ORG>` (e.g. `_TEAM_SE`). Add the org
-   to `EXTRA_ORGS` when running `receiver/deploy.sh` (default `team-se`) and redeploy.
-3. Its token as the GitHub secret `SELFHEAL_SENTRY_MCP_TOKEN_<ORG>`, passed in the runner's
-   "Prepare prompt and Sentry MCP" and "Verify" steps.
+   to `EXTRA_ORGS` when running `receiver/deploy.sh` (default: none) and redeploy.
+3. Its token as the GitHub secret `SELFHEAL_SENTRY_MCP_TOKEN_<ORG>`, passed as
+   `SENTRY_MCP_TOKEN_<ORG>` in every runner step that sets `SENTRY_MCP_TOKEN`.
 4. A target for it in `targets.json`.
 
 Manual runs: `SELFHEAL_TARGET=agent-context selfheal/scripts/trigger.sh "Kunal LLM Context Snowball" 7813412119`.
@@ -306,8 +304,8 @@ posted" warning. `SELFHEAL_SLACK_CHANNEL` (#demo-selfhealing) is only where it l
 thread when Sentry can't tell it the alert's channels; it never posts there otherwise.
 
 For an SE's alert to work end to end:
-- The alert has a Slack action and the selfheal webhook action, in the demo or team-se org, on a
-  project a target in `targets.json` lists.
+- The alert has a Slack action and the selfheal webhook action, in the demo org, on a project a
+  target in `targets.json` lists.
 - The channel is in the Sentry Slack workspace, where the bot (Rusted Advisor) is installed.
 - The bot can read the channel: in a public channel it joins by itself if the app has
   `channels:join` (else `/invite @Rusted Advisor`); a private channel needs the invite plus
