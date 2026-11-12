@@ -13,13 +13,13 @@ return new class extends Migration
     {
         Schema::create('reviews', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('product_id')->constrained()->onDelete('cascade');
+            $table->unsignedBigInteger('productid');
             $table->integer('rating');
-            $table->integer('customer_id')->nullable();
+            $table->integer('customerid')->nullable();
             $table->text('description')->nullable();
-            $table->timestamps();
+            $table->timestamp('created')->useCurrent();
             
-            $table->index('product_id');
+            $table->index('productid');
         });
     }
 

@@ -20,7 +20,7 @@ class InventoryFactory extends Factory
         return [
             'sku' => $this->faker->unique()->regexify('[A-Z]{3}[0-9]{3}'),
             'count' => $this->faker->numberBetween(0, 100),
-            'product_id' => Product::factory(),
+            'productid' => Product::factory(),
         ];
     }
 
