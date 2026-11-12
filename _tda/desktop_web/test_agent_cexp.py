@@ -12,8 +12,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from conftest import CExp, scale_batch_size_phase
 
 # Drives the conversational agent on the home page, the flow described in
-# agent/AGENT_CRITICAL_EXPERIENCE_PLAN.md. test_ai_agent.py still drives the
-# floating chat popup and is left alone.
+# agent/AGENT_CRITICAL_EXPERIENCE_PLAN.md.
 #
 # The whole point of this file is one correlation: when the products API is
 # degraded, engagement with the agent falls. It shares the `cexp` fixture with
@@ -30,16 +29,14 @@ from conftest import CExp, scale_batch_size_phase
 # one would put a guaranteed error in the healthy baseline the correlation is
 # measured against.
 
-# Below test_ai_agent.py's 0.185, which is already there "to reduce token
-# usage". A completed run here is four turns against that file's two, and each
-# turn is three LLM calls.
+# A completed run is four turns, and each turn is three LLM calls, so keep an
+# eye on token usage before raising this.
 VOLUME_FACTOR = 0.9
 BASE_ITERATIONS = 3
 JITTER_PERCENT = 30
 
-# test_ai_agent.py and test_basic_checkout.py both fill in on the +12 phase.
-# A third competitor there starves one of them, so this one sits a quarter of a
-# day away from both.
+# test_basic_checkout.py fills in on the +12 phase. Competing for it would
+# starve one of them, so this one sits a quarter of a day away.
 PHASE_OFFSET_HOURS = 6
 
 # The products turn is an LLM round trip on top of flask's slow profile, and
@@ -95,8 +92,7 @@ def _wait_for_card(driver, css_selector, timeout=TURN_TIMEOUT):
     )
 
 
-# Skip before the Sauce session is created. Like test_ai_agent.py this file has
-# no batch loop, so we only coin-flip whether to run this round.
+# Skip before the Sauce session is created. This file has no batch loop, so we only coin-flip whether to run this round.
 @pytest.fixture(autouse=True)
 def _skip_when_off_phase(random):
     if scale_batch_size_phase(1, random, PHASE_OFFSET_HOURS) == 0:

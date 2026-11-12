@@ -13,7 +13,7 @@ Runs automted tests against Sentry demos on GCP, in order to generate errors and
 
 Run just 1 test locally:
 ```
-./deploy _tda --env=local -- ./run_local.sh desktop_web/test_ai_agent.py
+./deploy _tda --env=local -- ./run_local.sh desktop_web/test_agent_cexp.py
 ```
 
 Run entire suite locally:

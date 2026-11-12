@@ -3,9 +3,7 @@
 `agent_advice_error` / `agent_info_error` are set on the page URL; ChatWidget.jsx
 maps them onto ?validate_plant_advice / ?validate_plant_info on the agent
 request. /buy-plants read them from the start. /chat did not, which quietly
-killed both demo error paths for the conversational flow — including in
-_tda/desktop_web/test_ai_agent.py, which still appends those page params and
-still drives the chat widget.
+killed both demo error paths for the conversational flow.
 
 These go through the router rather than calling set_plant_failure_flags()
 directly, so removing the call from the endpoint fails them. `stream_turn` is
