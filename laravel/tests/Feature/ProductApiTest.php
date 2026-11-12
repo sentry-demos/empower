@@ -6,6 +6,7 @@ use App\Models\Product;
 use App\Models\Review;
 use App\Models\Inventory;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class ProductApiTest extends TestCase
@@ -58,6 +59,39 @@ class ProductApiTest extends TestCase
         ]);
 
         $response->assertStatus(500); // Exception should be thrown
+    }
+
+    public function test_checkout_succeeds_when_inventory_is_sufficient(): void
+    {
+        DB::shouldReceive('select')
+            ->once()
+            ->andReturn([(object) ['id' => 1, 'sku' => 'SKU001', 'count' => 10, 'productid' => 3]]);
+
+        $response = $this->postJson('/api/checkout', [
+            'cart' => [
+                'items' => [['id' => 3, 'title' => 'Plant Mood']],
+                'quantities' => ['3' => 4],
+                'total' => 620,
+            ],
+            'form' => [],
+            'validate_inventory' => 'true',
+        ]);
+
+        $response->assertStatus(200)
+                ->assertJson(['status' => 'success']);
+    }
+
+    public function test_checkout_fails_for_empty_cart_quantities(): void
+    {
+        DB::shouldReceive('select')->andReturn([]);
+
+        $response = $this->postJson('/api/checkout', [
+            'cart' => ['items' => [], 'quantities' => [], 'total' => 0],
+            'form' => [],
+            'validate_inventory' => 'true',
+        ]);
+
+        $response->assertStatus(500);
     }
 
     public function test_can_get_inventory_levels(): void
