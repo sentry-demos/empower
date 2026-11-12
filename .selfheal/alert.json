@@ -1,0 +1,15 @@
+{
+  "kind": "event_alert",
+  "title": "[Dry run test] High Token Usage",
+  "description": "Notify via selfheal, Notify #demo-kunal via Slack",
+  "url": "https://sentry.io/organizations/demo/issues/7845445522/events/9c88061f6a104ce9bf8e61bb06ae5da8/",
+  "issue_id": "7845445522",
+  "project_id": "4512138284367872",
+  "project_slug": "manager-agent",
+  "rule": "Notify via selfheal, Notify #demo-kunal via Slack",
+  "se": "",
+  "variant": "",
+  "org": "demo",
+  "target": "agent-context",
+  "run_key": "ka64fbc60c0"
+}
