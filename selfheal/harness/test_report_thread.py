@@ -23,7 +23,9 @@ def sentry_message(ts, text, **extra):
 
 
 class History:
-    """conversations.history, newest first, `per_page` messages a page, honouring `oldest`."""
+    """conversations.history as Slack serves it: `per_page` messages a page, each page newest
+    first, honouring `oldest` and `latest`. With `oldest` and no `latest`, Slack starts from
+    the oldest end, so the first page holds the oldest messages in the window."""
 
     def __init__(self, messages, per_page=200):
         self.messages = sorted(messages, key=lambda m: -float(m["ts"]))
@@ -32,9 +34,15 @@ class History:
 
     def __call__(self, url, headers=None, params=None, timeout=None):
         self.calls.append(params)
-        kept = [m for m in self.messages if float(m["ts"]) >= float(params["oldest"])]
+        kept = [m for m in self.messages if float(m["ts"]) >= float(params["oldest"])
+                and ("latest" not in params or float(m["ts"]) <= float(params["latest"]))]
         start = int(params.get("cursor") or 0)
-        page, more = kept[start:start + self.per_page], start + self.per_page < len(kept)
+        if "latest" not in params:
+            # Pages walk forward in time from `oldest`
+            ascending = kept[::-1][start:start + self.per_page]
+            page, more = ascending[::-1], start + self.per_page < len(kept)
+        else:
+            page, more = kept[start:start + self.per_page], start + self.per_page < len(kept)
         body = {"ok": True, "messages": page,
                 "response_metadata": {"next_cursor": str(start + self.per_page) if more else ""}}
         return type("Response", (), {"json": lambda self: body})()
@@ -105,3 +113,15 @@ def test_slack_refusal_posts_to_the_channel(monkeypatch):
     monkeypatch.setattr(report.requests, "get",
                         lambda *a, **k: type("Response", (), {"json": lambda self: body})())
     assert report.lookup_alert_message("xoxb-test", "C1", ISSUE_ALERT) == (None, False)
+
+
+def test_busy_channel_replies_under_the_newest_alert_for_the_issue(slack):
+    # #demo-kunal on Nov 12: the alert posts a new top-level message for each event, and the
+    # channel has more messages than one page. The reply belongs under today's message, not
+    # under the first one for the issue (which Slack's oldest-first paging would list first).
+    link = "<https://demo.sentry.io/issues/7817323193/?referrer=slack|*Exception*>"
+    first = sentry_message(NOW - 86400, link)
+    latest = sentry_message(NOW - 30, link)
+    chatter = [sentry_message(NOW - 80000 + i * 100, "Critical: High Agent Token Usage") for i in range(450)]
+    slack([first, latest, *chatter], per_page=200)
+    assert report.lookup_alert_message("xoxb-test", "C1", ISSUE_ALERT) == (latest["ts"], False)

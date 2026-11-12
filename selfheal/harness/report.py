@@ -130,10 +130,14 @@ def lookup_alert_message(token, channel, alert):
 
 
 def channel_history(token, channel, oldest, max_pages=10):
-    """(messages, error): the channel's top-level messages since `oldest`, newest first."""
+    """(messages, error): the channel's top-level messages since `oldest`, newest first.
+
+    `latest` is set too: with only `oldest`, Slack pages forward from the oldest end, so in a
+    busy channel the first match would be the oldest message for an issue, not today's."""
     messages, cursor = [], None
+    latest = f"{time.time():.6f}"
     for _ in range(max_pages):
-        params = {"channel": channel, "oldest": f"{oldest:.0f}", "limit": 200}
+        params = {"channel": channel, "oldest": f"{oldest:.0f}", "latest": latest, "limit": 200}
         if cursor:
             params["cursor"] = cursor
         try:
@@ -148,7 +152,7 @@ def channel_history(token, channel, oldest, max_pages=10):
         cursor = (body.get("response_metadata") or {}).get("next_cursor")
         if not cursor:
             break
-    return messages, None
+    return sorted(messages, key=lambda m: -float(m["ts"])), None
 
 
 def join_channel(token, channel):
