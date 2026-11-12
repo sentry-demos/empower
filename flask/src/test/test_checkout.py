@@ -18,3 +18,24 @@ def test_checkout_without_inventory_validation_succeeds(client, inventory):
     assert response.status_code == 200
     assert json.loads(response.data) == {"status": "success"}
     assert inventory.decrements == []
+
+
+def test_checkout_with_inventory_validation_succeeds(client, inventory):
+    # Regression: `quantities` was read before assignment, so every validated checkout 500'd
+    inventory.stock.update({3: 10, 4: 5})
+
+    response = post_checkout(client, make_order({3: 1, 4: 2}))
+
+    assert response.status_code == 200
+    assert json.loads(response.data) == {"status": "success"}
+    assert sorted(inventory.decrements) == [(3, 1), (4, 2)]
+
+
+def test_checkout_out_of_stock_item_is_reported(client, inventory):
+    inventory.stock.update({3: 0})
+
+    response = post_checkout(client, make_order({3: 1}))
+
+    assert response.status_code == 200
+    assert json.loads(response.data) == {"status": "failed"}
+    assert inventory.decrements == []
