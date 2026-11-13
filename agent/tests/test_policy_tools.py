@@ -10,6 +10,7 @@ turn's history doesn't carry the blob at all.
 import json
 
 import pytest
+import sentry_sdk
 from test_tool_errors import _run_in_tool_span
 
 from app.session import OMITTED_TOOL_RESULT, ChatSession, trim_tool_outputs
@@ -83,6 +84,27 @@ async def test_spike_is_one_turn_wide():
         tool="ask_checkout_agent"
     )
     assert len(json.dumps(session.history)) < 2_000
+
+
+@pytest.mark.asyncio
+async def test_documents_metric_is_emitted(monkeypatch):
+    calls = []
+    monkeypatch.setattr(
+        sentry_sdk.metrics,
+        "distribution",
+        lambda name, value, **kw: calls.append((name, value, kw)),
+    )
+    payload, _ = await _run_in_tool_span(
+        search_policies, {"query": "return policy"}, ChatSession("p6")
+    )
+
+    assert calls == [
+        (
+            "agent.policy.documents",
+            len(payload["pages"]),
+            {"attributes": {"tool": "search_policies"}},
+        )
+    ]
 
 
 def test_ordinary_latest_result_is_still_kept():
