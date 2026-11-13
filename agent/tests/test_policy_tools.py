@@ -46,6 +46,24 @@ async def test_payload_is_big_enough_to_spike_input_tokens():
 
 
 @pytest.mark.asyncio
+async def test_document_count_metric_is_emitted(monkeypatch):
+    calls = []
+    monkeypatch.setattr(
+        "sentry_sdk.metrics.distribution",
+        lambda name, value, **kw: calls.append((name, value, kw)),
+    )
+    payload, _ = await _run_in_tool_span(
+        search_policies, {"query": "return policy"}, ChatSession("p6")
+    )
+
+    assert len(calls) == 1
+    name, value, kw = calls[0]
+    assert name == "agent.policy.documents"
+    assert value == len(payload["pages"])
+    assert kw["attributes"] == {"tool": "search_policies"}
+
+
+@pytest.mark.asyncio
 async def test_card_carries_the_answer_not_the_export():
     session = ChatSession("p3")
     await _run_in_tool_span(search_policies, {"query": "return policy"}, session)
