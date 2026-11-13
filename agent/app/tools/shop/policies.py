@@ -1,17 +1,11 @@
 """Store policy lookup, backed by a mock help-centre export.
 
-This is the context snowball in the demo. search_policies is meant to find the
-page that answers the customer's question, but it ignores the query and returns
-every page of the export as raw HTML — about 160KB. checkout_agent stops on its
-first tool, so that blob becomes the delegation's result verbatim and lands in
-the orchestrator's next gen_ai.chat call as tens of thousands of input tokens.
-
-The answer the customer gets is right, and nothing errors. The only sign is the
-input token count on that one span, with policy.pages and policy.bytes on the
-tool span above it saying where it came from.
-
-The fix (strip the markup, return only the pages that match the query) is left
-for Seer to propose, so the tests pin the broken behaviour down on purpose.
+search_policies returns the few pages that match the customer's query, as plain
+text. checkout_agent stops on its first tool, so this result becomes the
+delegation's result verbatim and lands in the orchestrator's next gen_ai.chat
+call; it has to stay small. (It once returned all ~50 export pages as raw HTML,
+~160KB / ~47k input tokens.) policy.pages and policy.bytes on the tool span
+record what was returned.
 """
 
 import json
@@ -34,6 +28,12 @@ EXCERPT_CHARS = 200
 
 _TAGS = re.compile(r"<[^>]+>")
 
+# Pages returned to the model per question.
+MAX_PAGES = 3
+
+_STOPWORDS = {"the", "what", "your", "you", "are", "and", "for", "how", "can",
+              "does", "do", "is", "to", "of", "a", "our", "with", "about", "policy"}
+
 
 def _excerpt(html: str) -> str:
     """The first EXCERPT_CHARS of a page's body copy, without markup."""
@@ -43,6 +43,35 @@ def _excerpt(html: str) -> str:
     body = body.replace("</p>", " ")
     text = _TAGS.sub("", body).replace("&ndash;", "–").replace("&amp;", "&")
     return " ".join(text.split())[:EXCERPT_CHARS]
+
+
+def _page_text(html: str) -> str:
+    """A page's body copy without the export's chrome or markup."""
+    body = html.split('class="wiki-content"', 1)[-1]
+    body = body.split("</h1>", 1)[-1].split('<div class="page-metadata">', 1)[0]
+    body = body.replace("</p>", " ")
+    text = _TAGS.sub(" ", body).replace("&ndash;", "–").replace("&amp;", "&")
+    return " ".join(text.split())
+
+
+def _terms(text: str) -> set[str]:
+    # Crude stemming ("returns" -> "return") so plurals match.
+    words = (w.rstrip("s") for w in re.findall(r"[a-z0-9]+", text.lower()))
+    return {w for w in words if len(w) > 2 and w not in _STOPWORDS}
+
+
+def _search(pages: list[dict], query: str) -> list[dict]:
+    """The MAX_PAGES pages best matching the query; titles count more than body."""
+    wanted = _terms(query)
+    scored = []
+    for page in pages:
+        title = _terms(page["title"])
+        body = _terms(_page_text(page["html"]))
+        score = 3 * len(wanted & title) + len(wanted & body)
+        if score:
+            scored.append((score, page))
+    scored.sort(key=lambda pair: -pair[0])
+    return [page for _, page in scored[:MAX_PAGES]]
 
 
 @function_tool  # type: ignore[misc]
@@ -58,20 +87,18 @@ async def search_policies(context: RunContextWrapper[ChatSession], query: str) -
     session = context.context
     logging.debug(f"search_policies query={query!r}")
 
-    # The bug: every page, raw, whatever was asked.
-    pages = policy_export.pages()
-    payload = json.dumps({"query": query, "pages": pages})
+    matches = _search(policy_export.pages(), query)
+    results = [{"title": page["title"], "text": _page_text(page["html"])} for page in matches]
+    payload = json.dumps({"query": query, "pages": results})
 
-    set_tool_attribute("policy.pages", len(pages))
+    set_tool_attribute("policy.pages", len(results))
     set_tool_attribute("policy.bytes", len(payload))
-    logging.info(f"search_policies returned {len(pages)} pages, {len(payload)} bytes")
+    logging.info(f"search_policies returned {len(results)} pages, {len(payload)} bytes")
 
-    answer = next(
-        page for page in pages if page["title"] == policy_export.RETURNS_PAGE_TITLE
-    )
-    session.record_widget(
-        "search_policies",
-        "policy",
-        {"title": answer["title"], "excerpt": _excerpt(answer["html"])},
-    )
+    if matches:
+        session.record_widget(
+            "search_policies",
+            "policy",
+            {"title": matches[0]["title"], "excerpt": _excerpt(matches[0]["html"])},
+        )
     return payload
