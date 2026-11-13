@@ -741,7 +741,14 @@ def ios_sim_driver(request, se_prefix):
     se = f'{se_prefix}-sauce-ios15.5'
     sentry_sdk.set_tag('se', se)
     try:
-        release_version = ReleaseVersion.latest_ios_github_release()
+        # Optional override for testing unreleased builds, e.g. a Sauce App Storage upload:
+        #   IOS_APP_URL=storage:filename=EmpowerPlant_release.zip
+        app = os.getenv('IOS_APP_URL')
+        if app:
+            print(f"Using IOS_APP_URL: {app}")
+        else:
+            release_version = ReleaseVersion.latest_ios_github_release()
+            app = f'https://github.com/sentry-demos/ios/releases/download/{release_version}/EmpowerPlant_release.zip'
 
         options = XCUITestOptions().load_capabilities({
             'appium:deviceName': 'iPhone 13 Simulator',
@@ -754,7 +761,7 @@ def ios_sim_driver(request, se_prefix):
                 'username': SAUCE_USERNAME,
                 'accessKey': SAUCE_ACCESS_KEY
             },
-            'appium:app': f'https://github.com/sentry-demos/ios/releases/download/{release_version}/EmpowerPlant_release.zip',
+            'appium:app': app,
         })
 
         driver = appiumdriver.Remote(SELENIUM_ENDPOINT, options=options)

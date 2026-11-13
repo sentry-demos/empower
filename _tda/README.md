@@ -21,6 +21,17 @@ Run entire suite locally:
 ./deploy _tda --env=local
 ```
 
+Run only the native iOS tests on Sauce Labs against an unreleased app build. Upload the simulator
+`.zip` (a zipped `EmpowerPlant.app` built for `iphonesimulator`) to Sauce App Storage, then point
+`IOS_APP_URL` at it. Without `IOS_APP_URL` the tests use `EmpowerPlant_release.zip` from the newest
+`sentry-demos/ios` GitHub release, same as production.
+```
+IOS_APP_URL=storage:filename=EmpowerPlant_release.zip ./deploy _tda --env=local -- ./run_local.sh mobile_native/ios
+```
+Local runs are tagged with your system user name instead of `prod` in the `se` tag
+(e.g. `<user>-tda-direct--mobile_native/ios/test_checkout_ios.py-sauce-ios15.5`), so filter
+empower-tda by `se:<user>-tda*` to find your results.
+
 # How to deploy to production
 
 This will take care of everything
