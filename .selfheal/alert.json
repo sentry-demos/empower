@@ -1,0 +1,15 @@
+{
+  "kind": "event_alert",
+  "title": "High Agent Token Usage (kunal3)",
+  "description": "kunal3 - High Agent Token Usage: Slack + Self Heal",
+  "url": "https://sentry.io/organizations/demo/issues/7845481730/events/d7db53e2981a4be3bf2e1210bee77f6d/",
+  "issue_id": "7845481730",
+  "project_id": "4512138284367872",
+  "project_slug": "manager-agent",
+  "rule": "kunal3 - High Agent Token Usage: Slack + Self Heal",
+  "se": "",
+  "variant": "",
+  "org": "demo",
+  "target": "agent-context",
+  "run_key": "kb66e74a930"
+}
