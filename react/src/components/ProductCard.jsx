@@ -16,6 +16,16 @@ function ProductCard(props) {
   const stars = props.stars;
 
   function validate_inventory(product) {
+    if (!Array.isArray(inventory)) {
+      Sentry.captureMessage('Add to cart attempted without inventory', {
+        level: 'warning',
+        extra: {
+          product_id: product && product.id,
+          add_to_cart_js_error: Boolean(props.addToCartJsError),
+        },
+      });
+      return false;
+    }
     return product && inventory.includes(product.id)
   }
 

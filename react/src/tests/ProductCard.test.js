@@ -83,18 +83,35 @@ describe('ProductCard Component', () => {
     // expect(mockNavigate).toHaveBeenCalledWith('/product/1', { state: product });
   });
 
-//   test('adds product to cart on "Add to cart" button click', () => {
-//     render(
-//       <Provider store={store}>
-//         <Router>
-//           <ProductCard {...props} />
-//         </Router>
-//       </Provider>
-//     );
+  // The component only adds products that are in its hardcoded inventory.
+  const inStockProduct = { ...product, id: 3 };
 
-//     const addToCartButton = screen.getByText(/Add to cart — \$100.00/);
-//     fireEvent.click(addToCartButton);
+  test('adds product to cart on "Add to cart" button click', () => {
+    render(
+      <Provider store={store}>
+        <Router>
+          <ProductCard {...props} product={inStockProduct} />
+        </Router>
+      </Provider>
+    );
 
-//     expect(props.addProduct).toHaveBeenCalledWith(product);
-//   });
+    const addToCartButton = screen.getByRole('button');
+    fireEvent.click(addToCartButton);
+
+    expect(store.getActions()).toContainEqual(addProduct(inStockProduct));
+  });
+
+  test('does not throw when the inventory is unavailable', () => {
+    render(
+      <Provider store={store}>
+        <Router>
+          <ProductCard {...props} product={inStockProduct} addToCartJsError={true} />
+        </Router>
+      </Provider>
+    );
+
+    const addToCartButton = screen.getByRole('button');
+    expect(() => fireEvent.click(addToCartButton)).not.toThrow();
+    expect(store.getActions()).toEqual([]);
+  });
 })
