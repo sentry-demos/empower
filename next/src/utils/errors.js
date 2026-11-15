@@ -5,6 +5,8 @@ if (typeof window !== 'undefined') {
   history = createBrowserHistory();
 }
 
+const CRASHER_ENABLED = process.env.REACT_APP_ENABLE_CRASHER === 'true';
+
 // ERRORS
 const notAFunctionError = () => {
   const someArray = [{ func: function () {} }];
@@ -44,10 +46,16 @@ const crasher = () => {
   if (queryParams !== '') {
     const crash = queryParams.get('crash');
     if (crash) {
+      if (!CRASHER_ENABLED) {
+        console.log('> crasher disabled', crash);
+        return;
+      }
       console.log('> crash', crash);
-      const errnum =
-        queryParams.get('errnum') ||
-        parseInt(Math.random() * randomErrors.length);
+      const errnumRaw = queryParams.get('errnum');
+      const errnumParsed = parseInt(errnumRaw, 10);
+      const errnum = !isNaN(errnumParsed) 
+        ? errnumParsed 
+        : Math.floor(Math.random() * randomErrors.length);
       if (crash === 'true' || probability(parseFloat(crash))) {
         throwErrorNumber(errnum);
       }

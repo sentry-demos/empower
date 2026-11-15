@@ -1,5 +1,7 @@
 // Angular Errors Utility - Replicates React crash functionality EXACTLY
 
+const CRASHER_ENABLED = (window as any).REACT_APP_ENABLE_CRASHER === 'true';
+
 // Custom error class for unhandled exceptions
 export class UnhandledException extends Error {
   constructor(message: string) {
@@ -59,13 +61,20 @@ export const crasher = (): void => {
     const crash = queryParams.get('crash');
     
     if (crash) {
+      if (!CRASHER_ENABLED) {
+        console.log('> crasher disabled', crash);
+        return;
+      }
       console.log('> crash', crash);
-      const errnum = queryParams.get('errnum') || 
-                     Math.floor(Math.random() * randomErrors.length).toString();
+      const errnumRaw = queryParams.get('errnum');
+      const errnumParsed = parseInt(errnumRaw || '', 10);
+      const errnum = !isNaN(errnumParsed) 
+        ? errnumParsed 
+        : Math.floor(Math.random() * randomErrors.length);
       
       if (crash === 'true' || probability(parseFloat(crash))) {
         // Call immediately like React does (no setTimeout)
-        throwErrorNumber(parseInt(errnum));
+        throwErrorNumber(errnum);
       }
     }
   } else {
