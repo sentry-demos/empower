@@ -21,10 +21,11 @@ Run entire suite locally:
 ./deploy _tda --env=local
 ```
 
-Run only the native iOS tests on Sauce Labs against an unreleased app build. Upload the simulator
-`.zip` (a zipped `EmpowerPlant.app` built for `iphonesimulator`) to Sauce App Storage, then point
-`IOS_APP_URL` at it. Without `IOS_APP_URL` the tests use `EmpowerPlant_release.zip` from the newest
-`sentry-demos/ios` GitHub release, same as production.
+Run only the native iOS tests on Sauce Labs. They target the `ios-demo-update` app (sentry-demos/ios#161).
+To test a build that is not released yet, upload its simulator `.zip` (a zipped `EmpowerPlant.app` built
+for `iphonesimulator`) to Sauce App Storage and point `IOS_APP_URL` at it. Without `IOS_APP_URL` the tests
+install `EmpowerPlant_release.zip` from the newest `sentry-demos/ios` GitHub release, same as production.
+`local.env` needs `TDA_SAUCELABS_USERNAME` and `TDA_SAUCELABS_ACCESS_KEY` (e.g. `=${__GCP_SECRET__}`).
 ```
 IOS_APP_URL=storage:filename=EmpowerPlant_release.zip ./deploy _tda --env=local -- ./run_local.sh mobile_native/ios
 ```

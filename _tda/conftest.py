@@ -1,6 +1,7 @@
 import pytest
 import contextlib
 import os
+import time
 import release_version_manager as ReleaseVersion
 import random as real_random
 import subprocess
@@ -13,6 +14,7 @@ from pathlib import Path
 
 from selenium import webdriver
 from appium import webdriver as appiumdriver
+from appium.webdriver.common.appiumby import AppiumBy
 from appium.options.android import UiAutomator2Options
 from appium.options.ios import XCUITestOptions
 from selenium.common.exceptions import WebDriverException
@@ -765,7 +767,8 @@ def ios_sim_driver(request, se_prefix):
         })
 
         driver = appiumdriver.Remote(SELENIUM_ENDPOINT, options=options)
-        driver.implicitly_wait(20)
+        # A fresh install shows no plants until the slow GET /products returns
+        driver.implicitly_wait(60)
 
         sentry_sdk.set_tag("sauceLabsUrl", f"https://app.saucelabs.com/tests/{driver.session_id}")
 
@@ -779,6 +782,11 @@ def ios_sim_driver(request, se_prefix):
 
     except Exception as err:
         sentry_sdk.capture_exception(err)
+
+
+def ios_tap(driver, accessibility_id, wait=0):
+    driver.find_element(AppiumBy.ACCESSIBILITY_ID, accessibility_id).click()
+    time.sleep(wait)
 
 
 @pytest.fixture
