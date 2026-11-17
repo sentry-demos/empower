@@ -18,6 +18,7 @@ import json
 import logging
 import re
 
+import sentry_sdk
 from agents import RunContextWrapper, function_tool
 
 from ...session import ChatSession
@@ -65,6 +66,9 @@ async def search_policies(context: RunContextWrapper[ChatSession], query: str) -
     set_tool_attribute("policy.pages", len(pages))
     set_tool_attribute("policy.bytes", len(payload))
     logging.info(f"search_policies returned {len(pages)} pages, {len(payload)} bytes")
+    sentry_sdk.metrics.distribution(
+        "agent.policy.documents", len(pages), attributes={"tool": "search_policies"}
+    )
 
     answer = next(
         page for page in pages if page["title"] == policy_export.RETURNS_PAGE_TITLE

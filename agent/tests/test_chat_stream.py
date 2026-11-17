@@ -7,6 +7,14 @@ orchestrator's, crediting the wrong agent. These tests fail at that point
 instead.
 """
 
+from types import SimpleNamespace
+
+import pytest
+import sentry_sdk
+from agents.stream_events import RunItemStreamEvent
+
+from app.api import chat_stream
+from app.session import ChatSession
 from app.api.chat_stream import (
     AGENTS,
     DEFAULT_AGENT,
@@ -54,3 +62,42 @@ def test_agent_ref_falls_back_rather_than_raising():
     assert agent_ref("plant") == {"id": "plant", "name": AGENTS["plant"]}
     assert agent_ref(None)["id"] == DEFAULT_AGENT
     assert agent_ref("no_such_agent")["id"] == DEFAULT_AGENT
+
+
+@pytest.mark.asyncio
+async def test_turn_emits_tool_call_count(monkeypatch):
+    def item(name, call_id):
+        return SimpleNamespace(raw_item={"name": name, "call_id": call_id})
+
+    class FakeResult:
+        async def stream_events(self):
+            yield RunItemStreamEvent(
+                name="tool_called", item=item("ask_checkout_agent", "c1")
+            )
+            yield RunItemStreamEvent(
+                name="tool_called", item=item("ask_products_agent", "c2")
+            )
+
+        def to_input_list(self):
+            return []
+
+    monkeypatch.setattr(
+        chat_stream.Runner, "run_streamed", lambda *a, **k: FakeResult()
+    )
+    calls = []
+    monkeypatch.setattr(
+        sentry_sdk.metrics,
+        "distribution",
+        lambda name, value, **kw: calls.append((name, value, kw)),
+    )
+
+    async for _ in chat_stream.stream_turn(ChatSession("t1"), "hi"):
+        pass
+
+    assert calls == [
+        (
+            "agent.turn.tool_calls",
+            2,
+            {"attributes": {"agent": chat_stream.SHOPPING_AGENT_NAME}},
+        )
+    ]
