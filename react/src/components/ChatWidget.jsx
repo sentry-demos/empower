@@ -326,6 +326,8 @@ const ChatWidget = ({ onExitFull }) => {
               id: generateMessageId(),
             },
           ]);
+        } else if (event === 'done') {
+          Sentry.metrics.count('chat.reply_received', 1);
         } else if (event === 'pills') {
           setPills(data.pills || []);
         } else if (event === 'error') {
