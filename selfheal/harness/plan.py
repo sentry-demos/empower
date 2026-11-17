@@ -9,7 +9,8 @@ Each alert picks its version, so two alerts can drive the two versions separatel
   3. Otherwise "with-seer" / "without-seer" in the alert's title or description. The
      receiver puts the rule name there, so naming the alert e.g.
      "Checkout revenue dropped [with-seer]" is enough.
-  4. Otherwise the default: SELFHEAL_VARIANTS (both, side by side, or a repo-chosen list).
+  4. Otherwise an `se` tag listed in SE_TAG_VARIANTS (e.g. se=reinvent runs with Seer).
+  5. Otherwise the default: SELFHEAL_VARIANTS (both, side by side, or a repo-chosen list).
 
 Usage (prints the JSON list for the workflow matrix):
     python selfheal/harness/plan.py .selfheal/alert.json
@@ -21,6 +22,12 @@ import urllib.parse
 import urllib.request
 
 VARIANTS = ("without-seer", "with-seer")
+
+# `se` tag values that pick a version without saying it, e.g. an event's demo tag. Matched on the
+# whole value (case-insensitive), after the alert's own name, before SELFHEAL_VARIANTS.
+SE_TAG_VARIANTS = {
+    "reinvent": "with-seer",  # AWS re:Invent 2026 booth, #demo-aws-reinvent-2026
+}
 
 
 def variant_in(*texts):
@@ -91,13 +98,26 @@ def variants_for(alert, default=None, lookup=issue_se_tag, allowed=None):
     return chosen
 
 
+def se_tag_variant(*tags):
+    """The version an `se` tag value is mapped to in SE_TAG_VARIANTS, or ""."""
+    for tag in tags:
+        variant = SE_TAG_VARIANTS.get(str(tag or "").strip().lower(), "")
+        if variant in VARIANTS:
+            return variant
+    return ""
+
+
 def choose(alert, default=None, lookup=issue_se_tag):
     variant = alert.get("variant") if alert.get("variant") in VARIANTS else ""
+    se = ""
     if not variant and alert.get("issue_id"):
         se = lookup(alert["issue_id"], alert.get("org"))
         print(f"Issue {alert['issue_id']} has se={se or '(none)'}", file=sys.stderr)
         variant = variant_in(se)
     variant = variant or alert_variant(alert)
+    # A mapped se tag comes after an alert that names its version, so a "[without-seer]" alert
+    # still runs without Seer for an se=reinvent event
+    variant = variant or se_tag_variant(alert.get("se"), se)
     if variant:
         return [variant]
     if default is None:
