@@ -1,4 +1,5 @@
-"""The telemetry follow-up: the agent's proposal, the instrumentation PR, and the monitor.
+"""The telemetry follow-up: the agent's proposal, the instrumentation PR, the monitor form and the
+dashboard preview.
 
 Run from the repo root: python -m pytest selfheal/harness
 """
@@ -11,30 +12,50 @@ from urllib.parse import parse_qs, urlparse
 import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import dashboard_preview  # noqa: E402
 import monitor_preview  # noqa: E402
 import open_telemetry_pr  # noqa: E402
 import prepare  # noqa: E402
-import report  # noqa: E402
 import target  # noqa: E402
 import telemetry_spec  # noqa: E402
 
+DOCS = {"name": "agent.policy.documents", "type": "distribution", "unit": "none", "attributes": ["tool"],
+        "file": "agent/app/tools/shop/policies.py", "new": True}
+REPLY = {"name": "chat.reply_received", "type": "count", "unit": "none", "attributes": [],
+         "file": "react/src/components/ChatWidget.jsx", "new": True}
+SENT = {"name": "chat.message_sent", "type": "count", "unit": "none", "attributes": [],
+        "file": "react/src/components/ChatWidget.jsx", "new": False}
+STAGES = [
+    {"name": "Message sent", "span_query": 'span.op:ui.action.click span.description:"Send Message"',
+     "metric": "chat.message_sent", "metric_aggregate": "sum", "error_query": ""},
+    {"name": "Policy search", "span_query": "span.op:gen_ai.execute_tool gen_ai.tool.name:search_policies",
+     "metric": "agent.policy.documents", "metric_aggregate": "p95", "error_query": "culprit:*policies*"},
+    {"name": "Reply received", "span_query": "span.op:http.client span.description:*chat*",
+     "metric": "chat.reply_received", "metric_aggregate": "sum", "error_query": "transaction:/chat"},
+]
 SPEC = {
-    "metric": {"name": "agent.policy.documents", "type": "distribution", "unit": "none", "attributes": ["tool"],
-               "file": "agent/app/tools/shop/policies.py"},
-    "monitor": {"aggregate": "max", "threshold": 10, "unit_label": "documents",
+    "metrics": [SENT, DOCS, REPLY],
+    "monitor": {"metric": "agent.policy.documents", "aggregate": "max", "threshold": 10, "unit_label": "documents",
                 "reasoning": "Normal answers use 3 or fewer pages; the spike sent all 50."},
-    "summary": "search_policies now reports how many pages it sends to the agent.",
+    "stages": STAGES,
+    "summary": "The chatbot flow now reports a metric per stage.",
 }
-ALERT = {"org": "team-se", "rule": "Notify via selfheal", "issue_id": "7825689300",
-         "title": "Chris LLM Context Snowball — max input tokens spike"}
-SETTINGS = {"goal": "the number of help-centre documents", "project": "kunal-manager-agent",
-            "window_seconds": 300}
+ALERT = {"org": "demo", "rule": "Notify via selfheal", "issue_id": "7825689300",
+         "title": "High Agent Token Usage"}
+SETTINGS = {"goal": "the chatbot's critical experience", "project": "manager-agent",
+            "paths": ["agent/", "react/"], "window_seconds": 300,
+            "dashboard": {"title": "Chatbot critical experience", "projects": ["frontend-react", "manager-agent"],
+                          "environment": "production"}}
 
 
 def write(tmp_path, **files):
     for name, content in files.items():
         (tmp_path / name).write_text(content if isinstance(content, str) else json.dumps(content))
     return str(tmp_path)
+
+
+def load(tmp_path, spec=SPEC):
+    return telemetry_spec.load(write(tmp_path, **{"telemetry.json": spec}))
 
 
 @pytest.fixture
@@ -45,126 +66,130 @@ def no_slack(monkeypatch):
 
 # --- the proposal ---------------------------------------------------------------------------
 
-def test_spec_builds_sentrys_metric_aggregate(tmp_path):
-    spec = telemetry_spec.load(write(tmp_path, **{"telemetry.json": SPEC}))
+def test_spec_builds_sentrys_metric_aggregates(tmp_path):
+    spec = load(tmp_path)
     # The same syntax Sentry's Explore uses for application metrics
     assert spec["monitor"]["sentry_aggregate"] == "max(value,agent.policy.documents,distribution,-)"
     assert telemetry_spec.describe(spec, 300) == "max > 10 documents in 5 min"
+    assert [s["sentry_metric_aggregate"] for s in spec["stages"]] == [
+        "sum(value,chat.message_sent,counter,-)", "p95(value,agent.policy.documents,distribution,-)",
+        "sum(value,chat.reply_received,counter,-)"]
+    assert spec["metric"]["name"] == "agent.policy.documents"  # the monitored metric
 
 
-def test_counter_metric_uses_sentrys_counter_type(tmp_path):
-    spec = {**SPEC, "metric": {**SPEC["metric"], "type": "count"}, "monitor": {**SPEC["monitor"], "aggregate": "sum"}}
-    loaded = telemetry_spec.load(write(tmp_path, **{"telemetry.json": spec}))
-    assert loaded["monitor"]["sentry_aggregate"] == "sum(value,agent.policy.documents,counter,-)"
+def bad(**change):
+    return {**SPEC, **change}
 
 
-@pytest.mark.parametrize("change, error", [
-    ({"metric": {**SPEC["metric"], "name": "Documents Sent"}}, "dotted lowercase"),
-    ({"metric": {**SPEC["metric"], "name": "agent.docs,distribution),count("}}, "dotted lowercase"),
-    ({"metric": {**SPEC["metric"], "type": "histogram"}}, "metric type"),
-    ({"monitor": {**SPEC["monitor"], "aggregate": "p95"}, "metric": {**SPEC["metric"], "type": "gauge"}}, "doesn't apply"),
-    ({"monitor": {**SPEC["monitor"], "threshold": 0}}, "positive number"),
-    ({"monitor": {**SPEC["monitor"], "threshold": "10"}}, "positive number"),
-    ({"metric": {**SPEC["metric"], "unit": "docs; drop"}}, "unit"),
+@pytest.mark.parametrize("spec, error", [
+    (bad(metrics=[{**DOCS, "name": "Documents Sent"}, SENT, REPLY]), "dotted lowercase"),
+    (bad(metrics=[{**DOCS, "name": "agent.docs,distribution),count("}, SENT, REPLY]), "dotted lowercase"),
+    (bad(metrics=[{**DOCS, "type": "histogram"}, SENT, REPLY]), "type"),
+    (bad(metrics=[{**DOCS, "unit": "docs; drop"}, SENT, REPLY]), "unit"),
+    (bad(metrics=[{**DOCS, "new": False}, SENT, {**REPLY, "new": False}]), "no new metrics"),
+    (bad(metrics=[DOCS, DOCS, SENT, REPLY]), "listed twice"),
+    (bad(monitor={**SPEC["monitor"], "metric": "agent.unknown"}), "monitor.metric"),
+    (bad(monitor={**SPEC["monitor"], "threshold": 0}), "positive number"),
+    (bad(monitor={**SPEC["monitor"], "threshold": "10"}), "positive number"),
+    (bad(monitor={**SPEC["monitor"], "metric": "chat.reply_received", "aggregate": "p95"}), "doesn't apply"),
+    (bad(stages=STAGES[:2]), "3 to 8"),
+    (bad(stages=STAGES + [{**STAGES[0], "metric": "agent.unknown"}]), "isn't one of the listed metrics"),
+    (bad(stages=STAGES + [{**STAGES[0], "span_query": ""}]), "no span_query"),
+    (bad(stages=STAGES + [{**STAGES[0], "span_query": "x" * 301}]), "longer than"),
 ])
-def test_bad_proposals_never_reach_sentry(tmp_path, change, error):
+def test_bad_proposals_never_reach_sentry(tmp_path, spec, error):
     with pytest.raises(telemetry_spec.SpecError, match=error):
-        telemetry_spec.load(write(tmp_path, **{"telemetry.json": {**SPEC, **change}}))
+        load(tmp_path, spec)
 
 
 # --- the instrumentation PR -----------------------------------------------------------------
 
-@pytest.mark.parametrize("added, emits", [
-    (['    sentry_sdk.metrics.distribution("agent.policy.documents", len(pages), attributes={"tool": "search_policies"})'], True),
-    (["    sentry_sdk.metrics.distribution(", '        "agent.policy.documents",', "        len(pages),", "    )"], True),
-    (['    sentry_sdk.metrics.distribution("agent.policy.pages", len(pages))'], False),   # another name
-    (['    sentry_sdk.metrics.count("agent.policy.documents", 1)'], False),               # another type
-    (['    # TODO: emit agent.policy.documents via sentry_sdk.metrics.distribution'], False),
+@pytest.mark.parametrize("added, missing", [
+    (['    sentry_sdk.metrics.distribution("agent.policy.documents", len(pages), attributes={"tool": "x"})',
+      "    Sentry.metrics.count('chat.reply_received', 1);"], []),
+    (["    sentry_sdk.metrics.distribution(", '        "agent.policy.documents",', "        len(pages),", "    )",
+      "  Sentry.metrics.count(", "    'chat.reply_received',", "    1,", "  );"], []),
+    (['    sentry_sdk.metrics.distribution("agent.policy.pages", len(pages))',
+      "    Sentry.metrics.count('chat.reply_received', 1);"], ["agent.policy.documents"]),   # another name
+    (['    sentry_sdk.metrics.count("agent.policy.documents", 1)'],
+     ["agent.policy.documents", "chat.reply_received"]),                                     # another type
+    (["    // TODO: Sentry.metrics.count chat.reply_received"],
+     ["agent.policy.documents", "chat.reply_received"]),
 ])
-def test_harness_checks_the_code_really_emits_the_metric(tmp_path, added, emits):
-    spec = telemetry_spec.load(write(tmp_path, **{"telemetry.json": SPEC}))
-    assert open_telemetry_pr.emits_metric(added, spec) is emits
+def test_harness_checks_the_code_emits_every_new_metric(tmp_path, added, missing):
+    # chat.message_sent already exists ("new": false), so the change needn't emit it
+    assert open_telemetry_pr.missing_metrics(added, load(tmp_path)) == missing
 
 
 def test_blockers_name_every_problem():
-    check = {"secrets_found": [], "in_scope": False, "tests_passed": False, "spec_error": None, "emits_metric": False}
+    check = {"secrets_found": [], "in_scope": False, "tests_passed": False, "spec_error": None,
+             "missing_metrics": ["chat.reply_received"]}
     found = open_telemetry_pr.blockers(check)
     assert any("outside" in b for b in found) and "tests fail" in found
-    assert any("doesn't emit" in b for b in found)
+    assert any("doesn't emit chat.reply_received" in b for b in found)
 
 
-def test_slack_message_matches_fix_ready_for_review(tmp_path):
-    spec = telemetry_spec.load(write(tmp_path, **{"telemetry.json": SPEC}))
-    assert open_telemetry_pr.slack_text("https://github.com/sentry-demos/empower/pull/1751", spec) == (
+def test_slack_message_lists_the_new_metrics(tmp_path):
+    assert open_telemetry_pr.slack_text("https://github.com/sentry-demos/empower/pull/1751", load(tmp_path)) == (
         "*Telemetry PR ready for review* · <https://github.com/sentry-demos/empower/pull/1751|PR #1751>\n\n"
-        "• New application metric: `agent.policy.documents`")
+        "• New application metrics along the chatbot flow: `agent.policy.documents`, `chat.reply_received`")
 
 
-def test_pr_text_links_the_fix_and_never_closes_the_issue(tmp_path, monkeypatch):
+def test_pr_text_links_the_fix_shows_the_dashboard_and_never_closes_the_issue(tmp_path, monkeypatch):
     monkeypatch.setenv("TARGET_TELEMETRY", json.dumps(SETTINGS))
     out = write(tmp_path, **{"telemetry.json": SPEC,
-                             "pr_body.md": "## Why\n\nThis fixes KUNAL-MANAGER-AGENT-7 for good.\n"})
+                             "pr_body.md": "## Why\n\nThis fixes MANAGER-AGENT-5 for good.\n"})
     spec = telemetry_spec.load(out)
-    check = {"files_changed": ["agent/app/tools/shop/policies.py"], "tests_summary": "50 passed"}
-    fix = {"issue_short_id": "KUNAL-MANAGER-AGENT-7", "issue_url": "https://team-se.sentry.io/issues/KUNAL-MANAGER-AGENT-7"}
+    check = {"files_changed": ["agent/app/tools/shop/policies.py", "react/src/components/ChatWidget.jsx"],
+             "tests_summary": "50 passed"}
+    fix = {"issue_short_id": "MANAGER-AGENT-5", "issue_url": "https://demo.sentry.io/issues/MANAGER-AGENT-5"}
     title, message, body = open_telemetry_pr.pr_text(out, spec, check, "https://github.com/o/r/pull/1725", fix)
-    assert title == "[telemetry] KUNAL-MANAGER-AGENT-7: measure agent.policy.documents as a Sentry application metric"
+    assert title == "[telemetry] MANAGER-AGENT-5: instrument the critical flow (2 application metrics, 3 stages)"
     assert message.startswith("Follows https://github.com/o/r/pull/1725")
-    assert "_Telemetry follow-up to the self-heal fix in https://github.com/o/r/pull/1725._" in body
     assert "`max(value,agent.policy.documents,distribution,-)`, alerts when max > 10 documents in 5 min" in body
-    assert "addresses KUNAL-MANAGER-AGENT-7" in body  # the agent's "fixes" was reworded
+    assert "| 2 | Policy search | `span.op:gen_ai.execute_tool gen_ai.tool.name:search_policies` |" in body
+    assert '"title": "Chatbot critical experience"' in body  # the JSON, to import if the preview fails
+    assert "addresses MANAGER-AGENT-5" in body  # the agent's "fixes" was reworded
 
 
-# --- the monitor preview --------------------------------------------------------------------
+# --- the monitor form -----------------------------------------------------------------------
 
-PREVIEW = ("https://team-se.sentry.io/monitors/new/settings/?detectorType=metric_issue&dataset=metrics"
-           "&aggregate=max%28value%2Cagent.policy.documents%2Cdistribution%2C-%29&project=4512069456953344")
+PREVIEW = ("https://demo.sentry.io/monitors/new/settings/?detectorType=metric_issue&dataset=metrics"
+           "&aggregate=max%28value%2Cagent.policy.documents%2Cdistribution%2C-%29&project=4512138284367872")
 
 
-def test_preview_link_prefills_the_monitor_form(tmp_path):
-    spec = telemetry_spec.load(write(tmp_path, **{"telemetry.json": SPEC}))
-    url = monitor_preview.preview_url("team-se", spec, "4512069456953344")
+def test_monitor_link_prefills_the_form(tmp_path):
+    url = monitor_preview.preview_url("demo", load(tmp_path), "4512138284367872")
     assert url == PREVIEW
     # The fields Sentry's form reads from its URL (useInitialMetricDetectorFormData)
     assert parse_qs(urlparse(url).query) == {
-        "detectorType": ["metric_issue"], "dataset": ["metrics"], "project": ["4512069456953344"],
+        "detectorType": ["metric_issue"], "dataset": ["metrics"], "project": ["4512138284367872"],
         "aggregate": ["max(value,agent.policy.documents,distribution,-)"]}
 
 
-def test_slack_line_says_what_threshold_to_set(tmp_path):
-    spec = telemetry_spec.load(write(tmp_path, **{"telemetry.json": SPEC}))
-    assert monitor_preview.slack_text(PREVIEW, spec, 300) == (
+def test_monitor_line_says_what_threshold_to_set(tmp_path):
+    assert monitor_preview.slack_text(PREVIEW, load(tmp_path), 300) == (
         f"*Proposed monitor*: <{PREVIEW}|preview> · max over 5 min, set threshold to *10* documents")
 
 
-def test_preview_creates_nothing_in_sentry(tmp_path, no_slack, monkeypatch, capsys):
+def test_monitor_preview_creates_nothing_in_sentry(tmp_path, no_slack, monkeypatch, capsys):
     calls = []
 
     def fake_get(org, path, params=None):
         calls.append(("GET", path))
-        return {"id": "4512069456953344", "slug": "kunal-manager-agent"}, None
+        return {"id": "4512138284367872", "slug": "manager-agent"}, None
     monkeypatch.setattr(monitor_preview.slack_channels, "sentry_get", fake_get)
     monkeypatch.setenv("TARGET_TELEMETRY", json.dumps(SETTINGS))
     out = write(tmp_path, **{"telemetry.json": SPEC, "alert.json": ALERT})
     monkeypatch.setattr(sys, "argv", ["monitor_preview.py", "--out", out])
     monitor_preview.main()
-    assert calls == [("GET", "/projects/team-se/kunal-manager-agent/")]  # one read, no writes
+    assert calls == [("GET", "/projects/demo/manager-agent/")]  # one read, no writes
     assert json.loads((tmp_path / "monitor_preview.json").read_text())["url"] == PREVIEW
     assert f"<{PREVIEW}|preview>" in capsys.readouterr().out
 
 
-def test_preview_without_the_project_id_still_links_the_form(tmp_path, no_slack, monkeypatch, capsys):
-    monkeypatch.setattr(monitor_preview.slack_channels, "sentry_get", lambda *a, **k: (None, None))
-    monkeypatch.setenv("TARGET_TELEMETRY", json.dumps(SETTINGS))
-    out = write(tmp_path, **{"telemetry.json": SPEC, "alert.json": ALERT})
-    monkeypatch.setattr(sys, "argv", ["monitor_preview.py", "--out", out])
-    monitor_preview.main()
-    assert "the form will ask for the project" in capsys.readouterr().out
-    assert "project=" not in json.loads((tmp_path / "monitor_preview.json").read_text())["url"]
-
-
-def test_bad_proposal_gets_no_preview(tmp_path, no_slack, monkeypatch, capsys):
-    out = write(tmp_path, **{"telemetry.json": {**SPEC, "monitor": {**SPEC["monitor"], "threshold": -1}},
+def test_bad_proposal_gets_no_monitor_link(tmp_path, no_slack, monkeypatch, capsys):
+    out = write(tmp_path, **{"telemetry.json": bad(monitor={**SPEC["monitor"], "threshold": -1}),
                              "alert.json": ALERT})
     monkeypatch.setattr(sys, "argv", ["monitor_preview.py", "--out", out])
     with pytest.raises(SystemExit):
@@ -173,24 +198,84 @@ def test_bad_proposal_gets_no_preview(tmp_path, no_slack, monkeypatch, capsys):
     assert "::warning title=No monitor preview::" in output and "Proposed monitor" not in output
 
 
+# --- the dashboard preview ------------------------------------------------------------------
+
+def test_dashboard_has_a_row_per_stage(tmp_path):
+    board = dashboard_preview.build_dashboard(load(tmp_path), SETTINGS, ["5808623", "4512138284367872"])
+    assert board["title"] == "Chatbot critical experience"
+    assert board["projects"] == [5808623, 4512138284367872] and board["environment"] == ["production"]
+    assert len(board["widgets"]) == 4 * len(STAGES)
+    row = board["widgets"][4:8]  # stage 2, policy search
+    assert [w["title"] for w in row] == [
+        "2. Policy search · throughput", "2. Policy search · p95(agent.policy.documents)",
+        "2. Policy search · p95 latency", "2. Policy search · errors"]
+    assert [(w["widgetType"], w["queries"][0]["aggregates"][0], w["queries"][0]["conditions"]) for w in row] == [
+        ("spans", "count()", STAGES[1]["span_query"]),
+        ("tracemetrics", "p95(value,agent.policy.documents,distribution,-)", ""),
+        ("spans", "p95(span.duration)", STAGES[1]["span_query"]),
+        ("error-events", "count()", "culprit:*policies*")]
+    # Each row fills Sentry's 6-column grid, one row under the other
+    assert [(w["layout"]["x"], w["layout"]["y"], w["layout"]["w"]) for w in row] == [(0, 2, 1), (1, 2, 2), (3, 2, 2), (5, 2, 1)]
+
+
+def run_preview(tmp_path, monkeypatch, response):
+    calls = []
+
+    def fake_start(org, body):
+        calls.append((org, body))
+        return response
+    monkeypatch.setattr(dashboard_preview, "start_preview", fake_start)
+    monkeypatch.setattr(dashboard_preview, "project_ids", lambda org, slugs: ["5808623", "4512138284367872"])
+    monkeypatch.setenv("TARGET_TELEMETRY", json.dumps(SETTINGS))
+    out = write(tmp_path, **{"telemetry.json": SPEC, "alert.json": ALERT,
+                             "telemetry_verify.json": {"pr_url": "https://github.com/o/r/pull/1769"}})
+    monkeypatch.setattr(sys, "argv", ["dashboard_preview.py", "--out", out])
+    return calls
+
+
+def test_dashboard_preview_links_an_unsaved_dashboard(tmp_path, no_slack, monkeypatch, capsys):
+    calls = run_preview(tmp_path, monkeypatch, (789, None))
+    dashboard_preview.main()
+    (org, body), = calls  # one generate call: Sentry saves nothing until a person does
+    assert org == "demo" and "exactly as given" in body["prompt"]
+    assert body["current_dashboard"]["title"] == "Chatbot critical experience"
+    url = "https://demo.sentry.io/dashboards/new/from-seer/?seerRunId=789"
+    assert json.loads((tmp_path / "dashboard_preview.json").read_text())["url"] == url
+    assert f"*Dashboard preview* 📊: <{url}|Chatbot critical experience> · 3 stages" in capsys.readouterr().out
+
+
+def test_dashboard_preview_falls_back_to_the_json_in_the_pr(tmp_path, no_slack, monkeypatch, capsys):
+    run_preview(tmp_path, monkeypatch, (None, "HTTP 403 from dashboards/generate: AI features are disabled"))
+    with pytest.raises(SystemExit):
+        dashboard_preview.main()
+    output = capsys.readouterr().out
+    assert "::warning title=No dashboard preview::HTTP 403" in output
+    assert "<https://github.com/o/r/pull/1769|the telemetry PR> to import" in output
+    assert (tmp_path / "dashboard.json").exists()
+
+
 # --- wiring ---------------------------------------------------------------------------------
 
 @pytest.mark.parametrize("project, has_telemetry", [("manager-agent", True), ("backend-flask", False)])
 def test_only_targets_with_a_telemetry_block_get_the_follow_up(project, has_telemetry):
     alert = {"org": "demo", "project": project, "project_slug": project}
     name, config = target.resolve(alert, target.load_targets())
-    settings = target.env_lines(name, config, alert)["TARGET_TELEMETRY"]
-    assert bool(settings) is has_telemetry
+    lines = target.env_lines(name, config, alert)
+    assert bool(lines["TARGET_TELEMETRY"]) is has_telemetry
     if has_telemetry:
-        assert json.loads(settings)["project"] == "manager-agent"
+        settings = json.loads(lines["TARGET_TELEMETRY"])
+        assert settings["project"] == "manager-agent" and settings["dashboard"]["title"]
+        # The fix stays in agent/; the telemetry follow-up may also change the browser
+        assert lines["TARGET_PATHS"] == "agent/"
+        assert target.telemetry_lines(lines, config)["TARGET_PATHS"] == "agent/,react/"
 
 
 def test_telemetry_prompt_is_fully_rendered(tmp_path, monkeypatch):
     monkeypatch.setenv("TARGET_TELEMETRY", json.dumps(SETTINGS))
     monkeypatch.setenv("TARGET_TESTS", "python -m pytest agent/tests -q")
-    monkeypatch.setenv("TARGET_PATHS", "agent/")
-    monkeypatch.setenv("SENTRY_ORG", "team-se")
-    monkeypatch.setenv("SENTRY_MCP_TOKEN_TEAM_SE", "test-token-12345")
+    monkeypatch.setenv("TARGET_PATHS", "agent/,react/")
+    monkeypatch.setenv("SENTRY_ORG", "demo")
+    monkeypatch.setenv("SENTRY_MCP_TOKEN", "test-token-12345")
     alert = tmp_path / "alert.json"
     alert.write_text(json.dumps(ALERT))
     out = tmp_path / "out"
@@ -200,31 +285,36 @@ def test_telemetry_prompt_is_fully_rendered(tmp_path, monkeypatch):
     prepare.main()
     prompt = (out / "prompt.md").read_text()
     assert "{{" not in prompt
-    assert "**the number of help-centre documents**" in prompt and "5-minute window" in prompt
-    assert "project `kunal-manager-agent`" in prompt and "https://github.com/o/r/pull/1725" in prompt
+    assert "**the chatbot's critical experience**" in prompt and "5-minute window" in prompt
+    assert "`agent/`, `react/`" in prompt and "project is `manager-agent`" in prompt
+    assert "https://github.com/o/r/pull/1725" in prompt
     assert json.loads((tmp_path / "secrets" / "mcp.json").read_text())["mcpServers"]["sentry"]
 
 
 def test_verify_against_a_real_git_tree(tmp_path, monkeypatch):
-    # The instrumentation in a changed file, and its test in a new one, as the agent leaves them
+    # Instrumentation in the agent and the browser, and a new test, as the agent leaves them
     repo = tmp_path / "repo"
     (repo / "agent" / "tests").mkdir(parents=True)
-    policies = repo / "agent" / "policies.py"
+    (repo / "react" / "src").mkdir(parents=True)
+    policies, widget = repo / "agent" / "policies.py", repo / "react" / "src" / "ChatWidget.jsx"
     policies.write_text("def search_policies(pages):\n    return pages\n")
+    widget.write_text("export function onReply() {}\n")
     for args in (["init", "-q"], ["add", "."],
                  ["-c", "user.email=t@example.com", "-c", "user.name=t", "commit", "-qm", "base"]):
         subprocess.run(["git", *args], cwd=repo, check=True)
     policies.write_text("import sentry_sdk\n\ndef search_policies(pages):\n    sentry_sdk.metrics.distribution(\n"
                         "        \"agent.policy.documents\", len(pages), attributes={\"tool\": \"search_policies\"})\n"
                         "    return pages\n")
+    widget.write_text("export function onReply() {\n  Sentry.metrics.count('chat.reply_received', 1);\n}\n")
     (repo / "agent" / "tests" / "test_metric.py").write_text("def test_metric():\n    assert True\n")
     out = write(tmp_path, **{"telemetry.json": SPEC})
     monkeypatch.chdir(repo)
-    monkeypatch.setenv("TARGET_PATHS", "agent/")
+    monkeypatch.setenv("TARGET_PATHS", "agent/,react/")
     monkeypatch.setenv("TARGET_TESTS", f"{sys.executable} -c pass")
     check, spec = open_telemetry_pr.verify(out)
-    assert check["in_scope"] and check["tests_passed"] and check["emits_metric"], check
-    assert sorted(check["files_changed"]) == ["agent/policies.py", "agent/tests/test_metric.py"]
+    assert check["in_scope"] and check["tests_passed"] and check["missing_metrics"] == [], check
+    assert sorted(check["files_changed"]) == ["agent/policies.py", "agent/tests/test_metric.py",
+                                              "react/src/ChatWidget.jsx"]
     assert open_telemetry_pr.blockers(check) == []
 
 

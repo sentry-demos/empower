@@ -85,16 +85,26 @@ def env_lines(name, target, alert):
     return lines
 
 
+def telemetry_lines(lines, target):
+    """The telemetry follow-up's overrides: it may change more of the code than the fix (the
+    browser as well as the agent), so its paths come from the target's telemetry block."""
+    paths = (target.get("telemetry") or {}).get("paths")
+    return {**lines, "TARGET_PATHS": ",".join(paths)} if paths else lines
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--alert", required=True)
     parser.add_argument("--github-env", action="store_true", help="append to $GITHUB_ENV")
     parser.add_argument("--shell", action="store_true", help='print `export K=V` lines for eval "$(...)"')
+    parser.add_argument("--telemetry", action="store_true", help="with the telemetry follow-up's paths")
     args = parser.parse_args()
     with open(args.alert) as f:
         alert = json.load(f)
     name, target = resolve(alert, load_targets())
     lines = env_lines(name, target, alert)
+    if args.telemetry:
+        lines = telemetry_lines(lines, target)
     text = "".join(f"{k}={v}\n" for k, v in lines.items())
     if args.github_env:
         with open(os.environ["GITHUB_ENV"], "a") as f:

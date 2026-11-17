@@ -1,10 +1,10 @@
 """Check the telemetry agent's instrumentation, then open it as its own draft PR into the base.
 
 Like open_pr.py for the fix, nothing is taken on the agent's word: the change must stay in the
-target's paths, the tests must pass, the code must actually emit the metric the agent proposed
-(sentry_sdk.metrics.<type>("<name>", ...)), and no secret may leak. Then it posts
-"(PR #N) Instrumented code to capture new application metric in Sentry · <metric>" in the
-alert's Slack thread.
+telemetry paths (the agent and the browser), the tests must pass, the code must actually emit
+every new metric the agent listed (sentry_sdk.metrics.<type>("<name>", ...) in Python,
+Sentry.metrics.<type>('<name>', ...) in the browser), and no secret may leak. Then it posts
+"Telemetry PR ready for review" with the new metrics in the alert's Slack thread.
 
 Usage (repo root, after run_agent.py):
     python selfheal/harness/open_telemetry_pr.py --out DIR --fix-pr-url URL --fix-result result.json
@@ -16,7 +16,8 @@ import os
 import re
 import sys
 
-import issue_refs  # same directory: python puts the script's folder on sys.path
+import dashboard_preview  # same directory: python puts the script's folder on sys.path
+import issue_refs
 import report
 import telemetry_spec
 import work
@@ -33,13 +34,18 @@ def added_lines(paths):
     return [line[1:] for line in diff.splitlines() if line.startswith("+") and not line.startswith("+++")]
 
 
-def emits_metric(lines, spec):
-    """Whether the added code calls sentry_sdk.metrics.<type>("<name>", ...)."""
-    code = "\n".join(lines)
-    quoted = re.compile(rf"[\"']{re.escape(spec['metric']['name'])}[\"']")
-    # The name is the call's first argument, possibly on the next line
+def emits(code, metric):
+    """Whether the code calls metrics.<type>("<name>", ...): sentry_sdk.metrics in Python,
+    Sentry.metrics in the browser. The name is the first argument, possibly on the next line."""
+    quoted = re.compile(rf"[\"'`]{re.escape(metric['name'])}[\"'`]")
     return any(quoted.match(code[call.end():call.end() + 200].lstrip())
-               for call in re.finditer(rf"metrics\.{spec['metric']['type']}\(", code))
+               for call in re.finditer(rf"metrics\.{metric['type']}\(", code))
+
+
+def missing_metrics(lines, spec):
+    """The new metrics the added code doesn't emit."""
+    code = "\n".join(lines)
+    return [m["name"] for m in spec["metrics"] if m["new"] and not emits(code, m)]
 
 
 def verify(out):
@@ -53,9 +59,9 @@ def verify(out):
     try:
         spec = telemetry_spec.load(out)
         result["spec_error"] = None
-        result["emits_metric"] = emits_metric(added_lines(paths), spec)
+        result["missing_metrics"] = missing_metrics(added_lines(paths), spec)
     except telemetry_spec.SpecError as err:
-        spec, result["spec_error"], result["emits_metric"] = None, str(err), False
+        spec, result["spec_error"], result["missing_metrics"] = None, str(err), []
     return result, spec
 
 
@@ -69,15 +75,17 @@ def blockers(check):
         found.append("tests fail")
     if check["spec_error"]:
         found.append(f"telemetry.json: {check['spec_error']}")
-    elif not check["emits_metric"]:
-        found.append("the added code doesn't emit the proposed metric via sentry_sdk.metrics")
+    elif check["missing_metrics"]:
+        found.append(f"the added code doesn't emit {', '.join(check['missing_metrics'])} via Sentry metrics")
     return found
 
 
 def pr_text(out, spec, check, fix_pr_url, fix_result):
     short_id, issue_url = fix_result.get("issue_short_id", ""), fix_result.get("issue_url", "")
-    name = spec["metric"]["name"]
-    title = f"[telemetry] {short_id or 'Alerted issue'}: measure {name} as a Sentry application metric"
+    new = [m for m in spec["metrics"] if m["new"]]
+    new_names = ", ".join("`" + m["name"] + "`" for m in new)
+    title = (f"[telemetry] {short_id or 'Alerted issue'}: instrument the critical flow"
+             f" ({len(new)} application metric{'s' if len(new) != 1 else ''}, {len(spec['stages'])} stages)")
     message = f"Follows {fix_pr_url}\n\nSentry issue: {short_id} {issue_url}".strip()
     body_path = os.path.join(out, "pr_body.md")
     body = open(body_path).read() if os.path.exists(body_path) else spec.get("summary", "")
@@ -86,29 +94,44 @@ def pr_text(out, spec, check, fix_pr_url, fix_result):
     if work_section:
         body += "\n\n" + work_section
     body = work.scrub(body)[:60000]
-    window = int(json.loads(os.environ.get("TARGET_TELEMETRY") or "{}").get("window_seconds") or 300)
+    settings = json.loads(os.environ.get("TARGET_TELEMETRY") or "{}")
+    window = int(settings.get("window_seconds") or 300)
     run_id = os.environ.get("GITHUB_RUN_ID", "local")
     body += (
         "\n\n---\n"
         f"_Opened by the self-heal telemetry agent from "
         f"[run {run_id}]({os.environ.get('GITHUB_SERVER_URL', '')}/{os.environ.get('GITHUB_REPOSITORY', '')}/actions/runs/{run_id})._"
-        " The alert's Slack thread links a pre-filled Sentry monitor form for the proposed monitor.\n\n"
+        " The alert's Slack thread links a pre-filled Sentry monitor form for the proposed monitor and"
+        " an unsaved dashboard preview with a row per stage.\n\n"
         "**Harness verification**\n"
         f"- Files: {', '.join(check['files_changed'])}\n"
-        f"- Tests: passed ({check['tests_summary']})\n"
-        f"- Emits `{name}` via `sentry_sdk.metrics.{spec['metric']['type']}`: yes\n"
+        f"- Agent tests: passed ({check['tests_summary']}). Browser changes aren't run here.\n"
+        f"- Emits every new metric ({new_names}): yes\n"
         f"- Proposed monitor: `{spec['monitor']['sentry_aggregate']}`, alerts when {telemetry_spec.describe(spec, window)}\n"
+        + dashboard_section(spec, settings)
     )
     title, body = (issue_refs.neutralize(text, short_id, issue_url) for text in (title, body))
     issue_refs.check({"title": title, "commit": message, "body": body}, short_id, issue_url)
     return title, message, body
 
 
+def dashboard_section(spec, settings):
+    """The stages and the dashboard JSON, so the dashboard can be imported if the preview fails."""
+    rows = "\n".join(f"| {n} | {s['name']} | `{s['span_query']}` | `{s['metric_aggregate']}({s['metric']})` |"
+                     f" `{s['error_query'] or '-'}` |" for n, s in enumerate(spec["stages"], 1))
+    dashboard = dashboard_preview.build_dashboard(spec, settings)
+    return ("\n**Dashboard: one row per stage** (throughput · metric · p95 latency · errors)\n\n"
+            "| # | Stage | Spans | Metric | Errors |\n|---|---|---|---|---|\n" + rows + "\n\n"
+            "<details><summary>Dashboard JSON (for Sentry's dashboards API or import)</summary>\n\n"
+            f"```json\n{json.dumps(dashboard, indent=2)}\n```\n</details>\n")
+
+
 def slack_text(pr_url, spec):
     """Shaped like "PR ready for review"."""
     number = pr_url.rstrip("/").rsplit("/", 1)[-1]
+    names = ", ".join("`" + m["name"] + "`" for m in spec["metrics"] if m["new"])
     return (f"*Telemetry PR ready for review* · <{pr_url}|PR #{number}>\n\n"
-            f"• New application metric: `{spec['metric']['name']}`")
+            f"• New application metrics along the chatbot flow: {names}")
 
 
 def close_earlier(prefix, keep_url):

@@ -273,25 +273,39 @@ SENTRY_AUTH_TOKEN=... selfheal/scripts/reset.sh
 For targets with a `telemetry` block in `targets.json` (today `agent-context`, Kunal's context
 snowball), the run doesn't stop at the fix. The `telemetry` job, after the review:
 
-1. A second agent (`prompts/telemetry.md`) reads the fix PR and the issue, looks at the data in
-   Sentry (read-only: every Sentry tool that changes something is denied), and instruments the
-   cause as a Sentry Application Metric on the base branch, without the fix. For the snowball:
-   `sentry_sdk.metrics.distribution("agent.policy.documents", len(pages), ...)` in
-   `search_policies`. It proposes a monitor in `telemetry.json`: aggregate, threshold, reasoning.
-2. `harness/open_telemetry_pr.py` checks the change stays in the target's paths, the tests pass,
-   the code really emits the proposed metric, and no secret leaks. Then it opens its own draft PR
-   into the base (label `selfheal-telemetry`) and posts "Telemetry PR ready for review · PR #N /
-   • New application metric: `<metric>`" in the alert's thread.
-3. `harness/monitor_preview.py` validates the proposal (`telemetry_spec.py`) and links Sentry's
-   new-monitor form, pre-filled with the project, the Application Metrics dataset and the
-   aggregate, e.g. `max(value,agent.policy.documents,distribution,-)`. **Nothing is created in
-   Sentry**, so SEs demoing at once don't each leave a monitor behind. The form doesn't take a
-   threshold or name from its URL, so the thread says what to set: "Proposed monitor: preview · max
-   over 5 min, set threshold to 10 documents". Whoever creates it adds its alert in the form.
+1. A second agent (`prompts/telemetry.md`) reads the fix PR and the issue, maps the chatbot's
+   critical flow into 4–7 stages (chat opened, message sent, the agent's turn, its tools, the
+   reply), checks each stage's spans in Sentry (read-only: every Sentry tool that changes
+   something is denied), and gives every stage an Application Metric, reusing the browser's
+   existing `chat.*` counts and adding the rest, always including the cause behind the alert
+   (`agent.policy.documents` for the snowball). It may change `agent/` and `react/` (the target's
+   `telemetry.paths`), on the base branch without the fix. In `telemetry.json` it lists the
+   metrics, the stages (span query, metric, error query) and a monitor for the alert's metric.
+2. `harness/open_telemetry_pr.py` checks the change stays in those paths, the agent tests pass
+   (browser changes aren't run), the code really emits every new metric (`sentry_sdk.metrics.*`
+   in Python, `Sentry.metrics.*` in the browser), and no secret leaks. Then it opens its own
+   draft PR into the base (label `selfheal-telemetry`), with a table of the stages and the
+   dashboard JSON, and posts "Telemetry PR ready for review · PR #N / • New application metrics
+   along the chatbot flow: …" in the alert's thread.
+3. `harness/monitor_preview.py` links Sentry's new-monitor form, pre-filled with the project, the
+   Application Metrics dataset and the aggregate, e.g.
+   `max(value,agent.policy.documents,distribution,-)`. The form doesn't take a threshold or name
+   from its URL, so the thread says what to set: "Proposed monitor: preview · max over 5 min, set
+   threshold to 10 documents". Whoever creates it adds its alert in the form.
+4. `harness/dashboard_preview.py` builds the dashboard (one row per stage: throughput, the
+   stage's metric, p95 latency across browser and agent spans, errors; the target's
+   `telemetry.dashboard` sets its title, projects and environment) and opens it **unsaved**
+   through Sentry's "create dashboard with Seer" flow: `POST /organizations/{org}/dashboards/generate/`
+   with the dashboard as `current_dashboard`, then a link to
+   `/dashboards/new/from-seer/?seerRunId=<id>`, which shows it in preview mode. The thread gets
+   "Dashboard preview 📊: Chatbot critical experience · N stages … · not saved". If Sentry won't
+   generate it (AI features off for the org, say), the thread points at the JSON in the PR instead.
 
-The org's Sentry token is only read from here (to look up the project's ID). The metric only has
+**Nothing is created in Sentry**, so SEs demoing at once don't each leave a monitor or dashboard
+behind: the monitor is a pre-filled form, and the dashboard a preview someone can save or leave.
+The org's Sentry token reads project IDs and starts the dashboard preview. The metrics only have
 data once the instrumentation runs (merged, or checked out locally). Any step that fails shows a
-warning on the run and skips its Slack message; the fix PR is unaffected.
+warning on the run; the fix PR is unaffected.
 
 ## Slack: where the bot posts
 

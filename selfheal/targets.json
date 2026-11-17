@@ -49,11 +49,17 @@
       "label": "Critical Experience dashboard",
       "url": "https://demo.sentry.io/dashboard/510044/?project=5808623&project=4508968134377472&project=4512138282270720&project=4512138284367872&project=4512138287906816&statsPeriod=7d"
     },
-    "_telemetry": "After the fix PR opens, a second agent instruments the code with a Sentry Application Metric for this goal (its own PR into base), and the alert's thread links a pre-filled Sentry monitor form for it (nothing is created in Sentry)",
+    "_telemetry": "After the fix PR opens, a second agent instruments the chatbot's critical flow (browser + agent) with Sentry Application Metrics in its own PR into base. The alert's thread then links a pre-filled monitor form for the metric behind the alert and an unsaved dashboard preview with a row per stage (nothing is created in Sentry)",
     "telemetry": {
-      "goal": "the number of help-centre documents (policy pages) the shopping agent sends to the model for one question",
+      "goal": "the Empower shopping chatbot's critical experience, stage by stage, from opening the chat to the agent's reply, including the number of help-centre documents (policy pages) the agent sends to the model for one question",
       "project": "manager-agent",
-      "window_seconds": 300
+      "paths": ["agent/", "react/"],
+      "window_seconds": 300,
+      "dashboard": {
+        "title": "Chatbot critical experience",
+        "projects": ["frontend-react", "agent", "manager-agent", "plant-agent", "shopping-agent"],
+        "environment": "production"
+      }
     },
     "_variants": "with-seer's handoff (seer_handoff.py, fix_from_seer.md) is checkout-specific for now",
     "variants": ["without-seer"]

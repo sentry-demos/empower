@@ -318,8 +318,9 @@ jobs:
 
   telemetry:
     # Follow-up for targets with a `telemetry` block (targets.json): a second agent takes the fix
-    # PR, instruments the cause as a Sentry Application Metric in its own PR into the base, and
-    # the thread gets a link to a pre-filled monitor form for it (nothing is created in Sentry).
+    # PR, instruments the critical flow (browser + agent) with Sentry Application Metrics in its own
+    # PR into the base, and the thread gets a pre-filled monitor form and an unsaved dashboard
+    # preview (nothing is created in Sentry).
     needs: [plan, review]
     if: always() && needs.plan.result == 'success'
     runs-on: ubuntu-latest
@@ -339,8 +340,9 @@ jobs:
       - name: Find the fix PR and the target's telemetry settings
         id: fix
         run: |
-          python3 selfheal/harness/target.py --alert .selfheal/alert.json --github-env
-          eval "$(python3 selfheal/harness/target.py --alert .selfheal/alert.json --shell)"
+          # --telemetry: the follow-up's own paths (the agent and the browser)
+          python3 selfheal/harness/target.py --alert .selfheal/alert.json --telemetry --github-env
+          eval "$(python3 selfheal/harness/target.py --alert .selfheal/alert.json --telemetry --shell)"
           if [ -z "$TARGET_TELEMETRY" ]; then
             echo "Target $SELFHEAL_TARGET has no telemetry follow-up."
             exit 0
@@ -439,6 +441,18 @@ jobs:
           SELFHEAL_SLACK_CHANNELS: ${{ needs.plan.outputs.slack_channels }}
         run: python selfheal/harness/monitor_preview.py --out "$OUT"
 
+      - name: Link an unsaved dashboard preview (nothing is saved in Sentry)
+        # Sentry's "create dashboard with Seer" flow: a preview of the stage-by-stage dashboard
+        # that a person can save or leave. Falls back to the dashboard JSON in the PR.
+        if: steps.fix.outputs.url && steps.pr.outcome == 'success'
+        continue-on-error: true
+        env:
+          SENTRY_MCP_TOKEN: ${{ secrets.SELFHEAL_SENTRY_MCP_TOKEN }}
+          SELFHEAL_SLACK_BOT_TOKEN: ${{ secrets.SELFHEAL_SLACK_BOT_TOKEN }}
+          SELFHEAL_SLACK_CHANNEL: ${{ vars.SELFHEAL_SLACK_CHANNEL }}
+          SELFHEAL_SLACK_CHANNELS: ${{ needs.plan.outputs.slack_channels }}
+        run: python selfheal/harness/dashboard_preview.py --out "$OUT"
+
       - name: Upload the telemetry results
         if: always() && steps.fix.outputs.url
         uses: actions/upload-artifact@v4
@@ -449,6 +463,8 @@ jobs:
             ${{ env.OUT }}/telemetry.json
             ${{ env.OUT }}/telemetry_verify.json
             ${{ env.OUT }}/monitor_preview.json
+            ${{ env.OUT }}/dashboard.json
+            ${{ env.OUT }}/dashboard_preview.json
             ${{ env.OUT }}/stats.json
 
   report:
