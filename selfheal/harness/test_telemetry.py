@@ -26,11 +26,13 @@ REPLY = {"name": "chat.reply_received", "type": "count", "unit": "none", "attrib
 SENT = {"name": "chat.message_sent", "type": "count", "unit": "none", "attributes": [],
         "file": "react/src/components/ChatWidget.jsx", "new": False}
 STAGES = [
-    {"name": "Message sent", "span_query": 'span.op:ui.action.click span.description:"Send Message"',
-     "metric": "chat.message_sent", "metric_aggregate": "sum", "error_query": ""},
-    {"name": "Policy search", "span_query": "span.op:gen_ai.execute_tool gen_ai.tool.name:search_policies",
+    {"name": "Message sent", "frontend_query": 'span.op:ui.action.click span.description:"Send Message"',
+     "backend_query": 'transaction:"POST /chat"', "metric": "chat.message_sent", "metric_aggregate": "sum",
+     "error_query": 'transaction:"POST /chat"'},
+    {"name": "Policy search", "frontend_query": "",
+     "backend_query": "span.op:gen_ai.execute_tool gen_ai.tool.name:search_policies",
      "metric": "agent.policy.documents", "metric_aggregate": "p95", "error_query": "culprit:*policies*"},
-    {"name": "Reply received", "span_query": "span.op:http.client span.description:*chat*",
+    {"name": "Reply received", "frontend_query": "span.op:http.client span.description:*chat*", "backend_query": "",
      "metric": "chat.reply_received", "metric_aggregate": "sum", "error_query": "transaction:/chat"},
 ]
 SPEC = {
@@ -94,8 +96,9 @@ def bad(**change):
     (bad(monitor={**SPEC["monitor"], "metric": "chat.reply_received", "aggregate": "p95"}), "doesn't apply"),
     (bad(stages=STAGES[:2]), "3 to 8"),
     (bad(stages=STAGES + [{**STAGES[0], "metric": "agent.unknown"}]), "isn't one of the listed metrics"),
-    (bad(stages=STAGES + [{**STAGES[0], "span_query": ""}]), "no span_query"),
-    (bad(stages=STAGES + [{**STAGES[0], "span_query": "x" * 301}]), "longer than"),
+    (bad(stages=STAGES + [{**STAGES[0], "frontend_query": "", "backend_query": ""}]), "neither a frontend_query"),
+    (bad(stages=STAGES + [{**STAGES[0], "frontend_query": "x" * 301}]), "longer than"),
+    (bad(stages=STAGES + [{**STAGES[0], "error_query": ""}]), "no error_query"),
 ])
 def test_bad_proposals_never_reach_sentry(tmp_path, spec, error):
     with pytest.raises(telemetry_spec.SpecError, match=error):
@@ -147,7 +150,8 @@ def test_pr_text_links_the_fix_shows_the_dashboard_and_never_closes_the_issue(tm
     assert title == "[telemetry] MANAGER-AGENT-5: instrument the critical flow (2 application metrics, 3 stages)"
     assert message.startswith("Follows https://github.com/o/r/pull/1725")
     assert "`max(value,agent.policy.documents,distribution,-)`, alerts when max > 10 documents in 5 min" in body
-    assert "| 2 | Policy search | `span.op:gen_ai.execute_tool gen_ai.tool.name:search_policies` |" in body
+    assert ("| 2 | Policy search | - | `span.op:gen_ai.execute_tool gen_ai.tool.name:search_policies` |"
+            " `p95(agent.policy.documents)` | `culprit:*policies*` |") in body
     assert '"title": "Chatbot critical experience"' in body  # the JSON, to import if the preview fails
     assert "addresses MANAGER-AGENT-5" in body  # the agent's "fixes" was reworded
 
@@ -200,22 +204,47 @@ def test_bad_proposal_gets_no_monitor_link(tmp_path, no_slack, monkeypatch, caps
 
 # --- the dashboard preview ------------------------------------------------------------------
 
-def test_dashboard_has_a_row_per_stage(tmp_path):
+def queries(widget):
+    return [(q["name"], q["aggregates"][0], q["conditions"]) for q in widget["queries"]]
+
+
+def test_dashboard_rows_match_the_critical_experience_layout(tmp_path):
     board = dashboard_preview.build_dashboard(load(tmp_path), SETTINGS, ["5808623", "4512138284367872"])
     assert board["title"] == "Chatbot critical experience"
     assert board["projects"] == [5808623, 4512138284367872] and board["environment"] == ["production"]
-    assert len(board["widgets"]) == 4 * len(STAGES)
-    row = board["widgets"][4:8]  # stage 2, policy search
-    assert [w["title"] for w in row] == [
-        "2. Policy search · throughput", "2. Policy search · p95(agent.policy.documents)",
-        "2. Policy search · p95 latency", "2. Policy search · errors"]
-    assert [(w["widgetType"], w["queries"][0]["aggregates"][0], w["queries"][0]["conditions"]) for w in row] == [
-        ("spans", "count()", STAGES[1]["span_query"]),
-        ("tracemetrics", "p95(value,agent.policy.documents,distribution,-)", ""),
-        ("spans", "p95(span.duration)", STAGES[1]["span_query"]),
-        ("error-events", "count()", "culprit:*policies*")]
-    # Each row fills Sentry's 6-column grid, one row under the other
-    assert [(w["layout"]["x"], w["layout"]["y"], w["layout"]["w"]) for w in row] == [(0, 2, 1), (1, 2, 2), (3, 2, 2), (5, 2, 1)]
+    assert len(board["widgets"]) == 4 * len(STAGES) + 2  # a row per stage, then the extras row
+    first, second = board["widgets"][0:4], board["widgets"][4:8]
+    # Like demo's dashboard 134148: funnel step (w 2) · metric (w 1) · FE/BE latency (w 1) · errors (w 2)
+    assert [(w["layout"]["x"], w["layout"]["y"], w["layout"]["w"], w["displayType"]) for w in second] == [
+        (0, 2, 2, "area"), (2, 2, 1, "area"), (3, 2, 1, "line"), (4, 2, 2, "area")]
+    assert [w["title"] for w in second] == [
+        "2. Policy search vs Reply received", "Policy search: p95(agent.policy.documents)",
+        "Policy search: p95 latency", "Errors in Policy search"]
+    # The funnel step plots this stage and the next as two series
+    assert queries(second[0]) == [
+        ("Policy search", "count(span.duration)", STAGES[1]["backend_query"]),
+        ("Reply received", "count(span.duration)", STAGES[2]["frontend_query"])]
+    assert queries(second[1]) == [("", "p95(value,agent.policy.documents,distribution,-)", "")]
+    # Latency splits browser (FE) and agent (BE) when the stage has both
+    assert queries(first[2]) == [("FE", "p95(span.duration)", STAGES[0]["frontend_query"]),
+                                 ("BE", "p95(span.duration)", STAGES[0]["backend_query"])]
+    assert queries(second[2]) == [("BE", "p95(span.duration)", STAGES[1]["backend_query"])]
+    assert first[0]["queries"][0]["conditions"] == f"({STAGES[0]['frontend_query']}) OR ({STAGES[0]['backend_query']})"
+    # Errors list the issues behind them
+    assert second[3]["widgetType"] == "error-events" and second[3]["queries"][0]["columns"] == ["issue", "title"]
+    # The last stage has no next step; the extras row holds the alert's metric and logs
+    assert board["widgets"][8]["title"] == "3. Reply received"
+    extras = board["widgets"][12:]
+    assert [(w["widgetType"], w["layout"]["y"]) for w in extras] == [("tracemetrics", 6), ("logs", 6)]
+    assert queries(extras[0]) == [("", "max(value,agent.policy.documents,distribution,-)", "")]
+
+
+def test_dashboard_filter_scopes_every_query(tmp_path):
+    settings = {**SETTINGS, "dashboard": {**SETTINGS["dashboard"], "filter": "has:cexp"}}
+    board = dashboard_preview.build_dashboard(load(tmp_path), settings)
+    conditions = [q["conditions"] for w in board["widgets"] for q in w["queries"]]
+    assert all(c.endswith("has:cexp") for c in conditions), conditions
+    assert f"({STAGES[1]['backend_query']}) has:cexp" in conditions
 
 
 def run_preview(tmp_path, monkeypatch, response):

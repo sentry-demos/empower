@@ -292,9 +292,12 @@ snowball), the run doesn't stop at the fix. The `telemetry` job, after the revie
    `max(value,agent.policy.documents,distribution,-)`. The form doesn't take a threshold or name
    from its URL, so the thread says what to set: "Proposed monitor: preview · max over 5 min, set
    threshold to 10 documents". Whoever creates it adds its alert in the form.
-4. `harness/dashboard_preview.py` builds the dashboard (one row per stage: throughput, the
-   stage's metric, p95 latency across browser and agent spans, errors; the target's
-   `telemetry.dashboard` sets its title, projects and environment) and opens it **unsaved**
+4. `harness/dashboard_preview.py` builds the dashboard, laid out like demo's Critical Experience
+   dashboard (134148): one row per stage with the funnel step (this stage vs the next), the
+   stage's metric, p95 latency with FE and BE as separate series, and the issues behind its
+   errors, then a row with the alert's metric and warning/error logs. The target's
+   `telemetry.dashboard` sets its title, projects, environment and an optional `filter` added to
+   every query (like 134148's `has:cexp`). It opens the dashboard **unsaved**
    through Sentry's "create dashboard with Seer" flow: `POST /organizations/{org}/dashboards/generate/`
    with the dashboard as `current_dashboard`, then a link to
    `/dashboards/new/from-seer/?seerRunId=<id>`, which shows it in preview mode. The thread gets

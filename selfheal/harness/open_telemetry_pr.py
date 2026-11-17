@@ -117,11 +117,15 @@ def pr_text(out, spec, check, fix_pr_url, fix_result):
 
 def dashboard_section(spec, settings):
     """The stages and the dashboard JSON, so the dashboard can be imported if the preview fails."""
-    rows = "\n".join(f"| {n} | {s['name']} | `{s['span_query']}` | `{s['metric_aggregate']}({s['metric']})` |"
-                     f" `{s['error_query'] or '-'}` |" for n, s in enumerate(spec["stages"], 1))
+    def code(value):
+        return f"`{value}`" if value else "-"
+    rows = "\n".join(f"| {n} | {s['name']} | {code(s['frontend_query'])} | {code(s['backend_query'])} |"
+                     f" `{s['metric_aggregate']}({s['metric']})` | {code(s['error_query'])} |"
+                     for n, s in enumerate(spec["stages"], 1))
     dashboard = dashboard_preview.build_dashboard(spec, settings)
-    return ("\n**Dashboard: one row per stage** (throughput · metric · p95 latency · errors)\n\n"
-            "| # | Stage | Spans | Metric | Errors |\n|---|---|---|---|---|\n" + rows + "\n\n"
+    return ("\n**Dashboard: one row per stage** (funnel step · metric · FE/BE p95 latency · errors by issue)\n\n"
+            "| # | Stage | Frontend spans | Backend spans | Metric | Errors |\n|---|---|---|---|---|---|\n"
+            + rows + "\n\n"
             "<details><summary>Dashboard JSON (for Sentry's dashboards API or import)</summary>\n\n"
             f"```json\n{json.dumps(dashboard, indent=2)}\n```\n</details>\n")
 

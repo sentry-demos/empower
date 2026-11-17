@@ -1,5 +1,6 @@
-"""An unsaved Sentry dashboard for the critical flow the telemetry agent instrumented: one row per
-funnel stage, with its throughput, its custom metric, its latency and its errors.
+"""An unsaved Sentry dashboard for the critical flow the telemetry agent instrumented, laid out like
+demo's Critical Experience dashboard: one row per funnel stage, with the step to the next stage,
+the stage's custom metric, its FE/BE latency and the issues behind its errors.
 
 Nothing is saved in Sentry (so SEs demoing at once don't each leave a dashboard behind). Sentry
 shows an unsaved, pre-filled dashboard only through its "create dashboard with Seer" flow:
@@ -24,48 +25,77 @@ import report  # same directory: python puts the script's folder on sys.path
 import slack_channels
 import telemetry_spec
 
-# Each stage is one row of Sentry's 6-column grid: (kind, width, display type)
-ROW = (("throughput", 1, "big_number"), ("metric", 2, "line"), ("latency", 2, "line"), ("errors", 1, "big_number"))
+# Laid out like demo's Critical Experience dashboard (134148): one row per funnel stage on Sentry's
+# 6-column grid, each 2 high: the funnel step (this stage vs the next) at x 0 (w 2), the stage's
+# custom metric at x 2 (w 1), p95 latency with FE and BE as separate series at x 3 (w 1), and the
+# issues behind its errors at x 4 (w 2). A last row holds the alert's metric and warning/error logs.
 ROW_HEIGHT = 2
 
 
-def widget(title, widget_type, display_type, aggregate, conditions, x, y, w, description=""):
+def query(conditions, aggregate, name="", columns=(), orderby=""):
+    return {"name": name, "fields": [*columns, aggregate], "aggregates": [aggregate], "columns": list(columns),
+            "conditions": conditions, "orderby": orderby}
+
+
+def widget(title, widget_type, display_type, queries, x, y, w, description="", limit=5):
     return {
         "title": title[:255], "description": description[:255], "displayType": display_type,
-        "widgetType": widget_type, "interval": "1h", "limit": None,
-        "queries": [{"name": "", "fields": [aggregate], "aggregates": [aggregate], "columns": [],
-                     "conditions": conditions, "orderby": ""}],
+        "widgetType": widget_type, "interval": "1h", "limit": limit, "queries": queries,
         "layout": {"x": x, "y": y, "w": w, "h": ROW_HEIGHT, "minH": ROW_HEIGHT},
     }
 
 
-def stage_widgets(number, stage, y):
-    """The row for one stage: throughput, its custom metric, latency (p95), errors."""
-    name = f"{number}. {stage['name']}"
-    span_query, error_query = stage["span_query"], stage["error_query"]
-    cells = {
-        "throughput": ("spans", "count()", span_query, f"{name} · throughput",
-                       "How often this stage runs (spans matching the stage)"),
-        "metric": ("tracemetrics", stage["sentry_metric_aggregate"], "",
-                   f"{name} · {stage['metric_aggregate']}({stage['metric']})", "The stage's application metric"),
-        "latency": ("spans", "p95(span.duration)", span_query, f"{name} · p95 latency",
-                    "Browser and agent spans for this stage"),
-        "errors": ("error-events", "count()", error_query, f"{name} · errors", "Errors in this stage's code"),
-    }
-    widgets, x = [], 0
-    for kind, width, display in ROW:
-        widget_type, aggregate, conditions, title, description = cells[kind]
-        widgets.append(widget(title, widget_type, display, aggregate, conditions, x, y, width, description))
-        x += width
-    return widgets
+def scoped(conditions, scope):
+    """The stage's conditions, narrowed to the dashboard's traffic filter (like 134148's has:cexp)."""
+    return f"({conditions}) {scope}" if scope and conditions else conditions or scope
+
+
+def stage_widgets(number, stage, following, y, scope=""):
+    """The row for one stage: funnel step, custom metric, p95 latency (FE/BE), errors by issue."""
+    name = stage["name"]
+    funnel = [query(scoped(stage["span_query"], scope), "count(span.duration)", name=name)]
+    funnel_title = f"{number}. {name}"
+    if following:
+        funnel.append(query(scoped(following["span_query"], scope), "count(span.duration)", name=following["name"]))
+        funnel_title += f" vs {following['name']}"
+    latency = [query(scoped(stage[f"{side}_query"], scope), "p95(span.duration)", name=label)
+               for side, label in (("frontend", "FE"), ("backend", "BE")) if stage[f"{side}_query"]]
+    metric = stage["sentry_metric_aggregate"]
+    return [
+        widget(funnel_title, "spans", "area", funnel, 0, y, 2,
+               "This stage vs the next (spans per hour): the gap is the drop-off"),
+        widget(f"{name}: {stage['metric_aggregate']}({stage['metric']})", "tracemetrics", "area",
+               [query(scope, metric, orderby=metric)], 2, y, 1, "The stage's application metric"),
+        widget(f"{name}: p95 latency", "spans", "line", latency, 3, y, 1, "Browser (FE) and agent (BE) spans"),
+        widget(f"Errors in {name}", "error-events", "area",
+               [query(scoped(stage["error_query"], scope), "count()", columns=("issue", "title"), orderby="-count()")],
+               4, y, 2, "The issues behind this stage's errors", limit=10),
+    ]
+
+
+def extras_row(spec, y, scope=""):
+    """Like 134148's last row: the metric behind the alert, and warning/error logs."""
+    monitor = spec["monitor"]
+    metric = monitor["sentry_aggregate"]
+    return [
+        widget(f"Alert metric: {monitor['aggregate']}({monitor['metric']})", "tracemetrics", "line",
+               [query(scope, metric, orderby=metric)], 0, y, 3,
+               f"Proposed monitor: critical above {monitor['threshold']}"),
+        widget("Agent logs WARN/ERROR", "logs", "area",
+               [query(scoped("severity:[warn,error]", scope), "count()", columns=("severity",), orderby="-count()")],
+               3, y, 3, "Warnings and errors logged along the flow"),
+    ]
 
 
 def build_dashboard(spec, settings, project_ids=()):
     """The dashboard as Sentry's dashboards API takes it: a row per stage, top to bottom."""
     board = settings.get("dashboard") or {}
-    widgets = []
-    for number, stage in enumerate(spec["stages"], 1):
-        widgets += stage_widgets(number, stage, (number - 1) * ROW_HEIGHT)
+    scope = " ".join(str(board.get("filter") or "").split())
+    stages, widgets = spec["stages"], []
+    for number, stage in enumerate(stages, 1):
+        following = stages[number] if number < len(stages) else None
+        widgets += stage_widgets(number, stage, following, (number - 1) * ROW_HEIGHT, scope)
+    widgets += extras_row(spec, len(stages) * ROW_HEIGHT, scope)
     dashboard = {"title": (board.get("title") or "Critical experience")[:255], "widgets": widgets,
                  "projects": [int(p) for p in project_ids], "period": "24h"}
     if board.get("environment"):
@@ -77,9 +107,10 @@ def prompt(spec, dashboard):
     stages = "; ".join(f"{n}. {s['name']}" for n, s in enumerate(spec["stages"], 1))
     return (f"Build the dashboard \"{dashboard['title']}\" exactly as given in the current dashboard: keep every "
             f"widget, title, query, dataset, display type and layout, in the same order. Don't add, remove or "
-            f"rename widgets. It follows one user flow, one row per stage ({stages}); each row shows the "
-            f"stage's throughput, its custom application metric, its p95 latency across browser and backend "
-            f"spans, and its errors.")
+            f"rename widgets. It follows one user flow, one row per stage ({stages}), laid out like a Critical "
+            f"Experience dashboard: each row shows the funnel step from this stage to the next, the stage's "
+            f"custom application metric, its p95 latency with frontend and backend as separate series, and "
+            f"the issues behind its errors. The last row has the alert's metric and warning/error logs.")
 
 
 def project_ids(org, slugs):
@@ -116,8 +147,8 @@ def preview_url(org, run_id):
 
 
 def slack_text(url, dashboard, stages):
-    return (f"*Dashboard preview* 📊: <{url}|{dashboard['title']}> · {stages} stages, each with throughput,"
-            f" metric, latency and errors · not saved")
+    return (f"*Dashboard preview* 📊: <{url}|{dashboard['title']}> · {stages} stages, each with funnel step,"
+            f" metric, FE/BE latency and errors · not saved")
 
 
 def fallback_text(pr_url):

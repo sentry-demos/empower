@@ -92,16 +92,18 @@ of that metric over a {{WINDOW_MINUTES}}-minute window, critical above the thres
 
 ## 4. Lay out the dashboard
 
-The harness builds a dashboard with one row per stage, in flow order, modelled on Sentry's
-Critical Experience dashboards. Each row has four widgets: throughput (count of the stage's
-spans), the stage's metric, p95 latency of the stage's spans across browser and agent, and the
-errors in the stage's code. For each stage give:
+The harness builds a dashboard with one row per stage, in flow order, laid out like demo's
+Critical Experience dashboard: the funnel step (this stage's span count against the next
+stage's, so the drop-off shows), the stage's metric, p95 latency with the browser (FE) and the
+agent (BE) as separate series, and the issues behind the stage's errors. For each stage give:
 
-- `span_query`: a span search that matches the stage's spans, browser and backend (checked in
-  step 1). Plain Sentry search syntax, no project filter.
+- `frontend_query` and `backend_query`: span searches for the stage's browser spans and its
+  agent spans (checked in step 1). Plain Sentry search syntax, no project filter. Use `""` for a
+  side the stage doesn't have, but give at least one.
 - `metric` and `metric_aggregate`: the stage's metric and how to chart it (`sum` for a count,
   `p95` or `max` for a distribution).
-- `error_query`: an error search scoped to the stage (e.g. by transaction or culprit), or `""`.
+- `error_query`: an error search scoped to the stage's page or code (by transaction, URL or
+  culprit), checked in step 1.
 
 ## 5. Report
 
@@ -118,9 +120,12 @@ Write `{{OUT}}/telemetry.json`:
   "monitor": {"metric": "agent.policy.documents", "aggregate": "max", "threshold": 10,
               "unit_label": "documents", "reasoning": "one or two sentences, with the numbers from Sentry"},
   "stages": [
-    {"name": "Message sent", "span_query": "span.op:ui.action.click span.description:\"Send Message\"",
-     "metric": "chat.message_sent", "metric_aggregate": "sum", "error_query": ""},
-    {"name": "Policy search", "span_query": "span.op:gen_ai.execute_tool gen_ai.tool.name:search_policies",
+    {"name": "Message sent",
+     "frontend_query": "span.op:ui.action.click span.description:\"Send Message\"",
+     "backend_query": "transaction:\"POST /chat\"",
+     "metric": "chat.message_sent", "metric_aggregate": "sum", "error_query": "transaction:\"POST /chat\""},
+    {"name": "Policy search", "frontend_query": "",
+     "backend_query": "span.op:gen_ai.execute_tool gen_ai.tool.name:search_policies",
      "metric": "agent.policy.documents", "metric_aggregate": "p95", "error_query": "culprit:*policies*"}
   ],
   "summary": "one sentence: what is now measured and where"

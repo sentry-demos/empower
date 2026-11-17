@@ -9,8 +9,8 @@ anything to Sentry, so a bad value can't reach Sentry's API.
                    "attributes": ["tool"], "file": "agent/app/tools/shop/policies.py", "new": true}, ...],
       "monitor": {"metric": "agent.policy.documents", "aggregate": "max", "threshold": 10,
                   "unit_label": "documents", "reasoning": "..."},
-      "stages": [{"name": "Policy search", "span_query": "...", "metric": "agent.policy.documents",
-                  "metric_aggregate": "p95", "error_query": "..."}, ...],
+      "stages": [{"name": "Policy search", "frontend_query": "", "backend_query": "...",
+                  "metric": "agent.policy.documents", "metric_aggregate": "p95", "error_query": "..."}, ...],
       "summary": "..."
     }
 """
@@ -105,11 +105,15 @@ def load(out):
             raise SpecError(f"stage {name!r}: metric {raw.get('metric')!r} isn't one of the listed metrics")
         stage_aggregate = _aggregate(metric, str(raw.get("metric_aggregate") or ("sum" if metric["type"] == "count" else "p95")),
                                      f"stage {name!r}")
-        span_query = _query(raw, "span_query")
-        if not span_query:
-            raise SpecError(f"stage {name!r} has no span_query")
+        frontend, backend = _query(raw, "frontend_query"), _query(raw, "backend_query")
+        if not (frontend or backend):
+            raise SpecError(f"stage {name!r} has neither a frontend_query nor a backend_query")
+        error_query = _query(raw, "error_query")
+        if not error_query:
+            raise SpecError(f"stage {name!r} has no error_query (scope it to the stage's page or code)")
         stages.append({**raw, "name": name, "metric": metric["name"], "metric_aggregate": stage_aggregate,
-                       "span_query": span_query, "error_query": _query(raw, "error_query"),
+                       "frontend_query": frontend, "backend_query": backend, "error_query": error_query,
+                       "span_query": f"({frontend}) OR ({backend})" if frontend and backend else frontend or backend,
                        "sentry_metric_aggregate": sentry_aggregate(stage_aggregate, metric)})
     if not MIN_STAGES <= len(stages) <= MAX_STAGES:
         raise SpecError(f"{len(stages)} stages; the dashboard needs {MIN_STAGES} to {MAX_STAGES}")
