@@ -24,6 +24,7 @@ import json
 import logging
 from typing import Any, AsyncIterator
 
+import sentry_sdk
 from agents import Runner
 from agents.stream_events import RunItemStreamEvent
 
@@ -238,6 +239,9 @@ async def stream_turn(session: ChatSession, message: str) -> AsyncIterator[str]:
     # and again on every handoff, so this is only ever wrong if that stops.
     speaker = DEFAULT_AGENT
 
+    # Tool calls the orchestrator made this turn, counting repeats.
+    tool_calls = 0
+
     try:
         # The orchestrator's own turn, in its own project. Two reasons it has to
         # wrap the drain and not just the run_streamed call: the run happens in a
@@ -277,6 +281,7 @@ async def stream_turn(session: ChatSession, message: str) -> AsyncIterator[str]:
                     name = _tool_name(event.item.raw_item)
                     if name is None:
                         continue
+                    tool_calls += 1
                     call_id = _call_id(event.item.raw_item)
                     if call_id:
                         # Recorded before the dedup below: a second call to the same
@@ -348,4 +353,7 @@ async def stream_turn(session: ChatSession, message: str) -> AsyncIterator[str]:
         yield sse("widget", {"type": "error", "data": {"message": str(error)}})
         yield sse("error", {"code": "turn_failed", "message": str(error)})
 
+    sentry_sdk.metrics.distribution(
+        "agent.turn.tool_calls", tool_calls, attributes={"agent": DEFAULT_AGENT}
+    )
     yield sse("done", {"conversation_id": session.conversation_id})
