@@ -7,7 +7,7 @@ def test_unhandledpromiserejection_react_native_ios(ios_react_native_sim_driver)
         ios_react_native_sim_driver.find_element(AppiumBy.ACCESSIBILITY_ID, 'landing-enter-button').click()
 
         # click on list app
-        ios_react_native_sim_driver.find_element(AppiumBy.ACCESSIBILITY_ID, 'Debug, tab, 3 of 3').click()
+        ios_react_native_sim_driver.find_element(AppiumBy.IOS_PREDICATE, "name BEGINSWITH 'Debug, tab,'").click()
 
         # click unhandled promise rejection button
         btn = ios_react_native_sim_driver.find_element(AppiumBy.ACCESSIBILITY_ID, "Unhandled Promise Rejection")
