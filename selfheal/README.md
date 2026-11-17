@@ -212,6 +212,10 @@ Each alert picks its version (`harness/plan.py`), so you can show one, the other
   and each version replies in its own alert's Slack thread.
 - **Either kind**: an alert with `with-seer` / `without-seer` in its name always gets that
   version. An alert that names neither runs `SELFHEAL_VARIANTS`.
+- **Event tags**: `SE_TAG_VARIANTS` in `harness/plan.py` maps whole `se` values to a version
+  (`se=reinvent` → with-seer), so an event's alerts can keep their own tag. It applies to issue
+  alerts only (metric alerts carry no `se`), after the alert's name and before
+  `SELFHEAL_VARIANTS`, and a target's `variants` list still limits it.
 
 The receiver reads the `se` tag from the alert's event. If the event comes without tags, the
 runner's plan job looks up the issue's `se` tag in Sentry itself, so issue alerts never need the
