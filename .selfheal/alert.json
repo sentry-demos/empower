@@ -1,0 +1,15 @@
+{
+  "kind": "event_alert",
+  "title": "High Agent Token Usage - reinvent",
+  "description": "reinvent - High Agent Token Usage \u2192 Slack + Self Heal",
+  "url": "https://sentry.io/organizations/demo/issues/7853286838/events/7fe8f8cb51724fec9491841be6537e82/",
+  "issue_id": "7853286838",
+  "project_id": "4512138284367872",
+  "project_slug": "manager-agent",
+  "rule": "reinvent - High Agent Token Usage \u2192 Slack + Self Heal",
+  "se": "",
+  "variant": "",
+  "org": "demo",
+  "target": "agent-context",
+  "run_key": "k01a3d8146e"
+}
