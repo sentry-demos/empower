@@ -24,6 +24,7 @@ import json
 import logging
 from typing import Any, AsyncIterator
 
+import sentry_sdk
 from agents import Runner
 from agents.stream_events import RunItemStreamEvent
 
@@ -234,6 +235,9 @@ async def stream_turn(session: ChatSession, message: str) -> AsyncIterator[str]:
     # call_id -> tool name, so a tool_output can be traced back to what ran.
     calls: dict[str, str] = {}
 
+    # Tool calls the orchestrator made this turn, duplicates included.
+    tool_calls = 0
+
     # Who is talking. The SDK announces the starting agent before anything else
     # and again on every handoff, so this is only ever wrong if that stops.
     speaker = DEFAULT_AGENT
@@ -277,6 +281,7 @@ async def stream_turn(session: ChatSession, message: str) -> AsyncIterator[str]:
                     name = _tool_name(event.item.raw_item)
                     if name is None:
                         continue
+                    tool_calls += 1
                     call_id = _call_id(event.item.raw_item)
                     if call_id:
                         # Recorded before the dedup below: a second call to the same
@@ -337,6 +342,10 @@ async def stream_turn(session: ChatSession, message: str) -> AsyncIterator[str]:
             # input with everything the run generated, which is what the next turn
             # needs to see — minus the superseded tool JSON that remember() drops.
             session.remember(result.to_input_list())
+
+            sentry_sdk.metrics.distribution(
+                "agent.turn.tool_calls", tool_calls, attributes={"agent": "manager"}
+            )
 
             yield sse("pills", {"pills": pills_for(session.last_tool)})
 

@@ -341,6 +341,9 @@ const ChatWidget = ({ onExitFull }) => {
           signal: controller.signal,
           onEvent,
         });
+        Sentry.metrics.count('chat.reply_received', 1, {
+          attributes: { stage: 'reply' },
+        });
       } catch (error) {
         if (error.name !== 'AbortError') {
           Sentry.captureException(error);
