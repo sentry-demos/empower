@@ -72,7 +72,6 @@ Sentry.init({
     tracesSampleRate: 1,
     replaysSessionSampleRate: 1.0,
     replaysOnErrorSampleRate: 1,
-    enableLogs: true,
     debug: true,
 
     integrations: (defaultIntegrations) => [
@@ -137,13 +136,16 @@ Sentry.init({
 // Set SE parameter in Sentry context (for Angular project)
 if (seValue) {
   Sentry.setTag('se', seValue);
+  Sentry.setAttribute('se', seValue);
 }
 
 // Set backendType tag in Sentry context (like React)
 Sentry.setTag('backendType', backendType);
+Sentry.setAttribute('backendType', backendType);
 
 // Set customerType tag in Sentry context (like React)
 Sentry.setTag('customerType', customerType);
+Sentry.setAttribute('customerType', customerType);
 
 // Set user email in Sentry context (like React)
 Sentry.setUser({ email: email ?? undefined });

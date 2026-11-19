@@ -115,7 +115,6 @@ Sentry.init({
   profileLifecycle: 'trace',
   replaysSessionSampleRate: 1.0,
   debug: true,
-  enableLogs: true,
   beforeSendLog: (log) => {
     const tags = Sentry.getIsolationScope().getScopeData().tags;
     if ('user.email' in tags) {
@@ -129,10 +128,6 @@ Sentry.init({
       (integration) => integration.name !== 'Dedupe'
     ),
     // Add custom integrations with options
-    // Enable span streaming: spans are sent individually as they complete
-    // instead of being batched into a transaction. This also implicitly sets
-    // `traceLifecycle: 'stream'`.
-    Sentry.spanStreamingIntegration(),
     Sentry.feedbackIntegration({
       // Additional SDK configuration goes in here, for example:
       colorScheme: 'system',

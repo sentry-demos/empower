@@ -13,7 +13,6 @@ Sentry.init({
   profileSessionSampleRate: 1.0,
   replaysSessionSampleRate: 1.0,
   environment: process.env.NEXT_APP_ENVIRONMENT,
-  enableLogs: true,
   profileLifecycle: 'trace',
   integrations: [
     Sentry.consoleLoggingIntegration({ levels: ["log", "warn", "error", "info"] }),
