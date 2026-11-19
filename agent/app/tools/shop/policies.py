@@ -18,6 +18,7 @@ import json
 import logging
 import re
 
+import sentry_sdk
 from agents import RunContextWrapper, function_tool
 
 from ...session import ChatSession
@@ -64,6 +65,10 @@ async def search_policies(context: RunContextWrapper[ChatSession], query: str) -
 
     set_tool_attribute("policy.pages", len(pages))
     set_tool_attribute("policy.bytes", len(payload))
+    # Documents sent to the model for one question: the cause of input-token spikes.
+    sentry_sdk.metrics.distribution(
+        "agent.policy.documents", len(pages), attributes={"tool": "search_policies"}
+    )
     logging.info(f"search_policies returned {len(pages)} pages, {len(payload)} bytes")
 
     answer = next(

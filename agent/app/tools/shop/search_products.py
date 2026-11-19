@@ -4,6 +4,7 @@ import json
 import logging
 from typing import Any
 
+import sentry_sdk
 from agents import RunContextWrapper, function_tool
 
 from ...session import ChatSession
@@ -77,6 +78,11 @@ async def search_products(
     # Remember what was shown so add_to_cart can resolve an id back to the full
     # product without re-querying Flask.
     session.last_results = matches
+    sentry_sdk.metrics.distribution(
+        "agent.product_search.results",
+        len(matches),
+        attributes={"tool": "search_products"},
+    )
 
     payload = {"products": matches, "count": len(matches)}
     session.record_widget("search_products", "products", payload)
