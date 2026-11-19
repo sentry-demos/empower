@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@sentry/vite-plugin": "^4.1.1",
-    "@sentry/vue": "^10.5.0",
+    "@sentry/vue": "^11.15.0",
     "bootstrap": "^5.3.3",
     "bootstrap-vue": "^2.23.1",
     "pinia": "^2.2.6",
