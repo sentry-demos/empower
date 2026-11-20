@@ -1,6 +1,7 @@
 import pytest
 import contextlib
 import os
+import time
 import release_version_manager as ReleaseVersion
 import random as real_random
 import subprocess
@@ -13,6 +14,7 @@ from pathlib import Path
 
 from selenium import webdriver
 from appium import webdriver as appiumdriver
+from appium.webdriver.common.appiumby import AppiumBy
 from appium.options.android import UiAutomator2Options
 from appium.options.ios import XCUITestOptions
 from selenium.common.exceptions import WebDriverException
@@ -741,7 +743,14 @@ def ios_sim_driver(request, se_prefix):
     se = f'{se_prefix}-sauce-ios15.5'
     sentry_sdk.set_tag('se', se)
     try:
-        release_version = ReleaseVersion.latest_ios_github_release()
+        # Optional override for testing unreleased builds, e.g. a Sauce App Storage upload:
+        #   IOS_APP_URL=storage:filename=EmpowerPlant_release.zip
+        app = os.getenv('IOS_APP_URL')
+        if app:
+            print(f"Using IOS_APP_URL: {app}")
+        else:
+            release_version = ReleaseVersion.latest_ios_github_release()
+            app = f'https://github.com/sentry-demos/ios/releases/download/{release_version}/EmpowerPlant_release.zip'
 
         options = XCUITestOptions().load_capabilities({
             'appium:deviceName': 'iPhone 13 Simulator',
@@ -754,11 +763,12 @@ def ios_sim_driver(request, se_prefix):
                 'username': SAUCE_USERNAME,
                 'accessKey': SAUCE_ACCESS_KEY
             },
-            'appium:app': f'https://github.com/sentry-demos/ios/releases/download/{release_version}/EmpowerPlant_release.zip',
+            'appium:app': app,
         })
 
         driver = appiumdriver.Remote(SELENIUM_ENDPOINT, options=options)
-        driver.implicitly_wait(20)
+        # A fresh install shows no plants until the slow GET /products returns
+        driver.implicitly_wait(60)
 
         sentry_sdk.set_tag("sauceLabsUrl", f"https://app.saucelabs.com/tests/{driver.session_id}")
 
@@ -772,6 +782,11 @@ def ios_sim_driver(request, se_prefix):
 
     except Exception as err:
         sentry_sdk.capture_exception(err)
+
+
+def ios_tap(driver, accessibility_id, wait=0):
+    driver.find_element(AppiumBy.ACCESSIBILITY_ID, accessibility_id).click()
+    time.sleep(wait)
 
 
 @pytest.fixture
