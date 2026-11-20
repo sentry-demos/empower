@@ -21,11 +21,13 @@ export default function SentryQueryInitializer() {
     'enterprise',
   ][Math.floor(Math.random() * 4)];
   globalScope.setTag('customerType', customerType);
+  globalScope.setAttribute('customerType', customerType);
 
   if (query.se) {
     // Route components (navigation changes) will now have 'se' tag on scope
     console.log('> src/index.js se', query.se);
     globalScope.setTag('se', query.se);
+    globalScope.setAttribute('se', query.se);
     // Set se tag as cookie to persist on server runtime
     Cookies.set("se", query.se);
     // for use in CheckoutForm.js when deciding whether to pre-fill form

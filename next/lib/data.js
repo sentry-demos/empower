@@ -27,6 +27,7 @@ export async function getProductsRaw() {
   const se = cookiesStore.get("se");
   if(se) {
     Sentry.getCurrentScope().setTag("se", se.value);
+    Sentry.getCurrentScope().setAttribute("se", se.value);
   }
 
   let products = [];
@@ -93,6 +94,7 @@ export async function checkoutAction(cart) {
       const se = cookiesStore.get("se");
       if(se) {
         Sentry.getCurrentScope().setTag("se", se.value)
+        Sentry.getCurrentScope().setAttribute("se", se.value);
       }
       const inventory = await getInventory(cart);
 
