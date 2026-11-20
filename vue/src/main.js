@@ -76,8 +76,8 @@ Sentry.init({
     autoSessionTracking: true,
     replaysSessionSampleRate: 1.0,
     replaysOnErrorSampleRate: 1.0,
-    profilesSampleRate: 1.0,
-    enableLogs: true
+    profileSessionSampleRate: 1.0,
+    profileLifecycle: 'trace',
   });
 
 let currentScope = Sentry.getCurrentScope();
@@ -90,12 +90,14 @@ const customerType = [
   'enterprise',
 ][Math.floor(Math.random() * 4)];
 currentScope.setTag('customerType', customerType);
+currentScope.setAttribute('customerType', customerType);
 
 // SE tag tracking for pre-filling forms
 let se = queryParams.get('se');
 if (se) {
   // Route components (navigation changes) will now have 'se' tag on scope
   currentScope.setTag('se', se);
+  currentScope.setAttribute('se', se);
   // for use in Checkout.js when deciding whether to pre-fill form
   // lasts for as long as the tab is open
   sessionStorage.setItem('se', se);
@@ -105,6 +107,7 @@ if (se) {
 let cexp = queryParams.get('cexp');
 if (cexp) {
   currentScope.setTag('cexp', cexp);
+  currentScope.setAttribute('cexp', cexp);
 
   if (cexp === 'checkout_success') {
     CHECKOUT_SUCCESS = true;
@@ -115,9 +118,11 @@ if (cexp) {
 if (queryParams.get('api') === 'join') {
   PRODUCTS_API = 'products-join';
   currentScope.setTag('api', 'products-join');
+  currentScope.setAttribute('api', 'products-join');
 } else {
   PRODUCTS_API = 'products';
   currentScope.setTag('api', 'products');
+  currentScope.setAttribute('api', 'products');
 }
 
 // Rage click experiment
@@ -135,6 +140,7 @@ sessionStorage.removeItem('lastErrorEventId');
 
 // Set backend type tag
 currentScope.setTag('backendType', backendType);
+currentScope.setAttribute('backendType', backendType);
 
 // User email tracking
 let email = null;
