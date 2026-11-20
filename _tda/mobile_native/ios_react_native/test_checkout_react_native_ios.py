@@ -13,7 +13,7 @@ def test_checkout_react_native_ios(ios_react_native_sim_driver):
         cart_btn.click()
         cart_btn.click()
 
-        ios_react_native_sim_driver.find_element(AppiumBy.ACCESSIBILITY_ID, 'Cart, tab, 2 of 3').click()
+        ios_react_native_sim_driver.find_element(AppiumBy.IOS_PREDICATE, "name BEGINSWITH 'Cart, tab,'").click()
         ios_react_native_sim_driver.find_element(AppiumBy.ACCESSIBILITY_ID, 'Checkout').click()
 
         ios_react_native_sim_driver.find_element(AppiumBy.XPATH, '//XCUIElementTypeTextField[@value="email"]').click()
