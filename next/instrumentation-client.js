@@ -17,10 +17,10 @@ Sentry.init({
   dsn: process.env.NEXT_PUBLIC_DSN,
   tracesSampleRate: 1.0,
   tracePropagationTargets: tracingOrigins,
-  profilesSampleRate: 1.0,
+  profileSessionSampleRate: 1.0,
+  profileLifecycle: 'trace',
   replaysSessionSampleRate: 1.0,
   environment: process.env.NEXT_APP_ENVIRONMENT,
-  enableLogs: true,
   debug: false,
   integrations: [
     Sentry.consoleLoggingIntegration({ levels: ["log", "warn", "error"] }),
