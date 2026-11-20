@@ -7,8 +7,8 @@ import React from 'react';
 //
 // Two shapes, same ids and same click path:
 //
-//   chips  the row above the input, used in the popup and mid-conversation
-//   cards  the large tiles on the full view's empty state
+//   chips  the row above the input, used mid-conversation
+//   cards  the large tiles on the empty state
 //
 // Only one shape renders at a time, so a pill id never appears twice in the DOM.
 
@@ -21,8 +21,9 @@ const CARD_BLURBS = {
   'chat-pill-checkout': 'Review the order and the prefilled details.',
   'chat-pill-apply-coupon': 'Try a promo code against the order.',
   'chat-pill-purchase': 'Place the order and get a confirmation.',
-  'chat-starter-low-light': 'Ask about placement and light levels.',
-  'chat-starter-easy-care': 'Get a recommendation for a forgiving plant.',
+  'chat-pill-cancel-order': 'Cancel an order and get a refund.',
+  'chat-starter-orders': 'See what you have ordered and where it is.',
+  'chat-starter-returns': 'How returns and refunds work.',
 };
 
 function ChatPills({ pills, onSelect, disabled, variant = 'chips' }) {

@@ -11,7 +11,7 @@ from flask_caching import Cache
 from statsig.statsig_user import StatsigUser
 from statsig import statsig, StatsigOptions, StatsigEnvironmentTier
 import dotenv
-from .db import decrement_inventory, get_products, get_products_join, get_inventory, get_promo_code
+from .db import decrement_inventory, get_products, get_products_join, get_inventory, get_promo_code, get_orders, get_order, set_order_status
 from .utils import parseHeaders, get_iterator, evaluate_statsig_flags
 from .queues.tasks import sendEmail
 import sentry_sdk
@@ -35,6 +35,14 @@ RUN_SLOW_PROFILE = None
 
 NORMAL_SLOW_PROFILE = 2 # seconds
 EXTREMELY_SLOW_PROFILE = 24
+
+# Cancelling an order refunds it through the mock payment provider below, which
+# answers slower than we are willing to wait — so every cancellation times out.
+# Kept just over the timeout: each cancel holds one of gunicorn's two sync
+# workers for the whole delay.
+PAYMENT_PROVIDER_TIMEOUT = 5 # seconds
+MOCK_PAYMENT_PROVIDER_DELAY = 6
+CANCELLABLE_ORDER_STATUSES = ["processing", "cancel_requested"]
 
 
 def before_send(event, hint):
@@ -478,6 +486,110 @@ def apply_promo_code():
     except Exception as err:
         sentry_sdk.capture_exception(err)
         return '', 500
+
+
+@app.route('/orders', methods=['GET'])
+def orders():
+    logger.info('[/orders] list request received')
+
+    email = request.args.get('email', '').strip()
+    if not email:
+        logger.warning('[/orders] bad request - missing email parameter')
+        return '', 400
+
+    customer_orders = get_orders(email)
+    logger.info('[/orders] found %d orders', len(customer_orders))
+    return jsonify({"orders": customer_orders})
+
+
+@app.route('/orders/<int:order_id>', methods=['GET'])
+def order_status(order_id):
+    logger.info('[/orders] request received for order %s', order_id)
+
+    order = get_order(order_id)
+    if not order:
+        logger.warning('[/orders] order not found: %s', order_id)
+        return jsonify({"error": {"code": "not_found", "message": "Order not found."}}), 404
+
+    return jsonify({"order": order})
+
+
+@app.route('/orders/<int:order_id>/cancel', methods=['POST'])
+def cancel_order(order_id):
+    logger.info('[/orders/cancel] request received for order %s', order_id)
+
+    order = get_order(order_id)
+    if not order:
+        logger.warning('[/orders/cancel] order not found: %s', order_id)
+        return jsonify({"error": {"code": "not_found", "message": "Order not found."}}), 404
+
+    if order['status'] not in CANCELLABLE_ORDER_STATUSES:
+        logger.warning('[/orders/cancel] order %s is %s, cannot cancel', order_id, order['status'])
+        return jsonify({
+            "error": {
+                "code": "not_cancellable",
+                "message": "Order has already been %s." % order['status']
+            },
+            "order": order
+        }), 409
+
+    # Marked before the refund is attempted, so the response for a refund that
+    # never comes back still carries the order at cancel_requested.
+    order = set_order_status(order_id, 'cancel_requested')
+
+    try:
+        refund = refund_payment(order)
+    except requests.exceptions.Timeout as err:
+        logger.error('[/orders/cancel] payment provider timed out refunding order %s', order_id)
+        sentry_sdk.capture_exception(err)
+        # The refund didn't happen, so neither did the cancellation: the order
+        # goes back to processing. The response below still reports it as
+        # cancel_requested, which is what the agent sees, and listing orders
+        # afterwards shows it was never cancelled. Also keeps the demo order
+        # cancellable on every run without a reseed.
+        set_order_status(order_id, 'processing')
+        return jsonify({
+            "order": order,
+            "refund": None,
+            "error": {"code": "payment_provider_timeout", "message": "Refund was not confirmed."}
+        }), 500
+
+    order = set_order_status(order_id, 'cancelled')
+    logger.info('[/orders/cancel] order %s cancelled', order_id)
+    return jsonify({"order": order, "refund": refund})
+
+
+@sentry_sdk.trace
+def refund_payment(order):
+    # Calls back into this same service (see mock_payment_provider_refunds), over
+    # real HTTP so the call is an http.client span that the trace continues
+    # through. PORT is set on Cloud Run, FLASK_LOCAL_PORT when run locally;
+    # stripped because local.env's inline comments leave trailing spaces on it.
+    port = (os.environ.get("PORT") or os.environ.get("FLASK_LOCAL_PORT")).strip()
+    r = requests.post(
+        "http://127.0.0.1:%s/mock/stripe/v1/refunds" % port,
+        json={"payment_intent": order['payment_intent'], "amount": order['total'] * 100},
+        timeout=PAYMENT_PROVIDER_TIMEOUT,
+    )
+    r.raise_for_status()
+    return r.json()
+
+
+# In-memory stand-in for Stripe's refunds API. Always slower than
+# PAYMENT_PROVIDER_TIMEOUT, so refund_payment never sees its answer.
+@app.route('/mock/stripe/v1/refunds', methods=['POST'])
+def mock_payment_provider_refunds():
+    logger.info('[/mock/stripe] refund requested')
+
+    body = json.loads(request.data)
+    time.sleep(MOCK_PAYMENT_PROVIDER_DELAY)
+    return jsonify({
+        "id": "re_mock_%s" % body['payment_intent'],
+        "object": "refund",
+        "amount": body['amount'],
+        "payment_intent": body['payment_intent'],
+        "status": "succeeded"
+    })
 
 
 @app.route('/product/0/info', methods=['GET'])

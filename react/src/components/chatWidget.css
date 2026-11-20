@@ -1,119 +1,3 @@
-.chat-widget-container {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  z-index: 1000;
-  font-family: 'Poppins', sans-serif;
-}
-
-/* Position the chat button above the Sentry feedback widget */
-.chat-toggle-button {
-  position: fixed;
-  bottom: 70px; /* Above the Sentry feedback widget which is typically at bottom: 20px */
-  right: 20px;
-  width: 90px;
-  height: 90px;
-  border-radius: 50%;
-  background-color: #002626;
-  border: none;
-  cursor: pointer;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  transition: transform 0.2s, box-shadow 0.2s;
-  padding: 12px;
-  z-index: 1001;
-}
-
-.chat-toggle-button:hover {
-  transform: scale(1.05);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
-}
-
-.chat-toggle-button img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 50%;
-}
-
-/* Chat window */
-.chat-window {
-  position: fixed;
-  bottom: 180px; /* Above the toggle button */
-  right: 20px;
-  width: 380px;
-  height: 550px;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  animation: slideUp 0.3s ease-out;
-  z-index: 1000;
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Chat header */
-.chat-header {
-  background-color: #002626;
-  color: white;
-  padding: 16px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.chat-header-content {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.chat-header-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  object-fit: cover;
-}
-
-.chat-header-title {
-  font-weight: 600;
-  font-size: 24px;
-}
-
-.chat-close-button {
-  background: none;
-  border: none;
-  color: white;
-  font-size: 28px;
-  cursor: pointer;
-  padding: 0;
-  margin: 0;
-  line-height: 1;
-  width: 30px;
-  height: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: opacity 0.2s;
-}
-
-.chat-close-button:hover {
-  opacity: 0.8;
-  background: none;
-  color: white;
-}
-
 /* Messages area */
 .chat-messages {
   flex: 1;
@@ -507,6 +391,118 @@
   padding: 0 6px 6px;
 }
 
+/* Orders card, and the status badge the single-order card shares */
+.chat-orders-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-right: 6px;
+}
+
+.chat-orders-count {
+  font-size: 13px;
+  color: #777;
+}
+
+.chat-orders-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-orders-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 6px;
+}
+
+.chat-orders-item + .chat-orders-item {
+  border-top: 1px solid #f0f0f0;
+}
+
+.chat-orders-top,
+.chat-orders-bottom {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.chat-orders-top {
+  align-items: center;
+}
+
+.chat-orders-bottom {
+  align-items: flex-end;
+}
+
+.chat-orders-id {
+  font-size: 14px;
+  font-weight: 600;
+  color: #002626;
+}
+
+.chat-orders-date {
+  font-size: 12px;
+  color: #777;
+}
+
+.chat-orders-items {
+  list-style: none;
+  margin: 2px 0 0;
+  padding: 0;
+  font-size: 13px;
+  color: #555;
+  min-width: 0;
+}
+
+.chat-orders-total {
+  font-size: 14px;
+  font-weight: 500;
+  color: #002626;
+  flex-shrink: 0;
+}
+
+.chat-order-status {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+  background-color: #f0f0f0;
+  color: #555;
+}
+
+.chat-order-status[data-status='processing'] {
+  background-color: #fdf6d8;
+  color: #7a5d00;
+}
+
+.chat-order-status[data-status='shipped'] {
+  background-color: #e5eefb;
+  color: #24508f;
+}
+
+.chat-order-status[data-status='delivered'] {
+  background-color: #e3f3ea;
+  color: #2f6b4f;
+}
+
+.chat-order-status[data-status='cancel_requested'] {
+  background-color: #fdeedd;
+  color: #8a4b0f;
+}
+
+.chat-order-status[data-status='cancelled'] {
+  background-color: #f0f0f0;
+  color: #666;
+}
+
 /* Error bubble */
 .chat-error {
   border-color: #e8a2a2;
@@ -628,21 +624,11 @@
   cursor: not-allowed;
 }
 
-/* Mobile responsiveness */
-@media (max-width: 480px) {
-  .chat-window {
-    width: calc(100vw - 40px);
-    height: calc(100vh - 190px);
-    max-height: 550px;
-  }
-}
-
 /* ==========================================================================
    Full-page conversation view
    --------------------------------------------------------------------------
-   The second shell (see ChatWidget.jsx). Everything here is scoped under
-   .chat-full so the popup above keeps its compact sizing untouched — the popup
-   is what _tda/test_ai_agent.py drives, so it is deliberately left alone.
+   The layout and roomier card sizing for ChatWidget.jsx, scoped under
+   .chat-full on top of the base message and card styles above.
    ========================================================================== */
 
 /* Set on <body> by ChatWidget while the full view is mounted. The footer lives
@@ -973,6 +959,33 @@ body.agent-full-view #footer {
 .chat-full .chat-checkout-title,
 .chat-full .chat-confirmation-title {
   font-size: 18px;
+}
+
+/* Orders: each order its own tile, two to a row where there is room. */
+.chat-full .chat-orders-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+  padding: 4px 0 0;
+}
+
+.chat-full .chat-orders-item {
+  padding: 14px;
+  border: 1px solid #ececec;
+  border-radius: 12px;
+}
+
+.chat-full .chat-orders-item + .chat-orders-item {
+  border-top: 1px solid #ececec;
+}
+
+.chat-full .chat-orders-id,
+.chat-full .chat-orders-total {
+  font-size: 15px;
+}
+
+.chat-full .chat-orders-items {
+  font-size: 14px;
 }
 
 @media (max-width: 720px) {

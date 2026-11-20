@@ -29,7 +29,7 @@ if FLASK_ENVIRONMENT == "local":
         host=HOST,
         port=5432,
         database=DATABASE
-    ))
+    ), pool_pre_ping=True)
 else:
     CLOUD_SQL_CONNECTION_NAME = os.environ["DB_CLOUD_SQL_CONNECTION_NAME"]
     print("> ENVIRONMENT production ")
@@ -43,7 +43,8 @@ else:
             query={
                 'unix_sock': '/cloudsql/{}/.s.PGSQL.5432'.format(CLOUD_SQL_CONNECTION_NAME)
             }
-        )
+        ),
+        pool_pre_ping=True
     )
 
 # N+1 because a sql query for every product n
@@ -166,3 +167,49 @@ def get_promo_code(code):
         return result
     except Exception as err:
         raise DatabaseConnectionError('get_promo_code') from err
+
+
+@sentry_sdk.trace
+def get_orders(email):
+    try:
+        with sentry_sdk.start_span(name="get_orders", op="db.connect"):
+            connection = db.connect()
+
+        with sentry_sdk.start_span(name="get_orders", op="db.query"):
+            query = text("SELECT * FROM orders WHERE email = :email ORDER BY created DESC")
+            orders = connection.execute(query, email=email).fetchall()
+    except Exception as err:
+        raise DatabaseConnectionError('get_orders') from err
+
+    return [dict(order) for order in orders]
+
+
+@sentry_sdk.trace
+def get_order(order_id):
+    try:
+        with sentry_sdk.start_span(name="get_order", op="db.connect"):
+            connection = db.connect()
+
+        with sentry_sdk.start_span(name="get_order", op="db.query"):
+            query = text("SELECT * FROM orders WHERE id = :order_id")
+            order = connection.execute(query, order_id=order_id).fetchone()
+    except Exception as err:
+        raise DatabaseConnectionError('get_order') from err
+
+    return dict(order) if order else None
+
+
+@sentry_sdk.trace
+def set_order_status(order_id, status):
+    try:
+        with sentry_sdk.start_span(name="set_order_status", op="db.connect"):
+            connection = db.connect()
+
+        with sentry_sdk.start_span(name="set_order_status", op="db.query"):
+            query = text("UPDATE orders SET status = :status WHERE id = :order_id RETURNING *")
+            with connection.begin():
+                order = connection.execute(query, status=status, order_id=order_id).fetchone()
+    except Exception as err:
+        raise DatabaseConnectionError('set_order_status') from err
+
+    return dict(order) if order else None

@@ -77,6 +77,9 @@ def sentry_options(dsn: str) -> dict[str, Any]:
         ],
         disabled_integrations=[OpenAIIntegration()],
         send_default_pii=True,
+        # Python logging at INFO and above becomes Sentry logs, attached to the
+        # trace they were written in (the default LoggingIntegration's level).
+        enable_logs=True,
         before_send_transaction=propagate_context_to_spans,
     )
 
@@ -161,6 +164,25 @@ def mark_tool_error(error_type: str, message: str) -> None:
         span.set_status(SPANSTATUS.INTERNAL_ERROR)
         span.set_data("error.type", error_type)
         span.set_data("error.message", message)
+
+
+def set_tool_attribute(key: str, value: Any) -> None:
+    """Set an attribute on the enclosing gen_ai.execute_tool span.
+
+    For the values worth searching tool calls by in Trace Explorer, such as the
+    order a call was about. Called from inside the tool body before any
+    outbound request, for the same reason as mark_tool_error: that is where the
+    execute_tool span is the innermost open span.
+    """
+    span = sentry_sdk.get_current_span()
+    if span is None:
+        return
+
+    if isinstance(span, StreamedSpan):
+        if span.get_attributes().get("sentry.op") == OP.GEN_AI_EXECUTE_TOOL:
+            span.set_attribute(key, value)
+    elif span.op == OP.GEN_AI_EXECUTE_TOOL:
+        span.set_data(key, value)
 
 
 @contextmanager
