@@ -24,6 +24,7 @@ import json
 import logging
 from typing import Any, AsyncIterator
 
+import sentry_sdk
 from agents import Runner
 from agents.stream_events import RunItemStreamEvent
 
@@ -337,6 +338,11 @@ async def stream_turn(session: ChatSession, message: str) -> AsyncIterator[str]:
             # input with everything the run generated, which is what the next turn
             # needs to see — minus the superseded tool JSON that remember() drops.
             session.remember(result.to_input_list())
+            sentry_sdk.metrics.distribution(
+                "agent.turn.tool_calls",
+                len(calls),
+                attributes={"agent": SHOPPING_AGENT_NAME},
+            )
 
             yield sse("pills", {"pills": pills_for(session.last_tool)})
 
