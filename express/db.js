@@ -22,6 +22,7 @@ const getProducts = async function () {
 
 
     Sentry.setTag("totalProducts", products.rows.length);
+    Sentry.setAttribute("totalProducts", products.rows.length);
     const span = Sentry.getActiveSpan();
     if (span) span.setAttribute("products", products.rows);
 
@@ -56,6 +57,7 @@ const getJoinedProducts = async function () {
   });
 
   Sentry.setTag("totalProducts", products.rows.length);
+  Sentry.setAttribute("totalProducts", products.rows.length);
   const span = Sentry.getActiveSpan();
   if (span) span.setAttribute("Products", products.rows);
 
