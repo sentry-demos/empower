@@ -26,6 +26,9 @@ def test_checkout_react_native_ios(ios_react_native_sim_driver):
         ios_react_native_sim_driver.find_element(AppiumBy.XPATH, '(//XCUIElementTypeOther[@name="Apply"])').click()
         time.sleep(3)
 
+        # The promo error pushes the place order button further down
+        ios_react_native_sim_driver.execute_script('mobile: scroll', {'direction': 'down'})
+
         ios_react_native_sim_driver.find_element(AppiumBy.XPATH, '(//XCUIElementTypeOther[@name="Place your order"])').click()
 
     except Exception as err:
