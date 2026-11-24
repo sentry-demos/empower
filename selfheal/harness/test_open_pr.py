@@ -112,3 +112,21 @@ def test_no_pr_at_all_still_fails_with_githubs_reason(gh):
     gh(create=(1, "", "pull request create failed: GraphQL: Head sha can't be blank"))
     with pytest.raises(RuntimeError, match="Head sha can't be blank"):
         open_pr.create_pr(BRANCH, "title", "body.md", LABELS)
+
+
+def replay_proc(code, out, err=""):
+    return subprocess.CompletedProcess(["replay.py"], code, out, err)
+
+
+def test_replay_status_is_read_past_the_apps_own_output():
+    out = '> ENVIRONMENT local\n{"status": 200, "body": "OK"}\n'
+    assert open_pr.replay_result(replay_proc(0, out)) == (200, None)
+
+
+def test_replay_that_crashes_before_replaying_is_an_error_not_a_crash():
+    # Run 45298351038: sentry-sdk 3.0 rejected enable_logs, so the app never imported and
+    # replay.py printed a log line and a traceback but no JSON. open_pr.py used to crash on it.
+    proc = replay_proc(1, "> ENVIRONMENT local\n", "Traceback ...\nTypeError: Unknown option 'enable_logs'\n")
+    status, error = open_pr.replay_result(proc)
+    assert status is None
+    assert error.startswith("exit 1: ") and "enable_logs" in error

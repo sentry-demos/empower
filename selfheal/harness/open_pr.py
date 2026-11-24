@@ -101,6 +101,20 @@ def last_line(proc):
     return (proc.stdout.strip().splitlines() or proc.stderr.strip().splitlines() or [""])[-1]
 
 
+def replay_result(proc):
+    """(HTTP status, None) from replay.py's JSON line, or (None, why) when it printed none: it
+    crashed before replaying, e.g. the app wouldn't import. Its last line isn't always the JSON
+    (the app logs to stdout too), so take the last line that parses."""
+    for line in reversed(proc.stdout.strip().splitlines()):
+        try:
+            return int(json.loads(line)["status"]), None
+        except (ValueError, KeyError, TypeError):
+            continue
+    # The traceback's last line (stderr) says why; stdout only has the app's log lines
+    why = (proc.stderr.strip().splitlines() or [last_line(proc)])[-1]
+    return None, f"exit {proc.returncode}: {why[:300]}"
+
+
 def verify(out):
     files = changed_files()
     paths = target_paths()
@@ -111,12 +125,11 @@ def verify(out):
     result["tests_passed"] = tests.returncode == 0
     result["tests_summary"] = last_line(tests)
 
-    result["replay_status"] = None
+    result["replay_status"], result["replay_error"] = None, None
     cart = os.path.join(out, "cart.json")
     if (os.environ.get("TARGET_REPLAY") or "true") == "true" and os.path.exists(cart):
         replay = sh(sys.executable, os.path.join(HARNESS, "replay.py"), cart, check=False)
-        lines = replay.stdout.strip().splitlines()
-        result["replay_status"] = json.loads(lines[-1])["status"] if lines else None
+        result["replay_status"], result["replay_error"] = replay_result(replay)
 
     # The target's own proof the problem is gone (e.g. the token budget), if it has one
     result["check_passed"] = None
@@ -128,7 +141,8 @@ def verify(out):
 
     result["secrets_found"] = leaked_secrets(files)
     result["ok"] = (result["in_scope"] and result["tests_passed"] and result["check_passed"] is not False
-                    and result["replay_status"] in (None, 200) and not result["secrets_found"])
+                    and result["replay_status"] in (None, 200) and not result["replay_error"]
+                    and not result["secrets_found"])
     return result
 
 
@@ -181,6 +195,8 @@ def pr_text(variant, out, check):
     )
     if check.get("replay_status") is not None:
         body += f"- Replay of the failing production request: HTTP {check['replay_status']}\n"
+    elif check.get("replay_error"):
+        body += f"- Replay of the failing production request: couldn't run ({work.scrub(check['replay_error'])})\n"
     if check.get("check_passed") is not None:
         label = check.get("check_label") or "Target check"
         body += f"- {label[:1].upper() + label[1:]}: {'passed' if check['check_passed'] else 'FAILED'}\n"
