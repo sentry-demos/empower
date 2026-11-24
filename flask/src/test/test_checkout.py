@@ -1,6 +1,4 @@
-"""/checkout tests. These pass on selfheal/base, where the validate_inventory path is
-intentionally broken; a fix for that path should add its own regression test here.
-"""
+"""/checkout tests."""
 import json
 
 from .conftest import make_order
@@ -17,4 +15,26 @@ def test_checkout_without_inventory_validation_succeeds(client, inventory):
 
     assert response.status_code == 200
     assert json.loads(response.data) == {"status": "success"}
+    assert inventory.decrements == []
+
+
+def test_checkout_with_inventory_validation_in_stock_succeeds(client, inventory):
+    # Regression for BACKEND-FLASK-M5: `quantities` was read before it was assigned,
+    # so every validated checkout raised UnboundLocalError.
+    inventory.stock.update({3: 10})
+
+    response = post_checkout(client, make_order({3: 2}))
+
+    assert response.status_code == 200
+    assert json.loads(response.data) == {"status": "success"}
+    assert inventory.decrements == [(3, 2)]
+
+
+def test_checkout_with_inventory_validation_out_of_stock_reports_failed(client, inventory):
+    inventory.stock.update({3: 1})
+
+    response = post_checkout(client, make_order({3: 2}))
+
+    assert response.status_code == 200
+    assert json.loads(response.data) == {"status": "failed"}
     assert inventory.decrements == []
