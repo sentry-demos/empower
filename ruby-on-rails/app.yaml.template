@@ -1,5 +1,5 @@
 entrypoint: bundle exec rackup -s Puma -p \$PORT
 env: standard
-runtime: ruby32
+runtime: ruby34
 
 service: ${RUBYONRAILS_APP_ENGINE_SERVICE}
