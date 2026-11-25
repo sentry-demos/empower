@@ -52,10 +52,11 @@ jobs:
         with:
           node-version: "22"
 
+      # Match ruby-on-rails Gemfile (~> 3.4.0) and app.yaml.template (runtime: ruby34).
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '3.2'
+          ruby-version: '3.4'
 
       - name: Set up Java
         uses: actions/setup-java@v5
